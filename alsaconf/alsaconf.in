@@ -175,7 +175,7 @@ elif [ "$kernel" = "new" ]; then
   fi
   cfgfile="/etc/modprobe.conf"
 elif [ "$distribution" = "debian" ]; then
-  cfgfile="/etc/alsa/modutils/0.9"
+  cfgfile="/etc/modutils/alsa-base"
 elif [ -e /etc/modules.conf ]; then
   cfgfile="/etc/modules.conf"
 elif [ -e /etc/conf.modules ]; then
