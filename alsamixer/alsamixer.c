@@ -836,14 +836,21 @@ mixer_update_cbar (int elem_index)
   mvaddstr (y, x, "         ");
   if (mixer_type[elem_index] & MIXER_ELEM_HAS_VOLUME) {
     mixer_dc (DC_TEXT);
-    sprintf (string, "%ld", vleft);
-    mvaddstr (y, x + 3 - strlen (string), string);
-    mixer_dc (DC_CBAR_FRAME);
-    mvaddch (y, x + 3, '<');
-    mvaddch (y, x + 4, '>');
-    mixer_dc (DC_TEXT);
-    sprintf (string, "%ld", vright);
-    mvaddstr (y, x + 5, string);
+    if (chn_right == SND_MIXER_SCHN_UNKNOWN) {
+      /* mono */
+      sprintf (string, "%ld", vleft);
+      mvaddstr (y, x + 4 - strlen (string) / 2, string);
+    } else {
+      /* stereo */
+      sprintf (string, "%ld", vleft);
+      mvaddstr (y, x + 3 - strlen (string), string);
+      mixer_dc (DC_CBAR_FRAME);
+      mvaddch (y, x + 3, '<');
+      mvaddch (y, x + 4, '>');
+      mixer_dc (DC_TEXT);
+      sprintf (string, "%ld", vright);
+      mvaddstr (y, x + 5, string);
+    }
   }
   y--;
   
