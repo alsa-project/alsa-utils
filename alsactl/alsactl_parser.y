@@ -43,7 +43,7 @@ static void select_rawmidi( char *name );
 
 static void select_mixer_channel( char *name );
 static void set_mixer_channel( int left, int right );
-static void set_mixer_channel_record( void );
+static void set_mixer_channel_flags( unsigned int mask, unsigned int flags );
 static void set_mixer_channel_end( void );
 
 #define SWITCH_CONTROL		0
@@ -60,7 +60,7 @@ static void select_rawmidi_input_switch( char *name );
 
 static void set_switch_boolean( int val );
 static void set_switch_integer( int val );
-static void set_switch_iec958ocs_begin( void );
+static void set_switch_iec958ocs_begin( int end );
 static void set_switch_iec958ocs( int idx, unsigned short val, unsigned short mask );
 
 	/* local variables */
@@ -74,6 +74,8 @@ static unsigned int Xmixerchannelflags = 0;
 static int Xswitchtype = SWITCH_CONTROL;
 static int *Xswitchchange = NULL;
 static void *Xswitch = NULL;
+static unsigned int Xswitchiec958ocs = 0;
+static unsigned short Xswitchiec958ocs1[16];
 
 %}
 
@@ -100,8 +102,8 @@ static void *Xswitch = NULL;
 	/* other keywords */
 %token L_SOUNDCARD L_MIXER L_CHANNEL L_STEREO L_MONO L_SWITCH L_RAWDATA
 %token L_CONTROL L_PCM L_RAWMIDI L_PLAYBACK L_RECORD L_OUTPUT L_INPUT
-%token L_IEC958OCS L_3D L_RESET L_USER L_VALID L_DATA L_PROTECTED L_PRE2
-%token L_FSLOCK L_TYPE L_GSTATUS L_ENABLE L_DISABLE
+%token L_IEC958OCS L_3D L_RESET L_USER L_VALID L_DATA L_PROTECT L_PRE2
+%token L_FSLOCK L_TYPE L_GSTATUS L_ENABLE L_DISABLE L_MUTE L_SWOUT L_SWIN
 
 %type <b_value> boolean
 %type <i_value> integer
@@ -150,10 +152,43 @@ mvalues : mvalue
 	| mvalues mvalue
 	;
 
-mvalue	: L_STEREO '(' integer ',' integer ')' { set_mixer_channel( $3, $5 ); }
-	| L_MONO '(' integer ')' { set_mixer_channel( $3, $3 ); }
-	| L_RECORD		{ set_mixer_channel_record(); }
+mvalue	: L_STEREO '(' xmchls ',' xmchrs ')'
+	| L_MONO '(' xmchs ')'
 	| error			{ yyerror( "unknown keyword in mixer channel{} level" ); }
+	;
+
+xmchls	: xmchl
+	| xmchls xmchl
+	;
+
+xmchl	: L_INTEGER		{ set_mixer_channel( $1, -1 ); }
+	| L_MUTE		{ set_mixer_channel_flags( SND_MIXER_FLG_MUTE_LEFT, SND_MIXER_FLG_MUTE_LEFT ); }
+	| L_RECORD		{ set_mixer_channel_flags( SND_MIXER_FLG_RECORD_LEFT, SND_MIXER_FLG_RECORD_LEFT ); }
+	| L_SWOUT		{ set_mixer_channel_flags( SND_MIXER_FLG_LTOR_OUT, SND_MIXER_FLG_LTOR_OUT ); }
+	| L_SWIN		{ set_mixer_channel_flags( SND_MIXER_FLG_LTOR_IN, SND_MIXER_FLG_LTOR_IN ); }
+	| error			{ yyerror( "unknown keyword in left channel section..." ); }
+	;
+
+xmchrs	: xmchr
+	| xmchrs xmchr
+	;
+
+xmchr	: L_INTEGER		{ set_mixer_channel( -1, $1 ); }
+	| L_MUTE		{ set_mixer_channel_flags( SND_MIXER_FLG_MUTE_RIGHT, SND_MIXER_FLG_MUTE_RIGHT ); }
+	| L_RECORD		{ set_mixer_channel_flags( SND_MIXER_FLG_RECORD_RIGHT, SND_MIXER_FLG_RECORD_RIGHT ); }
+	| L_SWOUT		{ set_mixer_channel_flags( SND_MIXER_FLG_RTOL_OUT, SND_MIXER_FLG_RTOL_OUT ); }
+	| L_SWIN		{ set_mixer_channel_flags( SND_MIXER_FLG_RTOL_IN, SND_MIXER_FLG_RTOL_IN ); }
+	| error			{ yyerror( "unknown keyword in right channel section..." ); }
+	;
+
+xmchs	: xmch
+	| xmchs xmch
+	;
+
+xmch	: L_INTEGER		{ set_mixer_channel( $1, $1 ); }
+	| L_MUTE		{ set_mixer_channel_flags( SND_MIXER_FLG_MUTE, SND_MIXER_FLG_MUTE ); }
+	| L_RECORD		{ set_mixer_channel_flags( SND_MIXER_FLG_RECORD, SND_MIXER_FLG_RECORD ); }
+	| error			{ yyerror( "unknown keyword in mono channel section..." ); }
 	;
 
 pcms	: pcm
@@ -212,7 +247,7 @@ switches : switch
 switch	: L_TRUE		{ set_switch_boolean( 1 ); }
 	| L_FALSE		{ set_switch_boolean( 0 ); }
 	| L_INTEGER		{ set_switch_integer( $1 ); }
-	| L_IEC958OCS '(' { set_switch_iec958ocs_begin(); } iec958ocs ')'
+	| L_IEC958OCS '(' { set_switch_iec958ocs_begin( 0 ); } iec958ocs { set_switch_iec958ocs_begin( 1 ); } ')'
 	| error			{ yyerror( "unknown keyword in switch() data parameter" ); }
 	;
 
@@ -227,6 +262,7 @@ iec958ocs1 : L_ENABLE		{ set_switch_iec958ocs( 0, 1, 0 ); }
 	| L_USER		{ set_switch_iec958ocs( 4, 0x0020, ~0x0020 ); }
 	| L_VALID		{ set_switch_iec958ocs( 4, 0x0010, ~0x0010 ); }
 	| L_DATA		{ set_switch_iec958ocs( 5, 0x0002, ~0x0002 ); }
+	| L_PROTECT		{ set_switch_iec958ocs( 5, 0x0004, ~0x0004 ); }
 	| L_PRE2		{ set_switch_iec958ocs( 5, 0x0008, ~0x0018 ); }
 	| L_FSLOCK		{ set_switch_iec958ocs( 5, 0x0020, ~0x0020 ); }
 	| L_TYPE '(' integer ')' { set_switch_iec958ocs( 5, ($3 & 0x7f) << 6, ~(0x7f<<6) ); }
@@ -334,6 +370,13 @@ static void select_mixer_channel( char *name )
   for ( channel = Xmixer -> channels; channel; channel = channel -> next )
     if ( !strcmp( channel -> i.name, name ) ) {
       Xmixerchannel = channel;
+      Xmixerchannelflags = Xmixerchannel -> c.flags & 
+				~(SND_MIXER_FLG_RECORD |
+			  	  SND_MIXER_FLG_MUTE |
+			  	  SND_MIXER_FLG_SWITCH_OUT |
+			  	  SND_MIXER_FLG_SWITCH_IN |
+			  	  SND_MIXER_FLG_DECIBEL |
+			  	  SND_MIXER_FLG_FORCE);
       free( name );
       return;
     }
@@ -343,38 +386,33 @@ static void select_mixer_channel( char *name )
 
 static void set_mixer_channel( int left, int right )
 {
-  Xmixerchannelflags = Xmixerchannel -> c.flags & 
-			~(SND_MIXER_FLG_RECORD |
-			  SND_MIXER_FLG_MUTE |
-			  SND_MIXER_FLG_DECIBEL |
-			  SND_MIXER_FLG_FORCE);
-  if ( left & 0x80000000 ) {
-    Xmixerchannelflags |= SND_MIXER_FLG_MUTE_LEFT;
-    left &= 0x7fffffff;
+  if ( left >= 0 ) {
+    if ( Xmixerchannel -> i.min > left || Xmixerchannel -> i.max < left )
+      yyerror( "Value out of range (%i-%i)...", Xmixerchannel -> i.min, Xmixerchannel -> i.max );
+    if ( Xmixerchannel -> c.left != left )
+      Xmixerchannel -> change = 1;
+    Xmixerchannel -> c.left = left;
   }
-  if ( right & 0x80000000 ) {
-    Xmixerchannelflags |= SND_MIXER_FLG_MUTE_RIGHT;
-    right &= 0x7fffffff;
+  if ( right >= 0 ) {
+    if ( Xmixerchannel -> i.min > right || Xmixerchannel -> i.max < right )
+      yyerror( "Value out of range (%i-%i)...", Xmixerchannel -> i.min, Xmixerchannel -> i.max );
+    if ( Xmixerchannel -> c.right != right )
+      Xmixerchannel -> change = 1;
+    Xmixerchannel -> c.right = right;
   }
-  if ( Xmixerchannel -> i.min > left || Xmixerchannel -> i.max < left )
-    yyerror( "Value out of range (%i-%i)...", Xmixerchannel -> i.min, Xmixerchannel -> i.max );
-  if ( Xmixerchannel -> i.min > right || Xmixerchannel -> i.max < right )
-    yyerror( "Value out of range (%i-%i)...", Xmixerchannel -> i.min, Xmixerchannel -> i.max );
-  if ( Xmixerchannel -> c.left != left || Xmixerchannel -> c.right != right )
-    Xmixerchannel -> change = 1;
-  Xmixerchannel -> c.left = left;
-  Xmixerchannel -> c.right = right;
 }
 
-static void set_mixer_channel_record( void )
+static void set_mixer_channel_flags( unsigned int mask, unsigned int flags )
 {
-  Xmixerchannelflags |= SND_MIXER_FLG_RECORD;
+  Xmixerchannelflags &= ~mask;
+  Xmixerchannelflags |= flags;
 }
 
 static void set_mixer_channel_end( void )
 {
-  if ( Xmixerchannel -> c.flags != Xmixerchannelflags )
+  if ( Xmixerchannel -> c.flags != Xmixerchannelflags ) {
     Xmixerchannel -> change = 1;
+  }
   Xmixerchannel -> c.flags = Xmixerchannelflags;
 }
 
@@ -458,30 +496,42 @@ static void set_switch_integer( int val )
   memcpy( &sw -> value, &xx, sizeof(xx) );
 }
 
-static void set_switch_iec958ocs_begin( void )
+static void set_switch_iec958ocs_begin( int end )
 {
   /* ok.. this is a little bit wrong, but at these times are all switches same */
   snd_ctl_switch_t *sw = (snd_ctl_switch_t *)Xswitch;
 
+  if ( !end ) {
+    if ( Xswitchiec958ocs != sw -> value.enable ) {
+      sw -> value.enable = Xswitchiec958ocs;
+      *Xswitchchange = 1;
+    }
+    if ( Xswitchiec958ocs1[4] != sw -> value.data16[4] ) {
+      sw -> value.data16[4] = Xswitchiec958ocs1[4];
+      *Xswitchchange = 1;
+    }
+    if ( Xswitchiec958ocs1[5] != sw -> value.data16[5] ) {
+      sw -> value.data16[5] = Xswitchiec958ocs1[5];
+      *Xswitchchange = 1;
+    }
+    return;
+  }
   if ( Xswitchtype != SWITCH_MIXER || sw -> type != SND_MIXER_SW_TYPE_BOOLEAN ||
-       !strcmp( sw -> name, SND_MIXER_SW_IEC958OUT ) )
+       strcmp( sw -> name, SND_MIXER_SW_IEC958OUT ) )
     yyerror( "Switch '%s' cannot store IEC958 information for Cirrus Logic chips...", sw -> name );
   if ( sw -> value.data32[1] != (('C'<<8)|'S') )
     yyerror( "Switch '%s' doesn't have Cirrus Logic signature!!!", sw -> name );
-  sw -> value.enable = 0;
-  sw -> value.data16[4] = 0x0000;
-  sw -> value.data16[5] = 0x0000;
+  Xswitchiec958ocs = 0;
+  Xswitchiec958ocs1[4] = 0x0000;
+  Xswitchiec958ocs1[5] = 0x0000;
 }
 
 static void set_switch_iec958ocs( int idx, unsigned short val, unsigned short mask )
 {
-  /* ok.. this is a little bit wrong, but at these times are all switches same */
-  snd_ctl_switch_t *sw = (snd_ctl_switch_t *)Xswitch;
-
   if ( idx == 0 ) {
-    sw -> value.enable = val ? 1 : 0;
+    Xswitchiec958ocs = val ? 1 : 0;
     return;
   }
-  sw -> value.data16[ idx ] &= ~mask;
-  sw -> value.data16[ idx ] |= val;
+  Xswitchiec958ocs1[ idx ] &= ~mask;
+  Xswitchiec958ocs1[ idx ] |= val;
 }

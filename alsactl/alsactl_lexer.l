@@ -63,13 +63,16 @@ reset			return L_RESET;
 user			return L_USER;
 valid			return L_VALID;
 data			return L_DATA;
-protected		return L_PROTECTED;
+protected		return L_PROTECT;
 pre2			return L_PRE2;
 fslock			return L_FSLOCK;
 type			return L_TYPE;
 gstatus			return L_GSTATUS;
 enable			return L_ENABLE;
 disable			return L_DISABLE;
+mute			return L_MUTE;
+swout			return L_SWOUT;
+swin			return L_SWIN;
 
 	/* boolean */
 
@@ -79,7 +82,6 @@ true|on|yes		return L_TRUE;
 	/* integers */
 
 [0-9]+			{ yylval.i_value = atoi( yytext ); return L_INTEGER; }
-"!"[0-9]+		{ yylval.i_value = atoi( yytext ); yylval.i_value |= 0x80000000; return L_INTEGER; }
 0x[0-9a-f]+		{ char *end;
                           yylval.i_value = strtol( yytext, &end, 0 );
                           return L_INTEGER; }

@@ -520,14 +520,13 @@ int soundcard_setup_load( const char *cfgfile )
 
 static void soundcard_setup_write_switch( FILE *out, int interface, const unsigned char *name, unsigned int type, unsigned int low, unsigned int high, void *data )
 {
-  struct data {
+  union {
     unsigned int enable;
     unsigned char data8[32];
     unsigned short data16[16];
     unsigned int data32[8];
-  };
+  } *pdata = data;
   char *s, v[16];
-  struct data *pdata = (struct data *)data;
   int idx, first, switchok = 0;
   const char *space = "    ";
   
@@ -558,10 +557,10 @@ static void soundcard_setup_write_switch( FILE *out, int interface, const unsign
     }
     if ( !first ) fprintf( out, "\n" );
   }
-  fprintf( out, "%sswitch( \"%s\", ", space, name );
   if ( interface == SND_INTERFACE_MIXER && type == SND_MIXER_SW_TYPE_BOOLEAN &&
        !strcmp( name, SND_MIXER_SW_IEC958OUT ) ) {
-    if ( pdata -> data16[0] == (('C'<<8)|'S') ) {	/* Cirrus Crystal */
+    fprintf( out, "%sswitch( \"%s\", ", space, name );
+    if ( pdata -> data32[1] == (('C'<<8)|'S') ) {	/* Cirrus Crystal */
       switchok = 0;
       fprintf( out, "iec958ocs( %s", pdata -> enable ? "enable" : "disable" );
       if ( pdata -> data16[4] & 0x2000 ) fprintf( out, " 3d" );
@@ -577,9 +576,11 @@ static void soundcard_setup_write_switch( FILE *out, int interface, const unsign
       if ( pdata -> data16[5] & 0x0020 ) fprintf( out, " fslock" );
       fprintf( out, " type( 0x%x )", (pdata -> data16[5] >> 6) & 0x7f );
       if ( pdata -> data16[5] & 0x2000 ) fprintf( out, " gstatus" );
-      fprintf( out, ")" );
+      fprintf( out, " )" );
+      goto __end;
     }
   }
+  fprintf( out, "%sswitch( \"%s\", ", space, name );
   if ( !switchok ) {
     fprintf( out, v );
     if ( type < 0 || type > SND_CTL_SW_TYPE_DWORD ) {
@@ -591,28 +592,50 @@ static void soundcard_setup_write_switch( FILE *out, int interface, const unsign
       fprintf( out, "%02x@ )\n", pdata -> data8[31] );
     }
   }
+  __end:
   fprintf( out, " )\n" );
 }
 
 
 static void soundcard_setup_write_mixer_channel( FILE *out, snd_mixer_channel_info_t *info, snd_mixer_channel_t *channel )
 {
-  fprintf( out, "    ; Capabilities:%s%s%s%s%s%s.\n",
+  fprintf( out, "    ; Capabilities:%s%s%s%s%s%s%s%s%s%s%s%s%s.\n",
   	info -> caps & SND_MIXER_CINFO_CAP_RECORD ? " record" : "",
+  	info -> caps & SND_MIXER_CINFO_CAP_JOINRECORD ? " join-record" : "",
   	info -> caps & SND_MIXER_CINFO_CAP_STEREO ? " stereo" : "",
   	info -> caps & SND_MIXER_CINFO_CAP_HWMUTE ? " hardware-mute" : "",
-  	info -> caps & SND_MIXER_CINFO_CAP_MONOMUTE ? " mono-mute" : "",
+  	info -> caps & SND_MIXER_CINFO_CAP_JOINMUTE ? " join-mute" : "",
   	info -> caps & SND_MIXER_CINFO_CAP_DIGITAL ? " digital" : "",
-  	info -> caps & SND_MIXER_CINFO_CAP_INPUT ? " external-input" : "" );
+  	info -> caps & SND_MIXER_CINFO_CAP_INPUT ? " external-input" : "",
+  	info -> caps & SND_MIXER_CINFO_CAP_LTOR_OUT ? " ltor-out" : "",
+  	info -> caps & SND_MIXER_CINFO_CAP_RTOL_OUT ? " rtol-out" : "",
+  	info -> caps & SND_MIXER_CINFO_CAP_SWITCH_OUT ? " switch-out" : "",
+  	info -> caps & SND_MIXER_CINFO_CAP_LTOR_IN ? " ltor-in" : "",
+  	info -> caps & SND_MIXER_CINFO_CAP_RTOL_IN ? " rtol-in" : "",
+  	info -> caps & SND_MIXER_CINFO_CAP_RECORDBYMUTE ? " record-by-mute" : "" );
   fprintf( out, "    ; Accepted channel range is from %i to %i.\n", info -> min, info -> max );
   fprintf( out, "    channel( \"%s\", ", info -> name );
+  printf( "flags = 0x%x\n", channel -> flags );
   if ( info -> caps & SND_MIXER_CINFO_CAP_STEREO ) {
-    fprintf( out, "stereo( %s%i, %s%i )", channel -> flags & SND_MIXER_FLG_MUTE_LEFT ? "!" : "", channel -> left, channel -> flags & SND_MIXER_FLG_MUTE_RIGHT ? "!" : "", channel -> right );
+    fprintf( out, "stereo( %i%s%s%s%s, %i%s%s%s%s )",
+      channel -> left,
+      channel -> flags & SND_MIXER_FLG_MUTE_LEFT ? " mute" : "",
+      channel -> flags & SND_MIXER_FLG_RECORD_LEFT ? " record" : "",
+      channel -> flags & SND_MIXER_FLG_LTOR_OUT ? " swout" : "",
+      channel -> flags & SND_MIXER_FLG_LTOR_IN ? " swin" : "",
+      channel -> right,
+      channel -> flags & SND_MIXER_FLG_MUTE_RIGHT ? " mute" : "",
+      channel -> flags & SND_MIXER_FLG_RECORD_RIGHT ? " record" : "",
+      channel -> flags & SND_MIXER_FLG_RTOL_OUT ? " swout" : "",
+      channel -> flags & SND_MIXER_FLG_RTOL_IN ? " swin" : ""
+    );
   } else {
-    fprintf( out, "mono( %s%i )", channel -> flags & SND_MIXER_FLG_MUTE ? "!" : "", channel -> left );
+    fprintf( out, "mono( %i%s%s )", 
+      (channel -> left + channel -> right) / 2,
+      channel -> flags & SND_MIXER_FLG_MUTE ? " mute" : "",
+      channel -> flags & SND_MIXER_FLG_RECORD ? " record" : ""
+    );
   }
-  if ( channel -> flags & SND_MIXER_FLG_RECORD )
-    fprintf( out, " record" );
   fprintf( out, " )\n" );
 }
 
@@ -649,7 +672,7 @@ int soundcard_setup_write( const char *cfgfile )
       for ( mixerchannel = mixer -> channels; mixerchannel; mixerchannel = mixerchannel -> next )
         soundcard_setup_write_mixer_channel( out, &mixerchannel -> i, &mixerchannel -> c );
       for ( mixersw = mixer -> switches; mixersw; mixersw = mixersw -> next )
-        soundcard_setup_write_switch( out, SND_INTERFACE_MIXER, mixersw -> s.name, mixersw -> s.type, mixersw -> s.low, mixersw -> s.high, (void *)&mixersw -> s.value );
+        soundcard_setup_write_switch( out, SND_INTERFACE_MIXER, mixersw -> s.name, mixersw -> s.type, mixersw -> s.low, mixersw -> s.high, (void *)(&mixersw -> s.value) );
       fprintf( out, "  }\n" );
     }
     for ( pcm = first -> pcms; pcm; pcm = pcm -> next ) {
