@@ -1,15 +1,5 @@
 INCLUDES=-I$(top_srcdir)/include
-SUBDIRS1=include alsactl alsamixer amixer aplay seq utils
-if COND_XAMIXER2
-SUBDIRS2=$(SUBDIRS1) xamixer2
-else
-SUBDIRS2=$(SUBDIRS1)
-endif
-if COND_GAMIX
-SUBDIRS=$(SUBDIRS2) gamix
-else
-SUBDIRS=$(SUBDIRS2)
-endif
+SUBDIRS=include alsactl alsamixer amixer aplay seq utils
 EXTRA_DIST=ChangeLog INSTALL README configure cvscompile
 
 rpm: dist

@@ -5,7 +5,7 @@ AM_INIT_AUTOMAKE(alsa-utils, 0.5.0)
 
 dnl Checks for programs.
 AC_PROG_CC
-AC_PROG_CXX
+dnl AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_YACC
@@ -24,10 +24,8 @@ AC_SUBST(CURSESINC)
 AC_SUBST(CURSESLIB)
 
 dnl Check for Gtk+
-AM_PATH_GTK(1.0.1)
-CFLAGS="$CFLAGS $GTK_CFLAGS"
-# LDFLAGS="$LDFLAGS $GTK_LIBS"
-
+dnl AM_PATH_GTK(1.0.1)
+dnl CFLAGS="$CFLAGS $GTK_CFLAGS"
 
 AM_CONFIG_HEADER(include/aconfig.h)
 
@@ -41,14 +39,6 @@ AC_PROG_GCC_TRADITIONAL
 
 SAVE_UTIL_VERSION
 
-AM_CONDITIONAL(COND_XAMIXER2, test "x$GTK_LIBS" != "x")
-if test "x$GTK_LIBS" = "x"; then
-  AC_MSG_RESULT(Not building XAmixer2 as Gtk+ was not found.)
-fi
-AM_CONDITIONAL(COND_GAMIX, test "x$GTK_LIBS" != "x")
-if test "x$GTK_LIBS" = "x"; then
-  AC_MSG_RESULT(Not building gamix as Gtk+ was not found.)
-fi
 AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amixer/Makefile aplay/Makefile \
-          include/Makefile utils/Makefile utils/alsa-utils.spec xamixer2/Makefile
-	  gamix/Makefile seq/Makefile seq/aconnect/Makefile seq/aseqnet/Makefile)
+          include/Makefile utils/Makefile utils/alsa-utils.spec \
+	  seq/Makefile seq/aconnect/Makefile seq/aseqnet/Makefile)
