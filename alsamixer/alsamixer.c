@@ -1926,6 +1926,11 @@ mixer_iteration (void)
         mixer_view = mixer_view_saved = VIEW_PLAYBACK;
         mixer_changed_state=1;
         mixer_reinit ();
+        if (mixer_n_view_elems == 0) {
+          mixer_view = mixer_view_saved = VIEW_CAPTURE;
+          mixer_changed_state=1;
+          mixer_reinit ();
+        }
       } 
       key = 0;
       break;
@@ -1937,6 +1942,11 @@ mixer_iteration (void)
         mixer_view = mixer_view_saved = VIEW_CAPTURE;
         mixer_changed_state=1;
         mixer_reinit ();
+        if (mixer_n_view_elems == 0) {
+          mixer_view = mixer_view_saved = VIEW_PLAYBACK;
+          mixer_changed_state=1;
+          mixer_reinit ();
+        }
       } 
       key = 0;
       break;
