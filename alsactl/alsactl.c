@@ -63,6 +63,28 @@ static void help( void )
   printf( "                    from configuration file\n" );
 }
 
+static int collect_all( void )
+{
+  int idx, err;
+  unsigned int card_mask;
+
+  card_mask = snd_cards_mask();
+  if ( !card_mask ) {
+    error( "No soundcards found..." );
+    return 1;
+  }
+  soundcard_setup_init();
+  for ( idx = 0; idx < 32; idx++ ) {
+    if ( card_mask & (1 << idx) ) {	/* find each installed soundcards */
+      if ( (err = soundcard_setup_collect( idx )) ) {
+        soundcard_setup_done();
+        return err;
+      }
+    }
+  }
+  return 0;
+}
+
 static int store_setup( const char *cardname )
 {
   int err;
@@ -92,7 +114,8 @@ static int store_setup( const char *cardname )
       error( "Cannot find soundcard '%s'...", cardname );
       return 1;
     }
-    soundcard_setup_init();
+    if ( (err = collect_all()) )
+      return err;
     if ( (err = soundcard_setup_load( cfgfile )) )
       return err;
     if ( (err = soundcard_setup_collect( cardno )) ) {
@@ -107,8 +130,7 @@ static int store_setup( const char *cardname )
 
 static int restore_setup( const char *cardname )
 {
-  int err, idx, cardno = -1;
-  unsigned int card_mask;
+  int err, cardno = -1;
   
   if ( cardname ) {
     cardno = snd_card_name( cardname );
@@ -117,20 +139,8 @@ static int restore_setup( const char *cardname )
       return 1;
     }
   }
-  card_mask = snd_cards_mask();
-  if ( !card_mask ) {
-    error( "No soundcards found..." );
-    return 1;
-  }
-  soundcard_setup_init();
-  for ( idx = 0; idx < 32; idx++ ) {
-    if ( card_mask & (1 << idx) ) {	/* find each installed soundcards */
-      if ( (err = soundcard_setup_collect( idx )) ) {
-        soundcard_setup_done();
-        return err;
-      }
-    }
-  }
+  if ( (err = collect_all()) )
+    return err;
   if ( (err = soundcard_setup_load( cfgfile )) )
     return err;
   err = soundcard_setup_process( cardno );
