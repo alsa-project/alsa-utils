@@ -95,7 +95,7 @@ static size_t chunk_bytes;
 static snd_output_t *log;
 
 static int fd = -1;
-static size_t pbrec_count = (size_t)-1, fdcount;
+static off64_t pbrec_count = (size_t)-1, fdcount;
 static int vocmajor, vocminor;
 
 /* needed prototypes */
@@ -1510,16 +1510,15 @@ static void init_raw_data(void)
 }
 
 /* calculate the data count to read from/to dsp */
-static size_t calc_count(void)
+static off64_t calc_count(void)
 {
-	size_t count;
+	off64_t count;
 
 	if (!timelimit) {
-		count = (size_t)-1;
+		count = (off64_t)-1;
 	} else {
-		count = snd_pcm_format_size(hwparams.format,
-					    timelimit * hwparams.rate *
-					    hwparams.channels);
+		count = snd_pcm_format_size(hwparams.format, hwparams.rate * hwparams.channels);
+		count *= (off64_t)timelimit;
 	}
 	return count < pbrec_count ? count : pbrec_count;
 }
