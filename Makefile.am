@@ -1,5 +1,10 @@
 INCLUDES=-I$(top_srcdir)/include
-SUBDIRS=include alsactl alsamixer amixer aplay seq utils
+if ALSAMIXER
+ALSAMIXER_DIR=alsamixer
+else
+ALSAMIXER_DIR=
+endif
+SUBDIRS=include alsactl $(ALSAMIXER_DIR) amixer aplay seq utils
 EXTRA_DIST=ChangeLog INSTALL TODO README configure cvscompile depcomp
 
 rpm: dist

@@ -4,20 +4,44 @@ AC_PREFIX_DEFAULT(/usr)
 AM_INIT_AUTOMAKE(alsa-utils, 0.9.4)
 
 dnl Checks for programs.
+
+dnl try to gues cross-compiler if not set
+if test "x$target" != "x$host" -a -z "`echo $CC | grep -e '-gcc'`";
+then
+  AC_MSG_CHECKING(for cross-compiler)
+
+  which ${program_prefix}gcc >/dev/null 2>&1 && CC=${program_prefix}gcc
+  which ${target_cpu}-${target_os}-gcc >/dev/null 2>&1 \
+  && CC=${target_cpu}-${target-os}-gcc
+  which ${target_cpu}-${target_vendor}-${target_os}-gcc >/dev/null 2>&1 \
+  && CC=${target_cpu}-${target_vendor}-${target_os}-gcc
+
+  AC_MSG_RESULT($CC)
+fi
+
 AC_PROG_CC
 dnl AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AM_PATH_ALSA(0.9.0)
 
+AC_ARG_ENABLE(alsamixer,
+     [  --disable-alsamixer     Disable alsamixer compilation],
+     [case "${enableval}" in
+       yes) alsamixer=true ;;
+       no)  alsamixer=false ;;
+       *) AC_MSG_ERROR(bad value ${enableval} for --enable-alsamixer) ;;
+     esac],[alsamixer=true])
+AM_CONDITIONAL(ALSAMIXER, test x$alsamixer = xtrue)
+
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_LIB(ncurses, initscr, 
-             [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncurses'; ], [ 
-	AC_CHECK_LIB(curses, initscr, 
-        	     [ CURSESINC='<curses.h>'; CURSESLIB='-lcurses'; ],
-                     AC_MSG_ERROR(this packages requires a curses library))
-])
+#AC_CHECK_LIB(ncurses, initscr, 
+#             [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncurses'; ], [ 
+#	AC_CHECK_LIB(curses, initscr, 
+#        	     [ CURSESINC='<curses.h>'; CURSESLIB='-lcurses'; ],
+#                     AC_MSG_ERROR(this packages requires a curses library))
+#])
 
 AC_SUBST(CURSESINC)
 AC_SUBST(CURSESLIB)
