@@ -205,7 +205,7 @@ void soundcard_setup_done(void)
 	soundcards = NULL;
 }
 
-static int determine_switches(void *handle, struct ctl_switch **csw, int iface, int device, int channel)
+static int determine_switches(void *handle, struct ctl_switch **csw, int iface, int device, int stream)
 {
 	int err, idx;
 	snd_switch_list_t list;
@@ -218,9 +218,9 @@ static int determine_switches(void *handle, struct ctl_switch **csw, int iface, 
 	bzero(&list, sizeof(list));
 	list.iface = iface;
 	list.device = device;
-	list.channel = channel;
+	list.stream = stream;
 	if ((err = snd_ctl_switch_list(handle, &list)) < 0) {
-		error("Cannot determine switches for interface %i and device %i and channel %i: %s", iface, device, channel, snd_strerror(err));
+		error("Cannot determine switches for interface %i and device %i and stream %i: %s", iface, device, stream, snd_strerror(err));
 		return 1;
 	}
 	if (list.switches_over <= 0)
@@ -233,7 +233,7 @@ static int determine_switches(void *handle, struct ctl_switch **csw, int iface, 
 		return 1;
 	}
 	if ((err = snd_ctl_switch_list(handle, &list)) < 0) {
-		error("Cannot determine switches (2) for interface %i and device %i and channel %i: %s", iface, device, channel, snd_strerror(err));
+		error("Cannot determine switches (2) for interface %i and device %i and stream %i: %s", iface, device, stream, snd_strerror(err));
 		return 1;
 	}
 	for (idx = 0, prev_csw = NULL; idx < list.switches; idx++) {
@@ -241,10 +241,10 @@ static int determine_switches(void *handle, struct ctl_switch **csw, int iface, 
 		bzero(&sw, sizeof(sw));
 		sw.iface = iface;
 		sw.device = device;
-		sw.channel = channel;
+		sw.stream = stream;
 		strncpy(sw.name, item->name, sizeof(sw.name));
 		if ((err = snd_ctl_switch_read(handle, &sw)) < 0) {
-			error("Cannot read switch '%s' for interface %i and device %i and channel %i: %s", sw.name, iface, device, channel, snd_strerror(err));
+			error("Cannot read switch '%s' for interface %i and device %i and stream %i: %s", sw.name, iface, device, stream, snd_strerror(err));
 			free(list.pswitches);
 			return 1;
 		}
@@ -368,11 +368,11 @@ static int soundcard_setup_collect_switches1(int cardno)
 			error("PCM info error: %s", snd_strerror(err));
 			return 1;
 		}
-		if (determine_switches(handle, &pcm->pswitches, SND_CTL_IFACE_PCM, device, SND_PCM_CHANNEL_PLAYBACK)) {
+		if (determine_switches(handle, &pcm->pswitches, SND_CTL_IFACE_PCM, device, SND_PCM_STREAM_PLAYBACK)) {
 			snd_ctl_close(handle);
 			return 1;
 		}
-		if (determine_switches(handle, &pcm->rswitches, SND_CTL_IFACE_PCM, device, SND_PCM_CHANNEL_CAPTURE)) {
+		if (determine_switches(handle, &pcm->rswitches, SND_CTL_IFACE_PCM, device, SND_PCM_STREAM_CAPTURE)) {
 			snd_ctl_close(handle);
 			return 1;
 		}
@@ -398,11 +398,11 @@ static int soundcard_setup_collect_switches1(int cardno)
 			error("RAWMIDI info error: %s", snd_strerror(err));
 			return 1;
 		}
-		if (determine_switches(handle, &rawmidi->oswitches, SND_CTL_IFACE_RAWMIDI, device, SND_RAWMIDI_CHANNEL_OUTPUT)) {
+		if (determine_switches(handle, &rawmidi->oswitches, SND_CTL_IFACE_RAWMIDI, device, SND_RAWMIDI_STREAM_OUTPUT)) {
 			snd_ctl_close(handle);
 			return 1;
 		}
-		if (determine_switches(handle, &rawmidi->iswitches, SND_CTL_IFACE_RAWMIDI, device, SND_RAWMIDI_CHANNEL_INPUT)) {
+		if (determine_switches(handle, &rawmidi->iswitches, SND_CTL_IFACE_RAWMIDI, device, SND_RAWMIDI_STREAM_INPUT)) {
 			snd_ctl_close(handle);
 			return 1;
 		}
@@ -631,7 +631,7 @@ static void soundcard_setup_write_switch(FILE * out, const char *space, int card
 		memset(&swi, 0, sizeof(swi));
 		swi.iface = sw->iface;
 		swi.device = sw->device;
-		swi.channel = sw->channel;
+		swi.stream = sw->stream;
 		strncpy(swi.name, sw->name, sizeof(swi.name));
 		swi.type = SND_SW_TYPE_LIST_ITEM;
 		if (snd_ctl_open(&handle, card) >= 0) {
@@ -746,18 +746,18 @@ static void soundcard_setup_write_mixer_element(FILE * out, struct mixer_element
 		break;
 	case SND_MIXER_ETYPE_VOLUME1:
 		for (idx = 0; idx < info->data.volume1.range; idx++)
-			fprintf(out, "    ; Voice %i : Min %i Max %i\n", idx, info->data.volume1.prange[idx].min, info->data.volume1.prange[idx].max);
+			fprintf(out, "    ; Channel %i : Min %i Max %i\n", idx, info->data.volume1.prange[idx].min, info->data.volume1.prange[idx].max);
 		fprintf(out, "    element(\"%s\",%i,%i,Volume1(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
-		for (idx = 0; idx < element->data.volume1.voices; idx++)
-			fprintf(out, "%s%i", idx > 0 ? "," : "", element->data.volume1.pvoices[idx]);
+		for (idx = 0; idx < element->data.volume1.channels; idx++)
+			fprintf(out, "%s%i", idx > 0 ? "," : "", element->data.volume1.pchannels[idx]);
 		fprintf(out, "))\n");
 		break;
 	case SND_MIXER_ETYPE_ACCU3:
 		for (idx = 0; idx < info->data.accu3.range; idx++)
-			fprintf(out, "    ; Voice %i : Min %i Max %i\n", idx, info->data.accu3.prange[idx].min, info->data.accu3.prange[idx].max);
+			fprintf(out, "    ; Channel %i : Min %i Max %i\n", idx, info->data.accu3.prange[idx].min, info->data.accu3.prange[idx].max);
 		fprintf(out, "    element(\"%s\",%i,%i,Accu3(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
-		for (idx = 0; idx < element->data.accu3.voices; idx++)
-			fprintf(out, "%s%i", idx > 0 ? "," : "", element->data.accu3.pvoices[idx]);
+		for (idx = 0; idx < element->data.accu3.channels; idx++)
+			fprintf(out, "%s%i", idx > 0 ? "," : "", element->data.accu3.pchannels[idx]);
 		fprintf(out, "))\n");
 		break;
 	case SND_MIXER_ETYPE_MUX1:

@@ -227,7 +227,7 @@ static int merge_one_element(struct mixer_element *celement, struct mixer_elemen
 	switch (celement->element.eid.type) {
 	case SND_MIXER_ETYPE_SWITCH1:
 		if (celement->element.data.switch1.sw != uelement->element.data.switch1.sw) {
-			error("Element %s has got a wrong count of voices.", element_id(&celement->element.eid, cardno, devno, id));
+			error("Element %s has got a wrong count of channels.", element_id(&celement->element.eid, cardno, devno, id));
 			return 1;
 		}
 		tmp = ((celement->element.data.switch1.sw + 31) / 32) * sizeof(unsigned int);
@@ -245,28 +245,28 @@ static int merge_one_element(struct mixer_element *celement, struct mixer_elemen
  		memcpy(celement->element.data.switch3.prsw, uelement->element.data.switch3.prsw, tmp);
 		break;
 	case SND_MIXER_ETYPE_VOLUME1:
-		if (celement->element.data.volume1.voices != uelement->element.data.volume1.voices) {
-			error("Element %s has got a wrong count of voices.", element_id(&celement->element.eid, cardno, devno, id));
+		if (celement->element.data.volume1.channels != uelement->element.data.volume1.channels) {
+			error("Element %s has got a wrong count of channels.", element_id(&celement->element.eid, cardno, devno, id));
 			return 1;
 		}
-		tmp = celement->element.data.volume1.voices * sizeof(int);
-		memcpy(celement->element.data.volume1.pvoices, uelement->element.data.volume1.pvoices, tmp);
+		tmp = celement->element.data.volume1.channels * sizeof(int);
+		memcpy(celement->element.data.volume1.pchannels, uelement->element.data.volume1.pchannels, tmp);
 		break;
 	case SND_MIXER_ETYPE_VOLUME2:
-		if (celement->element.data.volume2.avoices != uelement->element.data.volume2.avoices) {
-			error("Element %s has got a wrong count of voices.", element_id(&celement->element.eid, cardno, devno, id));
+		if (celement->element.data.volume2.achannels != uelement->element.data.volume2.achannels) {
+			error("Element %s has got a wrong count of channels.", element_id(&celement->element.eid, cardno, devno, id));
 			return 1;
 		}
-		tmp = celement->element.data.volume2.avoices * sizeof(int);
-		memcpy(celement->element.data.volume2.pavoices, uelement->element.data.volume2.pavoices, tmp);
+		tmp = celement->element.data.volume2.achannels * sizeof(int);
+		memcpy(celement->element.data.volume2.pachannels, uelement->element.data.volume2.pachannels, tmp);
 		break;
 	case SND_MIXER_ETYPE_ACCU3:
-		if (celement->element.data.accu3.voices != uelement->element.data.accu3.voices) {
-			error("Element %s has got a wrong count of voices.", element_id(&celement->element.eid, cardno, devno, id));
+		if (celement->element.data.accu3.channels != uelement->element.data.accu3.channels) {
+			error("Element %s has got a wrong count of channels.", element_id(&celement->element.eid, cardno, devno, id));
 			return 1;
 		}
-		tmp = celement->element.data.accu3.voices * sizeof(int);
-		memcpy(celement->element.data.accu3.pvoices, uelement->element.data.accu3.pvoices, tmp);
+		tmp = celement->element.data.accu3.channels * sizeof(int);
+		memcpy(celement->element.data.accu3.pchannels, uelement->element.data.accu3.pchannels, tmp);
 		break;
 	case SND_MIXER_ETYPE_MUX1:
 		if (celement->element.data.mux1.psel)

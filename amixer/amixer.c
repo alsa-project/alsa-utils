@@ -49,9 +49,9 @@ struct mixer_types {
 struct mixer_types mixer_types[] = {
 	{ SND_MIXER_ETYPE_INPUT, 	"Input" },
 	{ SND_MIXER_ETYPE_OUTPUT,	"Output" },
-	{ SND_MIXER_ETYPE_CAPTURE1,	"Capture Channel" },
+	{ SND_MIXER_ETYPE_CAPTURE1,	"Capture Stream" },
 	{ SND_MIXER_ETYPE_CAPTURE2,	"Capture Subchannel" },
-	{ SND_MIXER_ETYPE_PLAYBACK1,	"Playback Channel" },
+	{ SND_MIXER_ETYPE_PLAYBACK1,	"Playback Stream" },
 	{ SND_MIXER_ETYPE_PLAYBACK2,	"Playback Subchannel" },
 	{ SND_MIXER_ETYPE_ADC,		"ADC" },
 	{ SND_MIXER_ETYPE_DAC,		"DAC" },
@@ -340,21 +340,21 @@ static const char *speaker_position(int position)
 	static char str[32];
 
 	switch (position) {
-	case SND_MIXER_VOICE_UNKNOWN:
+	case SND_MIXER_CHANNEL_UNKNOWN:
 		return "Unknown";
-	case SND_MIXER_VOICE_MONO:
+	case SND_MIXER_CHANNEL_MONO:
 		return "Mono";
-	case SND_MIXER_VOICE_LEFT:
+	case SND_MIXER_CHANNEL_LEFT:
 		return "Left";
-	case SND_MIXER_VOICE_RIGHT:
+	case SND_MIXER_CHANNEL_RIGHT:
 		return "Right";
-	case SND_MIXER_VOICE_CENTER:
+	case SND_MIXER_CHANNEL_CENTER:
 		return "Center";
-	case SND_MIXER_VOICE_REAR_LEFT:
+	case SND_MIXER_CHANNEL_REAR_LEFT:
 		return "Rear-Left";
-	case SND_MIXER_VOICE_REAR_RIGHT:
+	case SND_MIXER_CHANNEL_REAR_RIGHT:
 		return "Rear-Right";
-	case SND_MIXER_VOICE_WOOFER:
+	case SND_MIXER_CHANNEL_WOOFER:
 		return "Woofer";
 	default:
 		sprintf(str, "Speaker%i", position);
@@ -495,7 +495,7 @@ int show_element_info(void *handle, snd_mixer_eid_t *eid, const char *space)
 		error("Mixer %i/%i info error: %s", card, device, snd_strerror(err));
 		return -1;
 	}
-	printf("%sInput/output voices: %i/%i\n", space, info.input_voices, info.output_voices);
+	printf("%sInput/output channels: %i/%i\n", space, info.input_channels, info.output_channels);
 	switch (info.eid.type) {
 	case SND_MIXER_ETYPE_INPUT:
 	case SND_MIXER_ETYPE_OUTPUT:
@@ -503,11 +503,11 @@ int show_element_info(void *handle, snd_mixer_eid_t *eid, const char *space)
 			printf("%sAttributes%s\n", space,
 				info.data.io.attrib & SND_MIXER_EIO_DIGITAL ? " digital" : "");
 		}
-		for (idx = 0; idx < info.data.io.voices; idx++) {
-			printf("%sVoice %i: %s\n",
+		for (idx = 0; idx < info.data.io.channels; idx++) {
+			printf("%sChannel %i: %s\n",
 				space,
 				idx,
-				speaker_position(info.data.io.pvoices[idx].position));
+				speaker_position(info.data.io.pchannels[idx].position));
 		}
 		break;
 	case SND_MIXER_ETYPE_CAPTURE1:
@@ -552,7 +552,7 @@ int show_element_info(void *handle, snd_mixer_eid_t *eid, const char *space)
 	case SND_MIXER_ETYPE_VOLUME1:
 		for (idx = 0; idx < info.data.volume1.range; idx++) {
 			struct snd_mixer_element_volume1_range *range = &info.data.volume1.prange[idx];
-			printf("%sVoice %i: Min %i (%i.%02idB), Max %i (%i.%02idB)\n",
+			printf("%sChannel %i: Min %i (%i.%02idB), Max %i (%i.%02idB)\n",
 				space,
 				idx,
 				range->min, range->min_dB / 100, abs(range->min_dB % 100),
@@ -572,7 +572,7 @@ int show_element_info(void *handle, snd_mixer_eid_t *eid, const char *space)
 	case SND_MIXER_ETYPE_ACCU3:
 		for (idx = 0; idx < info.data.accu3.range; idx++) {
 			struct snd_mixer_element_accu3_range *range = &info.data.accu3.prange[idx];
-			printf("%sVoice %i: Min %i (%i.%02idB), Max %i (%i.%02idB)\n",
+			printf("%sChannel %i: Min %i (%i.%02idB), Max %i (%i.%02idB)\n",
 				space,
 				idx,
 				range->min, range->min_dB / 100, abs(range->min_dB % 100),
@@ -677,14 +677,14 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 	case SND_MIXER_ETYPE_SWITCH1:
 		for (idx = 0; idx < element.data.switch1.sw; idx++) {
 			int val = snd_mixer_get_bit(element.data.switch1.psw, idx);
-			printf("%sVoice %i: Switch is %s\n", space, idx, val ? "ON" : "OFF");
+			printf("%sChannel %i: Switch is %s\n", space, idx, val ? "ON" : "OFF");
 		}
 		break;
 	case SND_MIXER_ETYPE_SWITCH2:
 		printf("%sSwitch is %s\n", space, element.data.switch2.sw ? "ON" : "OFF");
 		break;
 	case SND_MIXER_ETYPE_SWITCH3:
-		if (element.data.switch3.rsw != info.input_voices * info.output_voices) {
+		if (element.data.switch3.rsw != info.input_channels * info.output_channels) {
 			error("Switch3 !!!\n");
 			goto __end;
 		}
@@ -692,15 +692,15 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 			int val = snd_mixer_get_bit(element.data.switch3.prsw, idx);
 			printf("%sInput <%i> Output <%i>: Switch is %s\n",
 					space,
-					idx / info.input_voices,
-					idx % info.output_voices,
+					idx / info.input_channels,
+					idx % info.output_channels,
 					val ? "ON" : "OFF");
 		}
 		break;
 	case SND_MIXER_ETYPE_VOLUME1:
-		for (idx = 0; idx < element.data.volume1.voices; idx++) {
-			int val = element.data.volume1.pvoices[idx];
-			printf("%sVoice %i: Value %s\n", space, idx,
+		for (idx = 0; idx < element.data.volume1.channels; idx++) {
+			int val = element.data.volume1.pchannels[idx];
+			printf("%sChannel %i: Value %s\n", space, idx,
 				get_percent1(val, info.data.volume1.prange[idx].min,
 						  info.data.volume1.prange[idx].max,
 						  info.data.volume1.prange[idx].min_dB,
@@ -708,9 +708,9 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 		}
 		break;
 	case SND_MIXER_ETYPE_ACCU3:
-		for (idx = 0; idx < element.data.accu3.voices; idx++) {
-			int val = element.data.accu3.pvoices[idx];
-			printf("%sVoice %i: Value %s\n", space, idx,
+		for (idx = 0; idx < element.data.accu3.channels; idx++) {
+			int val = element.data.accu3.pchannels[idx];
+			printf("%sChannel %i: Value %s\n", space, idx,
 				get_percent1(val, info.data.accu3.prange[idx].min,
 						  info.data.accu3.prange[idx].max,
 						  info.data.accu3.prange[idx].min_dB,
@@ -720,7 +720,7 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 	case SND_MIXER_ETYPE_MUX1:
 		for (idx = 0; idx < element.data.mux1.sel; idx++) {
 			snd_mixer_eid_t *eid = &element.data.mux1.psel[idx];
-			printf("%sVoice %i: Element ", space, idx);
+			printf("%sChannel %i: Element ", space, idx);
 			if (eid->name[0] == '\0') {
 				printf("NONE\n");
 			} else {
@@ -732,7 +732,7 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 		break;
 	case SND_MIXER_ETYPE_MUX2:
 		{
-			printf("%sAll voices: Element ", space);
+			printf("%sAll channels: Element ", space);
 			if (element.data.mux2.sel.name[0] == '\0') {
 				printf("NONE\n");
 			} else {
@@ -1190,24 +1190,24 @@ int eset_volume1(int argc, char *argv[], void *handle, snd_mixer_eid_t *eid)
 		return 1;
 	}
 	if (!strchr(argv[0], ',')) {
-		for (idx = 0; idx < element.data.volume1.voices; idx++) {
+		for (idx = 0; idx < element.data.volume1.channels; idx++) {
 			ptr = argv[0];
 			tmp = get_volume(&ptr, 
 					info.data.volume1.prange[idx].min,
 					info.data.volume1.prange[idx].max,
 					info.data.volume1.prange[idx].min_dB,
 					info.data.volume1.prange[idx].max_dB);
-			element.data.volume1.pvoices[idx] = tmp;
+			element.data.volume1.pchannels[idx] = tmp;
 		}
 	} else {
 		ptr = argv[idx];
-		for (idx = 0; idx < element.data.volume1.voices; idx++) {
+		for (idx = 0; idx < element.data.volume1.channels; idx++) {
 			tmp = get_volume(&ptr, 
 					info.data.volume1.prange[idx].min,
 					info.data.volume1.prange[idx].max,
 					info.data.volume1.prange[idx].min_dB,
 					info.data.volume1.prange[idx].max_dB);
-			element.data.volume1.pvoices[idx] = tmp;
+			element.data.volume1.pchannels[idx] = tmp;
 		}
 	}
 	if ((err = snd_mixer_element_write(handle, &element)) < 0) {
@@ -1247,24 +1247,24 @@ int eset_accu3(int argc, char *argv[], void *handle, snd_mixer_eid_t *eid)
 		return 1;
 	}
 	if (!strchr(argv[0], ',')) {
-		for (idx = 0; idx < element.data.accu3.voices; idx++) {
+		for (idx = 0; idx < element.data.accu3.channels; idx++) {
 			ptr = argv[0];
 			tmp = get_volume(&ptr, 
 					info.data.accu3.prange[idx].min,
 					info.data.accu3.prange[idx].max,
 					info.data.accu3.prange[idx].min_dB,
 					info.data.accu3.prange[idx].max_dB);
-			element.data.accu3.pvoices[idx] = tmp;
+			element.data.accu3.pchannels[idx] = tmp;
 		}
 	} else {
 		ptr = argv[idx];
-		for (idx = 0; idx < element.data.volume1.voices; idx++) {
+		for (idx = 0; idx < element.data.volume1.channels; idx++) {
 			tmp = get_volume(&ptr, 
 					info.data.accu3.prange[idx].min,
 					info.data.accu3.prange[idx].max,
 					info.data.accu3.prange[idx].min_dB,
 					info.data.accu3.prange[idx].max_dB);
-			element.data.accu3.pvoices[idx] = tmp;
+			element.data.accu3.pchannels[idx] = tmp;
 		}
 	}
 	if ((err = snd_mixer_element_write(handle, &element)) < 0) {
@@ -1313,7 +1313,7 @@ int eset_mux1(int argc, char *argv[], void *handle, snd_mixer_eid_t *eid)
 		for (idx = 0; idx < element.data.mux1.sel; idx++)
 			element.data.mux1.psel[idx] = xeid;
 	} else {
-		for (idx = 0; idx < element.data.volume1.voices; idx++) {
+		for (idx = 0; idx < element.data.volume1.channels; idx++) {
 			if (parse_eid(argv[idx >= argc ? argc - 1 : idx], &xeid)) {
 				fprintf(stderr, "Wrong element identifier: %s\n", argv[0]);
 				snd_mixer_element_free(&element);

@@ -596,16 +596,16 @@ static void mixer_volume1_value(int val)
 {
 	int *ptr;
 
-	if (Xelement->element.data.volume1.voices_size <= Xelement->element.data.volume1.voices) {
-		Xelement->element.data.volume1.voices_size += 4;
-		ptr = (int *)realloc(Xelement->element.data.volume1.pvoices, Xelement->element.data.volume1.voices_size * sizeof(int));
+	if (Xelement->element.data.volume1.channels_size <= Xelement->element.data.volume1.channels) {
+		Xelement->element.data.volume1.channels_size += 4;
+		ptr = (int *)realloc(Xelement->element.data.volume1.pchannels, Xelement->element.data.volume1.channels_size * sizeof(int));
 		if (ptr == NULL) {
 			error_nomem();
 			return;
 		}
-		Xelement->element.data.volume1.pvoices = ptr;
+		Xelement->element.data.volume1.pchannels = ptr;
 	}
-	Xelement->element.data.volume1.pvoices[Xelement->element.data.volume1.voices++] = val;
+	Xelement->element.data.volume1.pchannels[Xelement->element.data.volume1.channels++] = val;
 } 
 
 static void mixer_3d_effect1(int end)
@@ -660,16 +660,16 @@ static void mixer_accu3_value(int val)
 {
 	int *ptr;
 
-	if (Xelement->element.data.accu3.voices_size <= Xelement->element.data.accu3.voices) {
-		Xelement->element.data.accu3.voices_size += 4;
-		ptr = (int *)realloc(Xelement->element.data.accu3.pvoices, Xelement->element.data.accu3.voices_size * sizeof(int));
+	if (Xelement->element.data.accu3.channels_size <= Xelement->element.data.accu3.channels) {
+		Xelement->element.data.accu3.channels_size += 4;
+		ptr = (int *)realloc(Xelement->element.data.accu3.pchannels, Xelement->element.data.accu3.channels_size * sizeof(int));
 		if (ptr == NULL) {
 			error_nomem();
 			return;
 		}
-		Xelement->element.data.accu3.pvoices = ptr;
+		Xelement->element.data.accu3.pchannels = ptr;
 	}
-	Xelement->element.data.accu3.pvoices[Xelement->element.data.accu3.voices++] = val;
+	Xelement->element.data.accu3.pchannels[Xelement->element.data.accu3.channels++] = val;
 } 
 
 static void mixer_mux1(int end)
