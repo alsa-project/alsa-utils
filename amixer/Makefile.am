@@ -1,5 +1,5 @@
 INCLUDES = -I$(top_srcdir)/include
-LDADD = -lasound -lm
+LDADD = -lm
 EXTRA_DIST = README.first
 
 bin_PROGRAMS = amixer

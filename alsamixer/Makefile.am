@@ -1,4 +1,4 @@
-LDADD = $(CURSESLIB) -lasound
+LDADD = $(CURSESLIB)
 
 bin_PROGRAMS = alsamixer
 man_MANS = alsamixer.1
