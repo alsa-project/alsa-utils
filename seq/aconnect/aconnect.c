@@ -22,8 +22,24 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <stdarg.h>
 #include <sys/ioctl.h>
 #include <sys/asoundlib.h>
+
+static void error_handler(const char *file, int line, const char *function, int err, const char *fmt, ...)
+{
+	va_list arg;
+
+	if (err == ENOENT)	/* Ignore those misleading "warnings" */
+		return;
+	va_start(arg, fmt);
+	fprintf(stderr, "ALSA lib %s:%i:(%s) ", file, line, function);
+	vfprintf(stderr, fmt, arg);
+	if (err)
+		fprintf(stderr, ": %s", snd_strerror(err));
+	putc('\n', stderr);
+	va_end(arg);
+}
 
 static void usage(void)
 {
@@ -335,6 +351,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	
+	snd_lib_error_set_handler(error_handler);
+
 	switch (command) {
 	case LIST_INPUT:
 		list_ports(seq, group, SND_SEQ_PORT_CAP_READ|SND_SEQ_PORT_CAP_SUBS_READ, list_subs);
