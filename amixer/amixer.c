@@ -1524,10 +1524,10 @@ int gset(int argc, char *argv[])
 		} else if (!strncmp(argv[idx], "unmute", 6) ||
 		           !strncmp(argv[idx], "on", 2)) {
 			group.mute = 0;
-		} else if (!strncmp(argv[idx], "capture", 7) ||
+		} else if (!strncmp(argv[idx], "cap", 3) ||
 		           !strncmp(argv[idx], "rec", 3)) {
 			group.capture = group.channels;
-		} else if (!strncmp(argv[idx], "nocapture", 9) ||
+		} else if (!strncmp(argv[idx], "nocap", 5) ||
 		           !strncmp(argv[idx], "norec", 5)) {
 			group.capture = 0;
 		} else if (isdigit(argv[idx][0])) {
