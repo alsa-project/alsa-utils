@@ -915,7 +915,7 @@ static int save_state(char *file, const char *cardname)
 	}
 
 	if (!cardname) {
-		unsigned int card, first = 1;
+		int card, first = 1;
 
 		card = -1;
 		/* find each installed soundcards */
@@ -991,7 +991,7 @@ static int load_state(char *file, const char *cardname)
 	}
 
 	if (!cardname) {
-		unsigned int card, first = 1;
+		int card, first = 1;
 
 		card = -1;
 		/* find each installed soundcards */
