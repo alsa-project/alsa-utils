@@ -490,10 +490,8 @@ static void set_switch_boolean(int val)
 	if (sw->type != SND_CTL_SW_TYPE_BOOLEAN)
 		yyerror("Switch '%s' isn't boolean type...", sw->name);
 	xx = val ? 1 : 0;
-	if (sw->value.enable != xx) {
-		printf("change!!\n");
+	if (sw->value.enable != xx)
 		*Xswitchchange = 1;
-	}
 	sw->value.enable = xx;
 	printf("name = '%s', sw->value.enable = %i\n", sw->name, xx);
 }
