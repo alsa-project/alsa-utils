@@ -182,7 +182,7 @@ static int	 mixer_ofs_x = 0;
 static float	 mixer_extra_space = 0;
 static int	 mixer_cbar_height = 0;
 
-static char*	 card_id = "hw:0";
+static char	 card_id[64] = "hw:0";
 static snd_mixer_t *mixer_handle;
 static char	 mixer_card_name[128];
 static char	 mixer_device_name[128];
@@ -1763,16 +1763,27 @@ main (int    argc,
    */
   do
     {
-      opt = getopt (argc, argv, "c:shg");
+      opt = getopt (argc, argv, "c:D:shg");
       switch (opt)
 	{
 	case '?':
 	case 'h':
 	  fprintf (stderr, "%s %s\n", PRGNAME_UPPER, VERSION);
-	  fprintf (stderr, "Usage: %s [-c <card: 0...7>] [-z]\n", PRGNAME);
+	  fprintf (stderr, "Usage: %s [-h] [-c <card: 0...7 or id>] [-D <mixer device>] [-g] [-s]\n", PRGNAME);
 	  mixer_abort (ERR_NONE, "", 0);
 	case 'c':
-	  card_id = optarg;
+	  {
+	    int i = snd_card_get_index(optarg);
+	    if (i < 0 || i > 31) {
+	      fprintf (stderr, "wrong -c argument '%s'\n", optarg);
+	      mixer_abort (ERR_NONE, "", 0);
+	    }
+	    sprintf(card_id, "hw:%i", i);
+	  }
+ 	  break;
+	case 'D':
+	  strncpy(card_id, optarg, sizeof(card_id));
+	  card_id[sizeof(card_id)-1] = '\0';
 	  break;
 	case 'g':
 	  mixer_do_color = !mixer_do_color;
