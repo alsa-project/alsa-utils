@@ -647,21 +647,42 @@ static int test_au(int fd, void *buffer)
 
 static void set_params(void)
 {
+	snd_pcm_hw_info_t info;
+	snd_pcm_strategy_t *strategy;
+	int err;
+	snd_pcm_hw_info_any(&info);
 	if (mmap_flag)
-		hwparams.access = SND_PCM_ACCBIT_MMAP;
+		info.access_mask = SND_PCM_ACCBIT_MMAP;
 	else if (interleaved)
-		hwparams.access = SND_PCM_ACCBIT_RW_INTERLEAVED;
+		info.access_mask = SND_PCM_ACCBIT_RW_INTERLEAVED;
 	else
-		hwparams.access = SND_PCM_ACCBIT_RW_NONINTERLEAVED;
-	hwparams.subformat = 0;
-	hwparams.fragment_size = hwparams.rate * frag_length / 1000;
-	hwparams.fragments = hwparams.rate * buffer_length / 1000;
-	hwparams.fragments /= hwparams.fragment_size; 
-	if (snd_pcm_hw_params_rulesv(handle, &hwparams,
-				     SND_PCM_RULE_REL_BITS | SND_PCM_HW_PARAM_ACCESS,
-				     SND_PCM_RULE_REL_NEAR | SND_PCM_HW_PARAM_FRAGMENT_SIZE,
-				     SND_PCM_RULE_REL_NEAR | SND_PCM_HW_PARAM_FRAGMENTS,
-				     -1) < 0) {
+		info.access_mask = SND_PCM_ACCBIT_RW_NONINTERLEAVED;
+	info.format_mask = 1 << hwparams.format;
+	info.channels_min = info.channels_max = hwparams.channels;
+	info.fragments_min = 2;
+	err = snd_pcm_strategy_simple(&strategy, 0, 1000000);
+	assert(err >= 0);
+	err = snd_pcm_strategy_simple_near(strategy, 0, SND_PCM_HW_PARAM_RATE,
+					   hwparams.rate, 10);
+	assert(err >= 0);
+	err = snd_pcm_strategy_simple_near(strategy, 0, SND_PCM_HW_PARAM_FRAGMENT_SIZE,
+					   hwparams.rate * frag_length / 1000, 1);
+	assert(err >= 0);
+	err = snd_pcm_strategy_simple_near(strategy, 0, SND_PCM_HW_PARAM_BUFFER_SIZE,
+					   hwparams.rate * buffer_length / 1000, 1);
+	assert(err >= 0);
+	err = snd_pcm_hw_info_strategy(handle, &info, strategy);
+	snd_pcm_strategy_free(strategy);
+	if (err < 0) {
+		fprintf(stderr, "Unable to find params combination:\n");
+		err = snd_pcm_hw_info_try_explain_failure(handle, &info, NULL, 2, stderr);
+		if (err < 0) {
+			fprintf(stderr, "No explaination found for this failure\n");
+		}
+		exit(EXIT_FAILURE);
+	}
+	err = snd_pcm_hw_params_info(handle, &hwparams, &info);
+	if (err < 0) {
 		snd_pcm_dump_hw_params_fail(&hwparams, stderr);
 		error("unable to set hw params");
 		exit(EXIT_FAILURE);
