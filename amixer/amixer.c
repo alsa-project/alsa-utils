@@ -114,7 +114,7 @@ static int info(void)
 }
 
 static snd_control_id_t __control_id ATTRIBUTE_UNUSED;
-#define control_name_size sizeof(__control_id.name)
+#define control_name_size (sizeof(__control_id.name)+1)
 
 static char *control_name(const char *name, char *result)
 {
@@ -174,7 +174,7 @@ static char *control_access(unsigned int access, char *result)
 }
 
 static snd_mixer_sid_t __simple_id ATTRIBUTE_UNUSED;
-#define simple_name_size sizeof(__simple_id.name)
+#define simple_name_size (sizeof(__simple_id.name)+1)
 
 static char *simple_name(const char *name, char *result)
 {
