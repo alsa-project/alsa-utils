@@ -61,6 +61,8 @@ static void help(void)
 	printf("                  to configuration file\n");
 	printf("  restore<card #> load current driver setup for one or each soundcards\n");
 	printf("                  from configuration file\n");
+	printf("  power [card #] [state]\n");
+	printf("                  get/set power state for one or each soundcards\n");
 }
 
 char *id_str(snd_ctl_elem_id_t *id)
@@ -948,7 +950,7 @@ static int save_state(char *file, const char *cardname)
 			if (card < 0) {
 				if (first) {
 					error("No soundcards found...");
-					return 1;
+					return EXIT_FAILURE;
 				}
 				break;
 			}
@@ -962,7 +964,7 @@ static int save_state(char *file, const char *cardname)
 		cardno = snd_card_get_index(cardname);
 		if (cardno < 0) {
 			error("Cannot find soundcard '%s'...", cardname);
-			return 1;
+			return EXIT_FAILURE;
 		}
 		if ((err = get_controls(cardno, config))) {
 			return err;
@@ -1022,7 +1024,7 @@ static int load_state(char *file, const char *cardname)
 			if (card < 0) {
 				if (first) {
 					error("No soundcards found...");
-					return 1;
+					return EXIT_FAILURE;
 				}
 				break;
 			}
@@ -1036,13 +1038,176 @@ static int load_state(char *file, const char *cardname)
 		cardno = snd_card_get_index(cardname);
 		if (cardno < 0) {
 			error("Cannot find soundcard '%s'...", cardname);
-			return 1;
+			return EXIT_FAILURE;
 		}
 		if ((err = set_controls(cardno, config))) {
 			return err;
 		}
 	}
 	return 0;
+}
+
+static int get_int_state(const char *str)
+{
+	if (*str == 'D' || *str == 'd') {
+		str++;
+		if (!strcmp(str, "0") || !strcmp(str, "on"))
+			return SND_CTL_POWER_D0;
+		if (!strcmp(str, "1"))
+			return SND_CTL_POWER_D1;
+		if (!strcmp(str, "2"))
+			return SND_CTL_POWER_D2;
+		if (!strcmp(str, "3"))
+			return SND_CTL_POWER_D3;
+		if (!strcmp(str, "3hot") || !strcmp(str, "off"))
+			return SND_CTL_POWER_D3hot;
+		if (!strcmp(str, "3cold"))
+			return SND_CTL_POWER_D3cold;
+	}
+	return -1;
+}
+
+static const char *get_str_state(int power_state)
+{
+	static char str[16];
+
+	switch (power_state) {
+	case SND_CTL_POWER_D0:
+		return "D0";
+	case SND_CTL_POWER_D1:
+		return "D1";
+	case SND_CTL_POWER_D2:
+		return "D2";
+	// return SND_CTL_POWER_D3;	/* it's same as D3hot */
+	case SND_CTL_POWER_D3hot:
+		return "D3hot";
+	case SND_CTL_POWER_D3cold:
+		return "D3cold";
+	default:
+		sprintf(str, "???0x%x", power_state);
+		return str;
+	}
+}
+
+static int show_power(int cardno)
+{
+	snd_ctl_t *handle;
+	char name[16];
+	int power_state, err;
+
+	sprintf(name, "hw:%d", cardno);
+	err = snd_ctl_open(&handle, name, 0);
+	if (err < 0) {
+		error("snd_ctl_open error: %s", snd_strerror(err));
+		return err;
+	}
+	err = snd_ctl_get_power_state(handle, &power_state);
+	if (err < 0) {
+		error("snd_ctl_get_power_state error: %s", snd_strerror(err));
+		snd_ctl_close(handle);
+		return err;
+	}
+	snd_ctl_close(handle);
+	printf("Power state for card #%d is %s\n", cardno, get_str_state(power_state));
+	return 0;
+}
+
+static int set_power(int cardno, int power_state)
+{
+	snd_ctl_t *handle;
+	char name[16];
+	int err;
+
+	sprintf(name, "hw:%d", cardno);
+	err = snd_ctl_open(&handle, name, 0);
+	if (err < 0) {
+		error("snd_ctl_open error: %s", snd_strerror(err));
+		return err;
+	}
+	err = snd_ctl_set_power_state(handle, power_state);
+	if (err < 0) {
+		error("snd_ctl_set_power_state error: %s", snd_strerror(err));
+		snd_ctl_close(handle);
+		return err;
+	}
+	err = snd_ctl_get_power_state(handle, &power_state);
+	if (err < 0) {
+		error("snd_ctl_get_power_state error: %s", snd_strerror(err));
+		snd_ctl_close(handle);
+		return err;
+	}
+	snd_ctl_close(handle);
+	printf("Power state for card #%d is %s\n", cardno, get_str_state(power_state));
+	return 0;
+}
+
+static int power(const char *argv[], int argc)
+{
+	int power_state, err;
+	
+	if (argc == 0) {		/* show status only */
+		int card, first = 1;
+
+		card = -1;
+		/* find each installed soundcards */
+		while (1) {
+			if (snd_card_next(&card) < 0)
+				break;
+			if (card < 0) {
+				if (first) {
+					error("No soundcards found...");
+					return EXIT_FAILURE;
+				}
+				break;
+			}
+			first = 0;
+			if ((err = show_power(card)) < 0)
+				return err;
+		}
+		return 0;
+	}
+	power_state = get_int_state(argv[0]);
+	if (power_state > 0) {
+		int card, first = 1;
+
+		card = -1;
+		/* find each installed soundcards */
+		while (1) {
+			if (snd_card_next(&card) < 0)
+				break;
+			if (card < 0) {
+				if (first) {
+					error("No soundcards found...");
+					return EXIT_FAILURE;
+				}
+				break;
+			}
+			first = 0;
+			if ((err = set_power(card, power_state)))
+				return err;
+		}
+	} else {
+		int cardno;
+
+		cardno = snd_card_get_index(argv[0]);
+		if (cardno < 0) {
+			error("Cannot find soundcard '%s'...", argv[0]);
+			return EXIT_FAILURE;
+		}
+		if (argc > 1) {
+			power_state = get_int_state(argv[1]);
+			if (power_state < 0) {
+				error("Invalid power state '%s'...", argv[1]);
+				return EXIT_FAILURE;
+			}
+			if ((err = set_power(cardno, power_state)) < 0)
+				return err;
+		} else {
+			if ((err = show_power(cardno)) < 0)
+				return err;
+		}
+	}
+	return EXIT_SUCCESS;
 }
 
 int main(int argc, char *argv[])
@@ -1077,7 +1242,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'v':
 			printf("alsactl version " SND_UTIL_VERSION_STR "\n");
-			return 1;
+			return EXIT_SUCCESS;
 		default:
 			fprintf(stderr, "\07Invalid switch or option needs an argument.\n");
 			morehelp++;
@@ -1085,7 +1250,7 @@ int main(int argc, char *argv[])
 	}
 	if (morehelp) {
 		help();
-		return 1;
+		return EXIT_SUCCESS;
 	}
 	if (argc - optind <= 0) {
 		fprintf(stderr, "alsactl: Specify command...\n");
@@ -1097,6 +1262,8 @@ int main(int argc, char *argv[])
 	} else if (!strcmp(argv[optind], "restore")) {
 		return load_state(cfgfile, argc - optind > 1 ? argv[optind + 1] : NULL) ?
 		    1 : 0;
+	} else if (!strcmp(argv[optind], "power")) {
+		return power((const char **)argv + optind + 1, argc - optind - 1);
 	} else {
 		fprintf(stderr, "alsactl: Unknown command '%s'...\n", argv[optind]);
 	}
