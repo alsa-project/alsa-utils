@@ -81,7 +81,7 @@ static int buffer_size = -1;
 static int frag_length = 125;
 static int buffer_length = 500;
 static int min_avail = 50;
-static int show_setup = 0;
+static int dump_pcm = 0;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t buffer_bytes;
@@ -147,7 +147,7 @@ static void check_new_format(snd_pcm_format_t * format)
 		exit(EXIT_FAILURE);
 	}
 	if (!(cpinfo.formats & (1 << format->format))) {
-		fprintf(stderr, "%s: unsupported format %s\n", command, snd_pcm_get_format_name(format->format));
+		fprintf(stderr, "%s: unsupported format %s\n", command, snd_pcm_format_name(format->format));
 		exit(EXIT_FAILURE);
 	}
 	if (format->channels > 1) {
@@ -191,12 +191,12 @@ Usage: %s [OPTION]... [FILE]...
 -F, --fragment-length=#  fragment length is # milliseconds
 -B, --buffer-length=#    buffer length is # milliseconds
 -A, --min-avail=#        min available space for wakeup is # milliseconds
--v, --show-setup         show actual setup
+-v, --verbose            show PCM structure and setup
 -I, --separate-channels  one file for each channel
 ", command, snd_cards()-1);
 	fprintf(stderr, "Recognized sample formats are:");
 	for (k = 0; k < 32; ++k) {
-		const char *s = snd_pcm_get_format_name(k);
+		const char *s = snd_pcm_format_name(k);
 		if (s)
 			fprintf(stderr, " %s", s);
 	}
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
 		{"fragment-length", 1, 0, 'F'},
 		{"buffer-length", 1, 0, 'B'},
 		{"min-avail", 1, 0, 'A'},
-		{"show-setup", 0, 0, 'v'},
+		{"verbose", 0, 0, 'v'},
 		{"separate-channels", 0, 0, 'I'},
 		{0, 0, 0, 0}
 	};
@@ -461,7 +461,7 @@ int main(int argc, char *argv[])
 				rformat.rate = 48000;
 				rformat.channels = 2;
 			} else {
-				rformat.format = snd_pcm_get_format_value(optarg);
+				rformat.format = snd_pcm_format_value(optarg);
 				if (rformat.format < 0) {
 					fprintf(stderr, "Error: wrong extended format '%s'\n", optarg);
 					exit(EXIT_FAILURE);
@@ -507,7 +507,7 @@ int main(int argc, char *argv[])
 			min_avail = atoi(optarg);
 			break;
 		case 'v':
-			show_setup = 1;
+			dump_pcm = 1;
 			break;
 		case 'I':
 			rformat.interleave = 0;
@@ -827,8 +827,8 @@ static void set_params(void)
 		exit(EXIT_FAILURE);
 	}
 
-	if (show_setup)
-		snd_pcm_dump_setup(handle, stderr);
+	if (dump_pcm)
+		snd_pcm_dump(handle, stderr);
 
 	buffer_size = setup.frag_size;
 	bits_per_sample = snd_pcm_format_physical_width(setup.format.format);
@@ -1427,7 +1427,7 @@ static void begin_wave(int fd, size_t cnt)
 		bits = 16;
 		break;
 	default:
-		fprintf(stderr, "%s: Wave doesn't support %s format...\n", command, snd_pcm_get_format_name(format.format));
+		fprintf(stderr, "%s: Wave doesn't support %s format...\n", command, snd_pcm_format_name(format.format));
 		exit(EXIT_FAILURE);
 	}
 	h.magic = WAV_RIFF;
@@ -1483,7 +1483,7 @@ static void begin_au(int fd, size_t cnt)
 		ah.encoding = BE_INT(AU_FMT_LIN16);
 		break;
 	default:
-		fprintf(stderr, "%s: Sparc Audio doesn't support %s format...\n", command, snd_pcm_get_format_name(format.format));
+		fprintf(stderr, "%s: Sparc Audio doesn't support %s format...\n", command, snd_pcm_format_name(format.format));
 		exit(EXIT_FAILURE);
 	}
 	ah.sample_rate = BE_INT(format.rate);
@@ -1519,7 +1519,7 @@ static void header(int rtype, char *name)
 			(stream == SND_PCM_STREAM_PLAYBACK) ? "Playing" : "Recording",
 			fmt_rec_table[rtype].what,
 			name);
-		fprintf(stderr, "%s, ", snd_pcm_get_format_description(format.format));
+		fprintf(stderr, "%s, ", snd_pcm_format_description(format.format));
 		fprintf(stderr, "Rate %d Hz, ", format.rate);
 		if (format.channels == 1)
 			fprintf(stderr, "Mono");
