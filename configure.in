@@ -1,20 +1,29 @@
 dnl Process this file with autoconf to produce a configure script.
-
-AC_INIT(Makefile.conf.in)
+AC_INIT(alsamixer/alsamixer.c)
 AC_PREFIX_DEFAULT(/usr)
+AM_INIT_AUTOMAKE(alsa-utils, 0.3.0-pre3)
 
 dnl Checks for programs.
 AC_PROG_CC
-AC_PROG_RANLIB
+AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AC_PROG_LEX
 AC_PROG_YACC
+AM_PROG_LEX
+AM_PATH_ALSA(0.1.1)
 
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CONFIG_HEADER(include/aconfig.h)
-AC_CHECK_HEADERS(linux/asound.h sys/asoundlib.h)
+AC_CHECK_LIB(ncurses, initscr, 
+             [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncurses'; ], [ 
+	AC_CHECK_LIB(curses, initscr, 
+        	     [ CURSESINC='<curses.h>'; CURSESLIB='-lcurses'; ])
+])
+
+AC_SUBST(CURSESINC)
+AC_SUBST(CURSESLIB)
+
+AM_CONFIG_HEADER(include/aconfig.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -24,40 +33,5 @@ AC_HEADER_TIME
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
 
-dnl Check for ALSA library package.
-myprefix=$prefix
-if test "$myprefix" = "NONE"; then
-  myprefix=$ac_default_prefix
-fi
-CFLAGS="-I$myprefix/include"
-LIBS="-L$myprefix/lib -lasound"
-#echo "CFLAGS=$CFLAGS"
-#echo "LIBS=$LIBS"
-AC_MSG_CHECKING(for alsa-lib package)
-AC_TRY_RUN([
-#include <sys/asoundlib.h>
-void main(void)
-{
-  snd_cards();
-  exit(0);
-}
-],
-  AC_MSG_RESULT("present"),
-  AC_MSG_RESULT("not found"); echo "Fatal error: Install alsa-lib package at first..."; exit 1;,
-  AC_MSG_RESULT("not supported"); echo "Fatal error: Cross-compiling isn't supported..."; exit 1;
-)
-
-dnl Check for version...
-AC_MSG_CHECKING(for alsa-utils version)
-SND_UTIL_VERSION=`cat $srcdir/version`
-AC_DEFINE_UNQUOTED(SND_UTIL_VERSION, "$SND_UTIL_VERSION")
-AC_SUBST(SND_UTIL_VERSION)
-SND_UTIL_MAJOR=`echo $SND_UTIL_VERSION | cut -d . -f 1`
-AC_SUBST(SND_UTIL_MAJOR)
-SND_UTIL_MINOR=`echo $SND_UTIL_VERSION | cut -d . -f 2`
-AC_SUBST(SND_UTIL_MINOR)
-SND_UTIL_SUBMINOR=`echo $SND_UTIL_VERSION | cut -d . -f 3`
-AC_SUBST(SND_UTIL_SUBMINOR)
-AC_MSG_RESULT($SND_UTIL_VERSION)
-
-AC_OUTPUT(Makefile.conf utils/alsa-utils.spec)
+AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amixer/Makefile aplay/Makefile \
+          include/Makefile utils/Makefile utils/alsa-utils.spec)

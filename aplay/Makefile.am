@@ -1,0 +1,24 @@
+INCLUDES = -I$(top_srcdir)/include
+LDADD = -lasound
+
+bin_PROGRAMS = aplay
+man_MANS = aplay.1
+noinst_HEADERS = formats.h
+
+EXTRA_CLEAN = arecord
+
+arecord: aplay
+	rm -f arecord
+	$(LN_S) $< $@
+
+arecord.1: aplay.1
+	rm -f arecord.1
+	$(LN_S) $< $@
+
+install-exec-hook:
+	rm -f $(bindir)/arecord
+	(cd $(bindir) && $(LN_S) aplay arecord)
+
+install-data-hook:
+	rm -f $(mandir)/man1/arecord.1
+	(cd $(mandir)/man1 && $(LN_S) aplay.1 arecord.1)

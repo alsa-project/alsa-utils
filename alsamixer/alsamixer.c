@@ -30,10 +30,10 @@
 #include <unistd.h>
 #include <sys/signal.h>
 
-#ifndef NCURSESINC
+#ifndef CURSESINC
 #include <ncurses.h>
 #else
-#include NCURSESINC
+#include CURSESINC
 #endif
 #include <time.h>
 

@@ -38,6 +38,7 @@
 #include <sys/asoundlib.h>
 #include "aconfig.h"
 #include "formats.h"
+#include "version.h"
 
 #define DEFAULT_SPEED 		8000
 
@@ -236,7 +237,7 @@ static void device_list(void)
 
 static void version(void)
 {
-	printf("%s: version " SND_UTIL_VERSION " by Jaroslav Kysela <perex@jcu.cz>\n", command);
+	printf("%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@jcu.cz>\n", command);
 }
 
 int main(int argc, char *argv[])

@@ -1,5 +1,25 @@
-/*
- *  Configuration header file for compilation of the ALSA utilities
- */
+/* include/aconfig.h.in.  Generated automatically from configure.in by autoheader.  */
 
-#undef SND_UTIL_VERSION
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+/* Define as __inline if that's what the C compiler calls it.  */
+#undef inline
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+/* Define if you can safely include both <sys/time.h> and <time.h>.  */
+#undef TIME_WITH_SYS_TIME
+
+/* Define if lex declares yytext as a char * by default, not a char[].  */
+#undef YYTEXT_POINTER
+
+/* Package name */
+#undef PACKAGE
+
+/* Package version */
+#undef VERSION
+
+/* Define if you have the asound library (-lasound).  */
+#undef HAVE_LIBASOUND

@@ -21,6 +21,7 @@
 
 #include "alsactl.h"
 #include "aconfig.h"
+#include "version.h"
 #include <getopt.h>
 #include <stdarg.h>
 
@@ -182,7 +183,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'v':
 		case HELPID_VERSION:
-			printf("alsactl version " SND_UTIL_VERSION "\n");
+			printf("alsactl version " SND_UTIL_VERSION_STR "\n");
 			return 1;
 		default:
 			fprintf(stderr, "\07Invalid switch or option needs an argument.\n");
@@ -209,3 +210,5 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+
