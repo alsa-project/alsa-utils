@@ -170,9 +170,6 @@ elif [ "$kernel" = "new" ]; then
   if [ -d /etc/modprobe.d ]; then
     cfgout="/etc/modprobe.d/sound"
   fi
-  if [ ! -r /etc/modprobe.conf ]; then
-    touch /etc/modprobe.conf
-  fi
   cfgfile="/etc/modprobe.conf"
 elif [ "$distribution" = "debian" ]; then
   cfgfile="/etc/modutils/alsa-base"
@@ -372,8 +369,20 @@ if [ -d /proc/asound ]; then
 fi
 
 
+cleanup () {
+    killall -9 aplay arecord >/dev/null 2>&1
+    /sbin/modprobe -r isapnp >/dev/null 2>&1
+    /sbin/modprobe -r isa-pnp >/dev/null 2>&1
+    rm -f "$TMP" "$addcfg" "$FOUND" "$DUMP"
+}
+trap cleanup 0 
 
 TMP=`mktemp -q /tmp/alsaconf.XXXXXX`
+if [ $? -ne 0 ]; then
+	echo "$0: Can't create temp file, exiting..."
+        exit 1
+fi
+addcfg=`mktemp -q /tmp/alsaconf.XXXXXX`
 if [ $? -ne 0 ]; then
 	echo "$0: Can't create temp file, exiting..."
         exit 1
@@ -388,13 +397,6 @@ if [ $? -ne 0 ]; then
 	echo "$0: Can't create temp file, exiting..."
         exit 1
 fi
-cleanup () {
-    killall -9 aplay arecord >/dev/null 2>&1
-    /sbin/modprobe -r isapnp >/dev/null 2>&1
-    /sbin/modprobe -r isa-pnp >/dev/null 2>&1
-    rm -f "$TMP" "$FOUND" "$DUMP"
-}
-trap cleanup 0 
 
 # convert ISA PnP id number to string 'ABC'
 convert_isapnp_id () {
@@ -553,20 +555,6 @@ find_device_name () {
 }
 
 #
-# make a backup of old config
-backup_old_config () {
-    if cmp -s $1 $2; then
-	return
-    fi
-    if cp -f $1 $1.old; then
-	cp -f $2 $1
-    else
-	echo "ERROR! $1 could not be saved."
-	exit 1
-    fi
-}
-
-#
 # configure and try test sound
 #
 ac_config_card () {
@@ -575,14 +563,14 @@ ac_config_card () {
     CARD_OPTS="${*:2}"
 
     if [ -n "$cfgout" ]; then
-	addcfg="$cfgout"
-    else
-	addcfg="$cfgfile"
-    fi
-    # Configuration done
-    $DIALOG --yesno "
+        $DIALOG --yesno "
 Configuring $CARD_DRIVER
-Do you want to modify ${addcfg}?" 8 50 || acex 0
+Do you want to modify ${cfgout} (and ${cfgfile} if present)?" 8 50 || acex 0
+    else
+        $DIALOG --yesno "
+Configuring $CARD_DRIVER
+Do you want to modify ${cfgfile}?" 8 50 || acex 0
+    fi
     clear
 
     # Copy conf.modules and make changes.
@@ -599,20 +587,12 @@ Do you want to modify ${addcfg}?" 8 50 || acex 0
 	SOUND_CORE="snd"
     fi
 
-    if [ "$distribution" = "redhat" -o "$distribution" = "fedora" ] ; then
-        remove_ac_block < $cfgfile | remove_sndconfig_block | uniq > $TMP
-    else
-	remove_ac_block < $cfgfile | remove_y2_block | uniq > $TMP
-    fi
-
-    if [ -n "$cfgout" ]; then
-	rm -f "$cfgout"
-	touch "$cfgout"
-	addcfg="$cfgout"
-    else
-	addcfg="$TMP"
-	echo "$ACB
-# --- ALSACONF verion $version ---" >> $addcfg
+    if [ -r $cfgfile ] ; then
+        if [ "$distribution" = "redhat" -o "$distribution" = "fedora" ] ; then
+            remove_ac_block < $cfgfile | remove_sndconfig_block | uniq > $TMP
+        else
+	    remove_ac_block < $cfgfile | remove_y2_block | uniq > $TMP
+        fi
     fi
 
     if [ -z "$have_alias" -a "$kernel" = "new" ]; then
@@ -637,15 +617,17 @@ alias sound-slot-0 $CARD_DRIVER" >> $addcfg
     if [ -n "$CARD_OPTS" ]; then
 	echo "options $CARD_DRIVER $CARD_OPTS" >> $addcfg
     fi
-    if [ -z "$cfgout" ]; then
-	echo "$ACE
-" >> $addcfg
-    fi
 
     if [ -n "$cfgout" ]; then
-	backup_old_config $cfgfile $TMP
+	[ ! -r "$cfgfile" ] || cmp -s "$TMP" "$cfgfile" || cat "$TMP" > "$cfgfile"
+	cmp -s "$addcfg" "$cfgout" || cat "$addcfg" > "$cfgout"
     else
-	backup_old_config $cfgfile $addcfg
+	echo "$ACB
+# --- ALSACONF verion $version ---" >> $TMP
+        cat "$addcfg" >> "$TMP"
+	echo "$ACE
+" >> $TMP
+        cmp -s "$TMP" "$cfgfile" || cat "$TMP" > "$cfgfile"
     fi
 
     /sbin/depmod -a 2>/dev/null
