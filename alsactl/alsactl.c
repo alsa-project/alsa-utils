@@ -218,6 +218,8 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		strcat(buf, " volatile");
 	if (snd_ctl_elem_info_is_locked(info))
 		strcat(buf, " locked");
+	if (snd_ctl_elem_info_is_user(info))
+		strcat(buf, " user");
 	err = snd_config_string_add(comment, "access", buf + 1);
 	if (err < 0) {
 		error("snd_config_string_add: %s", snd_strerror(err));
@@ -234,6 +236,11 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 	err = snd_config_string_add(comment, "type", s);
 	if (err < 0) {
 		error("snd_config_string_add: %s", snd_strerror(err));
+		return err;
+	}
+	err = snd_config_integer_add(comment, "count", count);
+	if (err < 0) {
+		error("snd_config_integer_add: %s", snd_strerror(err));
 		return err;
 	}
 
@@ -662,6 +669,106 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 	return -1;
 }
 
+static int is_user_control(snd_config_t *conf)
+{
+	snd_config_iterator_t i, next;
+
+	snd_config_for_each(i, next, conf) {
+		snd_config_t *n = snd_config_iterator_entry(i);
+		const char *id, *s;
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+		if (strcmp(id, "access") == 0) {
+			if (snd_config_get_string(n, &s) < 0)
+				return 0;
+			if (strstr(s, "user"))
+				return 1;
+		}
+	}
+	return 0;
+}
+
+static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_config_t *conf)
+{
+	snd_config_iterator_t i, next;
+	long imin, imax, istep;
+	snd_ctl_elem_type_t ctype;
+	unsigned int count;
+	int err;
+
+	imin = imax = istep = 0;
+	count = 0;
+	ctype = SND_CTL_ELEM_TYPE_NONE;
+	snd_config_for_each(i, next, conf) {
+		snd_config_t *n = snd_config_iterator_entry(i);
+		const char *id, *type;
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+		if (strcmp(id, "type") == 0) {
+			if ((err = snd_config_get_string(n, &type)) < 0)
+				return -EINVAL;
+			if (strcmp(type, "BOOLEAN") == 0)
+				ctype = SND_CTL_ELEM_TYPE_BOOLEAN;
+			else if (strcmp(type, "INTEGER") == 0)
+				ctype = SND_CTL_ELEM_TYPE_INTEGER;
+			else if (strcmp(type, "IEC958") == 0)
+				ctype = SND_CTL_ELEM_TYPE_IEC958;
+			else
+				return -EINVAL;
+			continue;
+		}
+		if (strcmp(id, "range") == 0) {
+			const char *s;
+			if ((err = snd_config_get_string(n, &s)) < 0)
+				return -EINVAL;
+			switch (ctype) {
+			case SND_CTL_ELEM_TYPE_INTEGER:
+				err = sscanf(s, "%li - %li (step %li)", &imin, &imax, &istep);
+				if (err != 3) {
+					istep = 0;
+					err = sscanf(s, "%li - %li", &imin, &imax);
+					if (err != 2)
+						return -EINVAL;
+				}
+				break;
+			default:
+				return -EINVAL;
+			}
+			continue;
+		}
+		if (strcmp(id, "count") == 0) {
+			long v;
+			if ((err = snd_config_get_integer(n, &v)) < 0)
+				return err;
+			count = v;
+			continue;
+		}
+	}
+
+	if (count <= 0)
+		count = 1;
+	switch (ctype) {
+	case SND_CTL_ELEM_TYPE_INTEGER:
+		if (imin > imax || istep > imax - imin)
+			return -EINVAL;
+		err = snd_ctl_elem_add_integer(handle, info, count, imin, imax, istep);
+		break;
+	case SND_CTL_ELEM_TYPE_BOOLEAN:
+		err = snd_ctl_elem_add_boolean(handle, info, count);
+		break;
+	case SND_CTL_ELEM_TYPE_IEC958:
+		err = snd_ctl_elem_add_iec958(handle, info);
+		break;
+	default:
+		err = -EINVAL;
+		break;
+	}
+
+	if (err < 0)
+		return err;
+	return snd_ctl_elem_info(handle, info);
+}
+
 static int set_control(snd_ctl_t *handle, snd_config_t *control)
 {
 	snd_ctl_elem_value_t *ctl;
@@ -682,6 +789,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	long index1;
 	long index = -1;
 	snd_config_t *value = NULL;
+	snd_config_t *comment = NULL;
 	long val;
 	long long lval;
 	unsigned int idx;
@@ -705,8 +813,14 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		const char *fld;
 		if (snd_config_get_id(n, &fld) < 0)
 			continue;
-		if (strcmp(fld, "comment") == 0)
+		if (strcmp(fld, "comment") == 0) {
+			if (snd_config_get_type(n) != SND_CONFIG_TYPE_COMPOUND) {
+				error("control.%d.%s is invalid", numid, fld);
+				return -EINVAL;
+			}
+			comment = n;
 			continue;
+		}
 		if (strcmp(fld, "iface") == 0) {
 			iface = (snd_ctl_elem_iface_t)config_iface(n);
 			if (iface < 0) {
@@ -778,6 +892,14 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 			snd_ctl_elem_info_set_name(info, name);
 			snd_ctl_elem_info_set_index(info, index);
 			err = snd_ctl_elem_info(handle, info);
+			if (err < 0 && comment && is_user_control(comment)) {
+				err = add_user_control(handle, info, comment);
+				if (err < 0) {
+					error("failed to add user control #%d (%s)",
+					      numid, snd_strerror(err));
+					return err;
+				}
+			}
 		}
 	}
 	if (err < 0) {
@@ -792,7 +914,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	index1 = snd_ctl_elem_info_get_index(info);
 	count = snd_ctl_elem_info_get_count(info);
 	type = snd_ctl_elem_info_get_type(info);
-	if (numid != numid1)
+	if (numid != numid1 && ! force_restore)
 		error("warning: numid mismatch (%d/%d) for control #%d", 
 		      numid, numid1, numid);
 	if (iface != iface1)
