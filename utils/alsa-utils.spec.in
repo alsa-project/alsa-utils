@@ -1,6 +1,5 @@
 %define ver      @VERSION@
 %define rel      1
-%define prefix   /
 
 Summary: Advanced Linux Sound Architecture (ALSA) - Utils
 Name: alsa-utils
@@ -9,9 +8,8 @@ Release: %rel
 Copyright: GPL
 Group: System/Libraries
 Source: ftp://ftp.alsa-project.org/pub/utils/alsa-utils-%{ver}.tar.bz2
-BuildRoot: /tmp/alsa-utils-%{ver}
+BuildRoot: /var/tmp/alsa-utils-%{ver}
 URL: http://www.alsa-project.org
-#Docdir: %{prefix}/usr/doc
 Requires: alsa-lib alsa-driver
 
 %description
@@ -20,11 +18,16 @@ Advanced Linux Sound Architecture (ALSA) - Utils
 
 %changelog
 
+* Tue Nov 20 2001 Jaroslav Kysela <perex@suse.cz>
+
+- changed BuildRoot from /tmp to /var/tmp
+- %_prefix and %_mandir macros are used for configure and mkdir
+- DESTDIR is used for make install
+
 * Sun Nov 11 2001 Miroslav Benes <mbenes@tenez.cz>
 
 - dangerous command "rpm -rf $RPM_BUILD_ROOT" checks $RPM_BUILD_ROOT variable
 - unset key "Docdir" - on some new systems are documentation in /usr/share/doc
-
 
 * Mon May 28 1998 Helge Jensen <slog@slog.dk>
 
@@ -34,15 +37,15 @@ Advanced Linux Sound Architecture (ALSA) - Utils
 %setup
 %build
 
-./configure --prefix=/usr
+./configure --prefix=%_prefix --mandir=%_mandir
 make
 
 %install
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
 
-mkdir -p $RPM_BUILD_ROOT/usr/bin $RPM_BUILD_ROOT/usr/man/man1
+mkdir -p $RPM_BUILD_ROOT/%_prefix/bin $RPM_BUILD_ROOT/%_mandir/man1
 
-make prefix="$RPM_BUILD_ROOT/usr" install
+make DESTDIR="$RPM_BUILD_ROOT" install
 
 %clean
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
@@ -52,6 +55,6 @@ make prefix="$RPM_BUILD_ROOT/usr" install
 
 %doc ChangeLog COPYING README config.status
 
-%{prefix}/usr/sbin/*
-%{prefix}/usr/bin/*
-%{prefix}/usr/man/man1/*
+%{_prefix}/sbin/*
+%{_prefix}/bin/*
+%{_mandir}/man1/*
