@@ -874,19 +874,19 @@ static void suspend(void)
 	int res;
 
 	if (!quiet_mode)
-		fprintf(stderr, "Suspended... Trying resume..."); fflush(stderr);
+		fprintf(stderr, "Suspended. Trying resume. "); fflush(stderr);
 	while ((res = snd_pcm_resume(handle)) == -EAGAIN)
 		sleep(1);	/* wait until suspend flag is not released */
 	if (res < 0) {
 		if (!quiet_mode)
-			fprintf(stderr, " Failed... Restarting stream..."); fflush(stderr);
+			fprintf(stderr, "Failed. Restarting stream. "); fflush(stderr);
 		if ((res = snd_pcm_prepare(handle)) < 0) {
 			error("suspend: prepare error: %s", snd_strerror(res));
 			exit(EXIT_FAILURE);
 		}
 	}
 	if (!quiet_mode)
-		fprintf(stderr, "\n");
+		fprintf(stderr, "Done.\n");
 }
 
 /* peak handler */
