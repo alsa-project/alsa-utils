@@ -496,6 +496,10 @@ int main(int argc, char *argv[])
 	}
 
 	if (mmap_flag) {
+		snd_pcm_sframes_t snd_pcm_mmap_writei(snd_pcm_t *pcm, const void *buffer, snd_pcm_uframes_t size);
+		snd_pcm_sframes_t snd_pcm_mmap_readi(snd_pcm_t *pcm, void *buffer, snd_pcm_uframes_t size);
+		snd_pcm_sframes_t snd_pcm_mmap_writen(snd_pcm_t *pcm, void **bufs, snd_pcm_uframes_t size);
+		snd_pcm_sframes_t snd_pcm_mmap_readn(snd_pcm_t *pcm, void **bufs, snd_pcm_uframes_t size);
 		writei_func = snd_pcm_mmap_writei;
 		readi_func = snd_pcm_mmap_readi;
 		writen_func = snd_pcm_mmap_writen;
