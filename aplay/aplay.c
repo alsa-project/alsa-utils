@@ -1527,6 +1527,10 @@ static void begin_wave(int fd, size_t cnt)
 	u_int tmp;
 	u_short tmp2;
 
+	/* WAVE cannot handle greater than 32bit (signed?) int */
+	if (cnt == (size_t)-2)
+		cnt = 0x7fffff00;
+
 	bits = 8;
 	switch ((unsigned long) hwparams.format) {
 	case SND_PCM_FORMAT_U8:
@@ -1754,28 +1758,29 @@ void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
 
 void capture_go(int fd, size_t count, int rtype, char *name)
 {
-	size_t c;
+	size_t c, cur;
 	ssize_t r, err;
 
 	header(rtype, name);
 	set_params();
 
-	while (count > 0) {
-		c = count;
-		if (c > chunk_bytes)
-			c = chunk_bytes;
-		c = c * 8 / bits_per_frame;
-		if ((size_t)(r = pcm_read(audiobuf, c)) != c)
-			break;
-		r = r * bits_per_frame / 8;
-		if ((err = write(fd, audiobuf, r)) != r) {
-			perror(name);
-			exit(EXIT_FAILURE);
+	do {
+		for (cur = count; cur > 0; cur -= r) {
+			c = cur;
+			if (c > chunk_bytes)
+				c = chunk_bytes;
+			c = c * 8 / bits_per_frame;
+			if ((size_t)(r = pcm_read(audiobuf, c)) != c)
+				break;
+			r = r * bits_per_frame / 8;
+			if ((err = write(fd, audiobuf, r)) != r) {
+				perror(name);
+				exit(EXIT_FAILURE);
+			}
+			if (err > 0)
+				fdcount += err;
 		}
-		if (err > 0)
-			fdcount += err;
-		count -= r;
-	}
+	} while (rtype == FORMAT_RAW && !timelimit);
 }
 
 /*
