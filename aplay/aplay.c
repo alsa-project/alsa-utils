@@ -456,7 +456,7 @@ int main(int argc, char *argv[])
 		snd_ctl_elem_value_set_interface(ctl, SND_CTL_ELEM_IFACE_PCM);
 		snd_ctl_elem_value_set_device(ctl, snd_pcm_info_get_device(info));
 		snd_ctl_elem_value_set_subdevice(ctl, snd_pcm_info_get_subdevice(info));
-		snd_ctl_elem_value_set_name(ctl, "IEC958 (S/PDIF) Stream");
+		snd_ctl_elem_value_set_name(ctl, SND_CTL_NAME_IEC958("",PLAYBACK,PCM_STREAM));
 		snd_ctl_elem_value_set_iec958(ctl, &spdif);
 		ctl_card = snd_pcm_info_get_card(info);
 		if (ctl_card < 0) {
