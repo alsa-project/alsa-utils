@@ -1,4 +1,4 @@
-%define ver      @SND_UTIL_VERSION@
+%define ver      @VERSION@
 %define rel      1
 %define prefix   /
 

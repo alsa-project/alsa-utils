@@ -1,4 +1,4 @@
-bin_PROGRAMS=alsactl
+sbin_PROGRAMS=alsactl
 noinst_HEADERS=alsactl.h
 man_MANS=alsactl.1
 

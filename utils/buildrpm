@@ -4,7 +4,7 @@ source=.
 version=`cat $source/../version`
 package=$source/../../alsa-utils-$version.tar.gz
 
-make -C .. dist
+make -C .. pack
 
 if [ ! -r $package ]; then
   echo "Error: wrong package: $package"
