@@ -169,8 +169,8 @@ Usage: %s [OPTION]... [FILE]...
 	}
 	fprintf(stderr, "\nSome of these may not be available on selected hardware\n");
 	fprintf(stderr, "The availabled format shortcuts are:\n");
-	fprintf(stderr, "cd (16 bit little endian, 44100, stereo)\n");
-	fprintf(stderr, "dat (16 bit little endian, 48000, stereo)\n");
+	fprintf(stderr, "-f cd (16 bit little endian, 44100, stereo)\n");
+	fprintf(stderr, "-f dat (16 bit little endian, 48000, stereo)\n");
 }
 
 static void device_list(void)
@@ -1574,7 +1574,7 @@ void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
 	snd_pcm_drain(handle);
 }
 
-/* captureing raw data, this proc handels WAVE files and .VOCs (as one block) */
+/* capturing raw data, this proc handels WAVE files and .VOCs (as one block) */
 
 void capture_go(int fd, size_t count, int rtype, char *name)
 {
