@@ -448,16 +448,16 @@ int main(int argc, char *argv[])
 	}
 
 	if (digtype != SND_CTL_ELEM_TYPE_NONE) {
-		snd_ctl_elem_t *ctl;
+		snd_ctl_elem_value_t *ctl;
 		snd_ctl_t *ctl_handle;
 		char ctl_name[12];
 		int ctl_card;
-		snd_ctl_elem_alloca(&ctl);
-		snd_ctl_elem_set_interface(ctl, SND_CTL_ELEM_IFACE_PCM);
-		snd_ctl_elem_set_device(ctl, snd_pcm_info_get_device(info));
-		snd_ctl_elem_set_subdevice(ctl, snd_pcm_info_get_subdevice(info));
-		snd_ctl_elem_set_name(ctl, "IEC958 (S/PDIF) Stream");
-		snd_ctl_elem_set_iec958(ctl, &spdif);
+		snd_ctl_elem_value_alloca(&ctl);
+		snd_ctl_elem_value_set_interface(ctl, SND_CTL_ELEM_IFACE_PCM);
+		snd_ctl_elem_value_set_device(ctl, snd_pcm_info_get_device(info));
+		snd_ctl_elem_value_set_subdevice(ctl, snd_pcm_info_get_subdevice(info));
+		snd_ctl_elem_value_set_name(ctl, "IEC958 (S/PDIF) Stream");
+		snd_ctl_elem_value_set_iec958(ctl, &spdif);
 		ctl_card = snd_pcm_info_get_card(info);
 		if (ctl_card < 0) {
 			error("Unable to setup the IEC958 (S/PDIF) interface - PCM has no assigned card");

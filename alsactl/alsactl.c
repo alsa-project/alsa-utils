@@ -142,7 +142,7 @@ static int snd_config_compound_add(snd_config_t *father, const char *id, int joi
 
 static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *top)
 {
-	snd_ctl_elem_t *ctl;
+	snd_ctl_elem_value_t *ctl;
 	snd_ctl_elem_info_t *info;
 	snd_config_t *control, *comment, *item, *value;
 	const char *s;
@@ -153,7 +153,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 	const char *name;
 	snd_ctl_elem_type_t type;
 	unsigned int count;
-	snd_ctl_elem_alloca(&ctl);
+	snd_ctl_elem_value_alloca(&ctl);
 	snd_ctl_elem_info_alloca(&info);
 	snd_ctl_elem_info_set_id(info, id);
 	err = snd_ctl_elem_info(handle, info);
@@ -164,7 +164,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 
 	if (!snd_ctl_elem_info_is_readable(info))
 		return 0;
-	snd_ctl_elem_set_id(ctl, id);
+	snd_ctl_elem_value_set_id(ctl, id);
 	err = snd_ctl_elem_read(handle, ctl);
 	if (err < 0) {
 		error("Cannot read control '%s': %s", id_str(id), snd_strerror(err));
@@ -303,7 +303,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		char buf[size * 2 + 1];
 		char *p = buf;
 		char *hex = "0123456789abcdef";
-		const unsigned char *bytes = snd_ctl_elem_get_bytes(ctl);
+		const unsigned char *bytes = snd_ctl_elem_value_get_bytes(ctl);
 		for (idx = 0; idx < size; idx++) {
 			int v = bytes[idx];
 			*p++ = hex[v >> 4];
@@ -324,14 +324,14 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 	if (count == 1) {
 		switch (snd_enum_to_int(type)) {
 		case SND_CTL_ELEM_TYPE_BOOLEAN:
-			err = snd_config_string_add(control, "value", snd_ctl_elem_get_boolean(ctl, 0) ? "true" : "false");
+			err = snd_config_string_add(control, "value", snd_ctl_elem_value_get_boolean(ctl, 0) ? "true" : "false");
 			if (err < 0) {
 				error("snd_config_string_add: %s", snd_strerror(err));
 				return err;
 			}
 			return 0;
 		case SND_CTL_ELEM_TYPE_INTEGER:
-			err = snd_config_integer_add(control, "value", snd_ctl_elem_get_integer(ctl, 0));
+			err = snd_config_integer_add(control, "value", snd_ctl_elem_value_get_integer(ctl, 0));
 			if (err < 0) {
 				error("snd_config_integer_add: %s", snd_strerror(err));
 				return err;
@@ -339,7 +339,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 			return 0;
 		case SND_CTL_ELEM_TYPE_ENUMERATED:
 		{
-			unsigned int v = snd_ctl_elem_get_enumerated(ctl, 0);
+			unsigned int v = snd_ctl_elem_value_get_enumerated(ctl, 0);
 			snd_config_t *c;
 			err = snd_config_search(item, num_str(v), &c);
 			if (err == 0) {
@@ -368,7 +368,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 	switch (snd_enum_to_int(type)) {
 	case SND_CTL_ELEM_TYPE_BOOLEAN:
 		for (idx = 0; idx < count; idx++) {
-			err = snd_config_string_add(value, num_str(idx), snd_ctl_elem_get_boolean(ctl, idx) ? "true" : "false");
+			err = snd_config_string_add(value, num_str(idx), snd_ctl_elem_value_get_boolean(ctl, idx) ? "true" : "false");
 			if (err < 0) {
 				error("snd_config_string_add: %s", snd_strerror(err));
 				return err;
@@ -377,7 +377,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		break;
 	case SND_CTL_ELEM_TYPE_INTEGER:
 		for (idx = 0; idx < count; idx++) {
-			err = snd_config_integer_add(value, num_str(idx), snd_ctl_elem_get_integer(ctl, idx));
+			err = snd_config_integer_add(value, num_str(idx), snd_ctl_elem_value_get_integer(ctl, idx));
 			if (err < 0) {
 				error("snd_config_integer_add: %s", snd_strerror(err));
 				return err;
@@ -386,7 +386,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		break;
 	case SND_CTL_ELEM_TYPE_ENUMERATED:
 		for (idx = 0; idx < count; idx++) {
-			unsigned int v = snd_ctl_elem_get_enumerated(ctl, idx);
+			unsigned int v = snd_ctl_elem_value_get_enumerated(ctl, idx);
 			snd_config_t *c;
 			err = snd_config_search(item, num_str(v), &c);
 			if (err == 0) {
@@ -592,9 +592,9 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 
 static int set_control(snd_ctl_t *handle, snd_config_t *control)
 {
-	snd_ctl_elem_t *ctl;
+	snd_ctl_elem_value_t *ctl;
 	snd_ctl_elem_info_t *info;
-	snd_config_iterator_t i;
+	snd_config_iterator_t i, next;
 	unsigned int numid1, iface1, device1, subdevice1, index1;
 	const char *name1;
 	unsigned int numid;
@@ -610,16 +610,16 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	unsigned int idx;
 	int err;
 	char *set;
-	snd_ctl_elem_alloca(&ctl);
+	snd_ctl_elem_value_alloca(&ctl);
 	snd_ctl_elem_info_alloca(&info);
 	if (snd_config_get_type(control) != SND_CONFIG_TYPE_COMPOUND) {
 		error("control is not a compound");
 		return -EINVAL;
 	}
 	numid = atoi(snd_config_get_id(control));
-	snd_config_foreach(i, control) {
+	snd_config_for_each(i, next, control) {
 		snd_config_t *n = snd_config_iterator_entry(i);
-		char *fld = snd_config_get_id(n);
+		const char *fld = snd_config_get_id(n);
 		if (strcmp(fld, "comment") == 0)
 			continue;
 		if (strcmp(fld, "iface") == 0) {
@@ -720,28 +720,28 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 
 	if (!snd_ctl_elem_info_is_writable(info))
 		return 0;
-	snd_ctl_elem_set_numid(ctl, numid);
+	snd_ctl_elem_value_set_numid(ctl, numid);
 
 	if (count == 1) {
 		switch (snd_enum_to_int(type)) {
 		case SND_CTL_ELEM_TYPE_BOOLEAN:
 			val = config_bool(value);
 			if (val >= 0) {
-				snd_ctl_elem_set_boolean(ctl, 0, val);
+				snd_ctl_elem_value_set_boolean(ctl, 0, val);
 				goto _ok;
 			}
 			break;
 		case SND_CTL_ELEM_TYPE_INTEGER:
 			err = snd_config_get_integer(value, &val);
 			if (err == 0) {
-				snd_ctl_elem_set_integer(ctl, 0, val);
+				snd_ctl_elem_value_set_integer(ctl, 0, val);
 				goto _ok;
 			}
 			break;
 		case SND_CTL_ELEM_TYPE_ENUMERATED:
 			val = config_enumerated(value, handle, info);
 			if (val >= 0) {
-				snd_ctl_elem_set_enumerated(ctl, 0, val);
+				snd_ctl_elem_value_set_enumerated(ctl, 0, val);
 				goto _ok;
 			}
 			break;
@@ -783,7 +783,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 				}
 				idx++;
 				if (idx % 2 == 0)
-					snd_ctl_elem_set_byte(ctl, idx / 2, c1 << 4 | c);
+					snd_ctl_elem_value_set_byte(ctl, idx / 2, c1 << 4 | c);
 				else
 					c1 = c;
 			}
@@ -800,7 +800,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 
 	set = alloca(count);
 	memset(set, 0, count);
-	snd_config_foreach(i, value) {
+	snd_config_for_each(i, next, value) {
 		snd_config_t *n = snd_config_iterator_entry(i);
 		idx = atoi(snd_config_get_id(n));
 		if (idx < 0 || idx >= count || 
@@ -815,7 +815,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 				error("bad control.%d.value.%d content", numid, idx);
 				return -EINVAL;
 			}
-			snd_ctl_elem_set_boolean(ctl, idx, val);
+			snd_ctl_elem_value_set_boolean(ctl, idx, val);
 			break;
 		case SND_CTL_ELEM_TYPE_INTEGER:
 			err = snd_config_get_integer(n, &val);
@@ -823,7 +823,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 				error("bad control.%d.value.%d content", numid, idx);
 				return -EINVAL;
 			}
-			snd_ctl_elem_set_integer(ctl, idx, val);
+			snd_ctl_elem_value_set_integer(ctl, idx, val);
 			break;
 		case SND_CTL_ELEM_TYPE_ENUMERATED:
 			val = config_enumerated(n, handle, info);
@@ -831,7 +831,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 				error("bad control.%d.value.%d content", numid, idx);
 				return -EINVAL;
 			}
-			snd_ctl_elem_set_enumerated(ctl, idx, val);
+			snd_ctl_elem_value_set_enumerated(ctl, idx, val);
 			break;
 		case SND_CTL_ELEM_TYPE_BYTES:
 		case SND_CTL_ELEM_TYPE_IEC958:
@@ -840,7 +840,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 				error("bad control.%d.value.%d content", numid, idx);
 				return -EINVAL;
 			}
-			snd_ctl_elem_set_byte(ctl, idx, val);
+			snd_ctl_elem_value_set_byte(ctl, idx, val);
 			break;
 		default:
 			break;
@@ -859,7 +859,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	if (err < 0) {
 		snd_ctl_elem_id_t *id;
 		snd_ctl_elem_id_alloca(&id);
-		snd_ctl_elem_get_id(ctl, id);
+		snd_ctl_elem_value_get_id(ctl, id);
 		error("Cannot write control '%s': %s", id_str(id), snd_strerror(err));
 		return err;
 	}
@@ -871,7 +871,7 @@ static int set_controls(int card, snd_config_t *top)
 	snd_ctl_t *handle;
 	snd_ctl_card_info_t *info;
 	snd_config_t *control;
-	snd_config_iterator_t i;
+	snd_config_iterator_t i, next;
 	int err;
 	char name[32];
 	const char *id;
@@ -899,7 +899,7 @@ static int set_controls(int card, snd_config_t *top)
 		error("state.%s.control is not a compound\n", id);
 		return -EINVAL;
 	}
-	snd_config_foreach(i, control) {
+	snd_config_for_each(i, next, control) {
 		snd_config_t *n = snd_config_iterator_entry(i);
 		err = set_control(handle, n);
 		if (err < 0)
