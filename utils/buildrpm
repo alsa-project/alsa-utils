@@ -2,7 +2,7 @@
 
 source=.
 version=`cat $source/../version`
-package=$source/../../alsa-utils-$version.tar.gz
+package=$source/../../alsa-utils-$version.tar.bz2
 
 make -C .. pack
 
