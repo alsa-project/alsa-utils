@@ -544,7 +544,10 @@ mixer_update_cbar (int group_index)
   /* channel bar name
    */
   mixer_dc (group_index == mixer_focus_group ? DC_CBAR_FOCUS_LABEL : DC_CBAR_LABEL);
-  strcpy(string1, group.gid.name);
+  if (group.gid.index > 0)
+    sprintf(string1, "%s %d", group.gid.name, group.gid.index);
+  else
+    strcpy(string1, group.gid.name);
   string1[8] = 0;
   for (i = 0; i < 8; i++)
     {
@@ -1153,6 +1156,7 @@ mixer_reinit (void)
       }
     }
   }
+  snd_mixer_sort_gid_table(mixer_gid, mixer_n_groups, snd_mixer_default_weights);
 }
 
 static void
