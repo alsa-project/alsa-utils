@@ -37,12 +37,25 @@ AM_CONDITIONAL(ALSAMIXER, test x$alsamixer = xtrue)
 dnl Checks for header files.
 AC_HEADER_STDC
 if test x$alsamixer = xtrue; then
-  AC_CHECK_LIB(ncurses, initscr, 
-             [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncurses'; ], [ 
-	AC_CHECK_LIB(curses, initscr, 
-        	     [ CURSESINC='<curses.h>'; CURSESLIB='-lcurses'; ],
-                     AC_MSG_ERROR(this packages requires a curses library))
-  ])
+  AC_ARG_WITH(curses,
+    [  --with-curses libname   Specify the curses library to use (default=auto)],
+    curseslib="$withval",
+    curseslib="auto")
+  if test "$curseslib" = "ncursesw"; then
+    AC_CHECK_LIB(ncursesw, initscr, 
+                 [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncursesw'; curseslib="ncursesw"])
+  fi
+  if test "$curseslib" = "ncurses" -o "$curseslib" = "auto"; then
+    AC_CHECK_LIB(ncurses, initscr, 
+                 [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncurses'; curseslib="ncurses"])
+  fi
+  if test "$curseslib" = "curses" -o "$curseslib" = "auto"; then
+    AC_CHECK_LIB(curses, initscr, 
+                 [ CURSESINC='<curses.h>'; CURSESLIB='-lcurses'; curseslib="curses"])
+  fi
+  if test -z "$CURSESINC"; then
+     AC_MSG_ERROR(this packages requires a curses library)
+  fi
 fi
 
 AC_SUBST(CURSESINC)
