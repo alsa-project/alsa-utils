@@ -1486,7 +1486,8 @@ int main(int argc, char *argv[])
 			break;
 		case 'D':
 		case HELPID_DEVICE:
-			strcpy(card, optarg);
+			strncpy(card, optarg, sizeof(card-1));
+			card[sizeof(card)-1] = '\0';
 			break;
 		case 'q':
 		case HELPID_QUIET:
