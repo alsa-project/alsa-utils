@@ -946,12 +946,12 @@ int soundcard_setup_write(const char *cfgfile, int cardno)
 				continue;
 			fprintf(out, "  pcm(\"%s\") {\n", pcm->info.name);
 			if (pcm->pswitches) {
-				fprintf(out, "    playback {");
+				fprintf(out, "    playback {\n");
 				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_PCM, &pcm->pswitches);
 				fprintf(out, "    }\n");
 			}
 			if (pcm->rswitches) {
-				fprintf(out, "    capture {");
+				fprintf(out, "    capture {\n");
 				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_PCM, &pcm->rswitches);
 				fprintf(out, "    }\n");
 			}
@@ -962,12 +962,12 @@ int soundcard_setup_write(const char *cfgfile, int cardno)
 				continue;
 			fprintf(out, "  rawmidi(\"%s\") {\n", rawmidi->info.name);
 			if (rawmidi->oswitches) {
-				fprintf(out, "    output {");
+				fprintf(out, "    output {\n");
 				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_RAWMIDI, &rawmidi->oswitches);
 				fprintf(out, "    }\n");
 			}
 			if (rawmidi->iswitches) {
-				fprintf(out, "    input {");
+				fprintf(out, "    input {\n");
 				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_RAWMIDI, &rawmidi->iswitches);
 				fprintf(out, "    }\n");
 			}

@@ -154,7 +154,7 @@ int soundcard_setup_merge_switches(int cardno)
 			soundcard_setup_merge_sw(mixer->switches, rmixer->switches, soundcard->no, mixer->no, "mixer");
 		}
 		for (rpcm = rsoundcard->pcms; rpcm; rpcm = rpcm->next) {
-			for (pcm = rsoundcard->pcms; pcm; pcm = pcm->next) {
+			for (pcm = soundcard->pcms; pcm; pcm = pcm->next) {
 				if (!strncmp(pcm->info.name, rpcm->info.name, sizeof(pcm->info.name)))
 					break;
 			}
@@ -451,7 +451,7 @@ int soundcard_setup_process_switches(int cardno)
 					}
 			}
 		}
-		if(ctlhandle) {
+		if (ctlhandle) {
 			snd_ctl_close(ctlhandle);
 			ctlhandle = NULL;
 		}
@@ -484,7 +484,7 @@ int soundcard_setup_process_data(int cardno)
 				mixhandle = NULL;
 			}
 		}
-		if(ctlhandle) {
+		if (ctlhandle) {
 			snd_ctl_close(ctlhandle);
 			ctlhandle = NULL;
 		}

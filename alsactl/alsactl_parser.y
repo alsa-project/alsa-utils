@@ -53,7 +53,7 @@ static void build_mixer_element(char *name, int index, int etype);
 static void build_control_switch(char *name);
 static void build_mixer_switch(char *name);
 static void build_pcm_playback_switch(char *name);
-static void build_pcm_record_switch(char *name);
+static void build_pcm_capture_switch(char *name);
 static void build_rawmidi_output_switch(char *name);
 static void build_rawmidi_input_switch(char *name);
 
@@ -117,7 +117,7 @@ static unsigned short Xswitchiec958ocs1[16];
 %token L_DOUBLE1
 	/* other keywords */
 %token L_SOUNDCARD L_MIXER L_ELEMENT L_SWITCH L_RAWDATA
-%token L_CONTROL L_PCM L_RAWMIDI L_PLAYBACK L_RECORD L_INPUT L_OUTPUT
+%token L_CONTROL L_PCM L_RAWMIDI L_PLAYBACK L_CAPTURE L_INPUT L_OUTPUT
 %token L_SWITCH1 L_SWITCH2 L_SWITCH3 L_VOLUME1 L_3D_EFFECT1 L_ACCU3
 %token L_MUX1 L_MUX2 L_TONE_CONTROL1
 %token L_IEC958OCS L_3D L_RESET L_USER L_VALID L_DATA L_PROTECT L_PRE2
@@ -288,7 +288,7 @@ pcms	: pcm
 	;
 
 pcm	: L_PLAYBACK '{' playbacks '}'
-	| L_RECORD '{' records '}'
+	| L_CAPTURE '{' captures '}'
 	| error			{ yyerror("an unknown keyword in the pcm{} section"); }
 	;
 
@@ -301,13 +301,13 @@ playback : L_SWITCH '(' string	{ build_pcm_playback_switch($3); }
 	| error			{ yyerror("an unknown keyword in the playback{} section"); }
 	;
 
-records : record
-	| records record
+captures : capture
+	| captures capture
 	;
 
-record	: L_SWITCH '(' string	{ build_pcm_record_switch($3); }
-	  ',' switches ')'	{ build_pcm_record_switch(NULL); }
-	| error			{ yyerror("an unknown keyword in the record{} section"); }
+capture	: L_SWITCH '(' string	{ build_pcm_capture_switch($3); }
+	  ',' switches ')'	{ build_pcm_capture_switch(NULL); }
+	| error			{ yyerror("an unknown keyword in the capture{} section"); }
 	;
 
 rawmidis : rawmidi
@@ -778,7 +778,7 @@ static void build_pcm_playback_switch(char *name)
 	build_switch(&Xpcm->pswitches, name);
 }
 
-static void build_pcm_record_switch(char *name)
+static void build_pcm_capture_switch(char *name)
 { 
 	build_switch(&Xpcm->rswitches, name);
 }

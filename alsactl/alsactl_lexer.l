@@ -60,7 +60,7 @@ rawdata			return L_RAWDATA;
 pcm			return L_PCM;
 rawmidi			return L_RAWMIDI;
 playback		return L_PLAYBACK;
-record			return L_RECORD;
+capture			return L_CAPTURE;
 output			return L_OUTPUT;
 input			return L_INPUT;
 iec958ocs		return L_IEC958OCS;
