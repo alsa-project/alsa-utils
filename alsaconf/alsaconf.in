@@ -54,9 +54,9 @@ elif [ -f /etc/debian_version ]; then
   distribution="debian"
 elif [ -f /etc/mandrake-release ]; then
   distribution="mandrake"
-elif [ -f /etc/redhat-release -a `grep -c "Red Hat" /etc/redhat-release 2>/dev/null` -ne 0 ]; then
+elif test -f /etc/redhat-release && grep -q "Red Hat" /etc/redhat-release; then
   distribution="redhat"
-elif [ -f /etc/fedora-release -a `grep -c "Fedora" /etc/fedora-release 2>/dev/null` -ne 0 ]; then
+elif test -f /etc/fedora-release && grep -q "Fedora" /etc/fedora-release; then
   distribution="fedora"
 else
   distribution="unknown"
