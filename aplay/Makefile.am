@@ -9,6 +9,7 @@ bin_PROGRAMS = aplay
 man_MANS = aplay.1 arecord.1
 noinst_HEADERS = formats.h
 
+EXTRA_DIST = aplay.1 arecord.1
 EXTRA_CLEAN = arecord
 
 arecord: aplay
