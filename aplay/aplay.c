@@ -650,19 +650,13 @@ static void setup_print(snd_pcm_channel_setup_t *setup)
 	fprintf(stderr, "buffer_size: %d\n", setup->buffer_size);
 	fprintf(stderr, "frag_size: %d\n", setup->frag_size);
 	fprintf(stderr, "frags: %d\n", setup->frags);
-	fprintf(stderr, "frag_boundary: %d\n", setup->frag_boundary);
 	fprintf(stderr, "byte_boundary: %d\n", setup->byte_boundary);
 	fprintf(stderr, "msbits_per_sample: %d\n", setup->msbits_per_sample);
-	if (setup->mode == SND_PCM_MODE_STREAM) {
-		fprintf(stderr, "bytes_min: %d\n", setup->buf.stream.bytes_min);
-		fprintf(stderr, "bytes_align: %d\n", setup->buf.stream.bytes_align);
-		fprintf(stderr, "bytes_xrun_max: %d\n", setup->buf.stream.bytes_xrun_max);
-		fprintf(stderr, "fill: %s\n", assoc(setup->buf.stream.fill, fills));
-		fprintf(stderr, "bytes_fill_max: %d\n", setup->buf.stream.bytes_fill_max);
-	} else if (setup->mode == SND_PCM_MODE_BLOCK) {
-		fprintf(stderr, "frags_min: %d\n", setup->buf.block.frags_min);
-		fprintf(stderr, "frags_xrun_max: %d\n", setup->buf.block.frags_xrun_max);
-	}
+	fprintf(stderr, "bytes_min: %d\n", setup->bytes_min);
+	fprintf(stderr, "bytes_align: %d\n", setup->bytes_align);
+	fprintf(stderr, "bytes_xrun_max: %d\n", setup->bytes_xrun_max);
+	fprintf(stderr, "fill: %s\n", assoc(setup->fill_mode, fills));
+	fprintf(stderr, "bytes_fill_max: %d\n", setup->bytes_fill_max);
 }
 
 static void set_params(void)
@@ -687,15 +681,11 @@ static void set_params(void)
 	params.xrun_mode = SND_PCM_XRUN_FLUSH;
 	params.frag_size = snd_pcm_format_bytes_per_second(&format) / 1000.0 * frag_length;
 	params.buffer_size = params.frag_size * 4;
-	if (mode == SND_PCM_MODE_BLOCK) {
-		params.buf.block.frags_min = 1;
-		params.buf.block.frags_xrun_max = 0;
-	} else {
-		params.buf.stream.fill = SND_PCM_FILL_SILENCE;
-		params.buf.stream.bytes_fill_max = 1024;
-		params.buf.stream.bytes_min = 1024;
-		params.buf.stream.bytes_xrun_max = 0;
-	}
+	params.bytes_min = 0;
+	params.bytes_xrun_max = 0;
+	params.fill_mode = SND_PCM_FILL_SILENCE;
+	params.bytes_fill_max = 1024;
+	params.bytes_xrun_max = 0;
 	if (snd_pcm_channel_params(pcm_handle, &params) < 0) {
 		fprintf(stderr, "%s: unable to set channel params\n", command);
 		exit(EXIT_FAILURE);
