@@ -6,7 +6,7 @@
 
 /* Definitions for .VOC files */
 
-#define VOC_MAGIC_STRING	"Creative Voice File\0x1A"
+#define VOC_MAGIC_STRING	"Creative Voice File\x1A"
 #define VOC_ACTUAL_VERSION	0x010A
 #define VOC_SAMPLESIZE		8
 

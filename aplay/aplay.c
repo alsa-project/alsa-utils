@@ -305,7 +305,7 @@ enum {
 int main(int argc, char *argv[])
 {
 	int option_index;
-	char *short_options = "hlLD:qt:c:f:r:d:s:MNF:A:X:R:T:B:vIPC";
+	char *short_options = "hlLD:qt:c:f:r:d:s:MNF:A:R:T:B:vIPC";
 	static struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"version", 0, 0, OPT_VERSION},
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
 		{"format", 1, 0, 'f'},
 		{"rate", 1, 0, 'r'},
 		{"duration", 1, 0 ,'d'},
-		{"sleep-min", 0, 0, 's'},
+		{"sleep-min", 1, 0, 's'},
 		{"mmap", 0, 0, 'M'},
 		{"nonblock", 0, 0, 'N'},
 		{"period-time", 1, 0, 'F'},
@@ -602,12 +602,12 @@ static int test_vocfile(void *buffer)
 {
 	VocHeader *vp = buffer;
 
-	if (strstr(vp->magic, VOC_MAGIC_STRING)) {
-		vocminor = vp->version & 0xFF;
-		vocmajor = vp->version / 256;
-		if (vp->version != (0x1233 - vp->coded_ver))
+	if (!memcmp(vp->magic, VOC_MAGIC_STRING, 20)) {
+		vocminor = LE_SHORT(vp->version) & 0xFF;
+		vocmajor = LE_SHORT(vp->version) / 256;
+		if (LE_SHORT(vp->version) != (0x1233 - LE_SHORT(vp->coded_ver)))
 			return -2;	/* coded version mismatch */
-		return vp->headerlen - sizeof(VocHeader);	/* 0 mostly */
+		return LE_SHORT(vp->headerlen) - sizeof(VocHeader);	/* 0 mostly */
 	}
 	return -1;		/* magic string fail */
 }
@@ -627,12 +627,13 @@ size_t test_wavefile_read(int fd, char *buffer, size_t *size, size_t reqsize, in
 	return *size = reqsize;
 }
 
-#define check_wavefile_space(buffer, size, len, blimit) \
-	if (size + len > blimit) \
-		blimit = size + len; \
-	if ((buffer = realloc(buffer, blimit)) == NULL) { \
-		error("not enough memory"); \
-		exit(EXIT_FAILURE); \
+#define check_wavefile_space(buffer, len, blimit) \
+	if (len > blimit) { \
+		blimit = len; \
+		if ((buffer = realloc(buffer, blimit)) == NULL) { \
+			error("not enough memory"); \
+			exit(EXIT_FAILURE); \
+		} \
 	}
 
 /*
@@ -654,22 +655,23 @@ static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
 	if (h->magic != WAV_RIFF || h->type != WAV_WAVE)
 		return -1;
 	if (size > sizeof(WaveHeader)) {
-		check_wavefile_space(buffer, size, size - sizeof(WaveHeader), blimit);
+		check_wavefile_space(buffer, size - sizeof(WaveHeader), blimit);
 		memcpy(buffer, _buffer + sizeof(WaveHeader), size - sizeof(WaveHeader));
 	}
 	size -= sizeof(WaveHeader);
 	while (1) {
-		check_wavefile_space(buffer, size, sizeof(WaveChunkHeader), blimit);
+		check_wavefile_space(buffer, sizeof(WaveChunkHeader), blimit);
 		test_wavefile_read(fd, buffer, &size, sizeof(WaveChunkHeader), __LINE__);
 		c = (WaveChunkHeader*)buffer;
 		type = c->type;
 		len = LE_INT(c->length);
+		len += len % 2;
 		if (size > sizeof(WaveChunkHeader))
 			memmove(buffer, buffer + sizeof(WaveChunkHeader), size - sizeof(WaveChunkHeader));
 		size -= sizeof(WaveChunkHeader);
 		if (type == WAV_FMT)
 			break;
-		check_wavefile_space(buffer, size, len, blimit);
+		check_wavefile_space(buffer, len, blimit);
 		test_wavefile_read(fd, buffer, &size, len, __LINE__);
 		if (size > len)
 			memmove(buffer, buffer + len, size - len);
@@ -680,7 +682,7 @@ static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
 		error("unknown length of 'fmt ' chunk (read %u, should be %u at least)", len, (u_int)sizeof(WaveFmtBody));
 		exit(EXIT_FAILURE);
 	}
-	check_wavefile_space(buffer, size, len, blimit);
+	check_wavefile_space(buffer, len, blimit);
 	test_wavefile_read(fd, buffer, &size, len, __LINE__);
 	f = (WaveFmtBody*) buffer;
 	if (LE_SHORT(f->format) != WAV_PCM_CODE) {
@@ -740,7 +742,7 @@ static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
 	while (1) {
 		u_int type, len;
 
-		check_wavefile_space(buffer, size, sizeof(WaveChunkHeader), blimit);
+		check_wavefile_space(buffer, sizeof(WaveChunkHeader), blimit);
 		test_wavefile_read(fd, buffer, &size, sizeof(WaveChunkHeader), __LINE__);
 		c = (WaveChunkHeader*)buffer;
 		type = c->type;
@@ -749,14 +751,15 @@ static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
 			memmove(buffer, buffer + sizeof(WaveChunkHeader), size - sizeof(WaveChunkHeader));
 		size -= sizeof(WaveChunkHeader);
 		if (type == WAV_DATA) {
-			if (len < pbrec_count)
+			if (len < pbrec_count && len < 0x7ffffffe)
 				pbrec_count = len;
 			if (size > 0)
 				memcpy(_buffer, buffer, size);
 			free(buffer);
 			return size;
 		}
-		check_wavefile_space(buffer, size, len, blimit);
+		len += len % 2;
+		check_wavefile_space(buffer, len, blimit);
 		test_wavefile_read(fd, buffer, &size, len, __LINE__);
 		if (size > len)
 			memmove(buffer, buffer + len, size - len);
@@ -1294,6 +1297,7 @@ static void voc_write_silence(unsigned x)
 		}
 		x -= l;
 	}
+	free(buf);
 }
 
 static void voc_pcm_flush(void)
@@ -1562,11 +1566,10 @@ static void begin_voc(int fd, size_t cnt)
 	VocVoiceData vd;
 	VocExtBlock eb;
 
-	strncpy(vh.magic, VOC_MAGIC_STRING, 20);
-	vh.magic[19] = 0x1A;
-	vh.headerlen = sizeof(VocHeader);
-	vh.version = VOC_ACTUAL_VERSION;
-	vh.coded_ver = 0x1233 - VOC_ACTUAL_VERSION;
+	memcpy(vh.magic, VOC_MAGIC_STRING, 20);
+	vh.headerlen = LE_SHORT(sizeof(VocHeader));
+	vh.version = LE_SHORT(VOC_ACTUAL_VERSION);
+	vh.coded_ver = LE_SHORT(0x1233 - VOC_ACTUAL_VERSION);
 
 	if (write(fd, &vh, sizeof(VocHeader)) != sizeof(VocHeader)) {
 		error("write error");
@@ -1581,7 +1584,7 @@ static void begin_voc(int fd, size_t cnt)
 			error("write error");
 			exit(EXIT_FAILURE);
 		}
-		eb.tc = (u_short) (65536 - 256000000L / (hwparams.rate << 1));
+		eb.tc = LE_SHORT(65536 - 256000000L / (hwparams.rate << 1));
 		eb.pack = 0;
 		eb.mode = 1;
 		if (write(fd, &eb, sizeof(VocExtBlock)) != sizeof(VocExtBlock)) {
@@ -1743,15 +1746,16 @@ static void end_wave(int fd)
 {				/* only close output */
 	WaveChunkHeader cd;
 	off64_t length_seek;
+	off64_t filelen;
 	u_int rifflen;
 	
 	length_seek = sizeof(WaveHeader) +
 		      sizeof(WaveChunkHeader) +
 		      sizeof(WaveFmtBody);
 	cd.type = WAV_DATA;
-	cd.length = fdcount > 0x7fffffff ? 0x7fffffff : LE_INT(fdcount);
-	rifflen = fdcount + 2*sizeof(WaveChunkHeader) + sizeof(WaveFmtBody) + 4;
-	rifflen = rifflen > 0x7fffffff ? 0x7fffffff : LE_INT(rifflen);
+	cd.length = fdcount > 0x7fffffff ? LE_INT(0x7fffffff) : LE_INT(fdcount);
+	filelen = fdcount + 2*sizeof(WaveChunkHeader) + sizeof(WaveFmtBody) + 4;
+	rifflen = filelen > 0x7fffffff ? LE_INT(0x7fffffff) : LE_INT(filelen);
 	if (lseek64(fd, 4, SEEK_SET) == 4)
 		write(fd, &rifflen, 4);
 	if (lseek64(fd, length_seek, SEEK_SET) == length_seek)
@@ -1856,9 +1860,7 @@ void capture_go(int fd, off64_t count, int rtype, char *name)
 
 	do {
 		for (cur = count; cur > 0; cur -= r) {
-			c = cur;
-			if (c > chunk_bytes)
-				c = chunk_bytes;
+			c = (cur <= chunk_bytes) ? cur : chunk_bytes;
 			c = c * 8 / bits_per_frame;
 			if ((size_t)(r = pcm_read(audiobuf, c)) != c)
 				break;
