@@ -1,0 +1,4 @@
+1999-07-19  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* probe.c: fixed multi mixerdevices.
+
