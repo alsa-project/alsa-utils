@@ -937,7 +937,9 @@ static void xrun(void)
 		gettimeofday(&now, 0);
 		snd_pcm_status_get_trigger_tstamp(status, &tstamp);
 		timersub(&now, &tstamp, &diff);
-		fprintf(stderr, "xrun!!! (at least %.3f ms long)\n", diff.tv_sec * 1000 + diff.tv_usec / 1000.0);
+		fprintf(stderr, "%s!!! (at least %.3f ms long)\n",
+			stream == SND_PCM_STREAM_PLAYBACK ? "underrun" : "overrun",
+			diff.tv_sec * 1000 + diff.tv_usec / 1000.0);
 		if (verbose) {
 			fprintf(stderr, "Status:\n");
 			snd_pcm_status_dump(status, log);
@@ -947,6 +949,23 @@ static void xrun(void)
 			exit(EXIT_FAILURE);
 		}
 		return;		/* ok, data should be accepted again */
+	} if (snd_pcm_status_get_state(status) == SND_PCM_STATE_DRAINING) {
+		if (verbose) {
+			fprintf(stderr, "Status(DRAINING):\n");
+			snd_pcm_status_dump(status, log);
+		}
+		if (stream == SND_PCM_STREAM_CAPTURE) {
+			fprintf(stderr, "capture stream format change? attempting recover...\n");
+			if ((res = snd_pcm_prepare(handle))<0) {
+				error("xrun(DRAINING): prepare error: %s", snd_strerror(res));
+				exit(EXIT_FAILURE);
+			}
+			return;
+		}
+	}
+	if (verbose) {
+		fprintf(stderr, "Status(R/W):\n");
+		snd_pcm_status_dump(status, log);
 	}
 	error("read/write error, state = %s", snd_pcm_state_name(snd_pcm_status_get_state(status)));
 	exit(EXIT_FAILURE);
