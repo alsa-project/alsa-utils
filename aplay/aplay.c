@@ -702,7 +702,7 @@ static int test_au(int fd, void *buffer)
 		hwparams.format = SND_PCM_FORMAT_U8;
 		break;
 	case AU_FMT_LIN16:
-		hwparams.format = SND_PCM_FORMAT_U16_LE;
+		hwparams.format = SND_PCM_FORMAT_S16_BE;
 		break;
 	default:
 		return -1;
