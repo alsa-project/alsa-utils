@@ -36,6 +36,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <alsa/asoundlib.h>
 #include <assert.h>
 #include <sys/poll.h>
@@ -45,6 +46,10 @@
 #include "aconfig.h"
 #include "formats.h"
 #include "version.h"
+
+#ifndef LLONG_MAX
+#define LLONG_MAX    9223372036854775807LL
+#endif
 
 #define DEFAULT_SPEED 		8000
 
@@ -93,7 +98,7 @@ static size_t chunk_bytes;
 static snd_output_t *log;
 
 static int fd = -1;
-static off64_t pbrec_count = (size_t)-1, fdcount;
+static off64_t pbrec_count = LLONG_MAX, fdcount;
 static int vocmajor, vocminor;
 
 /* needed prototypes */
@@ -1513,15 +1518,11 @@ static off64_t calc_count(void)
 {
 	off64_t count;
 
-	if (!timelimit && pbrec_count == (size_t)-1) {
-		count = (off64_t)-1;
+	if (timelimit == 0) {
+		count = pbrec_count;
 	} else {
-		if (timelimit == 0) {
-			count = pbrec_count;
-		} else {
-			count = snd_pcm_format_size(hwparams.format, hwparams.rate * hwparams.channels);
-			count *= (off64_t)timelimit;
-		}
+		count = snd_pcm_format_size(hwparams.format, hwparams.rate * hwparams.channels);
+		count *= (off64_t)timelimit;
 	}
 	return count < pbrec_count ? count : pbrec_count;
 }
@@ -1766,11 +1767,11 @@ static void header(int rtype, char *name)
 
 /* playing raw data */
 
-void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
+void playback_go(int fd, size_t loaded, off64_t count, int rtype, char *name)
 {
 	int l, r;
-	size_t written = 0;
-	size_t c;
+	off64_t written = 0;
+	off64_t c;
 
 	header(rtype, name);
 	set_params();
@@ -1817,9 +1818,10 @@ void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
 
 /* capturing raw data, this proc handels WAVE files and .VOCs (as one block) */
 
-void capture_go(int fd, size_t count, int rtype, char *name)
+void capture_go(int fd, off64_t count, int rtype, char *name)
 {
-	size_t c, cur;
+	size_t c;
+	off64_t cur;
 	ssize_t r, err;
 
 	header(rtype, name);
@@ -1854,7 +1856,7 @@ static void playback(char *name)
 	size_t dta;
 	ssize_t dtawave;
 
-	pbrec_count = (size_t)-1;
+	pbrec_count = LLONG_MAX;
 	fdcount = 0;
 	if (!name || !strcmp(name, "-")) {
 		fd = fileno(stdin);
@@ -1905,7 +1907,7 @@ static void playback(char *name)
 
 static void capture(char *name)
 {
-	pbrec_count = (size_t)-1;
+	pbrec_count = LLONG_MAX;
 	if (!name || !strcmp(name, "-")) {
 		fd = fileno(stdout);
 		name = "stdout";
@@ -1929,7 +1931,7 @@ static void capture(char *name)
 	fmt_rec_table[file_type].end(fd);
 }
 
-void playbackv_go(int* fds, unsigned int channels, size_t loaded, size_t count, int rtype, char **names)
+void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t count, int rtype, char **names)
 {
 	int r;
 	size_t vsize;
@@ -1979,7 +1981,7 @@ void playbackv_go(int* fds, unsigned int channels, size_t loaded, size_t count, 
 	snd_pcm_drain(handle);
 }
 
-void capturev_go(int* fds, unsigned int channels, size_t count, int rtype, char **names)
+void capturev_go(int* fds, unsigned int channels, off64_t count, int rtype, char **names)
 {
 	size_t c;
 	ssize_t r;
