@@ -1,3 +1,5 @@
+#if 0
+
 /* AlsaMixer - Commandline mixer for the ALSA project
  * Copyright (C) 1998, 1999 Tim Janik <timj@gtk.org> and Jaroslav Kysela <perex@suse.cz>
  *
@@ -1806,3 +1808,12 @@ main (int    argc,
   
   mixer_abort (ERR_NONE, "", 0);
 };
+#else
+#include <stdlib.h>
+#include <stdio.h>
+int main(void)
+{
+	printf("Please wait for the new code...\n");
+	return EXIT_FAILURE;
+}
+#endif
