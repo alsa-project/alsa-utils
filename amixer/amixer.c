@@ -179,13 +179,14 @@ static int convert_db_range(int val, int omin, int omax, int nmin, int nmax)
 
 static int convert_prange(int val, int min, int max)
 {
-	 int range = max - min;
-	 int tmp;
-	 
-	 if (range == 0)
+	int range = max - min;
+	int tmp;
+
+	if (range == 0)
 		return 0;
-	 tmp = rint((double)val/(double)range * 100);
-	 return tmp;
+	val -= min;
+	tmp = rint((double)val/(double)range * 100);
+	return tmp;
 }
 
 /* Function to convert from percentage to volume. val = percentage */
@@ -196,9 +197,10 @@ static int convert_prange1(int val, int min, int max)
 	int tmp;
 
 	if (range == 0)
-
 		return 0;
+
 	tmp = rint((double)range * ((double)val*.01));
+	tmp += min;
 #if 0
 	printf("%i %i %i %i", val, max, min, tmp);
 #endif
