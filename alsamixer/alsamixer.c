@@ -594,7 +594,7 @@ mixer_write_cbar (int elem_index)
 static void
 mixer_update_cbar (int elem_index)
 {
-  char string[64], string1[64];
+  char string[128], string1[64];
   int err, dc;
   snd_mixer_simple_control_t scontrol;
   int vleft, vright;
@@ -632,6 +632,24 @@ mixer_update_cbar (int elem_index)
     vright = vleft;
   }
   
+  /* update the focused full bar name
+   */
+  if (elem_index == mixer_focus_elem) {
+    mixer_dc (DC_PROMPT);
+    mvaddstr (3, 2, "Item: ");
+    mixer_dc (DC_TEXT);
+    string1[8] = 0;
+    for (i = 0; i < 63; i++)
+      string1[i] = ' ';
+    string1[63] = '\0';
+    strcpy(string, scontrol.sid.name);
+    if (scontrol.sid.index > 0)
+      sprintf(string + strlen(string), " %i", scontrol.sid.index);
+    string[63] = '\0';
+    strncpy(string1, string, strlen(string));
+    addstr(string1);
+  }
+
   /* get channel bar position
    */
   if (!mixer_cbar_get_pos (elem_index, &x, &y))
