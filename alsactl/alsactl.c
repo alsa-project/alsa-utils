@@ -250,7 +250,7 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 	}
 	switch (info.id.iface) {
 	case SND_CONTROL_IFACE_CARD:
-		s = "global";
+		s = "card";
 		break;
 	case SND_CONTROL_IFACE_HWDEP:
 		s = "hwdep";
