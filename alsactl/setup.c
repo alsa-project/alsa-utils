@@ -325,7 +325,8 @@ static int determine_switches(void *handle, struct ctl_switch **csw, int interfa
 
 static int soundcard_setup_collect_switches1(int cardno)
 {
-	void *handle, *mhandle;
+	snd_ctl_t *handle;
+	snd_mixer_t *mhandle;
 	struct soundcard *card, *first, *prev;
 	int err, device;
 	struct mixer *mixer, *mixerprev;
@@ -495,7 +496,8 @@ int soundcard_setup_collect_switches(int cardno)
 
 static int soundcard_setup_collect_data1(int cardno)
 {
-	void *handle, *mhandle;
+	snd_ctl_t *handle; 
+	snd_mixer_t *mhandle;
 	struct soundcard *card;
 	int err, idx;
 	struct mixer *mixer;

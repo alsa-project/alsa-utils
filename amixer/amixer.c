@@ -101,7 +101,7 @@ static void help(void)
 int info(void)
 {
 	int err;
-	void *handle;
+	snd_mixer_t *handle;
 	snd_mixer_info_t info;
 	
 	if ((err = snd_mixer_open(&handle, card, device)) < 0) {
@@ -645,7 +645,7 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 int elements(void)
 {
 	int err, idx;
-	void *handle;
+	snd_mixer_t *handle;
 	snd_mixer_elements_t elements;
 	snd_mixer_eid_t *element;
 	
@@ -683,7 +683,7 @@ int elements(void)
 int elements_contents(void)
 {
 	int err, idx;
-	void *handle;
+	snd_mixer_t *handle;
 	snd_mixer_elements_t elements;
 	snd_mixer_eid_t *element;
 	
@@ -761,7 +761,7 @@ int show_group(void *handle, snd_mixer_gid_t *gid, const char *space)
 int groups(void)
 {
 	int err, idx;
-	void *handle;
+	snd_mixer_t *handle;
 	snd_mixer_groups_t groups;
 	snd_mixer_gid_t *group;
 	
@@ -1091,7 +1091,7 @@ int eset_mux1(int argc, char *argv[], void *handle, snd_mixer_eid_t *eid)
 int eset(int argc, char *argv[])
 {
 	int err;
-	void *handle;
+	snd_mixer_t *handle;
 	snd_mixer_eid_t eid;
 
 	if (argc < 1) {
@@ -1147,7 +1147,7 @@ int eset(int argc, char *argv[])
 int eget(int argc, char *argv[])
 {
 	int err;
-	void *handle;
+	snd_mixer_t *handle;
 	snd_mixer_eid_t eid;
 
 	if (argc < 1) {

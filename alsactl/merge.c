@@ -364,7 +364,7 @@ int soundcard_setup_merge_data(int cardno)
 	return 0;
 }
 
-static int soundcard_open_ctl(void **ctlhandle, struct soundcard *soundcard)
+static int soundcard_open_ctl(snd_ctl_t **ctlhandle, struct soundcard *soundcard)
 {
 	int err;
 
@@ -377,7 +377,7 @@ static int soundcard_open_ctl(void **ctlhandle, struct soundcard *soundcard)
 	return 0;
 }
 
-static int soundcard_open_mix(void **mixhandle, struct soundcard *soundcard, struct mixer *mixer)
+static int soundcard_open_mix(snd_mixer_t **mixhandle, struct soundcard *soundcard, struct mixer *mixer)
 {
 	int err;
 
@@ -393,7 +393,7 @@ static int soundcard_open_mix(void **mixhandle, struct soundcard *soundcard, str
 int soundcard_setup_process_switches(int cardno)
 {
 	int err;
-	void *ctlhandle = NULL;
+	snd_ctl_t *ctlhandle = NULL;
 	struct soundcard *soundcard;
 	struct ctl_switch *ctlsw;
 	struct mixer *mixer;
@@ -461,8 +461,8 @@ int soundcard_setup_process_switches(int cardno)
 int soundcard_setup_process_data(int cardno)
 {
 	int err;
-	void *ctlhandle = NULL;
-	void *mixhandle = NULL;
+	snd_ctl_t *ctlhandle = NULL;
+	snd_mixer_t *mixhandle = NULL;
 	struct soundcard *soundcard;
 	struct mixer *mixer;
 	struct mixer_element *element;

@@ -51,7 +51,7 @@
 /* global data */
 
 char *command;
-void *pcm_handle;
+snd_pcm_t *pcm_handle;
 struct snd_pcm_playback_info pinfo;
 struct snd_pcm_record_info rinfo;
 snd_pcm_format_t rformat, format;
@@ -160,7 +160,7 @@ static void usage(char *command)
 
 static void device_list(void)
 {
-	void *handle;
+	snd_ctl_t *handle;
 	int card, err, dev, idx;
 	unsigned int mask;
 	struct snd_ctl_hw_info info;
