@@ -169,18 +169,42 @@ static void init_buf(void)
 }
 
 /*
- * parse client:port argument
+ * parse command line to client:port
+ * NB: the given string will be broken.
  */
-static int parse_addr(snd_seq_addr_t *addr, char *arg)
+static int parse_address(snd_seq_t *seq, snd_seq_addr_t *addr, char *arg)
 {
 	char *p;
+	int client, port;
 
-	if (! isdigit(*arg))
-		return -1;
 	if ((p = strpbrk(arg, ":.")) == NULL)
 		return -1;
-	addr->client = atoi(arg);
-	addr->port = atoi(p + 1);
+	if ((port = atoi(p + 1)) < 0)
+		return -1;
+	addr->port = port;
+	if (isdigit(*arg)) {
+		client = atoi(arg);
+		if (client < 0)
+			return -1;
+		addr->client = client;
+	} else {
+		/* convert from the name */
+		snd_seq_client_info_t cinfo;
+		int len;
+
+		*p = 0;
+		len = strlen(arg);
+		if (len <= 0)
+			return -1;
+		cinfo.client = -1;
+		while (snd_seq_query_next_client(seq, &cinfo) >= 0) {
+			if (! strncmp(cinfo.name, arg, len)) {
+				addr->client = cinfo.client;
+				return 0;
+			}
+		}
+		return -1; /* not found */
+	}
 	return 0;
 }
 
@@ -240,7 +264,7 @@ static void init_seq(char *source, char *dest)
 	/* explicit subscriptions */
 	if (source) {
 		/* read subscription */
-		if (parse_addr(&addr, source) < 0) {
+		if (parse_address(handle, &addr, source) < 0) {
 			fprintf(stderr, "invalid source address %s\n", source);
 			exit(1);
 		}
@@ -251,7 +275,7 @@ static void init_seq(char *source, char *dest)
 	}
 	if (dest) {
 		/* write subscription */
-		if (parse_addr(&addr, dest) < 0) {
+		if (parse_address(handle, &addr, dest) < 0) {
 			fprintf(stderr, "invalid destination address %s\n", dest);
 			exit(1);
 		}

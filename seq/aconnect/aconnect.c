@@ -50,17 +50,41 @@ static void usage(void)
 
 /*
  * parse command line to client:port
+ * NB: the given string will be broken.
  */
-static int parse_address(snd_seq_addr_t *addr, char *arg)
+static int parse_address(snd_seq_t *seq, snd_seq_addr_t *addr, char *arg)
 {
 	char *p;
+	int client, port;
 
-	if (! isdigit(*arg))
-		return -1;
 	if ((p = strpbrk(arg, ":.")) == NULL)
 		return -1;
-	addr->client = atoi(arg);
-	addr->port = atoi(p + 1);
+	if ((port = atoi(p + 1)) < 0)
+		return -1;
+	addr->port = port;
+	if (isdigit(*arg)) {
+		client = atoi(arg);
+		if (client < 0)
+			return -1;
+		addr->client = client;
+	} else {
+		/* convert from the name */
+		snd_seq_client_info_t cinfo;
+		int len;
+
+		*p = 0;
+		len = strlen(arg);
+		if (len <= 0)
+			return -1;
+		cinfo.client = -1;
+		while (snd_seq_query_next_client(seq, &cinfo) >= 0) {
+			if (! strncmp(cinfo.name, arg, len)) {
+				addr->client = cinfo.client;
+				return 0;
+			}
+		}
+		return -1; /* not found */
+	}
 	return 0;
 }
 
@@ -354,11 +378,11 @@ int main(int argc, char **argv)
 
 	/* set subscription */
 	memset(&subs, 0, sizeof(subs));
-	if (parse_address(&subs.sender, argv[optind]) < 0) {
+	if (parse_address(seq, &subs.sender, argv[optind]) < 0) {
 		fprintf(stderr, "invalid sender address %s\n", argv[optind]);
 		return 1;
 	}
-	if (parse_address(&subs.dest, argv[optind + 1]) < 0) {
+	if (parse_address(seq, &subs.dest, argv[optind + 1]) < 0) {
 		fprintf(stderr, "invalid destination address %s\n", argv[optind + 1]);
 		return 1;
 	}
