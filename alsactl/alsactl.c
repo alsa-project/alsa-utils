@@ -917,19 +917,24 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	index1 = snd_ctl_elem_info_get_index(info);
 	count = snd_ctl_elem_info_get_count(info);
 	type = snd_ctl_elem_info_get_type(info);
-	if (numid != numid1 && ! force_restore)
+	if (err |= numid != numid1 && ! force_restore)
 		error("warning: numid mismatch (%d/%d) for control #%d", 
 		      numid, numid1, numid);
-	if (iface != iface1)
+	if (err |= iface != iface1)
 		error("warning: iface mismatch (%d/%d) for control #%d", iface, iface1, numid);
-	if (device != device1)
+	if (err |= device != device1)
 		error("warning: device mismatch (%ld/%ld) for control #%d", device, device1, numid);
-	if (subdevice != subdevice1)
+	if (err |= subdevice != subdevice1)
 		error("warning: subdevice mismatch (%ld/%ld) for control #%d", subdevice, subdevice1, numid);
-	if (strcmp(name, name1))
+	if (err |= strcmp(name, name1))
 		error("warning: name mismatch (%s/%s) for control #%d", name, name1, numid);
-	if (index != index1)
+	if (err |= index != index1)
 		error("warning: index mismatch (%ld/%ld) for control #%d", index, index1, numid);
+	if (err < 0) {
+		error("failed to obtain info for control #%d (%s)", numid, snd_strerror(err));
+		return -ENOENT;
+	}
+
 #if 0
 	if (comment) {
 		check_comment_type(comment, type);
