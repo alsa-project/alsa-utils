@@ -1802,6 +1802,7 @@ mixer_iteration (void)
       break;
     case 'h':
     case 'H':
+    case '?':
     case KEY_F (1):
       mixer_view = VIEW_HELP;
       key = 0;
