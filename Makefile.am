@@ -10,5 +10,5 @@ pack: clean-recursive
 	rm -rf `find . -name ".deps"`
 	chown -R root.root ../alsa-utils
 	mv ../alsa-utils ../alsa-utils-$(VERSION)
-	tar --exclude=CVS -cvz -C .. -f ../alsa-utils-$(VERSION).tar.gz alsa-utils-$(VERSION)
+	tar --exclude=CVS -cvI -C .. -f ../alsa-utils-$(VERSION).tar.bz2 alsa-utils-$(VERSION)
 	mv ../alsa-utils-$(VERSION) ../alsa-utils
