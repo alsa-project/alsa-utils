@@ -7,4 +7,4 @@ rpm: dist
 
 dist-hook:
 	-chmod -R a+r $(distdir)
-	$(AMTAR) cvjf $(distdir).tar.bz2 $(distdir)
+	$(TAR) cvjf $(distdir).tar.bz2 $(distdir)
