@@ -114,7 +114,9 @@ struct {
 } formats[] = {
 	{ "s8", SND_PCM_SFMT_S8 },
 	{ "u8", SND_PCM_SFMT_U8 },
+	{ "8", SND_PCM_SFMT_U8 },
 	{ "s16l", SND_PCM_SFMT_S16_LE },
+	{ "16", SND_PCM_SFMT_S16_LE },
 	{ "s16b", SND_PCM_SFMT_S16_BE },
 	{ "u16l", SND_PCM_SFMT_U16_LE },
 	{ "u16b", SND_PCM_SFMT_U16_BE },
@@ -173,16 +175,16 @@ static void usage(char *command)
 		"  -S            stereo\n"
 		"  -s <Hz>       speed (Hz)\n"
 		"  -f <format>   data format\n"
-		"  -m            set CD-ROM quality (44100Hz,stereo,16-bit linear, little endian)\n"
-		"  -M            set DAT quality (48000Hz,stereo,16-bit linear, little endian)\n"
+		"  -m            set CD-ROM quality (44100Hz,stereo,16-bit linear,little endian)\n"
+		"  -M            set DAT quality (48000Hz,stereo,16-bit linear,little endian)\n"
 		"  -t <secs>     timelimit (seconds)\n"
-		"  -e		 stream mode\n"
+		"  -e            stream mode\n"
 		"  -E            mmap mode\n"
 		,command, snd_cards()-1);
 	fprintf(stderr, "\nRecognized data formats are:");
 	for (i = 0; i < NUMFORMATS; ++i)
 		fprintf(stderr, " %s", formats[i].name);
-	fprintf(stderr, "\nSome of this may not be available on selected hardware\n");
+	fprintf(stderr, " (some of these may not be available on selected hardware)\n");
 }
 
 static void device_list(void)
