@@ -576,12 +576,12 @@ static void soundcard_setup_write_switch( FILE *out, int interface, const unsign
       if ( pdata -> data16[4] & 0x0020 ) fprintf( out, " user" );
       if ( pdata -> data16[4] & 0x0010 ) fprintf( out, " valid" );
       if ( pdata -> data16[5] & 0x0002 ) fprintf( out, " data" );
-      if ( !(pdata -> data16[5] & 0x0004) ) fprintf( out, " protected" );
+      if ( !(pdata -> data16[5] & 0x0004) ) fprintf( out, " protect" );
       switch ( pdata -> data16[5] & 0x0018 ) {
         case 0x0008: fprintf( out, " pre2" ); break;
         default: break;
       }
-      if ( pdata -> data16[5] & 0x0020 ) fprintf( out, " fslock" );
+      if ( pdata -> data16[5] & 0x0020 ) fprintf( out, " fsunlock" );
       fprintf( out, " type( 0x%x )", (pdata -> data16[5] >> 6) & 0x7f );
       if ( pdata -> data16[5] & 0x2000 ) fprintf( out, " gstatus" );
       fprintf( out, " )" );
