@@ -829,7 +829,7 @@ static int sset(int argc, char *argv[], int roflag)
 	}
 	memset(&control, 0, sizeof(control));
 	control.sid = sid;
-	if (snd_mixer_simple_control_read(handle, &control)<0) {
+	if ((err = snd_mixer_simple_control_read(handle, &control))<0) {
 		error("Unable to read simple control '%s',%i: %s\n", simple_name(sid.name, name), sid.index, snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
@@ -880,7 +880,7 @@ static int sset(int argc, char *argv[], int roflag)
 			return err;
 		}
 	} 
-	if (snd_mixer_simple_control_write(handle, &control)<0) {
+	if ((err = snd_mixer_simple_control_write(handle, &control))<0) {
 		error("Unable to write control '%s',%i: %s\n", simple_name(sid.name, name), sid.index, snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
@@ -966,13 +966,82 @@ static int events(int argc, char *argv[])
 		ctl_poll.fd = snd_ctl_file_descriptor(handle);
 		ctl_poll.events = POLLIN;
 		ctl_poll.revents = 0;
-		if (poll(&ctl_poll, 1, -1)) {
+		if ((res = poll(&ctl_poll, 1, -1)) > 0) {
+			printf("Poll ok: %i\n", res);
 			res = snd_ctl_hevent(handle);
 			if (res > 0)
 				printf("%i events processed\n", res);
 		}
 	}
 	snd_ctl_close(handle);
+}
+
+static void sevents_rebuild(snd_mixer_t *handle, void *private_data)
+{
+	printf("event rebuild\n");
+}
+
+static void sevents_value(snd_mixer_t *handle, void *private_data, snd_mixer_sid_t *sid)
+{
+	char name[simple_name_size];
+
+	printf("event value: '%s',%i\n", simple_name(sid->name, name), sid->index);
+}
+
+static void sevents_change(snd_mixer_t *handle, void *private_data, snd_mixer_sid_t *sid)
+{
+	char name[simple_name_size];
+
+	printf("event change: '%s',%i\n", simple_name(sid->name, name), sid->index);
+}
+
+static void sevents_add(snd_mixer_t *handle, void *private_data, snd_mixer_sid_t *sid)
+{
+	char name[simple_name_size];
+
+	printf("event add: '%s',%i\n", simple_name(sid->name, name), sid->index);
+}
+
+static void sevents_remove(snd_mixer_t *handle, void *private_data, snd_mixer_sid_t *sid)
+{
+	char name[simple_name_size];
+
+	printf("event remove: '%s',%i\n", simple_name(sid->name, name), sid->index);
+}
+
+static int sevents(int argc, char *argv[])
+{
+	snd_mixer_t *handle;
+	static snd_mixer_simple_callbacks_t callbacks = {
+		private_data: NULL,
+		rebuild: sevents_rebuild,
+		value: sevents_value,
+		change: sevents_change,
+		add: sevents_add,
+		remove: sevents_remove,
+		reserved: { NULL, }
+	};
+	int err;
+
+	if ((err = snd_mixer_open(&handle, card)) < 0) {
+		error("Mixer %i open error: %s\n", card, snd_strerror(err));
+		return err;
+	}
+	printf("Ready to listen...\n");
+	while (1) {
+		struct pollfd mixer_poll;
+		int res;
+		mixer_poll.fd = snd_mixer_file_descriptor(handle);
+		mixer_poll.events = POLLIN;
+		mixer_poll.revents = 0;
+		if ((res = poll(&mixer_poll, 1, -1)) > 0) {
+			printf("Poll ok: %i\n", res);
+			res = snd_mixer_simple_read(handle, &callbacks);
+			if (res > 0)
+				printf("%i events processed\n", res);
+		}
+	}
+	snd_mixer_close(handle);
 }
 
 int main(int argc, char *argv[])
@@ -1054,6 +1123,8 @@ int main(int argc, char *argv[])
 		return cset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 1) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "events")) {
 		return events(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL);
+	} else if (!strcmp(argv[optind], "sevents")) {
+		return sevents(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL);
 	} else {
 		fprintf(stderr, "amixer: Unknown command '%s'...\n", argv[optind]);
 	}
