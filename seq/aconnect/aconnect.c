@@ -255,7 +255,6 @@ static struct option long_option[] = {
 	{"disconnect", 0, NULL, 'd'},
 	{"input", 0, NULL, 'i'},
 	{"output", 0, NULL, 'o'},
-	{"group", 1, NULL, 'g'},
 	{"real", 1, NULL, 'r'},
 	{"tick", 1, NULL, 't'},
 	{"exclusive", 0, NULL, 'e'},
@@ -276,7 +275,7 @@ int main(int argc, char **argv)
 	snd_seq_port_subscribe_t *subs;
 	snd_seq_addr_t sender, dest;
 
-	while ((c = getopt_long(argc, argv, "diog:r:t:elx", long_option, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "dior:t:elx", long_option, NULL)) != -1) {
 		switch (c) {
 		case 'd':
 			command = UNSUBSCRIBE;
@@ -351,15 +350,17 @@ int main(int argc, char **argv)
 	if (snd_seq_set_client_name(seq, "ALSA Connector") < 0) {
 		snd_seq_close(seq);
 		fprintf(stderr, "can't set client info\n");
-		return 0;
+		return 1;
 	}
 
 	/* set subscription */
 	if (snd_seq_parse_address(seq, &sender, argv[optind]) < 0) {
+		snd_seq_close(seq);
 		fprintf(stderr, "invalid sender address %s\n", argv[optind]);
 		return 1;
 	}
 	if (snd_seq_parse_address(seq, &dest, argv[optind + 1]) < 0) {
+		snd_seq_close(seq);
 		fprintf(stderr, "invalid destination address %s\n", argv[optind + 1]);
 		return 1;
 	}

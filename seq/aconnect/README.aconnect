@@ -19,26 +19,22 @@ To see which port is available as input port, run the following
 command:
 
 	% aconnect -i
-	client 0: 'System' [group=system] [type=kernel]
-	    0 'Timer           ' [group=system]
-	    1 'Announce        ' [group=system]
-	client 64: '0: MIDI Synth' [group=] [type=kernel]
-	    0 'card 0: synth-midi: 0' [group=device]
+	client 0: 'System' [type=kernel]
+	    0 'Timer           '
+	    1 'Announce        '
+	client 64: '0: MIDI Synth' [type=kernel]
+	    0 'card 0: synth-midi: 0'
 
 Similary, to see the output ports, use -o flag.
 
 	% aconnect -o
-	client 64: '0: MIDI Synth' [group=] [type=kernel]
-	    0 'card 0: synth-midi: 0' [group=device]
-	client 65: 'AWE Wave Table Synth : 0' [group=device] [type=kernel]
-	    0 'Emu8000 port 0  ' [group=device]
-	    1 'Emu8000 port 1  ' [group=device]
-	    2 'Emu8000 port 2  ' [group=device]
-	    3 'Emu8000 port 3  ' [group=device]
-
-Some ports may have permission for its own group.
-In such a case, change the group of aconnect to the appropriate one by
-using -g option.
+	client 64: '0: MIDI Synth' [type=kernel]
+	    0 'card 0: synth-midi: 0'
+	client 65: 'AWE Wave Table Synth : 0' [type=kernel]
+	    0 'Emu8000 port 0  '
+	    1 'Emu8000 port 1  '
+	    2 'Emu8000 port 2  '
+	    3 'Emu8000 port 3  '
 
 The option -l together with -i or -o shows subscribers for each port.
 
