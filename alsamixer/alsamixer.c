@@ -200,6 +200,7 @@ enum {
   MIXER_ELEM_FRONT, MIXER_ELEM_REAR,
   MIXER_ELEM_CENTER, MIXER_ELEM_WOOFER,
   MIXER_ELEM_CAPTURE,
+  MIXER_ELEM_ENUM,
   MIXER_ELEM_END
 };
 
@@ -207,6 +208,7 @@ enum {
 #define MIXER_ELEM_CAPTURE_SWITCH	0x100 /* bit */
 #define MIXER_ELEM_MUTE_SWITCH		0x200 /* bit */
 #define MIXER_ELEM_CAPTURE_SUFFIX	0x400
+#define MIXER_ELEM_HAS_VOLUME		0x800
 
 /* left and right channels for each type */
 static snd_mixer_selem_channel_id_t mixer_elem_chn[][2] = {
@@ -484,7 +486,7 @@ mixer_calc_volume(snd_mixer_elem_t *elem,
   if (type != MIXER_ELEM_CAPTURE)
     snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
   else
-      snd_mixer_selem_get_capture_volume_range(elem, &min, &max);
+    snd_mixer_selem_get_capture_volume_range(elem, &min, &max);
   vol1 = (vol < 0) ? -vol : vol;
   if (vol1 > 0) {
     if (vol1 > 100)
@@ -502,6 +504,27 @@ mixer_calc_volume(snd_mixer_elem_t *elem,
     snd_mixer_selem_get_capture_volume(elem, chn, &v);
   vol1 += v;
   return CLAMP(vol1, min, max);
+}
+
+/* update enum list */
+static void update_enum_list(snd_mixer_elem_t *elem, int chn, int delta)
+{
+  int eidx;
+  if (snd_mixer_selem_get_enum_item(elem, chn, &eidx) < 0)
+    return;
+  if (delta < 0) {
+    eidx--;
+    if (eidx < 0)
+      return;
+  } else {
+    int items = snd_mixer_selem_get_enum_items(elem);
+    if (items < 0)
+      return;
+    eidx++;
+    if (eidx >= items)
+      return;
+  }
+  snd_mixer_selem_set_enum_item(elem, chn, eidx);
 }
 
 /* set new channel values
@@ -541,8 +564,7 @@ mixer_write_cbar (int elem_index)
   if ((mixer_volume_delta[MIXER_CHN_LEFT] ||
        mixer_volume_delta[MIXER_CHN_RIGHT] ||
        mixer_balance_volumes) &&
-      ((type != MIXER_ELEM_CAPTURE && snd_mixer_selem_has_playback_volume(elem)) ||
-       (type == MIXER_ELEM_CAPTURE && snd_mixer_selem_has_capture_volume(elem)))) {
+      (mixer_type[elem_index] & MIXER_ELEM_HAS_VOLUME)) {
     int mono;
     int joined;
     mono = (chn_right == SND_MIXER_SCHN_UNKNOWN);
@@ -597,8 +619,6 @@ mixer_write_cbar (int elem_index)
       }
     }
   }
-  mixer_volume_delta[MIXER_CHN_LEFT] = mixer_volume_delta[MIXER_CHN_RIGHT] = 0;
-  mixer_balance_volumes = 0;
 
   /* mute
    */
@@ -645,8 +665,45 @@ mixer_write_cbar (int elem_index)
     }
   }
   mixer_toggle_capture = 0;
+
+  /* enum list
+   */
+  if (type == MIXER_ELEM_ENUM) {
+    if (mixer_volume_delta[MIXER_CHN_LEFT])
+      update_enum_list(elem, MIXER_CHN_LEFT, mixer_volume_delta[MIXER_CHN_LEFT]);
+    if (mixer_volume_delta[MIXER_CHN_RIGHT])
+      update_enum_list(elem, MIXER_CHN_RIGHT, mixer_volume_delta[MIXER_CHN_RIGHT]);
+  }
+
+  mixer_volume_delta[MIXER_CHN_LEFT] = mixer_volume_delta[MIXER_CHN_RIGHT] = 0;
+  mixer_balance_volumes = 0;
 }
 
+
+static void display_enum_list(snd_mixer_elem_t *elem, int y, int x)
+{
+  int i, cury, ch, err;
+
+  /* clear */
+  mixer_dc(DC_TEXT);
+  for (i = mixer_cbar_height + 3, cury = y; i > 0; i--, cury--)
+    mvaddstr(cury, x, "       ");
+  
+  cury = y - 4;
+  for (ch = 0; ch < 2; ch++) {
+    int eidx, ofs;
+    char tmp[9];
+    err = snd_mixer_selem_get_enum_item(elem, ch, &eidx);
+    if (err < 0)
+      break;
+    if (snd_mixer_selem_get_enum_item_name(elem, eidx, sizeof(tmp) - 1, tmp) < 0)
+      break;
+    tmp[8] = 0;
+    ofs = (8 - strlen(tmp)) / 2;
+    mvaddstr(cury, x + ofs, tmp);
+    cury += 2;
+  }
+}
 
 static void
 mixer_update_cbar (int elem_index)
@@ -761,17 +818,24 @@ mixer_update_cbar (int elem_index)
    */
   mixer_dc (DC_BACK);
   mvaddstr (y, x, "         ");
-  mixer_dc (DC_TEXT);
-  sprintf (string, "%ld", vleft);
-  mvaddstr (y, x + 3 - strlen (string), string);
-  mixer_dc (DC_CBAR_FRAME);
-  mvaddch (y, x + 3, '<');
-  mvaddch (y, x + 4, '>');
-  mixer_dc (DC_TEXT);
-  sprintf (string, "%ld", vright);
-  mvaddstr (y, x + 5, string);
+  if (mixer_type[elem_index] & MIXER_ELEM_HAS_VOLUME) {
+    mixer_dc (DC_TEXT);
+    sprintf (string, "%ld", vleft);
+    mvaddstr (y, x + 3 - strlen (string), string);
+    mixer_dc (DC_CBAR_FRAME);
+    mvaddch (y, x + 3, '<');
+    mvaddch (y, x + 4, '>');
+    mixer_dc (DC_TEXT);
+    sprintf (string, "%ld", vright);
+    mvaddstr (y, x + 5, string);
+  }
   y--;
   
+  if (type == MIXER_ELEM_ENUM) {
+    display_enum_list(elem, y, x);
+    return;
+  } 
+
   /* left/right bar
    */
   mixer_dc (DC_CBAR_FRAME);
@@ -1444,11 +1508,17 @@ __again:
       if (ok) {
 	sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * idx);
 	mixer_grpidx[elem_index] = idx;
-	mixer_type[elem_index] = i;
-	if (i == 0 && snd_mixer_selem_has_playback_switch(elem))
-	  mixer_type[elem_index] |= MIXER_ELEM_MUTE_SWITCH;
-	if (i == 0 && snd_mixer_selem_has_capture_switch(elem))
-	  mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SWITCH;
+	if (snd_mixer_selem_is_enumerated(elem)) {
+	  mixer_type[elem_index] = MIXER_ELEM_ENUM;
+	} else {
+	  mixer_type[elem_index] = i;
+	  if (i == 0 && snd_mixer_selem_has_playback_switch(elem))
+	    mixer_type[elem_index] |= MIXER_ELEM_MUTE_SWITCH;
+	  if (snd_mixer_selem_has_playback_volume(elem))
+	    mixer_type[elem_index] |= MIXER_ELEM_HAS_VOLUME;
+	  if (i == 0 && snd_mixer_selem_has_capture_switch(elem))
+	    mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SWITCH;
+	}
 	elem_index++;
 	nelems_added++;
 	if (elem_index >= mixer_n_elems)
@@ -1463,6 +1533,8 @@ __again:
 	mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SWITCH;
       if (nelems_added)
 	mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SUFFIX;
+      if (snd_mixer_selem_has_capture_volume(elem))
+	mixer_type[elem_index] |= MIXER_ELEM_HAS_VOLUME;
       elem_index++;
       if (elem_index >= mixer_n_elems)
 	break;
