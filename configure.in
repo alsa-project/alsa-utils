@@ -41,13 +41,9 @@ AC_PROG_GCC_TRADITIONAL
 
 SAVE_UTIL_VERSION
 
-if test "$GTK_LIBS" != ""; then 
+AM_CONDITIONAL(COND_XAMIXER2, test "x$GTK_LIBS" != "x")
+if test "x$GTK_LIBS" = "x"; then
+  AC_MSG_RESULT(Not building XAmixer2 as Gtk+ was not found.)
+fi
 AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amixer/Makefile aplay/Makefile \
           include/Makefile utils/Makefile utils/alsa-utils.spec xamixer2/Makefile)
-
-else
-	AC_MSG_RESULT(Not building XAmixer2 as Gtk+ was not found.)
-AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amixer/Makefile aplay/Makefile \
-          include/Makefile utils/Makefile utils/alsa-utils.spec)
-fi
-
