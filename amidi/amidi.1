@@ -1,4 +1,4 @@
-.TH AMIDI 1 "18 Jan 2004"
+.TH AMIDI 1 "22 Feb 2004"
 
 .SH NAME
 amidi \- read from and write to ALSA RawMIDI ports
@@ -16,7 +16,12 @@ It can also send any other MIDI commands.
 .B amidi
 handles only files containing raw MIDI commands, without timing
 information.
-Standard MIDI (.mid) files are not supported.
+.B amidi
+does not support Standard MIDI (.mid) files, but
+.B aplaymidi(1)
+and
+.B arecordmidi(1)
+do.
 
 .SH INVOKING
 .B amidi
@@ -68,17 +73,15 @@ uses the default port defined in the configuration file
 .I -s, --send=filename
 Sends the contents of the specified file to the MIDI port.
 The file must contain raw MIDI commands (e.g. a .syx file);
-you can
-.I not
-use a Standard MIDI (.mid) file for this.
+for Standard MIDI (.mid) files, use
+.B aplaymidi(1).
 
 .TP
 .I -r, --receive=filename
 Writes data received from the MIDI port into the specified file.
 The file will contain raw MIDI commands (such as in a .syx file);
-this will
-.I not
-create a Standard MIDI (.mid) file.
+to record a Standard MIDI (.mid) file, use
+.B arecordmidi(1).
 
 .B amidi
 will filter out any Active Sensing bytes (FEh), unless the
@@ -155,6 +158,11 @@ user specific rawmidi definitions
 The
 .I --list-devices
 option pretends that output and input ports are the same.
+
+.SH SEE ALSO
+aplaymidi(1)
+.br
+arecordmidi(1)
 
 .SH AUTHOR
 Clemens Ladisch <clemens@ladisch.de>
