@@ -441,6 +441,16 @@ int main(int argc, char *argv[])
 		fcn_read = snd_pcm_read;
 	}
 
+	if (!quiet_mode) {
+		char *cardname;
+		
+		if ((err = snd_card_get_longname(card, &cardname)) < 0) {
+			fprintf(stderr, "Error: unable to obtain longname: %s\n", snd_strerror(err));
+			return 1;
+		}
+		printf("Using soundcard '%s'\n", cardname);
+		free(cardname);
+	}
 	if ((err = snd_pcm_open(&pcm_handle, card, dev, direction)) < 0) {
 		fprintf(stderr, "Error: audio open error: %s\n", snd_strerror(err));
 		return 1;
