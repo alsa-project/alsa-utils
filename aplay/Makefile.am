@@ -5,7 +5,7 @@ LDADD = -lasound
 #LDFLAGS = -static
 #LDADD += -ldl
 
-bin_PROGRAMS = aplay arecord
+bin_PROGRAMS = aplay
 man_MANS = aplay.1 arecord.1
 noinst_HEADERS = formats.h
 
@@ -20,7 +20,7 @@ arecord.1: aplay.1
 	rm -f arecord.1
 	$(LN_S) $< $@
 
-install-exec-hook:
+install-exec-hook: arecord
 	rm -f $(DESTDIR)$(bindir)/arecord
 	(cd $(DESTDIR)$(bindir) && $(LN_S) aplay arecord)
 
