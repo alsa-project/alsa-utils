@@ -39,6 +39,7 @@ int quiet = 0;
 int debugflag = 0;
 int card;
 int device;
+int group_contents_is_on = 0;
 
 struct mixer_types {
 	int type;
@@ -94,6 +95,7 @@ static void help(void)
 	printf("  elements        show information about all mixer elements\n");
 	printf("  contents        show contents of all mixer elements\n");
 	printf("  groups          show all mixer groups\n");
+	printf("  gcontents	  show contents of all mixer groups\n");
 	printf("  eset E P	  set extended setup for one mixer element\n");
 	printf("  eget E P	  get extended information for one mixer element\n");
 }
@@ -224,6 +226,37 @@ static int get_volume(char **ptr, int min, int max, int min_dB, int max_dB)
 	} else if (**ptr == 'd') {
 		tmp1 *= 100; tmp1 += tmp2 % 100;
 		tmp1 = convert_range(tmp1, min_dB, max_dB, min, max);
+		(*ptr)++;
+	}
+	tmp1 = check_range(tmp1, min, max);
+	if (**ptr == ',')
+		(*ptr)++;
+	return tmp1;
+}
+
+static int get_volume_simple(char **ptr, int min, int max)
+{
+	int tmp, tmp1, tmp2;
+
+	if (**ptr == ':')
+		(*ptr)++;
+	if (**ptr == '\0' || (!isdigit(**ptr) && **ptr != '-'))
+		return min;
+	tmp = atoi(*ptr);
+	if (**ptr == '-')
+		(*ptr)++;
+	while (isdigit(**ptr))
+		(*ptr)++;
+	tmp1 = tmp;
+	tmp2 = 0;
+	if (**ptr == '.') {
+		(*ptr)++;
+		tmp2 = atoi(*ptr);
+		while (isdigit(**ptr))
+			(*ptr)++;
+	}
+	if (**ptr == '%') {
+		tmp1 = convert_prange(tmp, min, max);
 		(*ptr)++;
 	}
 	tmp1 = check_range(tmp1, min, max);
@@ -739,8 +772,8 @@ int show_group(void *handle, snd_mixer_gid_t *gid, const char *space)
 		error("Mixer %i/%i group error: %s", card, device, snd_strerror(err));
 		return -1;
 	}
-	if (group.channels) {
-		printf("  Capabilities:");
+	if (group_contents_is_on && group.channels) {
+		printf("%sCapabilities:", space);
 		if (group.caps & SND_MIXER_GRPCAP_VOLUME)
 			printf(" volume");
 		if (group.caps & SND_MIXER_GRPCAP_MUTE)
@@ -759,8 +792,8 @@ int show_group(void *handle, snd_mixer_gid_t *gid, const char *space)
 		printf("\n");
 		if ((group.caps & SND_MIXER_GRPCAP_RECORD) &&
 		    (group.caps & SND_MIXER_GRPCAP_EXCL_RECORD))
-			printf("  Record exclusive group: %i\n", group.record_group);
-		printf("  Channels: ");
+			printf("%sRecord exclusive group: %i\n", space, group.record_group);
+		printf("%sChannels: ", space);
 		if (group.channels == SND_MIXER_CHN_MASK_MONO) {
 			printf("Mono");
 		} else {
@@ -778,24 +811,26 @@ int show_group(void *handle, snd_mixer_gid_t *gid, const char *space)
 				printf("Woofer");
 		}
 		printf("\n");
-		printf("  Limits: min = %i, max = %i\n", group.min, group.max);
+		printf("%sLimits: min = %i, max = %i\n", space, group.min, group.max);
 		if (group.channels == SND_MIXER_CHN_MASK_MONO) {
-			printf("  Mono: %i [%s]\n", group.front_left, group.mute & SND_MIXER_CHN_MASK_MONO ? "mute" : "on");
+			printf("%sMono: %s [%s]\n", space, get_percent(group.front_left, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_MONO ? "mute" : "on");
 		} else {
 			if (group.channels & SND_MIXER_CHN_MASK_FRONT_LEFT)
-				printf("  Front-Left: %i [%s] [%s]\n", group.front_left, group.mute & SND_MIXER_CHN_MASK_FRONT_LEFT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_FRONT_LEFT ? "record" : "---");
+				printf("%sFront-Left: %s [%s] [%s]\n", space, get_percent(group.front_left, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_FRONT_LEFT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_FRONT_LEFT ? "record" : "---");
 			if (group.channels & SND_MIXER_CHN_MASK_FRONT_RIGHT)
-				printf("  Front-Right: %i [%s] [%s]\n", group.front_right, group.mute & SND_MIXER_CHN_MASK_FRONT_RIGHT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_FRONT_RIGHT ? "record" : "---");
+				printf("%sFront-Right: %s [%s] [%s]\n", space, get_percent(group.front_right, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_FRONT_RIGHT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_FRONT_RIGHT ? "record" : "---");
 			if (group.channels & SND_MIXER_CHN_MASK_FRONT_CENTER)
-				printf("  Front-Center: %i [%s] [%s]\n", group.front_center, group.mute & SND_MIXER_CHN_MASK_FRONT_CENTER ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_FRONT_CENTER ? "record" : "---");
+				printf("%sFront-Center: %s [%s] [%s]\n", space, get_percent(group.front_center, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_FRONT_CENTER ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_FRONT_CENTER ? "record" : "---");
 			if (group.channels & SND_MIXER_CHN_MASK_REAR_LEFT)
-				printf("  Rear-Left: %i [%s] [%s]\n", group.rear_left, group.mute & SND_MIXER_CHN_MASK_REAR_LEFT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_REAR_LEFT ? "record" : "---");
+				printf("%sRear-Left: %s [%s] [%s]\n", space, get_percent(group.rear_left, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_REAR_LEFT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_REAR_LEFT ? "record" : "---");
 			if (group.channels & SND_MIXER_CHN_MASK_REAR_RIGHT)
-				printf("  Rear-Right: %i [%s] [%s]\n", group.rear_right, group.mute &  SND_MIXER_CHN_MASK_REAR_RIGHT ? "mute" : "---", group.record & SND_MIXER_CHN_MASK_REAR_RIGHT ? "record" : "---");
+				printf("%sRear-Right: %s [%s] [%s]\n", space, get_percent(group.rear_right, group.min, group.max), group.mute &  SND_MIXER_CHN_MASK_REAR_RIGHT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_REAR_RIGHT ? "record" : "---");
 			if (group.channels & SND_MIXER_CHN_MASK_WOOFER)
-				printf("  Woofer: %i [%s] [%s]\n", group.woofer, group.mute & SND_MIXER_CHN_MASK_WOOFER ? "mute" : "---", group.record & SND_MIXER_CHN_MASK_WOOFER ? "record" : "---");
+				printf("%sWoofer: %s [%s] [%s]\n", space, get_percent(group.woofer, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_WOOFER ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_WOOFER ? "record" : "---");
 		}
 	}
+	if (group_contents_is_on)
+		return 0;
 	group.pelements = (snd_mixer_eid_t *)malloc(group.elements_over * sizeof(snd_mixer_eid_t));
 	if (!group.pelements) {
 		error("No enough memory...");
@@ -844,12 +879,22 @@ int groups(void)
 	}
 	for (idx = 0; idx < groups.groups; idx++) {
 		group = &groups.pgroups[idx];
-		printf("Group '%s', %i\n", group_name(group->name), group->index);
+		printf("Group '%s',%i\n", group_name(group->name), group->index);
 		show_group(handle, group, "  ");
 	}
 	free(groups.pgroups);
 	snd_mixer_close(handle);
 	return 0;
+}
+
+int groups_contents(void)
+{
+	int err;
+
+	group_contents_is_on = 1;
+	err = groups();
+	group_contents_is_on = 0;
+	return err;
 }
 
 static int parse_eid(const char *str, snd_mixer_eid_t *eid)
@@ -906,6 +951,49 @@ static int parse_eid(const char *str, snd_mixer_eid_t *eid)
 			}
 	}
 	return 1;
+}
+
+static int parse_gid(const char *str, snd_mixer_gid_t *gid)
+{
+	int c, size;
+	char *ptr;
+
+	while (*str == ' ' || *str == '\t')
+		str++;
+	if (!(*str))
+		return 1;
+	bzero(gid, sizeof(*gid));
+	ptr = gid->name;
+	size = 0;
+	if (*str != '"' && *str != '\'') {
+		while (*str && *str != ',') {
+			if (size < sizeof(gid->name)) {
+				*ptr++ = *str;
+				size++;
+			}
+			str++;
+		}
+	} else {
+		c = *str++;
+		while (*str && *str != c) {
+			if (size < sizeof(gid->name)) {
+				*ptr++ = *str;
+				size++;
+			}
+			str++;
+		}
+		if (*str == c)
+			str++;
+	}
+	if (*str == '\0')
+		return 0;
+	if (*str != ',')
+		return 1;
+	str++;
+	if (!isdigit(*str))
+		return 1;
+	gid->index = atoi(str);
+	return 0;
 }
 
 int eset_switch1(int argc, char *argv[], void *handle, snd_mixer_eid_t *eid)
@@ -1232,6 +1320,112 @@ int eget(int argc, char *argv[])
 	return 0;
 }
 
+int gset(int argc, char *argv[])
+{
+	int err, idx;
+	snd_mixer_t *handle;
+	snd_mixer_gid_t gid;
+	snd_mixer_group_t group;
+
+	if (argc < 1) {
+		fprintf(stderr, "Specify a group identifier: 'name',index\n");
+		return 1;
+	}
+	if (parse_gid(argv[0], &gid)) {
+		fprintf(stderr, "Wrong group identifier: %s\n", argv[0]);
+		return 1;
+	}
+	if (argc < 2) {
+		fprintf(stderr, "Specify what you want to set...\n");
+		return 1;
+	}
+	if ((err = snd_mixer_open(&handle, card, device)) < 0) {
+		error("Mixer %i/%i open error: %s\n", card, device, snd_strerror(err));
+		return -1;
+	}
+	bzero(&group, sizeof(group));
+	group.gid = gid;
+	if (snd_mixer_group_read(handle, &group)<0) {
+		error("Unable to read group '%s',%i: %s\n", group_name(gid.name), gid.index, snd_strerror(err));
+		snd_mixer_close(handle);
+		return -1;
+	}
+	for (idx = 1; idx < argc; idx++) {
+		if (!strncmp(argv[idx], "mute", 4) || !strncmp(argv[idx], "off", 3)) {
+			group.mute = group.channels;
+		} else if (!strncmp(argv[idx], "on", 2)) {
+			group.mute = 0;
+		} else if (!strncmp(argv[idx], "rec", 3)) {
+			group.record = group.channels;
+		} else if (!strncmp(argv[idx], "norec", 5)) {
+			group.record = 0;
+		} else if (isdigit(argv[idx][0])) {
+			char *ptr;
+			int vol;
+		
+			ptr = argv[idx];
+			vol = get_volume_simple(&ptr, group.min, group.max);
+			if (group.channels & SND_MIXER_CHN_MASK_FRONT_LEFT)
+				group.front_left = vol;
+			if (group.channels & SND_MIXER_CHN_MASK_FRONT_RIGHT)
+				group.front_right = vol;
+			if (group.channels & SND_MIXER_CHN_MASK_FRONT_CENTER)
+				group.front_center = vol;
+			if (group.channels & SND_MIXER_CHN_MASK_REAR_LEFT)
+				group.rear_left = vol;
+			if (group.channels & SND_MIXER_CHN_MASK_REAR_RIGHT)
+				group.rear_right = vol;
+			if (group.channels & SND_MIXER_CHN_MASK_WOOFER)
+				group.woofer = vol;
+		} else {
+			error("Unknown setup '%s'..\n", argv[idx]);
+			snd_mixer_close(handle);
+			return -1;
+		}
+	} 
+	if (snd_mixer_group_write(handle, &group)<0) {
+		error("Unable to write group '%s',%i: %s\n", group_name(gid.name), gid.index, snd_strerror(err));
+		snd_mixer_close(handle);
+		return -1;
+	}
+	if (!quiet) {
+		printf("Group '%s',%i\n", group_name(gid.name), gid.index);
+		group_contents_is_on = 1;
+		show_group(handle, &gid, "  ");
+		group_contents_is_on = 0;
+	}
+	snd_mixer_close(handle);
+	return 0;
+}
+
+int gget(int argc, char *argv[])
+{
+	int err;
+	snd_mixer_t *handle;
+	snd_mixer_gid_t gid;
+
+	if (argc < 1) {
+		fprintf(stderr, "Specify a group identifier: 'name',index\n");
+		return 1;
+	}
+	if (parse_gid(argv[0], &gid)) {
+		fprintf(stderr, "Wrong group identifier: %s\n", argv[0]);
+		return 1;
+	}
+	if ((err = snd_mixer_open(&handle, card, device)) < 0) {
+		error("Mixer %i/%i open error: %s\n", card, device, snd_strerror(err));
+		return -1;
+	}
+	if (!quiet) {
+		printf("Group '%s',%i\n", group_name(gid.name), gid.index);
+		group_contents_is_on = 1;
+		show_group(handle, &gid, "  ");
+		group_contents_is_on = 0;
+	}
+	snd_mixer_close(handle);
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	int morehelp;
@@ -1293,8 +1487,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	if (argc - optind <= 0) {
-		fprintf(stderr, "amixer: Specify command...\n");
-		return 0;
+		return groups_contents() ? 1 : 0;
 	}
 	if (!strcmp(argv[optind], "info")) {
 		return info() ? 1 : 0;
@@ -1304,6 +1497,12 @@ int main(int argc, char *argv[])
 		return elements_contents() ? 1 : 0;
 	} else if (!strcmp(argv[optind], "groups")) {
 		return groups() ? 1 : 0;
+	} else if (!strcmp(argv[optind], "gcontents")) {
+		return groups_contents() ? 1 : 0;
+	} else if (!strcmp(argv[optind], "set")) {
+		return gset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL) ? 1 : 0;
+	} else if (!strcmp(argv[optind], "get")) {
+		return gget(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "eset")) {
 		return eset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "eget")) {
