@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	if (!strcmp(argv[optind], "store")) {
-		return store_setup(argc - optind > 1 ? argv[optind + 1] : NULL)
+		return store_setup(argc - optind > 1 ? argv[optind + 1] : NULL) ?
 		    1 : 0;
 	} else if (!strcmp(argv[optind], "restore")) {
 		return restore_setup(argc - optind > 1 ? argv[optind + 1] : NULL) ?
