@@ -1,6 +1,10 @@
 INCLUDES = -I$(top_srcdir)/include
 LDADD = -lasound
 
+# debug flags
+#LDFLAGS = -static
+#LDADD += -ldl
+
 bin_PROGRAMS = aplay
 man_MANS = aplay.1
 noinst_HEADERS = formats.h
