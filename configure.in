@@ -23,6 +23,11 @@ AC_CHECK_LIB(ncurses, initscr,
 AC_SUBST(CURSESINC)
 AC_SUBST(CURSESLIB)
 
+dnl Check for Gtk+
+AM_PATH_GTK(1.0.1)
+CFLAGS="$CFLAGS $GTK_CFLAGS"
+LDFALGS="$LDFLAGS $GTK_LIBS"
+
 AM_CONFIG_HEADER(include/aconfig.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -35,5 +40,11 @@ AC_PROG_GCC_TRADITIONAL
 
 SAVE_UTIL_VERSION
 
+if test "$GTK_LIBS" != "" then 
+AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amixer/Makefile aplay/Makefile \
+          include/Makefile utils/Makefile utils/alsa-utils.spec xamixer2/Makefile)
+else
 AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amixer/Makefile aplay/Makefile \
           include/Makefile utils/Makefile utils/alsa-utils.spec)
+AM_MSG_RESULT(Not building XAmixer2 since Gtk+ was not found.)
+fi
