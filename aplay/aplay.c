@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
 		fcn_params = snd_pcm_channel_params;
 		fcn_setup = snd_pcm_channel_setup;
 		fcn_status = snd_pcm_channel_status;
-		fcn_flush = snd_pcm_flush_channel;
+		fcn_flush = snd_pcm_channel_flush;
 		fcn_write = snd_pcm_write;
 		fcn_read = snd_pcm_read;
 	} else {
@@ -803,7 +803,7 @@ static void voc_play(int fd, int ofs, char *name)
 				d_printf("Silence for %d ms\n", (int) silence);
 #endif
 				write_zeros(*sp);
-				snd_pcm_flush_playback(pcm_handle);
+				snd_pcm_playback_flush(pcm_handle);
 				break;
 			case 4:	/* a marker for syncronisation, no effect */
 				sp = (u_short *) data;
@@ -1384,7 +1384,7 @@ static void capture(char *name)
 {
 	int fd;
 
-	snd_pcm_flush_capture(pcm_handle);
+	snd_pcm_capture_flush(pcm_handle);
 	if (!name || !strcmp(name, "-")) {
 		fd = 1;
 		name = "stdout";
