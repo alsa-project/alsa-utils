@@ -93,13 +93,13 @@ static void help(void)
 	printf("\nAvailable commands:\n");
 	printf("  info            show useful information for the selected mixer\n");
 	printf("  groups          show all mixer groups\n");
-	printf("  gcontents	  show contents of all mixer groups\n");
-	printf("  set G P         set group setup\n");
-	printf("  get G P         get group setup\n");
-	printf("  elements        show information about all mixer elements\n");
+	printf("  gcontents	  show contents of all mixer groups (default command)\n");
+	printf("  set G P         set group contents for one mixer group\n");
+	printf("  get G P         get group contents for one mixer group\n");
+	printf("  elements        show all mixer elements\n");
 	printf("  contents        show contents of all mixer elements\n");
-	printf("  eset E P	  set extended setup for one mixer element\n");
-	printf("  eget E P	  get extended setup for one mixer element\n");
+	printf("  eset E P	  set extended contents for one mixer element\n");
+	printf("  eget E P	  get extended contents for one mixer element\n");
 }
 
 int info(void)
