@@ -1922,7 +1922,10 @@ static void capture(char *name)
 	pbrec_count = calc_count();
 	/* WAVE-file should be even (I'm not sure), but wasting one byte
 	   isn't a problem (this can only be in 8 bit mono) */
-	pbrec_count += pbrec_count % 2;
+	if (pbrec_count < LLONG_MAX)
+		pbrec_count += pbrec_count % 2;
+	else
+		pbrec_count -= pbrec_count % 2;
 	if (pbrec_count == 0)
 		pbrec_count -= 2;
 	if (fmt_rec_table[file_type].start)
