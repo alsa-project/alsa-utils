@@ -615,7 +615,6 @@ static void soundcard_setup_write_mixer_channel( FILE *out, snd_mixer_channel_in
   	info -> caps & SND_MIXER_CINFO_CAP_RECORDBYMUTE ? " record-by-mute" : "" );
   fprintf( out, "    ; Accepted channel range is from %i to %i.\n", info -> min, info -> max );
   fprintf( out, "    channel( \"%s\", ", info -> name );
-  printf( "flags = 0x%x\n", channel -> flags );
   if ( info -> caps & SND_MIXER_CINFO_CAP_STEREO ) {
     fprintf( out, "stereo( %i%s%s%s%s, %i%s%s%s%s )",
       channel -> left,
