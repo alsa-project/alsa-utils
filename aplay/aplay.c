@@ -72,7 +72,6 @@ static int ready_mode = SND_PCM_READY_FRAGMENT;
 static int open_mode = 0;
 static int stream = SND_PCM_STREAM_PLAYBACK;
 static int mmap_flag = 0;
-static char *mmap_data = NULL;
 static int nonblock = 0;
 static char *audiobuf = NULL;
 static int buffer_size = -1;
@@ -164,6 +163,7 @@ static void check_new_format(snd_pcm_format_t * format)
 		error("unsupported format %s", snd_pcm_format_name(format->sfmt));
 		exit(EXIT_FAILURE);
 	}
+#if 0
 	if (format->channels > 1) {
 		if (xfer_mode == SND_PCM_XFER_INTERLEAVED) {
 			if (!(cpinfo.flags & SND_PCM_INFO_INTERLEAVED)) {
@@ -175,6 +175,7 @@ static void check_new_format(snd_pcm_format_t * format)
 			exit(EXIT_FAILURE);
 		}
 	}
+#endif
 }
 
 static void usage(char *command)
@@ -239,7 +240,7 @@ static void device_list(void)
 	for (card = 0; card < SND_CARDS; card++) {
 		if (!(mask & (1 << card)))
 			continue;
-		if ((err = snd_ctl_hw_open(&handle, card)) < 0) {
+		if ((err = snd_ctl_hw_open(&handle, NULL, card)) < 0) {
 			error("control open (%i): %s", card, snd_strerror(err));
 			continue;
 		}
@@ -798,7 +799,7 @@ static void set_params(void)
 		exit(EXIT_FAILURE);
 	}
 	if (mmap_flag) {
-		if (snd_pcm_mmap(handle, (void **)&mmap_data)<0) {
+		if (snd_pcm_mmap(handle)<0) {
 			error("unable to mmap memory");
 			exit(EXIT_FAILURE);
 		}
