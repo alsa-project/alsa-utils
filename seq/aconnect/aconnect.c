@@ -350,7 +350,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (snd_seq_open(&seq, "hw", SND_SEQ_OPEN_DUPLEX, 0) < 0) {
+	if (snd_seq_open(&seq, "default", SND_SEQ_OPEN_DUPLEX, 0) < 0) {
 		fprintf(stderr, "can't open sequencer\n");
 		return 1;
 	}

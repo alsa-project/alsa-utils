@@ -254,7 +254,7 @@ static void init_seq(char *source, char *dest)
 	snd_seq_addr_t addr;
 	int err, counti, counto;
 
-	if (snd_seq_open(&handle, "hw", SND_SEQ_OPEN_DUPLEX, 0) < 0) {
+	if (snd_seq_open(&handle, "default", SND_SEQ_OPEN_DUPLEX, 0) < 0) {
 		perror("snd_seq_open");
 		exit(1);
 	}

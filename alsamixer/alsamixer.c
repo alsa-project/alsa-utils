@@ -395,7 +395,8 @@ mixer_abort (ErrType     error,
     {
     case ERR_OPEN:
       fprintf (stderr,
-	       PRGNAME ": failed to open mixer %s: %s\n",
+	       PRGNAME ": function %s failed for %s: %s\n",
+	       err_string,
 	       card_id,
 	       snd_strerror (xerrno));
       break;
