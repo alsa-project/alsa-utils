@@ -634,6 +634,7 @@ static void set_format(void)
 		snd_pcm_munmap(pcm_handle, channel);
 	fcn_flush(pcm_handle, channel);		/* to be in right state */
 	memset(&params, 0, sizeof(params));
+	params.mode = mode;
 	params.channel = channel;
 	memcpy(&params.format, &format, sizeof(format));
 	if (channel == SND_PCM_CHANNEL_PLAYBACK) {
@@ -669,7 +670,6 @@ static void set_format(void)
 		exit(1);
 	}
 	memset(&setup, 0, sizeof(setup));
-	setup.mode = mode;
 	setup.channel = channel;
 	if (fcn_setup(pcm_handle, &setup) < 0) {
 		fprintf(stderr, "%s: unable to obtain setup\n", command);
@@ -1213,7 +1213,8 @@ void playback_go(int fd, int loaded, u_long count, int rtype, char *name)
 					}
 					usleep(10000);
 				}
-				memcpy(mmap_data + mmap_control->fragments[frag].addr, audiobuf, buffer_size);
+				/* FIXME: it's better to use snd_pcm_voice_setup data */
+				memcpy(mmap_data + buffer_size * frag, audiobuf, buffer_size);
 				mmap_control->fragments[frag].data = 1;
 				frag++; frag %= frags;
 			} else if (mode == SND_PCM_MODE_BLOCK) {
@@ -1291,7 +1292,8 @@ void capture_go(int fd, int loaded, u_long count, int rtype, char *name)
 			}
 			if (c > buffer_size)
 				c = buffer_size;
-			if (write(fd, mmap_data + mmap_control->fragments[frag].addr, c) != c) {
+			/* FIXME: it's better to use snd_pcm_voice_setup data */
+			if (write(fd, mmap_data + buffer_size * frag, c) != c) {
 				perror(name);
 				exit(-1);
 			}
