@@ -195,7 +195,7 @@ elif [ "$kernel" = "new" ]; then
   fi
   cfgfile="/etc/modprobe.conf"
 elif [ "$distribution" = "debian" ]; then
-  cfgfile="/etc/modutils/alsa-base"
+  cfgfile="/etc/modutils/sound"
 elif [ -e /etc/modules.conf ]; then
   cfgfile="/etc/modules.conf"
 elif [ -e /etc/conf.modules ]; then
