@@ -1121,7 +1121,20 @@ if [ x$devs_found != x ]; then
 		ac_config_legacy cs4236
 		exit 0
 	    fi
-	fi
+	elif $lspci -nv 2>/dev/null| grep -q "Subsystem: 8086:8080"; then
+	    if $DIALOG --yesno "
+ Looks like you having a Dell Dimension machine.
+ On this machine, CS4232 driver should be used
+ although CS46xx chip is detected.
+
+ Shall I try to snd-cs4232 driver and probe
+ the legacy ISA configuration?" 13 60
+	    then
+		try_all_combination=1
+		ac_config_legacy cs4232
+		exit 0
+	    fi
+        fi	
     fi
    
     devs_found=("${devs_found[@]}" "legacy" "Probe legacy ISA (non-PnP) chips")
