@@ -493,6 +493,9 @@ mixer_calc_volume(snd_mixer_elem_t *elem,
       vol1 = max;
     else
       vol1 = mixer_conv(vol1, 0, 100, min, max);
+    /* Note: we have delta in vol1 and we need to map our */
+    /*       delta value to hardware range */
+    vol1 -= min;
     if (vol1 <= 0)
       vol1 = 1;
     if (vol < 0)
