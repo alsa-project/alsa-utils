@@ -46,5 +46,5 @@ AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amixer/Makefile aplay/Mak
 else
 AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amixer/Makefile aplay/Makefile \
           include/Makefile utils/Makefile utils/alsa-utils.spec)
-AM_MSG_RESULT(Not building XAmixer2 since Gtk+ was not found.)
+AC_MSG_RESULT(Not building XAmixer2 since Gtk+ was not found.)
 fi
