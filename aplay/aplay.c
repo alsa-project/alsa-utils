@@ -565,15 +565,24 @@ size_t test_wavefile_read(int fd, char *buffer, size_t *size, size_t reqsize, in
 	return *size = reqsize;
 }
 
+#define check_wavefile_space(buffer, size, len, blimit) \
+	if (size + len > blimit) \
+		blimit = size + len; \
+	if ((buffer = realloc(buffer, blimit)) == NULL) { \
+		error("not enough memory"); \
+		exit(EXIT_FAILURE); \
+	}
 
 /*
  * test, if it's a .WAV file, > 0 if ok (and set the speed, stereo etc.)
  *                            == 0 if not
  * Value returned is bytes to be discarded.
  */
-static ssize_t test_wavefile(int fd, char *buffer, size_t size)
+static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
 {
-	WaveHeader *h = (WaveHeader *)buffer;
+	WaveHeader *h = (WaveHeader *)_buffer;
+	char *buffer = NULL;
+	size_t blimit = 0;
 	WaveFmtBody *f;
 	WaveChunkHeader *c;
 	u_int type, len;
@@ -582,10 +591,13 @@ static ssize_t test_wavefile(int fd, char *buffer, size_t size)
 		return -1;
 	if (h->magic != WAV_RIFF || h->type != WAV_WAVE)
 		return -1;
-	if (size > sizeof(WaveHeader))
-		memmove(buffer, buffer + sizeof(WaveHeader), size - sizeof(WaveHeader));
+	if (size > sizeof(WaveHeader)) {
+		check_wavefile_space(buffer, size, size - sizeof(WaveHeader), blimit);
+		memcpy(buffer, _buffer + sizeof(WaveHeader), size - sizeof(WaveHeader));
+	}
 	size -= sizeof(WaveHeader);
 	while (1) {
+		check_wavefile_space(buffer, size, sizeof(WaveChunkHeader), blimit);
 		test_wavefile_read(fd, buffer, &size, sizeof(WaveChunkHeader), __LINE__);
 		c = (WaveChunkHeader*)buffer;
 		type = c->type;
@@ -595,6 +607,7 @@ static ssize_t test_wavefile(int fd, char *buffer, size_t size)
 		size -= sizeof(WaveChunkHeader);
 		if (type == WAV_FMT)
 			break;
+		check_wavefile_space(buffer, size, len, blimit);
 		test_wavefile_read(fd, buffer, &size, len, __LINE__);
 		if (size > len)
 			memmove(buffer, buffer + len, size - len);
@@ -605,6 +618,7 @@ static ssize_t test_wavefile(int fd, char *buffer, size_t size)
 		error("unknown length of 'fmt ' chunk (read %u, should be %u at least)", len, (u_int)sizeof(WaveFmtBody));
 		exit(EXIT_FAILURE);
 	}
+	check_wavefile_space(buffer, size, len, blimit);
 	test_wavefile_read(fd, buffer, &size, len, __LINE__);
 	f = (WaveFmtBody*) buffer;
 	if (LE_SHORT(f->format) != WAV_PCM_CODE) {
@@ -639,6 +653,7 @@ static ssize_t test_wavefile(int fd, char *buffer, size_t size)
 	while (1) {
 		u_int type, len;
 
+		check_wavefile_space(buffer, size, sizeof(WaveChunkHeader), blimit);
 		test_wavefile_read(fd, buffer, &size, sizeof(WaveChunkHeader), __LINE__);
 		c = (WaveChunkHeader*)buffer;
 		type = c->type;
@@ -649,8 +664,12 @@ static ssize_t test_wavefile(int fd, char *buffer, size_t size)
 		if (type == WAV_DATA) {
 			if (len < count)
 				count = len;
+			if (size > 0)
+				memcpy(_buffer, buffer, size);
+			free(buffer);
 			return size;
 		}
+		check_wavefile_space(buffer, size, len, blimit);
 		test_wavefile_read(fd, buffer, &size, len, __LINE__);
 		if (size > len)
 			memmove(buffer, buffer + len, size - len);
