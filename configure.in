@@ -11,7 +11,7 @@ AC_PROG_LN_S
 
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CONFIG_HEADER(include/config.h)
+AC_CONFIG_HEADER(include/aconfig.h)
 AC_CHECK_HEADERS(linux/asound.h sys/asoundlib.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.

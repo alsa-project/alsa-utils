@@ -35,7 +35,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <sys/asoundlib.h>
-#include "config.h"
+#include "aconfig.h"
 #include "formats.h"
 
 #define DEFAULT_SPEED 		8000
