@@ -48,10 +48,14 @@ typedef struct voc_ext_block {
 #define COMPOSE_ID(a,b,c,d)	((a) | ((b)<<8) | ((c)<<16) | ((d)<<24))
 #define LE_SHORT(v)		(v)
 #define LE_INT(v)		(v)
+#define BE_SHORT(v)		bswap_16(v)
+#define BE_INT(v)		bswap_32(v)
 #else
 #define COMPOSE_ID(a,b,c,d)	((d) | ((c)<<8) | ((b)<<16) | ((a)<<24))
 #define LE_SHORT(v)		bswap_16(v)
 #define LE_INT(v)		bswap_32(v)
+#define BE_SHORT(v)		(v)
+#define BE_INT(v)		(v)
 #endif
 
 #define WAV_RIFF		COMPOSE_ID('R','I','F','F')
@@ -88,14 +92,14 @@ typedef struct {
 
 /* Definitions for Sparc .au header */
 
-#define AU_MAGIC		0x2e736e64
+#define AU_MAGIC		COMPOSE_ID('.','s','n','d')
 
 #define AU_FMT_ULAW		1
 #define AU_FMT_LIN8		2
 #define AU_FMT_LIN16		3
 
 typedef struct au_header {
-	u_int magic;		/* magic '.snd' */
+	u_int magic;		/* '.snd' */
 	u_int hdr_size;		/* size of header (min 24) */
 	u_int data_size;	/* size of data */
 	u_int encoding;		/* see to AU_FMT_XXXX */

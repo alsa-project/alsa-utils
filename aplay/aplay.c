@@ -35,7 +35,6 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <errno.h>
-#include <netinet/in.h>
 #include <sys/asoundlib.h>
 #include <assert.h>
 #include <sys/poll.h>
@@ -578,12 +577,12 @@ static int test_au(int fd, void *buffer)
 {
 	AuHeader *ap = buffer;
 
-	if (ntohl(ap->magic) != AU_MAGIC)
+	if (ap->magic != AU_MAGIC)
 		return -1;
-	if (ntohl(ap->hdr_size) > 128 || ntohl(ap->hdr_size) < 24)
+	if (BE_INT(ap->hdr_size) > 128 || BE_INT(ap->hdr_size) < 24)
 		return -1;
-	count = ntohl(ap->data_size);
-	switch (ntohl(ap->encoding)) {
+	count = BE_INT(ap->data_size);
+	switch (BE_INT(ap->encoding)) {
 	case AU_FMT_ULAW:
 		format.format = SND_PCM_SFMT_MU_LAW;
 		break;
@@ -596,13 +595,13 @@ static int test_au(int fd, void *buffer)
 	default:
 		return -1;
 	}
-	format.rate = ntohl(ap->sample_rate);
+	format.rate = BE_INT(ap->sample_rate);
 	if (format.rate < 2000 || format.rate > 256000)
 		return -1;
-	format.channels = ntohl(ap->channels);
+	format.channels = BE_INT(ap->channels);
 	if (format.channels < 1 || format.channels > 128)
 		return -1;
-	if (read(fd, buffer + sizeof(AuHeader), ntohl(ap->hdr_size) - sizeof(AuHeader)) < 0) {
+	if (read(fd, buffer + sizeof(AuHeader), BE_INT(ap->hdr_size) - sizeof(AuHeader)) < 0) {
 		fprintf(stderr, "%s: read error\n", command);
 		exit(EXIT_FAILURE);
 	}
@@ -735,7 +734,6 @@ static ssize_t pcm_write(u_char *data, size_t count)
 		count = buffer_size;
 	}
 	while (count > 0) {
-		struct pollfd pfd;
 		r = write_func(pcm_handle, data, count);
 		if (r == -EAGAIN || (r >= 0 && r < count)) {
 			struct pollfd pfd;
@@ -1254,7 +1252,7 @@ static void begin_wave(int fd, size_t cnt)
 	f.type = WAV_FMT;
 	f.length = LE_INT(16);
 	f.format = LE_INT(WAV_PCM_CODE);
-	f.modus = LE_SHORT(format.voices);
+	f.modus = LE_SHORT(format.channels);
 	f.sample_fq = LE_INT(format.rate);
 #if 0
 	tmp2 = (samplesize == 8) ? 1 : 2;
@@ -1262,7 +1260,7 @@ static void begin_wave(int fd, size_t cnt)
 	tmp2 = dsp_speed * format.channels * tmp2;
 	f.byte_p_sec = LE_SHORT(tmp2);
 #else
-	tmp2 = format.voices * ((bits + 7) / 8);
+	tmp2 = format.channels * ((bits + 7) / 8);
 	f.byte_p_spl = LE_SHORT(tmp2);
 	tmp2 = tmp2 * format.rate;
 	f.byte_p_sec = LE_SHORT(tmp2);
@@ -1285,25 +1283,25 @@ static void begin_au(int fd, size_t cnt)
 {
 	AuHeader ah;
 
-	ah.magic = htonl(AU_MAGIC);
-	ah.hdr_size = htonl(24);
-	ah.data_size = htonl(cnt);
+	ah.magic = AU_MAGIC;
+	ah.hdr_size = BE_INT(24);
+	ah.data_size = BE_INT(cnt);
 	switch (format.format) {
 	case SND_PCM_SFMT_MU_LAW:
-		ah.encoding = htonl(AU_FMT_ULAW);
+		ah.encoding = BE_INT(AU_FMT_ULAW);
 		break;
 	case SND_PCM_SFMT_U8:
-		ah.encoding = htonl(AU_FMT_LIN8);
+		ah.encoding = BE_INT(AU_FMT_LIN8);
 		break;
 	case SND_PCM_SFMT_S16_LE:
-		ah.encoding = htonl(AU_FMT_LIN16);
+		ah.encoding = BE_INT(AU_FMT_LIN16);
 		break;
 	default:
 		fprintf(stderr, "%s: Sparc Audio doesn't support %s format...\n", command, snd_pcm_get_format_name(format.format));
 		exit(EXIT_FAILURE);
 	}
-	ah.sample_rate = htonl(format.rate);
-	ah.channels = htonl(format.channels);
+	ah.sample_rate = BE_INT(format.rate);
+	ah.channels = BE_INT(format.channels);
 	if (write(fd, &ah, sizeof(AuHeader)) != sizeof(AuHeader)) {
 		fprintf(stderr, "%s: write error\n", command);
 		exit(EXIT_FAILURE);
@@ -1507,7 +1505,6 @@ static void capture(char *name)
 void playbackv_go(int* fds, unsigned int channels, size_t loaded, size_t count, int rtype, char **names)
 {
 	int r;
-	size_t c, expected;
 	size_t vsize;
 	unsigned int channel;
 	u_char *bufs[channels];
