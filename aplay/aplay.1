@@ -69,7 +69,9 @@ There are also two format shortcuts available:
 Sampling rate in Hertz.
 .TP
 \fI-d, --duration=#\fP
-Interrupt after # seconds
+Interrupt after # seconds.
+A value of zero means infinity.
+The default is zero, so if this option is omitted then the arecord process will run until it is killed.
 .TP
 \fI-s, --sleep-min=#\fP
 Min ticks to sleep
