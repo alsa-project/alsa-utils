@@ -10,6 +10,7 @@ exec_prefix=@exec_prefix@
 includedir=@includedir@
 bindir=@bindir@
 libdir=@libdir@
+mandir=@mandir@
 c_opts=@CFLAGS@
 INSTALL=@INSTALL@
 SND_UTIL_VERSION=@SND_UTIL_VERSION@
