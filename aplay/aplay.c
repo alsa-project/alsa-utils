@@ -191,15 +191,18 @@ Usage: %s [OPTION]... [FILE]...
 -B, --buffer-length=#    buffer length is # milliseconds
 -A, --min-avail=#        min available space for wakeup is # milliseconds
 -v, --show-setup         show actual setup
--I, --separate-channels  one file for each channel\
+-I, --separate-channels  one file for each channel
 ", command, snd_cards()-1);
-	fprintf(stderr, "\nRecognized sample formats are:");
+	fprintf(stderr, "Recognized sample formats are:");
 	for (k = 0; k < 32; ++k) {
 		const char *s = snd_pcm_get_format_name(k);
 		if (s)
 			fprintf(stderr, " %s", s);
 	}
 	fprintf(stderr, "\nSome of these may not be available on selected hardware\n");
+	fprintf(stderr, "The availabled format shortcuts are:\n");
+	fprintf(stderr, "cd (16 bit little endian, 44100, stereo)\n");
+	fprintf(stderr, "dat (16 bit little endian, 48000, stereo)\n");
 }
 
 static void device_list(void)
@@ -448,10 +451,20 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'f':
-			rformat.format = snd_pcm_get_format_value(optarg);
-			if (rformat.format < 0) {
-				fprintf(stderr, "Error: wrong extended format '%s'\n", optarg);
-				exit(EXIT_FAILURE);
+			if (strcasecmp(optarg, "cd") == 0) {
+				rformat.format = SND_PCM_SFMT_S16_LE;
+				rformat.rate = 44100;
+				rformat.channels = 2;
+			} else if (strcasecmp(optarg, "dat") == 0) {
+				rformat.format = SND_PCM_SFMT_S16_LE;
+				rformat.rate = 48000;
+				rformat.channels = 2;
+			} else {
+				rformat.format = snd_pcm_get_format_value(optarg);
+				if (rformat.format < 0) {
+					fprintf(stderr, "Error: wrong extended format '%s'\n", optarg);
+					exit(EXIT_FAILURE);
+				}
 			}
 			break;
 		case 'r':
