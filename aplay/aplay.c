@@ -39,6 +39,7 @@
 #include <assert.h>
 #include <sys/poll.h>
 #include <sys/uio.h>
+#include <sys/time.h>
 #include "aconfig.h"
 #include "formats.h"
 #include "version.h"
