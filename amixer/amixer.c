@@ -92,8 +92,8 @@ static int info(void)
 	}
 	printf("Card %s '%s'/'%s'\n", card, snd_ctl_card_info_get_id(info),
 	       snd_ctl_card_info_get_longname(info));
-	printf("  Mixer ID	: '%s'\n", snd_ctl_card_info_get_mixerid(info));
 	printf("  Mixer name	: '%s'\n", snd_ctl_card_info_get_mixername(info));
+	printf("  Components	: '%s'\n", snd_ctl_card_info_get_components(info));
 	if ((err = snd_ctl_elem_list(handle, clist)) < 0) {
 		error("snd_ctl_elem_list failure: %s", snd_strerror(err));
 	} else {
