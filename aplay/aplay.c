@@ -837,9 +837,8 @@ do { \
 } while (0)
 #endif
 
-/* playback write error hander */
-
-void xrun(void)
+/* I/O error handler */
+static void xrun(void)
 {
 	snd_pcm_status_t *status;
 	int res;
@@ -867,6 +866,27 @@ void xrun(void)
 	}
 	error("read/write error");
 	exit(EXIT_FAILURE);
+}
+
+/* I/O suspend handler */
+static void suspend(void)
+{
+	int res;
+
+	if (!quiet_mode)
+		fprintf(stderr, "Suspended... Trying resume..."); fflush(stderr);
+	while ((res = snd_pcm_resume(handle)) == -EBUSY)
+		sleep(1);	/* wait until suspend flag is not released */
+	if (res < 0) {
+		if (!quiet_mode)
+			fprintf(stderr, " Failed... Restarting stream..."); fflush(stderr);
+		if ((res = snd_pcm_prepare(handle)) < 0) {
+			error("suspend: prepare error: %s", snd_strerror(res));
+			exit(EXIT_FAILURE);
+		}
+	}
+	if (!quiet_mode)
+		fprintf(stderr, "\n");
 }
 
 /* peak handler */
@@ -912,6 +932,8 @@ static ssize_t pcm_write(u_char *data, size_t count)
 			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
 			xrun();
+		} else if (r == -ESTRPIPE) {
+			suspend();
 		} else if (r < 0) {
 			error("write error: %s", snd_strerror(r));
 			exit(EXIT_FAILURE);
@@ -952,6 +974,8 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
 			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
 			xrun();
+		} else if (r == -ESTRPIPE) {
+			suspend();
 		} else if (r < 0) {
 			error("writev error: %s", snd_strerror(r));
 			exit(EXIT_FAILURE);
@@ -989,6 +1013,8 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
 			xrun();
+		} else if (r == -ESTRPIPE) {
+			suspend();
 		} else if (r < 0) {
 			error("read error: %s", snd_strerror(r));
 			exit(EXIT_FAILURE);
@@ -1026,6 +1052,8 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
 			xrun();
+		} else if (r == -ESTRPIPE) {
+			suspend();
 		} else if (r < 0) {
 			error("readv error: %s", snd_strerror(r));
 			exit(EXIT_FAILURE);
