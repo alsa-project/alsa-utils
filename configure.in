@@ -8,8 +8,6 @@ AC_PROG_CC
 dnl AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AC_PROG_YACC
-AM_PROG_LEX
 AM_PATH_ALSA(0.9.0)
 
 dnl Checks for header files.
