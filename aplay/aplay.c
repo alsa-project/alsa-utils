@@ -87,6 +87,7 @@ static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t chunk_bytes;
 static snd_output_t *log;
+static unsigned int max_peak = 0;
 
 static int count;
 static int vocmajor, vocminor;
@@ -489,6 +490,12 @@ int main(int argc, char *argv[])
 		else
 			capturev(&argv[optind], argc - optind);
 	}
+	if (verbose) {
+		unsigned int max = (1 << bits_per_sample) - 1;
+		if (max == 0)
+			max = ~0;
+		printf("Max peak: %u (0x%x) %i%%\n", max_peak, max_peak, max_peak / (max / 100));
+	}
 	snd_pcm_close(handle);
 	free(audiobuf);
 	snd_output_close(log);
@@ -846,6 +853,25 @@ void xrun(void)
 	exit(EXIT_FAILURE);
 }
 
+/* peak handler */
+static void compute_max_peak(u_char *data, size_t count)
+{
+	unsigned int val;
+	size_t step;
+	
+	while (count-- > 0) {
+		switch (bits_per_sample) {
+		case 8: val = *data ^ snd_pcm_format_silence(hwparams.format); step = 1; break;
+		case 16: val = *(unsigned short *)data ^ snd_pcm_format_silence_16(hwparams.format); step = 2; break;
+		case 32: val = *(unsigned int *)data ^ snd_pcm_format_silence_32(hwparams.format); step = 4; break;
+		default: val = 0; step = 1; break;
+		}
+		data += step;
+		if (max_peak < val)
+			max_peak = val;
+	}
+}
+
 /*
  *  write function
  */
@@ -871,6 +897,8 @@ static ssize_t pcm_write(u_char *data, size_t count)
 			exit(EXIT_FAILURE);
 		}
 		if (r > 0) {
+			if (verbose)
+				compute_max_peak(data, r * hwparams.channels);
 			result += r;
 			count -= r;
 			data += r * bits_per_frame / 8;
@@ -909,6 +937,10 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
 			exit(EXIT_FAILURE);
 		}
 		if (r > 0) {
+			if (verbose) {
+				for (channel = 0; channel < channels; channel++)
+					compute_max_peak(data[channel], r);
+			}
 			result += r;
 			count -= r;
 		}
@@ -942,6 +974,8 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 			exit(EXIT_FAILURE);
 		}
 		if (r > 0) {
+			if (verbose)
+				compute_max_peak(data, r * hwparams.channels);
 			result += r;
 			count -= r;
 			data += r * bits_per_frame / 8;
@@ -977,6 +1011,10 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 			exit(EXIT_FAILURE);
 		}
 		if (r > 0) {
+			if (verbose) {
+				for (channel = 0; channel < channels; channel++)
+					compute_max_peak(data[channel], r);
+			}
 			result += r;
 			count -= r;
 		}
