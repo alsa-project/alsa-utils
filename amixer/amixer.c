@@ -34,8 +34,13 @@
 #define HELPID_HELP             1000
 #define HELPID_CARD             1001
 #define HELPID_QUIET		1002
-#define HELPID_DEBUG            1003
-#define HELPID_VERSION		1004
+#define HELPID_INACTIVE		1003
+#define HELPID_DEBUG            1004
+#define HELPID_VERSION		1005
+
+#define LEVEL_BASIC		(1<<0)
+#define LEVEL_INACTIVE		(1<<1)
+#define LEVEL_ID		(1<<2)
 
 int quiet = 0;
 int debugflag = 0;
@@ -60,6 +65,8 @@ static int help(void)
 	printf("  -c,--card N     select the card, default %s\n", card);
 	printf("  -D,--debug      debug mode\n");
 	printf("  -v,--version    print version of this program\n");
+	printf("  -q,--quiet      be quiet\n");
+	printf("  -i,--inactive   show also inactive controls\n");
 	printf("\nAvailable commands:\n");
 	printf("  scontrols       show all mixer simple controls\n");
 	printf("  scontents	  show contents of all mixer simple controls (default command)\n");
@@ -326,10 +333,10 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 	snd_ctl_elem_info_alloca(&info);
 	snd_ctl_elem_value_alloca(&control);
 	if ((err = snd_hctl_elem_info(elem, info)) < 0) {
-		error("Control %s cinfo error: %s\n", card, snd_strerror(err));
+		error("Control %s snd_hctl_elem_info error: %s\n", card, snd_strerror(err));
 		return err;
 	}
-	if (level & 2) {
+	if (level & LEVEL_ID) {
 		snd_hctl_elem_get_id(elem, id);
 		show_control_id(id);
 		printf("\n");
@@ -362,7 +369,7 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 		printf("\n");
 		break;
 	}
-	if (level & 1) {
+	if (level & LEVEL_BASIC) {
 		if ((err = snd_hctl_elem_read(elem, control)) < 0) {
 			error("Control %s element read error: %s\n", card, snd_strerror(err));
 			return err;
@@ -400,7 +407,9 @@ static int controls(int level)
 	snd_hctl_t *handle;
 	snd_hctl_elem_t *elem;
 	snd_ctl_elem_id_t *id;
+	snd_ctl_elem_info_t *info;
 	snd_ctl_elem_id_alloca(&id);
+	snd_ctl_elem_info_alloca(&info);
 	
 	if ((err = snd_hctl_open(&handle, card, 0)) < 0) {
 		error("Control %s open error: %s", card, snd_strerror(err));
@@ -411,10 +420,16 @@ static int controls(int level)
 		return err;
 	}
 	for (elem = snd_hctl_first_elem(handle); elem; elem = snd_hctl_elem_next(elem)) {
+		if ((err = snd_hctl_elem_info(elem, info)) < 0) {
+			error("Control %s snd_hctl_elem_info error: %s\n", card, snd_strerror(err));
+			return err;
+		}
+		if (!(level & LEVEL_INACTIVE) && snd_ctl_elem_info_is_inactive(info))
+			continue;
 		snd_hctl_elem_get_id(elem, id);
 		show_control_id(id);
 		printf("\n");
-		if (level > 0)
+		if (level & LEVEL_BASIC)
 			show_control("  ", elem, 1);
 	}
 	snd_hctl_close(handle);
@@ -428,7 +443,7 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 	long cmin = 0, cmax = 0;
 	long pvol, cvol;
 	int psw, csw;
-	int mono;
+	int pmono, cmono, mono_ok = 0;
 	snd_mixer_elem_t *elem;
 	
 	elem = snd_mixer_find_selem(handle, id);
@@ -437,36 +452,42 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 		return -ENOENT;
 	}
 
-	if ((level & 1) != 0) {
+	if (level & LEVEL_BASIC) {
 		printf("%sCapabilities:", space);
 		if (snd_mixer_selem_has_common_volume(elem)) {
 			printf(" volume");
 			if (snd_mixer_selem_has_playback_volume_joined(elem))
 				printf(" volume-joined");
-		} else if (snd_mixer_selem_has_playback_volume(elem)) {
-			printf(" pvolume");
-			if (snd_mixer_selem_has_playback_volume_joined(elem))
-				printf(" pvolume-joined");
+		} else {
+			if (snd_mixer_selem_has_playback_volume(elem)) {
+				printf(" pvolume");
+				if (snd_mixer_selem_has_playback_volume_joined(elem))
+					printf(" pvolume-joined");
+			}
+			if (snd_mixer_selem_has_capture_volume(elem)) {
+				printf(" cvolume");
+				if (snd_mixer_selem_has_capture_volume_joined(elem))
+					printf(" cvolume-joined");
+			}
 		}
 		if (snd_mixer_selem_has_common_switch(elem)) {
 			printf(" switch");
 			if (snd_mixer_selem_has_playback_switch_joined(elem))
 				printf(" switch-joined");
-		} else if (snd_mixer_selem_has_playback_switch(elem)) {
-			printf(" pswitch");
-			if (snd_mixer_selem_has_playback_switch_joined(elem))
-				printf(" pswitch-joined");
+		} else {
+			if (snd_mixer_selem_has_playback_switch(elem)) {
+				printf(" pswitch");
+				if (snd_mixer_selem_has_playback_switch_joined(elem))
+					printf(" pswitch-joined");
+			}
+			if (snd_mixer_selem_has_capture_switch(elem)) {
+				printf(" cswitch");
+				if (snd_mixer_selem_has_capture_switch_joined(elem))
+					printf(" cswitch-joined");
+				if (snd_mixer_selem_has_capture_switch_exclusive(elem))
+					printf(" cswitch-exclusive");
+			}
 		}
-		if (snd_mixer_selem_has_capture_volume(elem))
-			printf(" cvolume");
-		if (snd_mixer_selem_has_capture_volume_joined(elem))
-			printf(" cvolume-joined");
-		if (snd_mixer_selem_has_capture_switch(elem))
-			printf(" cswitch");
-		if (snd_mixer_selem_has_capture_switch_joined(elem))
-			printf(" cswitch-joined");
-		if (snd_mixer_selem_has_capture_switch_exclusive(elem))
-			printf(" cswitch_exclusive");
 		printf("\n");
 		if (snd_mixer_selem_has_capture_switch_exclusive(elem))
 			printf("%sCapture exclusive group: %i\n", space,
@@ -477,10 +498,14 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 			if (snd_mixer_selem_is_playback_mono(elem)) {
 				printf("Mono");
 			} else {
+				int first = 1;
 				for (chn = 0; chn <= SND_MIXER_SCHN_LAST; chn++){
 					if (!snd_mixer_selem_has_playback_channel(elem, chn))
 						continue;
+					if (!first)
+						printf("- ");
 					printf("%s ", snd_mixer_selem_channel_name(chn));
+					first = 0;
 				}
 			}
 			printf("\n");
@@ -491,10 +516,14 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 			if (snd_mixer_selem_is_capture_mono(elem)) {
 				printf("Mono");
 			} else {
+				int first = 1;
 				for (chn = 0; chn <= SND_MIXER_SCHN_LAST; chn++){
 					if (!snd_mixer_selem_has_capture_channel(elem, chn))
 						continue;
+					if (!first)
+						printf("- ");
 					printf("%s ", snd_mixer_selem_channel_name(chn));
+					first = 0;
 				}
 			}
 			printf("\n");
@@ -502,54 +531,153 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 		if (snd_mixer_selem_has_playback_volume(elem) ||
 		    snd_mixer_selem_has_capture_volume(elem)) {
 			printf("%sLimits: ", space);
-			if (snd_mixer_selem_has_playback_volume(elem)) {
-			  
+			if (snd_mixer_selem_has_common_volume(elem)) {
 				snd_mixer_selem_get_playback_volume_range(elem, &pmin, &pmax);
-				if (!snd_mixer_selem_has_common_volume(elem))
-					printf("Playback ");
-				printf("%li - %li ", pmin, pmax);
-			}
-			if (snd_mixer_selem_has_capture_volume(elem)) {
 				snd_mixer_selem_get_capture_volume_range(elem, &cmin, &cmax);
-				printf("Capture %li - %li", cmin, cmax);
+				printf("%li - %li", pmin, pmax);
+			} else {
+				if (snd_mixer_selem_has_playback_volume(elem)) {
+					snd_mixer_selem_get_playback_volume_range(elem, &pmin, &pmax);
+					printf("Playback %li - %li ", pmin, pmax);
+				}
+				if (snd_mixer_selem_has_capture_volume(elem)) {
+					snd_mixer_selem_get_capture_volume_range(elem, &cmin, &cmax);
+					printf("Capture %li - %li", cmin, cmax);
+				}
 			}
 			printf("\n");
 		}
-		mono = ((snd_mixer_selem_is_playback_mono(elem) || 
+		pmono = snd_mixer_selem_has_playback_channel(elem, SND_MIXER_SCHN_MONO) &&
+		        (snd_mixer_selem_is_playback_mono(elem) || 
 			 (!snd_mixer_selem_has_playback_volume(elem) &&
-			  !snd_mixer_selem_has_playback_switch(elem))) &&
-			(snd_mixer_selem_is_capture_mono(elem) || 
+			  !snd_mixer_selem_has_playback_switch(elem)));
+		cmono = snd_mixer_selem_has_capture_channel(elem, SND_MIXER_SCHN_MONO) &&
+		        (snd_mixer_selem_is_capture_mono(elem) || 
 			 (!snd_mixer_selem_has_capture_volume(elem) &&
-			  !snd_mixer_selem_has_capture_switch(elem))));
-		for (chn = 0; chn <= SND_MIXER_SCHN_LAST; chn++) {
-			if (!snd_mixer_selem_has_playback_channel(elem, chn) &&
-			    !snd_mixer_selem_has_capture_channel(elem, chn))
-				continue;
-			printf("%s%s: ", space, mono ? "Mono" : snd_mixer_selem_channel_name(chn));
-			if (snd_mixer_selem_has_playback_channel(elem, chn)) {
-				if (!snd_mixer_selem_has_common_volume(elem))
-					printf("Playback ");
+			  !snd_mixer_selem_has_capture_switch(elem)));
+#if 0
+		printf("pmono = %i, cmono = %i (%i, %i, %i, %i)\n", pmono, cmono,
+				snd_mixer_selem_has_capture_channel(elem, SND_MIXER_SCHN_MONO),
+				snd_mixer_selem_is_capture_mono(elem),
+				snd_mixer_selem_has_capture_volume(elem),
+				snd_mixer_selem_has_capture_switch(elem));
+#endif
+		if (pmono || cmono) {
+			if (!mono_ok) {
+				printf("%s%s: ", space, "Mono");
+				mono_ok = 1;
+			}
+			if (snd_mixer_selem_has_common_volume(elem)) {
+				snd_mixer_selem_get_playback_volume(elem, SND_MIXER_SCHN_MONO, &pvol);
+				printf("%s ", get_percent(pvol, pmin, pmax));
+			}
+			if (snd_mixer_selem_has_common_switch(elem)) {
+				snd_mixer_selem_get_playback_switch(elem, SND_MIXER_SCHN_MONO, &psw);
+				printf("[%s] ", psw ? "on" : "off");
+			}
+		}
+		if (pmono && snd_mixer_selem_has_playback_channel(elem, SND_MIXER_SCHN_MONO)) {
+			int title = 0;
+			if (!mono_ok) {
+				printf("%s%s: ", space, "Mono");
+				mono_ok = 1;
+			}
+			if (!snd_mixer_selem_has_common_volume(elem)) {
 				if (snd_mixer_selem_has_playback_volume(elem)) {
-					snd_mixer_selem_get_playback_volume(elem, chn, &pvol);
+					printf("Playback ");
+					title = 1;
+					snd_mixer_selem_get_playback_volume(elem, SND_MIXER_SCHN_MONO, &pvol);
 					printf("%s ", get_percent(pvol, pmin, pmax));
 				}
+			}
+			if (!snd_mixer_selem_has_common_switch(elem)) {
 				if (snd_mixer_selem_has_playback_switch(elem)) {
-					snd_mixer_selem_get_playback_switch(elem, chn, &psw);
+					if (!title)
+						printf("Playback ");
+					snd_mixer_selem_get_playback_switch(elem, SND_MIXER_SCHN_MONO, &psw);
 					printf("[%s] ", psw ? "on" : "off");
 				}
 			}
-			if (snd_mixer_selem_has_capture_channel(elem, chn)) {
-				printf("Capture ");
+		}
+		if (cmono && snd_mixer_selem_has_capture_channel(elem, SND_MIXER_SCHN_MONO)) {
+			int title = 0;
+			if (!mono_ok) {
+				printf("%s%s: ", space, "Mono");
+				mono_ok = 1;
+			}
+			if (!snd_mixer_selem_has_common_volume(elem)) {
 				if (snd_mixer_selem_has_capture_volume(elem)) {
-					snd_mixer_selem_get_capture_volume(elem, chn, &cvol);
+					printf("Capture ");
+					title = 1;
+					snd_mixer_selem_get_capture_volume(elem, SND_MIXER_SCHN_MONO, &cvol);
 					printf("%s ", get_percent(cvol, cmin, cmax));
 				}
+			}
+			if (!snd_mixer_selem_has_common_switch(elem)) {
 				if (snd_mixer_selem_has_capture_switch(elem)) {
-					snd_mixer_selem_get_capture_switch(elem, chn, &csw);
+					if (!title)
+						printf("Capture ");
+					snd_mixer_selem_get_capture_switch(elem, SND_MIXER_SCHN_MONO, &csw);
 					printf("[%s] ", csw ? "on" : "off");
 				}
 			}
+		}
+		if (pmono || cmono)
 			printf("\n");
+		if (!pmono || !cmono) {
+			for (chn = 0; chn <= SND_MIXER_SCHN_LAST; chn++) {
+				if ((pmono || !snd_mixer_selem_has_playback_channel(elem, chn)) &&
+				    (cmono || !snd_mixer_selem_has_capture_channel(elem, chn)))
+					continue;
+				printf("%s%s: ", space, snd_mixer_selem_channel_name(chn));
+				if (snd_mixer_selem_has_common_volume(elem)) {
+					snd_mixer_selem_get_playback_volume(elem, chn, &pvol);
+					printf("%s ", get_percent(pvol, pmin, pmax));
+				}
+				if (snd_mixer_selem_has_common_switch(elem)) {
+					snd_mixer_selem_get_playback_switch(elem, chn, &psw);
+					printf("[%s] ", psw ? "on" : "off");
+				}
+				if (!pmono && snd_mixer_selem_has_playback_channel(elem, chn)) {
+					int title = 0;
+					if (!snd_mixer_selem_has_common_volume(elem)) {
+						if (snd_mixer_selem_has_playback_volume(elem)) {
+							printf("Playback ");
+							title = 1;
+							snd_mixer_selem_get_playback_volume(elem, chn, &pvol);
+							printf("%s ", get_percent(pvol, pmin, pmax));
+						}
+					}
+					if (!snd_mixer_selem_has_common_switch(elem)) {
+						if (snd_mixer_selem_has_playback_switch(elem)) {
+							if (!title)
+								printf("Playback ");
+							snd_mixer_selem_get_playback_switch(elem, chn, &psw);
+							printf("[%s] ", psw ? "on" : "off");
+						}
+					}
+				}
+				if (!cmono && snd_mixer_selem_has_capture_channel(elem, chn)) {
+					int title = 0;
+					if (!snd_mixer_selem_has_common_volume(elem)) {
+						if (snd_mixer_selem_has_capture_volume(elem)) {
+							printf("Capture ");
+							title = 1;
+							snd_mixer_selem_get_capture_volume(elem, chn, &cvol);
+							printf("%s ", get_percent(cvol, cmin, cmax));
+						}
+					}
+					if (!snd_mixer_selem_has_common_switch(elem)) {
+						if (snd_mixer_selem_has_capture_switch(elem)) {
+							if (!title)
+								printf("Capture ");
+							snd_mixer_selem_get_capture_switch(elem, chn, &csw);
+							printf("[%s] ", csw ? "on" : "off");
+						}
+					}
+				}
+				printf("\n");
+			}
 		}
 	}
 	return 0;
@@ -585,6 +713,8 @@ static int selems(int level)
 	}
 	for (elem = snd_mixer_first_elem(handle); elem; elem = snd_mixer_elem_next(elem)) {
 		snd_mixer_selem_get_id(elem, sid);
+		if (!(level & LEVEL_INACTIVE) && !snd_mixer_selem_is_active(elem))
+			continue;
 		printf("Simple mixer control '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
 		show_selem(handle, sid, "  ", level);
 	}
@@ -834,7 +964,7 @@ static int cset(int argc, char *argv[], int roflag)
 		}
 		elem = snd_hctl_find_elem(hctl, id);
 		if (elem)
-			show_control("  ", elem, 3);
+			show_control("  ", elem, LEVEL_BASIC | LEVEL_ID);
 		else
 			printf("Could not find the specified element\n");
 		snd_hctl_close(hctl);
@@ -918,7 +1048,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 	}
 	elem = snd_mixer_find_selem(handle, sid);
 	if (!elem) {
-		error("Unable to find simple control '%s',%i: %s\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid), snd_strerror(err));
+		error("Unable to find simple control '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
 		snd_mixer_close(handle);
 		return -ENOENT;
 	}
@@ -1160,12 +1290,13 @@ static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 
 int main(int argc, char *argv[])
 {
-	int morehelp;
+	int morehelp, level = 0;
 	struct option long_option[] =
 	{
 		{"help", 0, NULL, HELPID_HELP},
 		{"card", 1, NULL, HELPID_CARD},
 		{"quiet", 0, NULL, HELPID_QUIET},
+		{"inactive", 0, NULL, HELPID_INACTIVE},
 		{"debug", 0, NULL, HELPID_DEBUG},
 		{"version", 0, NULL, HELPID_VERSION},
 		{NULL, 0, NULL, 0},
@@ -1175,7 +1306,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hc:qDv", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hc:qiDv", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
@@ -1189,6 +1320,10 @@ int main(int argc, char *argv[])
 		case 'q':
 		case HELPID_QUIET:
 			quiet = 1;
+			break;
+		case 'i':
+		case HELPID_INACTIVE:
+			level |= LEVEL_INACTIVE;
 			break;
 		case 'D':
 		case HELPID_DEBUG:
@@ -1208,20 +1343,20 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	if (argc - optind <= 0) {
-		return selems(1) ? 1 : 0;
+		return selems(LEVEL_BASIC | level) ? 1 : 0;
 	}
 	if (!strcmp(argv[optind], "help")) {
 		return help() ? 1 : 0;
 	} else if (!strcmp(argv[optind], "info")) {
 		return info() ? 1 : 0;
 	} else if (!strcmp(argv[optind], "controls")) {
-		return controls(0) ? 1 : 0;
+		return controls(level) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "contents")) {
-		return controls(1) ? 1 : 0;
+		return controls(LEVEL_BASIC | level) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "scontrols") || !strcmp(argv[optind], "simple")) {
-		return selems(0) ? 1 : 0;
+		return selems(level) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "scontents")) {
-		return selems(1) ? 1 : 0;
+		return selems(LEVEL_BASIC | level) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "sset") || !strcmp(argv[optind], "set")) {
 		return sset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 0) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "sget") || !strcmp(argv[optind], "get")) {
