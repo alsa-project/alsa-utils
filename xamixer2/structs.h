@@ -21,7 +21,7 @@ typedef struct _Group Group;
 struct _Mixer
 {
         int number; /* The number of the mixer device */
-        void *handle;
+        snd_mixer_t *handle;
         snd_mixer_info_t info; /* The info for the mixer */
         int cnum; /* The number of channels present */
         int snum; /* The number of mixer switches present */

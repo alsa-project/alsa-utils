@@ -51,7 +51,7 @@ int init_cards()
 {
 	int i,j,k;
 	int err;
-	void *handle;
+	snd_ctl_t *handle;
 
 	cards = snd_cards();
 	card = calloc(cards, sizeof(Card));
@@ -256,12 +256,13 @@ int misc_group_hack(Mixer *mixer, int index)
 			}
 					
 		mixer->group[index].element[idx].eid = mixer->group[index].group.pelements[idx];
-		if((err = snd_mixer_element_build(mixer->handle, 
-						  &mixer->group[index].element[idx])) < 0) {
-			printf("Unable to read element %s!  ",
-			       mixer->group[index].group.pelements[idx].name);
-			printf("Error: %s.\n", snd_strerror(err));
-		}
+		if(snd_mixer_element_has_control(&mixer->group[index].element[idx].eid))
+			if((err = snd_mixer_element_build(mixer->handle, 
+							&mixer->group[index].element[idx])) < 0) {
+				printf("Unable to read element %s!  ",
+						mixer->group[index].group.pelements[idx].name);
+				printf("Error: %s.\n", snd_strerror(err));
+			}
 
 		init_element_route(mixer->handle, 
 				   &mixer->group[index].routes[idx], 
