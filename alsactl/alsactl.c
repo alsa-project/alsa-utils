@@ -32,6 +32,7 @@
 #define SYS_ASOUNDRC "/etc/asound.state"
 
 int debugflag = 0;
+int force_restore = 0;
 char *command;
 
 #if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
@@ -54,6 +55,7 @@ static void help(void)
 	printf("\nAvailable options:\n");
 	printf("  -h,--help       this help\n");
 	printf("  -f,--file #     configuration file (default " SYS_ASOUNDRC ")\n");
+	printf("  -F,--force      try to restore the matching controls as much as possible\n");
 	printf("  -d,--debug      debug mode\n");
 	printf("  -v,--version    print version of this program\n");
 	printf("\nAvailable commands:\n");
@@ -756,8 +758,11 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	if (index < 0)
 		index = 0;
 
-	snd_ctl_elem_info_set_numid(info, numid);
-	err = snd_ctl_elem_info(handle, info);
+	err = -EINVAL;
+	if (! force_restore) {
+		snd_ctl_elem_info_set_numid(info, numid);
+		err = snd_ctl_elem_info(handle, info);
+	}
 	if (err < 0) {
 		if (iface >= 0 && name) {
 			snd_ctl_elem_info_set_numid(info, 0);
@@ -797,7 +802,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 
 	if (!snd_ctl_elem_info_is_writable(info))
 		return 0;
-	snd_ctl_elem_value_set_numid(ctl, numid);
+	snd_ctl_elem_value_set_numid(ctl, numid1);
 
 	if (count == 1) {
 		switch (type) {
@@ -994,7 +999,7 @@ static int set_controls(int card, snd_config_t *top)
 	snd_config_for_each(i, next, control) {
 		snd_config_t *n = snd_config_iterator_entry(i);
 		err = set_control(handle, n);
-		if (err < 0)
+		if (err < 0 && ! force_restore)
 			goto _close;
 	}
 
@@ -1119,7 +1124,7 @@ static int load_state(char *file, const char *cardname)
 				break;
 			}
 			first = 0;
-			if ((err = set_controls(card, config)))
+			if ((err = set_controls(card, config)) && ! force_restore)
 				return err;
 		}
 	} else {
@@ -1130,7 +1135,7 @@ static int load_state(char *file, const char *cardname)
 			error("Cannot find soundcard '%s'...", cardname);
 			return EXIT_FAILURE;
 		}
-		if ((err = set_controls(cardno, config))) {
+		if ((err = set_controls(cardno, config)) && ! force_restore) {
 			return err;
 		}
 	}
@@ -1311,6 +1316,7 @@ int main(int argc, char *argv[])
 	{
 		{"help", 0, NULL, 'h'},
 		{"file", 1, NULL, 'f'},
+		{"force", 1, NULL, 'F'},
 		{"debug", 0, NULL, 'd'},
 		{"version", 0, NULL, 'v'},
 		{NULL, 0, NULL, 0},
@@ -1330,6 +1336,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'f':
 			cfgfile = optarg;
+			break;
+		case 'F':
+			force_restore = 1;
 			break;
 		case 'd':
 			debugflag = 1;
