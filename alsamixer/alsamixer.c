@@ -1506,6 +1506,7 @@ mixer_iteration (void)
   int finished = 0;
   int key = 0;
   int old_view;
+  unsigned short revents;
   
   /* setup for select on stdin and the mixer fd */
   if ((count = snd_mixer_poll_descriptors_count(mixer_handle)) < 0)
@@ -1523,25 +1524,24 @@ mixer_iteration (void)
   finished = poll(fds, count + 1, -1);
 
   /* don't abort on handled signals */
-  if (finished && errno == EINTR)
+  if (finished < 0 && errno == EINTR)
     finished = 0;
-  else if (mixer_needs_resize)
+  if (mixer_needs_resize)
     mixer_resize ();
 
-  if (finished) {
+  if (finished > 0) {
     if (fds->revents & POLLIN) {
       key = getch ();
       finished--;
     }
+  } else {
+    key = 0;
   }
   
-  if (finished) {
-    for (idx = 1; idx <= count; idx++) {
-      if (fds[idx].revents & (POLLIN|POLLOUT)) {
+  if (finished > 0) {
+    if (snd_mixer_poll_descriptors_revents(mixer_handle, fds + 1, count, &revents) >= 0) {
+      if (revents & POLLIN)
         snd_mixer_handle_events(mixer_handle);
-        mixer_reinit();
-        break;
-      }
     }
   }
 
