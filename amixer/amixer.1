@@ -1,59 +1,82 @@
-.TH AMIXER 1 "30 Sep 1998"
+.TH AMIXER 1 "27 Jul 1999"
 .SH NAME
 amixer \- commandline mixer for ALSA soundcard driver
 .SH SYNOPSIS
-\fBamixer\fP [\fI-c\fP card] [\fI-d\fP dev] device [vol|L:R]
-[\fImute\fP|\fIunmute\fP] [\fIrec\fP|\fInorec\fP]
+\fBamixer\fP [\fI-c\fP card] [\fI-d\fP dev] [\fIcmd\fP]
 .SH DESCRIPTION
 \fBamixer\fP allows command-line control of the mixer for the ALSA
-soundcard driver. The settings can be written to or read from a resource
-file, making \fBamixer\fP ideal for invoking via a boot-time script.
+soundcard driver.
 \fBamixer\fP supports multiple soundcards with multiple devices.
 .SH INVOKING
 
 \fBamixer\fR with no arguments will display the current mixer settings
 for the default soundcard and device. This is a good way to see a list
-of the devices (aka mixer channels) you can control.
+of the groups you can control.
 
-\fImute, unmute, rec,\fP and \fInorec\fP are used to toggle muting and
-recording for the device specified.
+.SH COMMANDS
 
-The volume can be specified either as a percentage from 0 to 100, or as
-a
-colon-separated pair of percentages if independent control of Left and
-Right 
-is
-needed. A mixer device must be specified. Only one device can be
-controlled at a time, except when using the \fI-r\fP flag.
+.TP
+\fIinfo\fP
+Shows the information about a mixer device.
+
+.TP
+\fIgroups\fP
+Shows a complete list of mixer groups.
+
+.TP
+\fIgcontents\fP
+Shows a complete list of mixer groups with their contents.
+
+.TP
+\fIset\fP
+Sets the group contents. The parameter can be the volume either as a
+percentage from 0% to 100% or a exact hardware value. The parameters
+\fIcapture, nocapture, mute, unmute\fP are used to toggle capture
+(recording) and muting for the group specified.
+
+A mixer group must be specified. Only one device can be controlled at
+a time.
+
+.TP
+\fIget\fP
+Shows the group contents.
+
+A mixer group must be specified. Only one device can be controlled at
+a time.
+
+.TP
+\fIelements\fP
+Shows a complete list of mixer elements.
+
+.TP
+\fIcontents\fP
+Shows a complete list of mixer elements with their contents.
+
+.TP
+\fIeset\fP
+Sets the mixer element contents. This feature is not documented and is intended
+for experienced users only.
+
+.TP
+\fIeget\fP
+Shows the mixer element contents. This feature is not documented and is
+indended for experienced users only.
 
 .SS Options
 
 .TP
 [\fI-c\fP card] [\fI-d\fP device]
 
-Select the card and device number to control. Cards are numbered from 1
+Select the card and device number to control. Cards are numbered from 0
 (the default). Devices are numbered from 0 (the default). Note that
-here,
-"device" does \fBnot\fP mean "mixer channel", but refers to the
-architecture of your soundcard. Many
-soundcards will only have device 0. Some more complex cards may have
-more
-devices. Try using \fI-d 1\fP and if anything useful happens, now you
-know
-more
-than I do. :)
+here, "device" does \fBnot\fP mean "mixer channel", but refers to the
+architecture of your soundcard. Many soundcards will only have device 0.
+Some more complex cards may have more devices. Try using \fI-d 1\fP and
+if anything useful happens, now you know more than I do. :)
 
 .TP
 \fI-h\fP 
 Help: show syntax.
-.TP
-[\fI-p\fP path] \fI-r\fP 
-Read settings from $HOME/.amixerrc or from optional <path>. If <path>
-is ``\-'', reads from the standard input.
-.TP
-[\fI-p\fP path] \fI-w\fP 
-Write the current mixer settings into $HOME/.amixerrc or optional <path>.
-If <path> is ``\-'', writes to the standard output.
 .TP
 \fI-q\fP
 Quiet mode. Do not show results of changes.
@@ -62,21 +85,13 @@ Quiet mode. Do not show results of changes.
 Example: 
 
 .RS
-\fBamixer -c 2 line-in 80:50 unmute rec\fR
+\fBamixer -c 1 set Line 80% unmute capture\fR
 
 .ID
-will set the second soundcard's line-in left volume to 80%, line-in
-right volume to 50%, unmute it, and select it as a source for recording.
-.SH FILES 
-.I
-$HOME/.amixerrc
-is automatically generated from the current mixer settings by invoking
-amixer with the 
-.I
--w
-flag. It should probably not be modified by hand.
+will set the second soundcard's line input volume to 80%, unmute it,
+and select it as a source for capture (recording).
 .SH BUGS 
 None known.
 .SH AUTHOR
-\fBamixer\fP is by Andy Lo A Foe <arloafoe@cs.vu.nl>.
-This document is by Paul Winkler <zarmzarm@erols.com>.
+\fBamixer\fP is by Jaroslav Kysela <perex@suse.cz>.
+This document is by Paul Winkler <zarmzarm@erols.com> and Jaroslav Kysela <perex@suse.cz>.
