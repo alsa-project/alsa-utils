@@ -271,7 +271,7 @@ int main( int argc, char *argv[] )
     version();
     return 0;
   }
-  while ( (c = getopt( argc, argv, "hlc:d:qs:So:t:b:vrwuxB:c:p:mM" )) != EOF )
+  while ( (c = getopt( argc, argv, "hlc:d:qs:So:t:b:vrwuxB:c:p:mMV" )) != EOF )
     switch ( c ) {
       case 'h':
         usage( command );
