@@ -668,7 +668,7 @@ static void set_format(void)
 			exit(1);
 		}
 	}
-	if (snd_pcm_channel_prepare(pcm_handle, channel) < 0) {
+	if (snd_pcm_plugin_prepare(pcm_handle, channel) < 0) {
 		fprintf(stderr, "%s: unable to prepare channel\n", command);
 		exit(1);
 	}
@@ -1118,7 +1118,7 @@ void playback_write_error(void)
 	}
 	if (status.status == SND_PCM_STATUS_UNDERRUN) {
 		printf("underrun at position %u!!!\n", status.scount);
-		if (snd_pcm_channel_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK)<0) {
+		if (snd_pcm_plugin_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK)<0) {
 			fprintf(stderr, "underrun: playback channel prepare error\n");
 			exit(1);
 		}
@@ -1143,7 +1143,7 @@ void capture_read_error(void)
 	}
 	if (status.status == SND_PCM_STATUS_OVERRUN) {
 		printf("overrun at position %u!!!\n", status.scount);
-		if (snd_pcm_channel_prepare(pcm_handle, SND_PCM_CHANNEL_CAPTURE)<0) {
+		if (snd_pcm_plugin_prepare(pcm_handle, SND_PCM_CHANNEL_CAPTURE)<0) {
 			fprintf(stderr, "overrun: capture channel prepare error\n");
 			exit(1);
 		}
