@@ -281,9 +281,9 @@ static const char *speaker_position(int position)
 	case SND_MIXER_VOICE_CENTER:
 		return "Center";
 	case SND_MIXER_VOICE_REAR_LEFT:
-		return "Read-Left";
+		return "Rear-Left";
 	case SND_MIXER_VOICE_REAR_RIGHT:
-		return "Read-Right";
+		return "Rear-Right";
 	default:
 		sprintf(str, "Speaker%i", position);
 		return str;
@@ -832,7 +832,7 @@ static int parse_eid(const char *str, snd_mixer_eid_t *eid)
 	str++;
 	if (!isdigit(*str))
 		return 1;
-	eid->type = atoi(str);
+	eid->index = atoi(str);
 	while (isdigit(*str))
 		str++;
 	if (*str != ',')
