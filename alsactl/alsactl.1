@@ -1,6 +1,6 @@
 .TH ALSACTL 1 "25 Nov 1998"
 .SH NAME
-alsactl \- command-line control for ALSA soundcard driver
+alsactl \- advanced controls for ALSA soundcard driver
 
 .SH SYNOPSIS
 
@@ -16,7 +16,6 @@ soundcard drivers. It supports multiple soundcards.
 
 .SS Commands
 
- 
 \fIstore\fP saves the current driver setup for the selected soundcard
 to the configuration file.
 
@@ -44,18 +43,92 @@ Use debug mode: a bit more verbose.
 Print alsactl version number.
 
 .SH FILES
-\fI/etc/asound.conf\fP (or whatever file the user specifies with the
-\fB-f\fP flag) is used to store current mixer settings. There are two benefits
-of using alsactl: first, alsactl doesn't force the user to
-use any particular mixer app; second, alsactl knows about pretty much
-everything alsa is capable of controlling, which the various mixers
-(like \fBamixer\fP, \fBalsamixer\fP, or \fBxamixer\fP) might not.
+\fI/etc/asound.conf\fP (or whatever file you specify with the
+\fB-f\fP flag) is used to store current settings for your
+soundcards. The settings include all the usual soundcard mixer
+settings.  More importantly, alsactl is
+capable of controlling other card-specific features that mixer apps
+usually don't know about.
 
 The configuration file is generated automatically by running
-\fBalsactl store\fP. Editing the configuration file by hand is
-possible and may be necessary for some of the card-specific features
-that aren't known by the mixer apps (e.g. automatic mic gain, digital
-outputs, etc.).
+\fBalsactl store\fP. Editing the configuration file by hand may be
+necessary for some soundcard features (e.g. enabling/disabling
+automatic mic gain, digital outputs, joystick/game ports, some MIDI
+routing options, etc.).
+
+.SS Configuration File Syntax
+
+There are some terms in the config file that bear explaining. The
+"capabilities" comments before each line will tell you which flags you
+can set for each channel. The comments start with semicolons. To set a
+flag, simply add it to the channel() line you want.
+
+.TP
+\fIhardware-mute\fP 
+The soundcard itself is capable of muting the channel.
+Otherwise, kernel midlevel code will set the volume to minimum when an
+application requests muting on this channel.
+
+.TP
+\fIjoin-mute\fP
+Muting this channel can \fBonly\fP be
+toggled for left and right at the same time, \fBnot\fP independently
+-- even if you can control the volumes for left and right independently!
+
+.TP
+\fIstereo\fP
+The channel is stereo.
+
+.TP
+\fIrecord\fP
+Use the channel as a recording source.
+
+.TP
+\fIjoin-record\fP
+Recording from this channel can only be toggled for \fBboth\fP left
+and right at once; they cannot be toggled independently.
+
+.TP
+\fIrecord-by-mute\fP
+Allow recording the channel even if it's muted, so you can avoid
+feeding your record source to the speakers. Not all hardware supports this.
+
+.TP
+\fIexternal-input\fP
+This flag is purely informational: it tells you that the channel
+controls a signal from an external input (like Line-In or CD). This
+serves to distinguish external source channels from onboard
+source channels (like OPL-3 synth), which don't have this flag set.
+
+.TP
+\fIdigital\fP
+If you have a card with digital outputs and/or inputs, this flag
+toggles digital output/input for the channel.
+
+.PP
+Another feature of the configuration file is the \fIboolean\fP switches
+which are used to toggle certain card-specific advanced features. For
+example:
+
+    ; Type is 'bool'.
+    switch( "MIC Gain", false )
+
+This shows that my card has a switchable mic gain, and that it's
+currently turned off. To turn it on, just change "false" to "true" and
+run \fBalsactl restore\fP.
+
+
+.SH EXAMPLES
+
+Let's say I have this entry in /etc/asound.conf for my PCM output.
+
+    ; Capabilities: stereo hardware-mute digital.
+    ; Accepted channel range is from 0 to 63.
+    channel( "PCM", stereo( 40 mute, 50 mute ) )
+
+When \fBalsactl restore\fP is run, volume will be set to 40 for the left
+and 50 for the right, but both will be muted (by hardware).
+
 
 .SH SEE ALSO
 \fB
@@ -70,16 +143,3 @@ None known.
 .SH AUTHOR
 \fBalsactl\fP is by Jaroslav Kysela <perex@jcu.cz>
 This document is by Paul Winkler <zarmzarm@erols.com>.
-
-
-.SH QUESTIONS!!!
-
-There are some things in the asound.conf file that I don't
-understand:
-
---What's the difference between "hardware mute" and "join mute"?
-
---What does "record-by-mute" do?
-
---What does "external-input" do?
-
