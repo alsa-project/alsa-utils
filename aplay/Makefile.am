@@ -17,8 +17,8 @@ arecord.1: aplay.1
 
 install-exec-hook:
 	rm -f $(bindir)/arecord
-	(cd $(bindir) && $(LN_S) aplay arecord)
+	(cd $(DESTDIR)$(bindir) && $(LN_S) aplay arecord)
 
 install-data-hook:
 	rm -f $(mandir)/man1/arecord.1
-	(cd $(mandir)/man1 && $(LN_S) aplay.1 arecord.1)
+	(cd $(DESTDIR)$(mandir)/man1 && $(LN_S) aplay.1 arecord.1)
