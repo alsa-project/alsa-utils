@@ -68,17 +68,17 @@ Test speaker 1 or speaker 2 only, rather than both
 
 Produce stereo sound from one stereo jack:
 .EX
-  speaker-test -Dfront -c2
+  speaker-test -Dplug:front -c2
 .EE
 
 Produce 4 speaker sound from two stereo jacks:
 .EX
-  speaker-test -Dsurround40 -c4
+  speaker-test -Dplug:surround40 -c4
 .EE
 
 Produce 5.1 speaker sound from three stereo jacks:
 .EX
-  speaker-test -Dsurround51 -c6
+  speaker-test -Dplug:surround51 -c6
 .EE
 
 To send a nice low 75Hz tone to the Woofer and then exit without touching any other speakers:
