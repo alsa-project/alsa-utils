@@ -140,7 +140,7 @@ Usage: %s [OPTION]... [FILE]...
 -L, --list-pcms          list all PCMs defined
 -D, --device=NAME        select PCM by name
 -q, --quiet              quiet mode
--t, --file-type TYPE     file type (voc, wav or raw)
+-t, --file-type TYPE     file type (voc, wav, raw or au)
 -c, --channels=#         channels
 -f, --format=FORMAT      sample format (case insensitive)
 -r, --rate=#             sample rate
@@ -344,6 +344,8 @@ int main(int argc, char *argv[])
 				file_type = FORMAT_VOC;
 			else if (strcasecmp(optarg, "wav") == 0)
 				file_type = FORMAT_WAVE;
+			else if (strcasecmp(optarg, "au") == 0 || strcasecmp(optarg, "sparc") == 0)
+				file_type = FORMAT_AU;
 			else {
 				error("unrecognized file format %s", optarg);
 				return 1;
