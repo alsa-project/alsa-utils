@@ -11,6 +11,6 @@ aplay/arecord	- utility for playback / record of .wav,.voc,.au files
 amixer		- a command line mixer
 alsamixer	- ncurses mixer
 
-You should look for more info about ALSA project to http://alsa.jcu.cz.
+You may look for more info about ALSA project to http://www.alsa-project.org.
 
 					Jaroslav Kysela <perex@suse.cz>
