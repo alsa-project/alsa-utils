@@ -232,7 +232,7 @@ static void device_list(void)
 				for (idx = 0; idx <= pcminfo.playback; idx++) {
 					memset(&chninfo, 0, sizeof(chninfo));
 					chninfo.channel = SND_PCM_CHANNEL_PLAYBACK;
-					if ((err = snd_ctl_pcm_channel_info(handle, dev, idx, &chninfo)) < 0) {
+					if ((err = snd_ctl_pcm_channel_info(handle, dev, SND_PCM_CHANNEL_PLAYBACK, idx, &chninfo)) < 0) {
 						printf("Error: control digital audio playback info (%i): %s\n", card, snd_strerror(err));
 					} else {
 						printf("  Playback subdevice #%i: %s\n", idx, chninfo.subname);
@@ -243,7 +243,7 @@ static void device_list(void)
 				for (idx = 0; idx <= pcminfo.capture; idx++) {
 					memset(&chninfo, 0, sizeof(chninfo));
 					chninfo.channel = SND_PCM_CHANNEL_CAPTURE;
-					if ((err = snd_ctl_pcm_channel_info(handle, dev, 0, &chninfo)) < 0) {
+					if ((err = snd_ctl_pcm_channel_info(handle, dev, SND_PCM_CHANNEL_CAPTURE, 0, &chninfo)) < 0) {
 						printf("Error: control digital audio capture info (%i): %s\n", card, snd_strerror(err));
 					} else {
 						printf("  Capture subdevice #%i: %s\n", idx, chninfo.subname);
