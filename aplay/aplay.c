@@ -895,7 +895,7 @@ static void suspend(void)
 /* peak handler */
 static void compute_max_peak(u_char *data, size_t count)
 {
-	signed int val, max, max_peak = 0;
+	signed int val, max, max_peak = 0, perc;
 	size_t step, ocount = count;
 	
 	while (count-- > 0) {
@@ -912,7 +912,14 @@ static void compute_max_peak(u_char *data, size_t count)
 	max = 1 << (bits_per_sample-1);
 	if (max == 0)
 		max = 0x7fffffff;
-	printf("Max peak (%li samples): %i (0x%x) %i%%\n", (long)ocount, max_peak, max_peak, max_peak / (max / 100));
+	printf("Max peak (%li samples): %05i (0x%04x) ", (long)ocount, max_peak, max_peak);
+	perc = max_peak / (max / 100);
+	for (val = 0; val < 20; val++)
+		if (val <= perc / 5)
+			putc('#', stdout);
+		else
+			putc(' ', stdout);
+	printf(" %i%%\n", perc);
 }
 
 /*
