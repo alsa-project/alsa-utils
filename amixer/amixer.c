@@ -40,7 +40,7 @@
 
 int quiet = 0;
 int debugflag = 0;
-int card;
+char *card = "0";
 
 static void error(const char *fmt,...)
 {
@@ -58,7 +58,7 @@ static int help(void)
 	printf("Usage: amixer <options> command\n");
 	printf("\nAvailable options:\n");
 	printf("  -h,--help       this help\n");
-	printf("  -c,--card #     use a card number (0-%i) or the card name, default %i\n", snd_cards() - 1, card);
+	printf("  -c,--card #     use a card number (0-%i) or the card name, default %s\n", snd_cards() - 1, card);
 	printf("  -D,--debug      debug mode\n");
 	printf("  -v,--version    print version of this program\n");
 	printf("\nAvailable commands:\n");
@@ -90,7 +90,7 @@ static int info(void)
 		error("Control device %i hw info error: %s", card, snd_strerror(err));
 		return err;
 	}
-	printf("Card #%i '%s'/'%s'\n", card, info.id, info.longname);
+	printf("Card %s '%s'/'%s'\n", card, info.id, info.longname);
 	printf("  Mixer ID	: '%s'\n", info.mixerid);
 	printf("  Mixer name	: '%s'\n", info.mixername);
 	memset(&clist, 0, sizeof(clist));
@@ -1058,11 +1058,6 @@ int main(int argc, char *argv[])
 	};
 
 	morehelp = 0;
-	card = snd_defaults_mixer_card();
-	if (card < 0) {
-		fprintf(stderr, "The ALSA sound driver was not detected in this system.\n");
-		return 1;
-	}
 	while (1) {
 		int c;
 
@@ -1075,7 +1070,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'c':
 		case HELPID_CARD:
-			card = snd_card_get_index(optarg);
+			card = optarg;
 			break;
 		case 'q':
 		case HELPID_QUIET:

@@ -238,7 +238,7 @@ static void device_list(void)
 	for (card = 0; card < SND_CARDS; card++) {
 		if (!(mask & (1 << card)))
 			continue;
-		if ((err = snd_ctl_open(&handle, card)) < 0) {
+		if ((err = snd_ctl_hw_open(&handle, card)) < 0) {
 			error("control open (%i): %s", card, snd_strerror(err));
 			continue;
 		}

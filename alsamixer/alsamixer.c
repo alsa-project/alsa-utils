@@ -178,7 +178,7 @@ static int	 mixer_ofs_x = 0;
 static float	 mixer_extra_space = 0;
 static int	 mixer_cbar_height = 0;
 
-static int	 card_id = 0;
+static char*	 card_id = "0";
 static snd_mixer_t *mixer_handle;
 static char	 mixer_card_name[128];
 static char	 mixer_device_name[128];
@@ -399,7 +399,7 @@ mixer_abort (ErrType     error,
     {
     case ERR_OPEN:
       fprintf (stderr,
-	       PRGNAME ": failed to open mixer #%i: %s\n",
+	       PRGNAME ": failed to open mixer %s: %s\n",
 	       card_id,
 	       snd_strerror (xerrno));
       break;
@@ -1712,10 +1712,10 @@ main (int    argc,
 	case '?':
 	case 'h':
 	  fprintf (stderr, "%s %s\n", PRGNAME_UPPER, VERSION);
-	  fprintf (stderr, "Usage: %s [-c <card: 0..%i>] [-z]\n", PRGNAME, snd_cards () - 1);
+	  fprintf (stderr, "Usage: %s [-c <card: 0...%i>] [-z]\n", PRGNAME, snd_cards () - 1);
 	  mixer_abort (ERR_NONE, "", 0);
 	case 'c':
-	  card_id = snd_card_get_index(optarg);
+	  card_id = optarg;
 	  break;
 	case 'g':
 	  mixer_do_color = !mixer_do_color;
