@@ -583,6 +583,7 @@ int main(int argc, char *argv[])
 			capturev(&argv[optind], argc - optind);
 	}
 	snd_pcm_close(handle);
+	free(audiobuf);
 	return EXIT_SUCCESS;
 }
 
@@ -819,7 +820,7 @@ static void set_params(void)
 	bits_per_sample = snd_pcm_format_physical_width(setup.format.sfmt);
 	bits_per_frame = bits_per_sample * setup.format.channels;
 	buffer_bytes = buffer_size * bits_per_frame / 8;
-	audiobuf = malloc(buffer_bytes);
+	audiobuf = realloc(audiobuf, buffer_bytes);
 	if (audiobuf == NULL) {
 		error("not enough memory");
 		exit(EXIT_FAILURE);
