@@ -926,7 +926,7 @@ static int save_state(char *file, const char *cardname)
 		return err;
 	}
 	stdio = !strcmp(file, "-");
-	if (!stdio && (err = snd_input_stdio_open(&in, file)) >= 0) {
+	if (!stdio && (err = snd_input_stdio_open(&in, file, "r")) >= 0) {
 		err = snd_config_load(config, in);
 		snd_input_close(in);
 #if 0
@@ -972,7 +972,7 @@ static int save_state(char *file, const char *cardname)
 	if (stdio)
 		err = snd_output_stdio_attach(&out, stdout, 0);
 	else
-		err = snd_output_stdio_open(&out, file);
+		err = snd_output_stdio_open(&out, file, "w");
 	if (err < 0) {
 		error("Cannot open %s for writing", file);
 		return -errno;
@@ -1001,7 +1001,7 @@ static int load_state(char *file, const char *cardname)
 	if (stdio)
 		err = snd_input_stdio_attach(&in, stdin, 0);
 	else
-		err = snd_input_stdio_open(&in, file);
+		err = snd_input_stdio_open(&in, file, "r");
 	if (err >= 0) {
 		err = snd_config_load(config, in);
 		snd_input_close(in);
