@@ -360,6 +360,12 @@ int soundcard_setup_collect(int cardno)
 				error("MIXER channel read error (%s) - skipping", snd_strerror(err));
 				break;
 			}
+			if ((mixerchannel->i.caps & SND_MIXER_CINFO_CAP_RECORDVOLUME) &&
+			    (err = snd_mixer_channel_record_read(mhandle, idx, &mixerchannel->cr)) < 0) {
+				free(mixerchannel);
+				error("MIXER channel record read error (%s) - skipping", snd_strerror(err));
+				break;
+			}
 			if (!mixerchannelprev) {
 				mixer->channels = mixerchannel;
 			} else {
@@ -645,7 +651,7 @@ static void soundcard_setup_write_switch(FILE * out, int interface, const unsign
 }
 
 
-static void soundcard_setup_write_mixer_channel(FILE * out, snd_mixer_channel_info_t * info, snd_mixer_channel_t * channel)
+static void soundcard_setup_write_mixer_channel(FILE * out, snd_mixer_channel_info_t * info, snd_mixer_channel_t * channel, snd_mixer_channel_t * record_channel)
 {
 	fprintf(out, "    ; Capabilities:%s%s%s%s%s%s%s%s%s%s%s%s%s.\n",
 		info->caps & SND_MIXER_CINFO_CAP_RECORD ? 	" record" : "",
@@ -660,27 +666,39 @@ static void soundcard_setup_write_mixer_channel(FILE * out, snd_mixer_channel_in
 		info->caps & SND_MIXER_CINFO_CAP_SWITCH_OUT ?	" switch-out" : "",
 		info->caps & SND_MIXER_CINFO_CAP_LTOR_IN ?	" ltor-in" : "",
 		info->caps & SND_MIXER_CINFO_CAP_RTOL_IN ?	" rtol-in" : "",
-		info->caps & SND_MIXER_CINFO_CAP_RECORDBYMUTE ? " record-by-mute" : "");
+		info->caps & SND_MIXER_CINFO_CAP_RECORDVOLUME ? " record-volume" : "");
 	fprintf(out, "    ; Accepted channel range is from %i to %i.\n", info->min, info->max);
 	fprintf(out, "    channel( \"%s\", ", info->name);
 	if (info->caps & SND_MIXER_CINFO_CAP_STEREO) {
-		fprintf(out, "stereo( %i%s%s%s%s, %i%s%s%s%s )",
+		char bufl[16] = "";
+		char bufr[16] = "";
+		if (info->caps & SND_MIXER_CINFO_CAP_RECORDVOLUME) {
+			sprintf(bufl, " [%i]", record_channel->left);
+			sprintf(bufr, " [%i]", record_channel->right);
+		}
+		fprintf(out, "stereo( %i%s%s%s%s%s, %i%s%s%s%s%s )",
 			channel->left,
-		 channel->flags & SND_MIXER_FLG_MUTE_LEFT ? " mute" : "",
+			channel->flags & SND_MIXER_FLG_MUTE_LEFT ? " mute" : "",
 			channel->flags & SND_MIXER_FLG_RECORD_LEFT ? " record" : "",
-		 channel->flags & SND_MIXER_FLG_LTOR_OUT ? " swout" : "",
-		   channel->flags & SND_MIXER_FLG_LTOR_IN ? " swin" : "",
+			bufl,
+			channel->flags & SND_MIXER_FLG_LTOR_OUT ? " swout" : "",
+			channel->flags & SND_MIXER_FLG_LTOR_IN ? " swin" : "",
 			channel->right,
-		channel->flags & SND_MIXER_FLG_MUTE_RIGHT ? " mute" : "",
+			channel->flags & SND_MIXER_FLG_MUTE_RIGHT ? " mute" : "",
 			channel->flags & SND_MIXER_FLG_RECORD_RIGHT ? " record" : "",
-		 channel->flags & SND_MIXER_FLG_RTOL_OUT ? " swout" : "",
-		    channel->flags & SND_MIXER_FLG_RTOL_IN ? " swin" : ""
+			bufr,
+			channel->flags & SND_MIXER_FLG_RTOL_OUT ? " swout" : "",
+			channel->flags & SND_MIXER_FLG_RTOL_IN ? " swin" : ""
 		    );
 	} else {
-		fprintf(out, "mono( %i%s%s )",
+		char buf[16] = "";
+		if (info->caps & SND_MIXER_CINFO_CAP_RECORDVOLUME)
+			sprintf(buf, " [%i]", (record_channel->left+record_channel->right) /2);
+		fprintf(out, "mono( %i%s%s%s )",
 			(channel->left + channel->right) / 2,
-		      channel->flags & SND_MIXER_FLG_MUTE ? " mute" : "",
-		   channel->flags & SND_MIXER_FLG_RECORD ? " record" : ""
+			channel->flags & SND_MIXER_FLG_MUTE ? " mute" : "",
+			channel->flags & SND_MIXER_FLG_RECORD ? " record" : "",
+			buf
 		    );
 	}
 	fprintf(out, " )\n");
@@ -717,7 +735,7 @@ int soundcard_setup_write(const char *cfgfile)
 		for (mixer = first->mixers; mixer; mixer = mixer->next) {
 			fprintf(out, "  mixer( \"%s\" ) {\n", mixer->info.name);
 			for (mixerchannel = mixer->channels; mixerchannel; mixerchannel = mixerchannel->next)
-				soundcard_setup_write_mixer_channel(out, &mixerchannel->i, &mixerchannel->c);
+				soundcard_setup_write_mixer_channel(out, &mixerchannel->i, &mixerchannel->c, &mixerchannel->cr);
 			for (mixersw = mixer->switches; mixersw; mixersw = mixersw->next)
 				soundcard_setup_write_switch(out, SND_INTERFACE_MIXER, mixersw->s.name, mixersw->s.type, mixersw->s.low, mixersw->s.high, (void *) (&mixersw->s.value));
 			fprintf(out, "  }\n");
@@ -825,6 +843,9 @@ int soundcard_setup_process(int cardno)
 					if (!soundcard_open_mix(&mixhandle, soundcard, mixer)) {
 						if ((err = snd_mixer_channel_write(mixhandle, channel->no, &channel->c)) < 0)
 							error("Mixer channel '%s' write error: %s", channel->i.name, snd_strerror(err));
+						if ((channel->i.caps & SND_MIXER_CINFO_CAP_RECORDVOLUME) &&
+						    (err = snd_mixer_channel_record_write(mixhandle, channel->no, &channel->cr)) < 0)
+							error("Mixer channel '%s' record write error: %s", channel->i.name, snd_strerror(err));
 					}
 			if (mixhandle) {
 				snd_mixer_close(mixhandle);

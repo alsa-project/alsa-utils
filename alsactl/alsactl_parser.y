@@ -43,6 +43,7 @@ static void select_rawmidi(char *name);
 
 static void select_mixer_channel(char *name);
 static void set_mixer_channel(int left, int right);
+static void set_mixer_channel_record(int left, int right);
 static void set_mixer_channel_flags(unsigned int mask, unsigned int flags);
 static void set_mixer_channel_end(void);
 
@@ -162,6 +163,7 @@ xmchls	: xmchl
 	;
 
 xmchl	: L_INTEGER		{ set_mixer_channel( $1, -1 ); }
+	| '[' L_INTEGER ']'	{ set_mixer_channel_record( $2, -1 ); }
 	| L_MUTE		{ set_mixer_channel_flags( SND_MIXER_FLG_MUTE_LEFT, SND_MIXER_FLG_MUTE_LEFT ); }
 	| L_RECORD		{ set_mixer_channel_flags( SND_MIXER_FLG_RECORD_LEFT, SND_MIXER_FLG_RECORD_LEFT ); }
 	| L_SWOUT		{ set_mixer_channel_flags( SND_MIXER_FLG_LTOR_OUT, SND_MIXER_FLG_LTOR_OUT ); }
@@ -174,6 +176,7 @@ xmchrs	: xmchr
 	;
 
 xmchr	: L_INTEGER		{ set_mixer_channel( -1, $1 ); }
+	| '[' L_INTEGER ']'	{ set_mixer_channel_record( -1, $2 ); }
 	| L_MUTE		{ set_mixer_channel_flags( SND_MIXER_FLG_MUTE_RIGHT, SND_MIXER_FLG_MUTE_RIGHT ); }
 	| L_RECORD		{ set_mixer_channel_flags( SND_MIXER_FLG_RECORD_RIGHT, SND_MIXER_FLG_RECORD_RIGHT ); }
 	| L_SWOUT		{ set_mixer_channel_flags( SND_MIXER_FLG_RTOL_OUT, SND_MIXER_FLG_RTOL_OUT ); }
@@ -186,6 +189,7 @@ xmchs	: xmch
 	;
 
 xmch	: L_INTEGER		{ set_mixer_channel( $1, $1 ); }
+	| '[' L_INTEGER ']'	{ set_mixer_channel_record( $2, $2 ); }
 	| L_MUTE		{ set_mixer_channel_flags( SND_MIXER_FLG_MUTE, SND_MIXER_FLG_MUTE ); }
 	| L_RECORD		{ set_mixer_channel_flags( SND_MIXER_FLG_RECORD, SND_MIXER_FLG_RECORD ); }
 	| error			{ yyerror( "unknown keyword in mono channel section..." ); }
@@ -414,6 +418,24 @@ static void set_mixer_channel(int left, int right)
 		if (Xmixerchannel->c.right != right)
 			Xmixerchannel->change = 1;
 		Xmixerchannel->c.right = right;
+	}
+}
+
+static void set_mixer_channel_record(int left, int right)
+{
+	if (left >= 0) {
+		if (Xmixerchannel->i.min > left || Xmixerchannel->i.max < left)
+			yyerror("Value out of range (%i-%i)...", Xmixerchannel->i.min, Xmixerchannel->i.max);
+		if (Xmixerchannel->cr.left != left)
+			Xmixerchannel->change = 1;
+		Xmixerchannel->cr.left = left;
+	}
+	if (right >= 0) {
+		if (Xmixerchannel->i.min > right || Xmixerchannel->i.max < right)
+			yyerror("Value out of range (%i-%i)...", Xmixerchannel->i.min, Xmixerchannel->i.max);
+		if (Xmixerchannel->cr.right != right)
+			Xmixerchannel->change = 1;
+		Xmixerchannel->cr.right = right;
 	}
 }
 

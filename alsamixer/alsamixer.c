@@ -97,6 +97,8 @@ static int mixer_first_vis_channel = 0;
 static int mixer_focus_channel = 0;
 static int mixer_exact = 0;
 
+static int mixer_record_volumes = 0;
+
 static int mixer_lvolume_delta = 0;
 static int mixer_rvolume_delta = 0;
 static int mixer_balance_volumes = 0;
@@ -301,9 +303,12 @@ static void mixer_update_cbar(int channel_index)
 	{0};
 	snd_mixer_channel_t cdata =
 	{0};
+	snd_mixer_channel_t crdata =
+	{0};
 	int vleft, vright;
 	int x, y, i;
 
+	int channel_record_volume;
 
 	/* set specified EXACT mode
 	 */
@@ -314,6 +319,7 @@ static void mixer_update_cbar(int channel_index)
 	 */
 	if (snd_mixer_channel_info(mixer_handle, channel_index, &cinfo) < 0)
 		mixer_abort(ERR_FCN, "snd_mixer_channel_info");
+	channel_record_volume = (cinfo.caps & SND_MIXER_CINFO_CAP_RECORDVOLUME);
 
 	/* set new channel values
 	 */
@@ -326,14 +332,40 @@ static void mixer_update_cbar(int channel_index)
 	     mixer_route_rtol_in || mixer_route_ltor_in)) {
 		if (snd_mixer_channel_read(mixer_handle, channel_index, &cdata) < 0)
 			mixer_abort(ERR_FCN, "snd_mixer_channel_read");
+		if (mixer_record_volumes && channel_record_volume &&
+		    snd_mixer_channel_record_read(mixer_handle, channel_index, &crdata) < 0)
+			mixer_abort(ERR_FCN, "snd_mixer_channel_record_read");
 
 		cdata.flags &= ~SND_MIXER_FLG_DECIBEL;
-		cdata.left = CLAMP(cdata.left + mixer_lvolume_delta, cinfo.min, cinfo.max);
-		cdata.right = CLAMP(cdata.right + mixer_rvolume_delta, cinfo.min, cinfo.max);
-		mixer_lvolume_delta = mixer_rvolume_delta = 0;
+		if (mixer_lvolume_delta) {
+			if (mixer_record_volumes) {
+				if (channel_record_volume)
+					crdata.left = CLAMP(crdata.left + mixer_lvolume_delta, cinfo.min, cinfo.max);
+			}
+			else
+				cdata.left = CLAMP(cdata.left + mixer_lvolume_delta, cinfo.min, cinfo.max);
+			mixer_lvolume_delta = 0;
+		}
+		if (mixer_rvolume_delta) {
+			if (mixer_record_volumes) {
+				if (channel_record_volume)
+					crdata.right = CLAMP(crdata.right + mixer_rvolume_delta, cinfo.min, cinfo.max);
+			}
+			else
+				cdata.right = CLAMP(cdata.right + mixer_rvolume_delta, cinfo.min, cinfo.max);
+			mixer_rvolume_delta = 0;
+		}
 		if (mixer_balance_volumes) {
-			cdata.left = (cdata.left + cdata.right) / 2;
-			cdata.right = cdata.left;
+			if (mixer_record_volumes) {
+				if (channel_record_volume) {
+					crdata.left = (crdata.left + crdata.right) / 2;
+					crdata.right = crdata.left;
+				}
+			}
+			else {
+				cdata.left = (cdata.left + cdata.right) / 2;
+				cdata.right = cdata.left;
+			}
 			mixer_balance_volumes = 0;
 		}
 		if (mixer_toggle_mute_left) {
@@ -393,14 +425,29 @@ static void mixer_update_cbar(int channel_index)
 
 		if (snd_mixer_channel_write(mixer_handle, channel_index, &cdata) < 0)
 			mixer_abort(ERR_FCN, "snd_mixer_channel_write");
+		if (mixer_record_volumes && channel_record_volume &&
+		    snd_mixer_channel_record_write(mixer_handle, channel_index, &crdata) < 0)
+			mixer_abort(ERR_FCN, "snd_mixer_channel_record_write");
 	}
 	/* first, read values for the numbers to be displayed in
 	 * specified EXACT mode
 	 */
 	if (snd_mixer_channel_read(mixer_handle, channel_index, &cdata) < 0)
 		mixer_abort(ERR_FCN, "snd_mixer_ioctl_channel_read");
-	vleft = cdata.left;
-	vright = cdata.right;
+	if (mixer_record_volumes) {
+		if (channel_record_volume) {
+			if (snd_mixer_channel_record_read(mixer_handle, channel_index, &crdata) < 0)
+				mixer_abort(ERR_FCN, "snd_mixer_channel_record_read");
+			vleft = crdata.left;
+			vright = crdata.right;
+		}
+		else
+			vleft = vright = 0;
+	}
+	else {
+		vleft = cdata.left;
+		vright = cdata.right;
+	}
 
 	/* then, always use percentage values for the bars. if we don't do
 	 * this, we will see aliasing effects on specific circumstances.
@@ -413,6 +460,9 @@ static void mixer_update_cbar(int channel_index)
 			mixer_abort(ERR_FCN, "snd_mixer_exact");
 		if (snd_mixer_channel_read(mixer_handle, channel_index, &cdata) < 0)
 			mixer_abort(ERR_FCN, "snd_mixer_channel_read");
+		if (mixer_record_volumes && channel_record_volume &&
+		    snd_mixer_channel_record_read(mixer_handle, channel_index, &crdata) < 0)
+			mixer_abort(ERR_FCN, "snd_mixer_channel_record_read");
 	}
 	/* get channel bar position
 	 */
@@ -470,8 +520,8 @@ static void mixer_update_cbar(int channel_index)
 			dc = DC_CBAR_FULL_2;
 		else
 			dc = DC_CBAR_FULL_1;
-		mvaddch(y, x + 3, mixer_dc(cdata.left > i * 100 / mixer_cbar_height ? dc : DC_CBAR_EMPTY));
-		mvaddch(y, x + 4, mixer_dc(cdata.right > i * 100 / mixer_cbar_height ? dc : DC_CBAR_EMPTY));
+		mvaddch(y, x + 3, mixer_dc(vleft > i * 100 / mixer_cbar_height ? dc : DC_CBAR_EMPTY));
+		mvaddch(y, x + 4, mixer_dc(vright > i * 100 / mixer_cbar_height ? dc : DC_CBAR_EMPTY));
 		y--;
 	}
 
@@ -601,6 +651,10 @@ static void mixer_draw_frame(void)
 	if (strlen(string) > max_len)
 		string[max_len] = 0;
 	mvaddstr(2, 2 + 6, string);
+	if (mixer_record_volumes)
+		mvaddstr(3, 2, "Record mixer");
+	else
+		mvaddstr(3, 2, "            ");
 }
 
 static void mixer_init(void)
@@ -752,6 +806,7 @@ static int mixer_iteration(void)
 		break;
 	case 'm':
 	case 'M':
+		mixer_record_volumes = 0;
 		mixer_toggle_mute_left = 1;
 		mixer_toggle_mute_right = 1;
 		break;
@@ -762,14 +817,18 @@ static int mixer_iteration(void)
 		break;
 	case '<':
 	case ',':
+		mixer_record_volumes = 0;
 		mixer_toggle_mute_left = 1;
 		break;
 	case '>':
 	case '.':
+		mixer_record_volumes = 0;
 		mixer_toggle_mute_right = 1;
 		break;
 	case 'R':
 	case 'r':
+		mixer_record_volumes = !mixer_record_volumes;
+		break;
 	case 'L':
 	case 'l':
 		mixer_clear();
@@ -786,9 +845,11 @@ static int mixer_iteration(void)
 		mixer_toggle_rec_right = 1;
 		break;
 	case '1':
+		mixer_record_volumes = 0;
 		mixer_route_rtol_in = 1;
 		break;
 	case '2':
+		mixer_record_volumes = 0;
 		mixer_route_ltor_in = 1;
 		break;
 	}

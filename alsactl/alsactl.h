@@ -47,6 +47,7 @@ struct mixer_channel {
 	int change;
 	snd_mixer_channel_info_t i;
 	snd_mixer_channel_t c;
+	snd_mixer_channel_t cr;
 	struct mixer_channel *next;
 };
 

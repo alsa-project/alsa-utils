@@ -38,6 +38,7 @@ int linecount;
 
 "{"|"}"			return yytext[0];
 "("|")"			return yytext[0];
+"["|"]"			return yytext[0];
 ")"[ \t]*"{"		return L_DOUBLE1;
 ","			return yytext[0];
 
@@ -108,9 +109,9 @@ true|on|yes		return L_TRUE;
 \'[^\']*\'              { yytext[ strlen( yytext ) - 1 ] = 0;
                           yylval.s_value = strdup( &yytext[ 1 ] );
                           return L_STRING; }
-[a-z0-9/\~@-_\+=:\.]+  { yylval.s_value = strdup( yytext );
+[a-z0-9/\~@-Za-z_\+=:\.]+  { yylval.s_value = strdup( yytext );
                           return L_STRING; }
-$[a-z0-9/\~@-_\+=:\.]+ { yylval.s_value = strdup( getenv( &yytext[ 1 ] ) );
+$[a-z0-9/\~@-Za-z_\+=:\.]+ { yylval.s_value = strdup( getenv( &yytext[ 1 ] ) );
                           return L_STRING; }
 
 	/* comments & whitespaces */
