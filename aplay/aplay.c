@@ -81,7 +81,6 @@ static int buffer_size = -1;
 static int frag_length = 125000;
 static int buffer_length = 500000;
 static int avail_min = 50000;
-static int xfer_min = 50000;
 static int verbose = 0;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
@@ -392,9 +391,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'A':
 			avail_min = atoi(optarg);
-			break;
-		case 'X':
-			xfer_min = atoi(optarg);
 			break;
 		case 'v':
 			verbose = 1;
@@ -717,6 +713,7 @@ static void set_params(void)
 	snd_pcm_sw_params_t swparams;
 	size_t bufsize;
 	int err;
+	size_t n;
 	err = snd_pcm_hw_params_any(handle, &params);
 	if (err < 0) {
 		error("Broken configuration for this PCM: no configurations available");
@@ -727,79 +724,77 @@ static void set_params(void)
 		mask_set(mask, SND_PCM_ACCESS_MMAP_INTERLEAVED);
 		mask_set(mask, SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
 		mask_set(mask, SND_PCM_ACCESS_MMAP_COMPLEX);
-		err = snd_pcm_hw_params_mask(handle, &params,
-					     SND_PCM_HW_PARAM_ACCESS, mask);
+		err = snd_pcm_hw_param_mask(handle, &params,
+					    SND_PCM_HW_PARAM_ACCESS, mask);
 	} else if (interleaved)
-		err = snd_pcm_hw_params_set(handle, &params,
-					    SND_PCM_HW_PARAM_ACCESS,
-					    SND_PCM_ACCESS_RW_INTERLEAVED);
+		err = snd_pcm_hw_param_set(handle, &params,
+					   SND_PCM_HW_PARAM_ACCESS,
+					   SND_PCM_ACCESS_RW_INTERLEAVED);
 	else
-		err = snd_pcm_hw_params_set(handle, &params,
-					    SND_PCM_HW_PARAM_ACCESS,
-					    SND_PCM_ACCESS_RW_NONINTERLEAVED);
+		err = snd_pcm_hw_param_set(handle, &params,
+					   SND_PCM_HW_PARAM_ACCESS,
+					   SND_PCM_ACCESS_RW_NONINTERLEAVED);
 	if (err < 0) {
 		error("Access type not available");
 		exit(EXIT_FAILURE);
 	}
-	err = snd_pcm_hw_params_set(handle, &params, SND_PCM_HW_PARAM_FORMAT,
-				    hwparams.format);
+	err = snd_pcm_hw_param_set(handle, &params, SND_PCM_HW_PARAM_FORMAT,
+				   hwparams.format);
 	if (err < 0) {
 		error("Sample format non available");
 		exit(EXIT_FAILURE);
 	}
-	err = snd_pcm_hw_params_set(handle, &params, SND_PCM_HW_PARAM_CHANNELS,
-				    hwparams.channels);
+	err = snd_pcm_hw_param_set(handle, &params, SND_PCM_HW_PARAM_CHANNELS,
+				   hwparams.channels);
 	if (err < 0) {
 		error("Channels count non available");
 		exit(EXIT_FAILURE);
 	}
 
-	err = snd_pcm_hw_params_min(handle, &params,
-				    SND_PCM_HW_PARAM_FRAGMENTS, 2);
+	err = snd_pcm_hw_param_min(handle, &params,
+				   SND_PCM_HW_PARAM_FRAGMENTS, 2);
 	assert(err >= 0);
-	err = snd_pcm_hw_params_near(handle, &params,
-				     SND_PCM_HW_PARAM_RATE, hwparams.rate);
+	err = snd_pcm_hw_param_near(handle, &params,
+				    SND_PCM_HW_PARAM_RATE, hwparams.rate);
 	assert(err >= 0);
-	err = snd_pcm_hw_params_near(handle, &params,
-				     SND_PCM_HW_PARAM_FRAGMENT_LENGTH, 
-				     frag_length);
+	err = snd_pcm_hw_param_near(handle, &params,
+				    SND_PCM_HW_PARAM_FRAGMENT_LENGTH, 
+				    frag_length);
 	assert(err >= 0);
-	err = snd_pcm_hw_params_near(handle, &params,
+	err = snd_pcm_hw_param_near(handle, &params,
 				     SND_PCM_HW_PARAM_BUFFER_LENGTH,
 				     buffer_length);
 	assert(err >= 0);
 	err = snd_pcm_hw_params(handle, &params);
 	if (err < 0) {
-		fprintf(stderr, "Unable to install params:\n");
-		snd_pcm_dump_hw_params(&params, stderr);
+		fprintf(stderr, "Unable to install hw params:\n");
+		snd_pcm_hw_params_dump(&params, stderr);
 		exit(EXIT_FAILURE);
 	}
-	bufsize = snd_pcm_hw_params_value(&params, SND_PCM_HW_PARAM_FRAGMENT_SIZE) *
-		snd_pcm_hw_params_value(&params, SND_PCM_HW_PARAM_FRAGMENTS);
+	buffer_size = snd_pcm_hw_param_value(&params, SND_PCM_HW_PARAM_FRAGMENT_SIZE);
+	bufsize = buffer_size * snd_pcm_hw_param_value(&params, SND_PCM_HW_PARAM_FRAGMENTS);
 
-	swparams.start_mode = SND_PCM_START_DATA;
-	swparams.ready_mode = ready_mode;
-	swparams.xrun_mode = xrun_mode;
-	swparams.avail_min = snd_pcm_hw_params_value(&params, SND_PCM_HW_PARAM_RATE) * avail_min / 1000000;
-	swparams.xfer_min = snd_pcm_hw_params_value(&params, SND_PCM_HW_PARAM_RATE) * xfer_min / 1000000;
-	if (xrun_mode == SND_PCM_XRUN_FRAGMENT)
-		swparams.xfer_align = snd_pcm_hw_params_value(&params, SND_PCM_HW_PARAM_FRAGMENT_SIZE);
-	else
-		swparams.xfer_align = 1;
-	swparams.xfer_min -= swparams.xfer_min % swparams.xfer_align;
-	swparams.avail_min -= swparams.avail_min % swparams.xfer_align;
-	if (swparams.xfer_min == 0)
-		swparams.xfer_min = swparams.xfer_align;
-	else if (swparams.xfer_min >= bufsize)
-		swparams.xfer_min = bufsize - swparams.xfer_align;
-	if (swparams.avail_min == 0)
-		swparams.avail_min = swparams.xfer_align;
-	else if (swparams.avail_min >= bufsize)
-		swparams.avail_min = bufsize - swparams.xfer_align;
-	swparams.time = 0;
+	snd_pcm_sw_params_current(handle, &swparams);
+	err = snd_pcm_sw_param_set(handle, &swparams,
+				   SND_PCM_SW_PARAM_READY_MODE, ready_mode);
+	assert(err >= 0);
+	err = snd_pcm_sw_param_set(handle, &swparams,
+				   SND_PCM_SW_PARAM_XRUN_MODE, xrun_mode);
+	assert(err >= 0);
+	n = snd_pcm_hw_param_value(&params, SND_PCM_HW_PARAM_RATE) * avail_min / 1000000;
+	if (n > bufsize - buffer_size)
+		n = bufsize - buffer_size;
+	err = snd_pcm_sw_param_near(handle, &swparams,
+				    SND_PCM_SW_PARAM_AVAIL_MIN, n);
+				   
+	if (xrun_mode == SND_PCM_XRUN_ASAP) {
+		err = snd_pcm_sw_param_near(handle, &swparams,
+					    SND_PCM_SW_PARAM_XFER_ALIGN, 1);
+		assert(err >= 0);
+	}
 	if (snd_pcm_sw_params(handle, &swparams) < 0) {
-		snd_pcm_dump_sw_params_fail(&swparams, stderr);
-		error("unable to set sw params");
+		error("unable to install sw params:");
+		snd_pcm_sw_params_dump(&swparams, stderr);
 		exit(EXIT_FAILURE);
 	}
 	if (snd_pcm_prepare(handle) < 0) {
@@ -810,7 +805,6 @@ static void set_params(void)
 	if (verbose)
 		snd_pcm_dump(handle, stderr);
 
-	buffer_size = snd_pcm_hw_params_value(&params, SND_PCM_HW_PARAM_FRAGMENT_SIZE);
 	bits_per_sample = snd_pcm_format_physical_width(hwparams.format);
 	bits_per_frame = bits_per_sample * hwparams.channels;
 	buffer_bytes = buffer_size * bits_per_frame / 8;
@@ -841,7 +835,7 @@ void xrun(void)
 		fprintf(stderr, "xrun!!! (at least %.3f ms long)\n", diff.tv_sec * 1000 + diff.tv_usec / 1000.0);
 		if (verbose) {
 			fprintf(stderr, "Status:\n");
-			snd_pcm_dump_status(&status, stderr);
+			snd_pcm_status_dump(&status, stderr);
 		}
 		if ((res = snd_pcm_prepare(handle))<0) {
 			error("xrun: prepare error: %s", snd_strerror(res));
