@@ -781,14 +781,14 @@ static void set_params(void)
 	if (mmap_flag)
 		snd_pcm_munmap(handle, stream);
 #endif
-	snd_pcm_flush(handle);		/* to be in right state */
+	snd_pcm_drain(handle);		/* to be in right state */
 
 	memset(&params, 0, sizeof(params));
 	params.format = format;
 	params.start_mode = SND_PCM_START_DATA;
 	params.xfer_mode = xfer_mode;
 	params.xrun_mode = xrun_mode;
-	params.xrun_act = SND_PCM_XRUN_ACT_FLUSH;
+	params.xrun_act = SND_PCM_XRUN_ACT_STOP;
 	params.frag_size = format.rate * frag_length / 1000;
 	params.buffer_size = format.rate * buffer_length / 1000;
 	params.avail_min = format.rate * avail_min / 1000;
@@ -1063,7 +1063,7 @@ static void voc_pcm_flush(void)
 		if (pcm_write(audiobuf, b) != b)
 			error("voc_pcm_flush error");
 	}
-	snd_pcm_flush(handle);
+	snd_pcm_drain(handle);
 }
 
 static void voc_play(int fd, int ofs, char *name)
@@ -1532,7 +1532,7 @@ void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
 		written += r;
 		l = 0;
 	}
-	snd_pcm_flush(handle);
+	snd_pcm_drain(handle);
 }
 
 /* captureing raw data, this proc handels WAVE files and .VOCs (as one block) */
@@ -1572,7 +1572,7 @@ static void playback(char *name)
 	ssize_t dtawave;
 
 	count = calc_count();
-	snd_pcm_flush(handle);
+	snd_pcm_drain(handle);
 	if (!name || !strcmp(name, "-")) {
 		fd = 0;
 		name = "stdin";
@@ -1621,7 +1621,7 @@ static void capture(char *name)
 {
 	int fd;
 
-	snd_pcm_flush(handle);
+	snd_pcm_drain(handle);
 	if (!name || !strcmp(name, "-")) {
 		fd = 1;
 		name = "stdout";
@@ -1689,7 +1689,7 @@ void playbackv_go(int* fds, unsigned int channels, size_t loaded, size_t count, 
 		r = r * bits_per_frame / 8;
 		count -= r;
 	}
-	snd_pcm_flush(handle);
+	snd_pcm_drain(handle);
 }
 
 void capturev_go(int* fds, unsigned int channels, size_t count, int rtype, char **names)
@@ -1738,7 +1738,7 @@ static void playbackv(char **names, unsigned int count)
 	for (channel = 0; channel < channels; ++channel)
 		fds[channel] = -1;
 
-	snd_pcm_flush(handle);
+	snd_pcm_drain(handle);
 	if (count == 1) {
 		size_t len = strlen(names[0]);
 		char format[1024];
@@ -1793,7 +1793,7 @@ static void capturev(char **names, unsigned int count)
 	for (channel = 0; channel < channels; ++channel)
 		fds[channel] = -1;
 
-	snd_pcm_flush(handle);
+	snd_pcm_drain(handle);
 	if (count == 1) {
 		size_t len = strlen(names[0]);
 		char format[1024];

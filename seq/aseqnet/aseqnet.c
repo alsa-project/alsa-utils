@@ -560,7 +560,7 @@ static int copy_remote_to_local(int fd)
 		snd_seq_event_output(handle, ev);
 	}
 
-	snd_seq_flush_output(handle);
+	snd_seq_drain_output(handle);
 	return 0;
 }
 
