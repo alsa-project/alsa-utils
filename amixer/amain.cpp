@@ -188,12 +188,10 @@ int main(int argc, char **argv)
 		} else if (sscanf(argv[i], "%d:%d", &left, &right)==2) {
 		} else if (sscanf(argv[i], "%d", &left)==1) {
 			right = left;
-		} else if (sscanf(argv[i], "%s", device_name)==1) {
 		} else {
-			fprintf(stderr, "Wrong keyword: %s\n", argv[i]);
-			exit(1);
+			strncpy(device_name, argv[i], sizeof(device_name));
+			device_name[sizeof(device_name)-1] = 0;
 		}
-	
 	}
 	Mixer mixer(card,device);
 	
