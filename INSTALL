@@ -15,3 +15,22 @@ please, check if --prefix option is same for alsa-lib and alsa-utils
 package. The configure script from alsa-utils package probably cannot find
 header file asoundlib.h in $prefix/include/sys directory (usually in
 /usr/include/sys directory).
+
+Compilation from CVS sources
+----------------------------
+
+You need also GNU packages automake and libtool installed in your system
+to compile CVS sources of alsa-lib package.
+
+For compilation you can use these commands:
+
+	aclocal
+	automake --foreign --copy --add-missing
+	autoconf
+	./configure
+	make
+
+The included cvscompile script does this job for you.
+
+Note: Some automake packages have missing aclocal program. Use newer version
+      in the case.
