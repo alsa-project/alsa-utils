@@ -90,7 +90,7 @@ static size_t chunk_bytes;
 static snd_output_t *log;
 
 static int fd = -1;
-static int count, fdcount;
+static size_t count, fdcount;
 static int vocmajor, vocminor;
 
 /* needed prototypes */
@@ -1372,7 +1372,7 @@ static size_t calc_count(void)
 	size_t count;
 
 	if (!timelimit) {
-		count = 0x7fffffff;
+		count = -1;
 	} else {
 		count = snd_pcm_format_size(hwparams.format,
 					    timelimit * hwparams.rate *
@@ -1541,6 +1541,8 @@ static void end_voc(int fd)
 	bt.type = 1;
 	cnt = fdcount;
 	cnt += sizeof(VocVoiceData);	/* Channel_data block follows */
+	if (cnt > 0x00ffffff)
+		cnt = 0x00ffffff;
 	bt.datalen = (u_char) (cnt & 0xFF);
 	bt.datalen_m = (u_char) ((cnt & 0xFF00) >> 8);
 	bt.datalen_h = (u_char) ((cnt & 0xFF0000) >> 16);
@@ -1559,7 +1561,7 @@ static void end_wave(int fd)
 		      sizeof(WaveChunkHeader) +
 		      sizeof(WaveFmtBody);
 	cd.type = WAV_DATA;
-	cd.length = LE_INT(fdcount);
+	cd.length = fdcount > 0xffffffff ? 0xffffffff : LE_INT(fdcount);
 	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
 		write(fd, &cd, sizeof(WaveChunkHeader));
 	if (fd != 1)
@@ -1572,7 +1574,7 @@ static void end_au(int fd)
 	off_t length_seek;
 	
 	length_seek = (char *)&ah.data_size - (char *)&ah;
-	ah.data_size = BE_INT(fdcount);
+	ah.data_size = fdcount > 0xffffffff ? 0xffffffff : BE_INT(fdcount);
 	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
 		write(fd, &ah.data_size, sizeof(ah.data_size));
 	if (fd != 1)
@@ -1838,6 +1840,7 @@ void capturev_go(int* fds, unsigned int channels, size_t count, int rtype, char 
 		}
 		r = r * bits_per_frame / 8;
 		count -= r;
+		fdcount += r;
 	}
 }
 
