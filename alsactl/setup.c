@@ -559,7 +559,12 @@ static void soundcard_setup_write_switch(FILE * out, int interface, const unsign
 		break;
 	case SND_CTL_SW_TYPE_WORD:
 		s = "word";
-		sprintf(v, "%u", (unsigned int) pdata->data16[0]);
+		if (interface == SND_INTERFACE_CONTROL &&
+		    !strcmp(name, SND_CTL_SW_JOYSTICK_ADDRESS)) {
+		    	sprintf(v, "0x%x", (unsigned int) pdata->data16[0]);
+		} else {
+			sprintf(v, "%u", (unsigned int) pdata->data16[0]);
+		}
 		break;
 	case SND_CTL_SW_TYPE_DWORD:
 		s = "dword";
@@ -864,8 +869,10 @@ int soundcard_setup_process(int cardno)
 					}
 			}
 		}
+		if(ctlhandle) {
+			snd_ctl_close(ctlhandle);
+			ctlhandle = NULL;
+		}
 	}
-	if (ctlhandle)
-		snd_ctl_close(ctlhandle);
 	return 1;
 }
