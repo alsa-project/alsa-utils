@@ -6,6 +6,7 @@ ALSAMIXER_DIR=
 endif
 SUBDIRS=include alsactl alsaconf $(ALSAMIXER_DIR) amidi amixer aplay iecset seq utils
 EXTRA_DIST=ChangeLog INSTALL TODO README configure cvscompile depcomp
+AUTOMAKE_OPTIONS=foreign
 
 rpm: dist
 	$(MAKE) -C $@
