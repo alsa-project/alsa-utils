@@ -330,8 +330,8 @@ elif [ -x /usr/sbin/rcalsasound ]; then
     rcalsasound=/usr/sbin/rcalsasound
 elif [ -x /sbin/rcalsasound ]; then
     rcalsasound=/sbin/rcalsasound
-elif [ -x /etc/rc.d/inet.d/alsasound ]; then
-    rcalsasound=/etc/rc.d/inet.d/alsasound
+elif [ -x /etc/rc.d/init.d/alsasound ]; then
+    rcalsasound=/etc/rc.d/init.d/alsasound
 elif [ -x /etc/init.d/alsa ]; then
     rcalsasound=/etc/init.d/alsa
 else
