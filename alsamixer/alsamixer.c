@@ -1698,6 +1698,8 @@ mixer_iteration (void)
   
   if (finished > 0) {
     if (snd_mixer_poll_descriptors_revents(mixer_handle, fds + 1, count, &revents) >= 0) {
+      if (revents & POLLNVAL)
+        mixer_abort (ERR_FCN, "snd_mixer_poll_descriptors (POLLNVAL)", 0);
       if (revents & POLLERR)
         mixer_abort (ERR_FCN, "snd_mixer_poll_descriptors (POLLERR)", 0);
       if (revents & POLLIN)
