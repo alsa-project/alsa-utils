@@ -728,11 +728,11 @@ static void set_params(void)
 		exit(EXIT_FAILURE);
 	}
 	if (mmap_flag) {
-		mask_t *mask = alloca(mask_sizeof());
-		mask_none(mask);
-		mask_set(mask, SND_PCM_ACCESS_MMAP_INTERLEAVED);
-		mask_set(mask, SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
-		mask_set(mask, SND_PCM_ACCESS_MMAP_COMPLEX);
+		snd_mask_t *mask = alloca(snd_mask_sizeof());
+	snd_mask_none(mask);
+	snd_mask_set(mask, SND_PCM_ACCESS_MMAP_INTERLEAVED);
+	snd_mask_set(mask, SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
+	snd_mask_set(mask, SND_PCM_ACCESS_MMAP_COMPLEX);
 		err = snd_pcm_hw_param_mask(handle, &params,
 					    SND_PCM_HW_PARAM_ACCESS, mask);
 	} else if (interleaved)
