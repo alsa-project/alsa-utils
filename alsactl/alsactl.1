@@ -8,7 +8,9 @@ alsactl \- advanced controls for ALSA soundcard driver
 
 .SH DESCRIPTION
 \fBalsactl\fP is used to control advanced settings for the ALSA
-soundcard drivers. It supports multiple soundcards.
+soundcard drivers. It supports multiple soundcards. If your card has
+features that you can't seem to control from a mixer application,
+you have come to the right place.
 
 .SH INVOKING
 
@@ -53,15 +55,15 @@ usually don't know about.
 The configuration file is generated automatically by running
 \fBalsactl store\fP. Editing the configuration file by hand may be
 necessary for some soundcard features (e.g. enabling/disabling
-automatic mic gain, digital outputs, joystick/game ports, some MIDI
-routing options, etc.).
+automatic mic gain, digital output, joystick/game ports, some future MIDI
+routing options, etc).
 
 .SS Configuration File Syntax
 
 There are some terms in the config file that bear explaining. The
-"capabilities" comments before each line will tell you which flags you
-can set for each channel. The comments start with semicolons. To set a
-flag, simply add it to the channel() line you want.
+"capabilities" comments before each line tells you some
+characteristics of each channel. This is purely informational; these
+are not flags you can set. Capabilities are listed below.
 
 .TP
 \fIhardware-mute\fP 
@@ -81,7 +83,7 @@ The channel is stereo.
 
 .TP
 \fIrecord\fP
-Use the channel as a recording source.
+The channel may be used as a recording source.
 
 .TP
 \fIjoin-record\fP
@@ -90,23 +92,23 @@ and right at once; they cannot be toggled independently.
 
 .TP
 \fIrecord-by-mute\fP
-Allow recording the channel even if it's muted, so you can avoid
-feeding your record source to the speakers. Not all hardware supports this.
+This channel can be recorded even if it's muted, so you can avoid
+feeding your record source back to the speakers. 
 
 .TP
 \fIexternal-input\fP
-This flag is purely informational: it tells you that the channel
+The channel
 controls a signal from an external input (like Line-In or CD). This
 serves to distinguish external source channels from onboard
-source channels (like OPL-3 synth), which don't have this flag set.
+source channels (like OPL-3 synth).
 
 .TP
 \fIdigital\fP
-If you have a card with digital outputs and/or inputs, this flag
-toggles digital output/input for the channel.
+This channel is fed to an onboard digital mixer for possible hardware
+processing (for instance, surround-sound processing if your card has it).
 
 .PP
-Another feature of the configuration file is the \fIboolean\fP switches
+The configuration file also has \fIboolean switches\fP
 which are used to toggle certain card-specific advanced features. For
 example:
 
@@ -114,8 +116,8 @@ example:
     switch( "MIC Gain", false )
 
 This shows that my card has a switchable mic gain, and that it's
-currently turned off. To turn it on, just change "false" to "true" and
-run \fBalsactl restore\fP.
+currently turned off. To turn it on, just change "false" to "true,"
+save the config file, and run \fBalsactl restore\fP.
 
 
 .SH EXAMPLES
@@ -124,11 +126,12 @@ Let's say I have this entry in /etc/asound.conf for my PCM output.
 
     ; Capabilities: stereo hardware-mute digital.
     ; Accepted channel range is from 0 to 63.
-    channel( "PCM", stereo( 40 mute, 50 mute ) )
+    channel( "PCM", stereo( 40 mute, 50 mute ))
 
-When \fBalsactl restore\fP is run, volume will be set to 40 for the left
-and 50 for the right, but both will be muted (by hardware).
-
+When \fBalsactl restore\fP is run, the PCM volume will be set
+to 40 for the left and 50 for the right, but both will be
+muted. Since this card supports \fIhardware-mute\fP, muting will be done by
+hardware rather than by zeroing the levels.
 
 .SH SEE ALSO
 \fB
@@ -143,3 +146,6 @@ None known.
 .SH AUTHOR
 \fBalsactl\fP is by Jaroslav Kysela <perex@jcu.cz>
 This document is by Paul Winkler <zarmzarm@erols.com>.
+
+
+
