@@ -957,7 +957,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
  _ok:
 	err = snd_ctl_elem_write(handle, ctl);
 	if (err < 0) {
-		error("Cannot write control '%d:%d:%d:%s:%d' : %s", iface, device, subdevice, name, index, snd_strerror(err));
+		error("Cannot write control '%ld:%ld:%ld:%s:%ld' : %s", iface, device, subdevice, name, index, snd_strerror(err));
 		return err;
 	}
 	return 0;
