@@ -199,12 +199,12 @@ static void device_list(void)
 		sprintf(name, "hw:%d", card);
 		if ((err = snd_ctl_open(&handle, name, 0)) < 0) {
 			error("control open (%i): %s", card, snd_strerror(err));
-			continue;
+			goto next_card;
 		}
 		if ((err = snd_ctl_card_info(handle, info)) < 0) {
 			error("control hardware info (%i): %s", card, snd_strerror(err));
 			snd_ctl_close(handle);
-			continue;
+			goto next_card;
 		}
 		fprintf(stderr, "**** List of %s Hardware Devices ****\n", snd_pcm_stream_name(stream));
 		dev = -1;
@@ -239,6 +239,7 @@ static void device_list(void)
 			}
 		}
 		snd_ctl_close(handle);
+	next_card:
 		if (snd_card_next(&card) < 0) {
 			error("snd_card_next");
 			break;
