@@ -786,6 +786,15 @@ mixer_update_cbar (int elem_index)
       strcat(string, " Capture");
     if (snd_mixer_selem_id_get_index(sid) > 0)
       sprintf(string + strlen(string), " %i", snd_mixer_selem_id_get_index(sid));
+    if ((mixer_type[elem_index] & MIXER_ELEM_MUTE_SWITCH)
+	&& snd_mixer_selem_has_playback_switch(elem)) {
+      snd_mixer_selem_get_playback_switch(elem, chn_left, &swl);
+      swr = 0;
+      if (chn_right != SND_MIXER_SCHN_UNKNOWN)
+	snd_mixer_selem_get_playback_switch(elem, chn_right, &swr);
+      if (! swl && ! swr)
+	sprintf(string + strlen(string), " [Off]");
+    }
     string[63] = '\0';
     strncpy(string1, string, strlen(string));
     addstr(string1);
