@@ -70,4 +70,5 @@ rm -rf $RPM_BUILD_ROOT
 
 %doc CHANGELOG COPYING README config.status
 
+%{prefix}/usr/sbin/*
 %{prefix}/usr/bin/*
