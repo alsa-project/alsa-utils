@@ -24,7 +24,6 @@
 #include <string.h>
 #include <sys/asoundlib.h>
 
-#define VERSION		"1.00a"
 #define ALSACTL_FILE	"/etc/asound.conf"
 
 extern int debugflag;
