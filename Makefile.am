@@ -5,6 +5,10 @@ EXTRA_DIST=ChangeLog INSTALL README configure cvscompile
 rpm: dist
 	$(MAKE) -C $@
 
+dist-hook:
+	-chmod -R a+r $(distdir)
+	$(TAR) cvIf $(distdir).tar.bz2 $(distdir)
+
 pack: clean-recursive
 	rm -f config.log config.cache config.status
 	rm -rf `find . -name ".deps"`
