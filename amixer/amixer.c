@@ -39,6 +39,7 @@
 #define HELPID_DEBUG            1005
 #define HELPID_VERSION		1006
 #define HELPID_NOCHECK		1007
+#define HELPID_ABSTRACT		1008
 
 #define LEVEL_BASIC		(1<<0)
 #define LEVEL_INACTIVE		(1<<1)
@@ -47,6 +48,8 @@
 int quiet = 0;
 int debugflag = 0;
 int no_check = 0;
+int smixer_level = 0;
+struct snd_mixer_selem_regopt smixer_options;
 char card[64] = "default";
 
 static void error(const char *fmt,...)
@@ -72,6 +75,7 @@ static int help(void)
 	printf("  -v,--version    print version of this program\n");
 	printf("  -q,--quiet      be quiet\n");
 	printf("  -i,--inactive   show also inactive controls\n");
+	printf("  -a,--abstract L select abstraction level (none or basic)\n");
 	printf("\nAvailable commands:\n");
 	printf("  scontrols       show all mixer simple controls\n");
 	printf("  scontents	  show contents of all mixer simple controls (default command)\n");
@@ -122,7 +126,7 @@ static int info(void)
 		snd_mixer_close(mhandle);
 		return err;
 	}
-	if ((err = snd_mixer_selem_register(mhandle, NULL, NULL)) < 0) {
+	if ((err = snd_mixer_selem_register(mhandle, smixer_level > 0 ? &smixer_options : NULL, NULL)) < 0) {
 		error("Mixer register error: %s", snd_strerror(err));
 		snd_mixer_close(mhandle);
 		return err;
@@ -772,7 +776,7 @@ static int selems(int level)
 		snd_mixer_close(handle);
 		return err;
 	}
-	if ((err = snd_mixer_selem_register(handle, NULL, NULL)) < 0) {
+	if ((err = snd_mixer_selem_register(handle, smixer_level > 0 ? &smixer_options : NULL, NULL)) < 0) {
 		error("Mixer register error: %s", snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
@@ -1143,7 +1147,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 		snd_mixer_close(handle);
 		return err;
 	}
-	if ((err = snd_mixer_selem_register(handle, NULL, NULL)) < 0) {
+	if ((err = snd_mixer_selem_register(handle, smixer_level > 0 ? &smixer_options : NULL, NULL)) < 0) {
 		error("Mixer register error: %s", snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
@@ -1424,7 +1428,7 @@ static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 		snd_mixer_close(handle);
 		return err;
 	}
-	if ((err = snd_mixer_selem_register(handle, NULL, NULL)) < 0) {
+	if ((err = snd_mixer_selem_register(handle, smixer_level > 0 ? &smixer_options : NULL, NULL)) < 0) {
 		error("Mixer register error: %s", snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
@@ -1463,6 +1467,7 @@ int main(int argc, char *argv[])
 		{"debug", 0, NULL, HELPID_DEBUG},
 		{"nocheck", 0, NULL, HELPID_NOCHECK},
 		{"version", 0, NULL, HELPID_VERSION},
+		{"abstract", 1, NULL, HELPID_ABSTRACT},
 		{NULL, 0, NULL, 0},
 	};
 
@@ -1470,7 +1475,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hc:D:qidnv", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hc:D:qidnva:", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
@@ -1515,6 +1520,20 @@ int main(int argc, char *argv[])
 		case HELPID_VERSION:
 			printf("amixer version " SND_UTIL_VERSION_STR "\n");
 			return 1;
+		case 'a':
+		case HELPID_ABSTRACT:
+			smixer_level = 1;
+			memset(&smixer_options, 0, sizeof(smixer_options));
+			smixer_options.ver = 1;
+			if (!strcmp(optarg, "none"))
+				smixer_options.abstract = SND_MIXER_SABSTRACT_NONE;
+			else if (!strcmp(optarg, "basic"))
+				smixer_options.abstract = SND_MIXER_SABSTRACT_NONE;
+			else {
+				fprintf(stderr, "Select correct abstraction level (none or basic)...\n");
+				morehelp++;
+			}
+			break;
 		default:
 			fprintf(stderr, "\07Invalid switch or option needs an argument.\n");
 			morehelp++;
