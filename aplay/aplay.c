@@ -173,6 +173,7 @@ static void usage(char *command)
 		"  -w            file format Wave\n"
 		"  -r            file format Raw\n"
 		"  -S            stereo\n"
+		"  -o <voices>   voices (1-N)\n"
 		"  -s <Hz>       speed (Hz)\n"
 		"  -f <format>   data format\n"
 		"  -m            set CD-ROM quality (44100Hz,stereo,16-bit linear,little endian)\n"
@@ -330,6 +331,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "Error: value %i for voices is invalid\n", tmp);
 				return 1;
 			}
+			rformat.voices = tmp;
 			break;
 		case 'q':
 			quiet_mode = 1;
@@ -1145,6 +1147,8 @@ void capture_read_error(void)
 		fprintf(stderr, "capture channel status error\n");
 		exit(1);
 	}
+	if (status.status == SND_PCM_STATUS_RUNNING)
+		return;		/* everything is ok, but the driver is waiting for data */
 	if (status.status == SND_PCM_STATUS_OVERRUN) {
 		printf("overrun at position %u!!!\n", status.scount);
 		if (snd_pcm_plugin_prepare(pcm_handle, SND_PCM_CHANNEL_CAPTURE)<0) {
@@ -1311,8 +1315,10 @@ void capture_go(int fd, int loaded, u_long count, int rtype, char *name)
 				}
 				count -= c;
 			}
-			if (l == -EAGAIN)
+			if (l == -EAGAIN) {
+				capture_read_error();
 				l = 0;
+			}
 			if (l < 0) {
 				fprintf(stderr, "read error: %s\n", snd_strerror(l));
 				exit(-1);
