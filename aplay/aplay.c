@@ -137,32 +137,32 @@ struct fmt_capture {
 static void usage(char *command)
 {
 	snd_pcm_format_t k;
-	fprintf(stderr, "\
-Usage: %s [OPTION]... [FILE]...
-
---help                  help
---version               print current version
--l, --list-devices      list all soundcards and digital audio devices
--L, --list-pcms         list all PCMs defined
--D, --device=NAME       select PCM by name
--q, --quiet             quiet mode
--t, --file-type TYPE    file type (voc, wav, raw or au)
--c, --channels=#        channels
--f, --format=FORMAT     sample format (case insensitive)
--r, --rate=#            sample rate
--d, --duration=#        interrupt after # seconds
--s, --sleep-min=#       min ticks to sleep
--M, --mmap              mmap stream
--N, --nonblock          nonblocking mode
--F, --period-time=#     distance between interrupts is # microseconds
--B, --buffer-time=#     buffer duration is # microseconds
--A, --avail-min=#       min available space for wakeup is # microseconds
--R, --start-delay=#     delay for automatic PCM start is # microseconds 
-                        (relative to buffer size if <= 0)
--T, --stop-delay=#      delay for automatic PCM stop is # microseconds from xrun
--v, --verbose           show PCM structure and setup
--I, --separate-channels one file for each channel
-", command);
+	fprintf(stderr,
+"Usage: %s [OPTION]... [FILE]...\n"
+"\n"
+"--help                  help\n"
+"--version               print current version\n"
+"-l, --list-devices      list all soundcards and digital audio devices\n"
+"-L, --list-pcms         list all PCMs defined\n"
+"-D, --device=NAME       select PCM by name\n"
+"-q, --quiet             quiet mode\n"
+"-t, --file-type TYPE    file type (voc, wav, raw or au)\n"
+"-c, --channels=#        channels\n"
+"-f, --format=FORMAT     sample format (case insensitive)\n"
+"-r, --rate=#            sample rate\n"
+"-d, --duration=#        interrupt after # seconds\n"
+"-s, --sleep-min=#       min ticks to sleep\n"
+"-M, --mmap              mmap stream\n"
+"-N, --nonblock          nonblocking mode\n"
+"-F, --period-time=#     distance between interrupts is # microseconds\n"
+"-B, --buffer-time=#     buffer duration is # microseconds\n"
+"-A, --avail-min=#       min available space for wakeup is # microseconds\n"
+"-R, --start-delay=#     delay for automatic PCM start is # microseconds \n"
+"                        (relative to buffer size if <= 0)\n"
+"-T, --stop-delay=#      delay for automatic PCM stop is # microseconds from xrun\n"
+"-v, --verbose           show PCM structure and setup (accumulative)\n"
+"-I, --separate-channels one file for each channel\n"
+		, command);
 	fprintf(stderr, "Recognized sample formats are:");
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++(unsigned long) k) {
 		const char *s = snd_pcm_format_name(k);
@@ -431,7 +431,7 @@ int main(int argc, char *argv[])
 			stop_delay = atoi(optarg);
 			break;
 		case 'v':
-			verbose = 1;
+			verbose++;
 			break;
 		case 'M':
 			mmap_flag = 1;
@@ -956,7 +956,7 @@ static void compute_max_peak(u_char *data, size_t count)
 			max_peak = val;
 	}
 	max = 1 << (bits_per_sample-1);
-	if (max == 0)
+	if (max <= 0)
 		max = 0x7fffffff;
 	printf("Max peak (%li samples): %05i (0x%04x) ", (long)ocount, max_peak, max_peak);
 	perc = max_peak / (max / 100);
@@ -995,7 +995,7 @@ static ssize_t pcm_write(u_char *data, size_t count)
 			exit(EXIT_FAILURE);
 		}
 		if (r > 0) {
-			if (verbose)
+			if (verbose > 1)
 				compute_max_peak(data, r * hwparams.channels);
 			result += r;
 			count -= r;
@@ -1037,7 +1037,7 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
 			exit(EXIT_FAILURE);
 		}
 		if (r > 0) {
-			if (verbose) {
+			if (verbose > 1) {
 				for (channel = 0; channel < channels; channel++)
 					compute_max_peak(data[channel], r);
 			}
@@ -1076,7 +1076,7 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 			exit(EXIT_FAILURE);
 		}
 		if (r > 0) {
-			if (verbose)
+			if (verbose > 1)
 				compute_max_peak(data, r * hwparams.channels);
 			result += r;
 			count -= r;
@@ -1115,7 +1115,7 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 			exit(EXIT_FAILURE);
 		}
 		if (r > 0) {
-			if (verbose) {
+			if (verbose > 1) {
 				for (channel = 0; channel < channels; channel++)
 					compute_max_peak(data[channel], r);
 			}
