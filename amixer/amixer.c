@@ -762,7 +762,7 @@ static const char *group_name(const char *name)
 
 int show_group(void *handle, snd_mixer_gid_t *gid, const char *space)
 {
-	int err, idx;
+	int err, idx, chn;
 	snd_mixer_group_t group;
 	snd_mixer_eid_t *element;
 	
@@ -797,36 +797,27 @@ int show_group(void *handle, snd_mixer_gid_t *gid, const char *space)
 		if (group.channels == SND_MIXER_CHN_MASK_MONO) {
 			printf("Mono");
 		} else {
-			if (group.channels & SND_MIXER_CHN_MASK_FRONT_LEFT)
-				printf("Front-Left ");
-			if (group.channels & SND_MIXER_CHN_MASK_FRONT_RIGHT)
-				printf("Front-Right ");
-			if (group.channels & SND_MIXER_CHN_MASK_FRONT_CENTER)
-				printf("Front-Center ");
-			if (group.channels & SND_MIXER_CHN_MASK_REAR_LEFT)
-				printf("Rear-Left ");
-			if (group.channels & SND_MIXER_CHN_MASK_REAR_RIGHT)
-				printf("Rear-Right ");
-			if (group.channels & SND_MIXER_CHN_MASK_WOOFER)
-				printf("Woofer");
+			for (chn = 0; chn <= SND_MIXER_CHN_LAST; chn++) {
+				if (!(group.channels & (1<<chn)))
+					continue;
+				printf("%s ", snd_mixer_channel_name(chn));
+			}
 		}
 		printf("\n");
 		printf("%sLimits: min = %i, max = %i\n", space, group.min, group.max);
 		if (group.channels == SND_MIXER_CHN_MASK_MONO) {
-			printf("%sMono: %s [%s]\n", space, get_percent(group.front_left, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_MONO ? "mute" : "on");
+			printf("%sMono: %s [%s]\n", space, get_percent(group.volume.names.front_left, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_MONO ? "mute" : "on");
 		} else {
-			if (group.channels & SND_MIXER_CHN_MASK_FRONT_LEFT)
-				printf("%sFront-Left: %s [%s] [%s]\n", space, get_percent(group.front_left, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_FRONT_LEFT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_FRONT_LEFT ? "record" : "---");
-			if (group.channels & SND_MIXER_CHN_MASK_FRONT_RIGHT)
-				printf("%sFront-Right: %s [%s] [%s]\n", space, get_percent(group.front_right, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_FRONT_RIGHT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_FRONT_RIGHT ? "record" : "---");
-			if (group.channels & SND_MIXER_CHN_MASK_FRONT_CENTER)
-				printf("%sFront-Center: %s [%s] [%s]\n", space, get_percent(group.front_center, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_FRONT_CENTER ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_FRONT_CENTER ? "record" : "---");
-			if (group.channels & SND_MIXER_CHN_MASK_REAR_LEFT)
-				printf("%sRear-Left: %s [%s] [%s]\n", space, get_percent(group.rear_left, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_REAR_LEFT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_REAR_LEFT ? "record" : "---");
-			if (group.channels & SND_MIXER_CHN_MASK_REAR_RIGHT)
-				printf("%sRear-Right: %s [%s] [%s]\n", space, get_percent(group.rear_right, group.min, group.max), group.mute &  SND_MIXER_CHN_MASK_REAR_RIGHT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_REAR_RIGHT ? "record" : "---");
-			if (group.channels & SND_MIXER_CHN_MASK_WOOFER)
-				printf("%sWoofer: %s [%s] [%s]\n", space, get_percent(group.woofer, group.min, group.max), group.mute & SND_MIXER_CHN_MASK_WOOFER ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_WOOFER ? "record" : "---");
+			for (chn = 0; chn <= SND_MIXER_CHN_LAST; chn++) {
+				if (!(group.channels & (1<<chn)))
+					continue;
+				printf("%s%s: %s [%s] [%s]\n",
+						space,
+						snd_mixer_channel_name(chn),
+						get_percent(group.volume.values[chn], group.min, group.max),
+						group.mute & (1<<chn) ? "mute" : "on",
+						group.record & (1<<chn) ? "record" : "---");
+			}
 		}
 	}
 	if (group_contents_is_on)
@@ -1322,7 +1313,7 @@ int eget(int argc, char *argv[])
 
 int gset(int argc, char *argv[])
 {
-	int err, idx;
+	int err, idx, chn;
 	snd_mixer_t *handle;
 	snd_mixer_gid_t gid;
 	snd_mixer_group_t group;
@@ -1351,9 +1342,11 @@ int gset(int argc, char *argv[])
 		return -1;
 	}
 	for (idx = 1; idx < argc; idx++) {
-		if (!strncmp(argv[idx], "mute", 4) || !strncmp(argv[idx], "off", 3)) {
+		if (!strncmp(argv[idx], "mute", 4) ||
+		    !strncmp(argv[idx], "off", 3)) {
 			group.mute = group.channels;
-		} else if (!strncmp(argv[idx], "on", 2)) || !strncmp(argv[idx], "unmute", 6)) {
+		} else if (!strncmp(argv[idx], "unmute", 6) ||
+		           !strncmp(argv[idx], "on", 2)) {
 			group.mute = 0;
 		} else if (!strncmp(argv[idx], "rec", 3)) {
 			group.record = group.channels;
@@ -1365,18 +1358,11 @@ int gset(int argc, char *argv[])
 		
 			ptr = argv[idx];
 			vol = get_volume_simple(&ptr, group.min, group.max);
-			if (group.channels & SND_MIXER_CHN_MASK_FRONT_LEFT)
-				group.front_left = vol;
-			if (group.channels & SND_MIXER_CHN_MASK_FRONT_RIGHT)
-				group.front_right = vol;
-			if (group.channels & SND_MIXER_CHN_MASK_FRONT_CENTER)
-				group.front_center = vol;
-			if (group.channels & SND_MIXER_CHN_MASK_REAR_LEFT)
-				group.rear_left = vol;
-			if (group.channels & SND_MIXER_CHN_MASK_REAR_RIGHT)
-				group.rear_right = vol;
-			if (group.channels & SND_MIXER_CHN_MASK_WOOFER)
-				group.woofer = vol;
+			for (chn = 0; chn <= SND_MIXER_CHN_LAST; chn++) {
+				if (!(group.channels & (1<<chn)))
+					continue;
+				group.volume.values[idx] = vol;
+			}
 		} else {
 			error("Unknown setup '%s'..\n", argv[idx]);
 			snd_mixer_close(handle);
