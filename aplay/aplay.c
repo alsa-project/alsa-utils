@@ -26,6 +26,7 @@
  *
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <malloc.h>
 #include <unistd.h>
@@ -268,13 +269,19 @@ static void version(void)
 static void signal_handler(int sig)
 {
 	if (!quiet_mode)
-		fprintf(stderr, "Aborted...\n");
-	if (stream == SND_PCM_STREAM_CAPTURE)
+		fprintf(stderr, "Aborted by signal %s...\n", strsignal(sig));
+	if (stream == SND_PCM_STREAM_CAPTURE) {
 		fmt_rec_table[file_type].end(fd);
-	if (fd > 1)
+		stream = -1;
+	}
+	if (fd > 1) {
 		close(fd);
-	if (handle)
+		fd = -1;
+	}
+	if (handle) {
 		snd_pcm_close(handle);
+		handle = NULL;
+	}
 	exit(EXIT_FAILURE);
 }
 
