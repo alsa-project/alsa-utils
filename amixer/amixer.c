@@ -27,7 +27,9 @@
 #include <math.h>
 #include <errno.h>
 #include <ansidecl.h>
+#include <assert.h>
 #include <sys/asoundlib.h>
+#include <sys/poll.h>
 #include "amixer.h"
 
 #define HELPID_HELP             1000
@@ -40,7 +42,7 @@ int quiet = 0;
 int debugflag = 0;
 int card;
 
-void error(const char *fmt,...)
+static void error(const char *fmt,...)
 {
 	va_list va;
 
@@ -71,7 +73,7 @@ static int help(void)
 	return 0;
 }
 
-int info(void)
+static int info(void)
 {
 	int err;
 	snd_ctl_t *handle;
@@ -453,7 +455,7 @@ static int controls(int level)
 	return 0;
 }
 
-int show_simple_control(void *handle, snd_mixer_sid_t *sid, const char *space, int level)
+static int show_simple_control(void *handle, snd_mixer_sid_t *sid, const char *space, int level)
 {
 	int err, chn;
 	snd_mixer_simple_control_t scontrol;
@@ -515,7 +517,7 @@ int show_simple_control(void *handle, snd_mixer_sid_t *sid, const char *space, i
 	return 0;
 }
 
-int simple_controls(int level)
+static int simple_controls(int level)
 {
 	int err, idx;
 	snd_mixer_t *handle;
@@ -682,7 +684,7 @@ static int parse_simple_id(const char *str, snd_mixer_sid_t *sid)
 	return 0;
 }
 
-int cset(int argc, char *argv[], int roflag)
+static int cset(int argc, char *argv[], int roflag)
 {
 	int err;
 	snd_ctl_t *handle;
@@ -800,7 +802,7 @@ static int check_channels(char *arg, unsigned int mask, unsigned int *mask_retur
 	return 0;
 }
 
-int sset(int argc, char *argv[], int roflag)
+static int sset(int argc, char *argv[], int roflag)
 {
 	int err, idx, chn;
 	unsigned int channels;
@@ -892,6 +894,87 @@ int sset(int argc, char *argv[], int roflag)
 	return 0;
 }
 
+static void events_change(snd_ctl_t *handle, snd_hcontrol_t *hcontrol)
+{
+	printf("event change: ");
+	show_control_id(&hcontrol->id);
+	printf("\n");
+}
+
+static void events_value(snd_ctl_t *handle, snd_hcontrol_t *hcontrol)
+{
+	printf("event value: ");
+	show_control_id(&hcontrol->id);
+	printf("\n");
+}
+
+static void events_remove(snd_ctl_t *handle, snd_hcontrol_t *hcontrol)
+{
+	printf("event remove: ");
+	show_control_id(&hcontrol->id);
+	printf("\n");
+}
+
+static void events_rebuild(snd_ctl_t *handle, void *private_data)
+{
+	assert(private_data != (void *)1);
+	printf("event rebuild\n");
+}
+
+static void events_add(snd_ctl_t *handle, void *private_data, snd_hcontrol_t *hcontrol)
+{
+	assert(private_data != (void *)1);
+	printf("event add: ");
+	show_control_id(&hcontrol->id);
+	printf("\n");
+	hcontrol->event_change = events_change;
+	hcontrol->event_value = events_value;
+	hcontrol->event_remove = events_remove;	
+}
+
+static int events(int argc, char *argv[])
+{
+	snd_ctl_t *handle;
+	snd_hcontrol_t *hcontrol;
+	int err;
+
+	if ((err = snd_ctl_open(&handle, card)) < 0) {
+		error("Control %i open error: %s\n", card, snd_strerror(err));
+		return err;
+	}
+	if ((err = snd_ctl_hbuild(handle, NULL)) < 0) {
+		error("Control %u hbuild error: %s\n", card, snd_strerror(err));
+		return err;
+	}
+	if ((err = snd_ctl_hcallback_rebuild(handle, events_rebuild, (void *)1)) < 0) {
+		error("Control %u hcallback_rebuild error: %s\n", card, snd_strerror(err));
+		return err;
+	}
+	if ((err = snd_ctl_hcallback_add(handle, events_add, (void *)2)) < 0) {
+		error("Control %u hcallback_add error: %s\n", card, snd_strerror(err));
+		return err;
+	}
+	for (hcontrol = snd_ctl_hfirst(handle); hcontrol; hcontrol = snd_ctl_hnext(handle, hcontrol)) {
+		hcontrol->event_change = events_change;
+		hcontrol->event_value = events_value;
+		hcontrol->event_remove = events_remove;
+	}
+	printf("Ready to listen...\n");
+	while (1) {
+		struct pollfd ctl_poll;
+		int res;
+		ctl_poll.fd = snd_ctl_file_descriptor(handle);
+		ctl_poll.events = POLLIN;
+		ctl_poll.revents = 0;
+		if (poll(&ctl_poll, 1, -1)) {
+			res = snd_ctl_hevent(handle);
+			if (res > 0)
+				printf("%i events processed\n", res);
+		}
+	}
+	snd_ctl_close(handle);
+}
+
 int main(int argc, char *argv[])
 {
 	int morehelp;
@@ -969,6 +1052,8 @@ int main(int argc, char *argv[])
 		return cset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 0) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "cget")) {
 		return cset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 1) ? 1 : 0;
+	} else if (!strcmp(argv[optind], "events")) {
+		return events(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL);
 	} else {
 		fprintf(stderr, "amixer: Unknown command '%s'...\n", argv[optind]);
 	}
