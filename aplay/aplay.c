@@ -752,15 +752,17 @@ static void voc_play(int fd, int ofs, char *name)
 #if 0
 				d_printf("Repeat loop %d times\n", repeat);
 #endif
-				if (filepos >= 0)	/* if < 0, one seek fails, why test another */
+				if (filepos >= 0) {	/* if < 0, one seek fails, why test another */
 					if ((filepos = lseek(fd, 0, 1)) < 0) {
 						fprintf(stderr, "%s: can't play loops; %s isn't seekable\n",
 							command, name);
 						repeat = 0;
-					} else
+					} else {
 						filepos -= in_buffer;	/* set filepos after repeat */
-				else
+					}
+				} else {
 					repeat = 0;
+				}
 				break;
 			case 7:	/* ok, lets repeat that be rewinding tape */
 				if (repeat) {
