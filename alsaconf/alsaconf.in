@@ -419,16 +419,6 @@ build_card_db () {
 	    echo "ISAPNP: $id1$dev1=$id2$dev2"
 	fi
     done < $MODDIR/modules.isapnpmap >> $1
-
-    while read driver id dev devs; do
-	if expr $driver : 'snd-.*' >/dev/null ; then
-	    if [ "$last_driver" != "$driver" ]; then
-		echo $driver.o
-		last_driver=$driver
-	    fi
-	    echo "ISAPNP: $id=$dev"
-	fi
-    done < $MODDIR/modules.pnpmap >> $1
 }
 
 #
