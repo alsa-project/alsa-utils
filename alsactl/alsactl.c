@@ -690,6 +690,7 @@ static int is_user_control(snd_config_t *conf)
 
 static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_config_t *conf)
 {
+	snd_ctl_elem_id_t *id;
 	snd_config_iterator_t i, next;
 	long imin, imax, istep;
 	snd_ctl_elem_type_t ctype;
@@ -745,19 +746,21 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 		}
 	}
 
+	snd_ctl_elem_id_alloca(&id);
+	snd_ctl_elem_info_get_id(info, id);
 	if (count <= 0)
 		count = 1;
 	switch (ctype) {
 	case SND_CTL_ELEM_TYPE_INTEGER:
 		if (imin > imax || istep > imax - imin)
 			return -EINVAL;
-		err = snd_ctl_elem_add_integer(handle, info, count, imin, imax, istep);
+		err = snd_ctl_elem_add_integer(handle, id, count, imin, imax, istep);
 		break;
 	case SND_CTL_ELEM_TYPE_BOOLEAN:
-		err = snd_ctl_elem_add_boolean(handle, info, count);
+		err = snd_ctl_elem_add_boolean(handle, id, count);
 		break;
 	case SND_CTL_ELEM_TYPE_IEC958:
-		err = snd_ctl_elem_add_iec958(handle, info);
+		err = snd_ctl_elem_add_iec958(handle, id);
 		break;
 	default:
 		err = -EINVAL;
@@ -927,6 +930,14 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		error("warning: name mismatch (%s/%s) for control #%d", name, name1, numid);
 	if (index != index1)
 		error("warning: index mismatch (%ld/%ld) for control #%d", index, index1, numid);
+#if 0
+	if (comment) {
+		check_comment_type(comment, type);
+		if (type == SND_CTL_ELEM_TYPE_INTEGER ||
+		    type == SND_CTL_ELEM_TYPE_INTEGER64)
+			check_comment_range(comment, info);
+	}
+#endif
 
 	if (!snd_ctl_elem_info_is_writable(info))
 		return 0;
