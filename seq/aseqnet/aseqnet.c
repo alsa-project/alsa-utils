@@ -30,6 +30,7 @@
  */
 static void usage(void);
 static void init_buf(void);
+static void init_pollfds(void);
 static void close_files(void);
 static void init_seq(char *source, char *dest);
 static int get_port(char *service);
@@ -57,7 +58,13 @@ static int cur_wrlen, max_wrlen;
 #define MAX_CONNECTION	10
 
 static snd_seq_t *handle;
-static int seqfd, sockfd, netfd[MAX_CONNECTION] = {[0 ... MAX_CONNECTION-1] = -1};
+static struct pollfd *seqifds = NULL;
+static struct pollfd *seqofds = NULL;
+static struct pollfd *pollfds = NULL;
+static int seqifds_count = 0;
+static int seqofds_count = 0;
+static int pollfds_count = 0;
+static int sockfd, netfd[MAX_CONNECTION] = {[0 ... MAX_CONNECTION-1] = -1};
 static int max_connection;
 static int cur_connected;
 static int seq_port;
@@ -117,10 +124,12 @@ int main(int argc, char **argv)
 	if (optind >= argc) {
 		server_mode = 1;
 		max_connection = MAX_CONNECTION;
+		init_pollfds();
 		init_server(port);
 	} else {
 		server_mode = 0;
 		max_connection = 1;
+		init_pollfds();
 		init_client(argv[optind], port);
 	}
 
@@ -166,6 +175,16 @@ static void init_buf(void)
 	memset(writebuf, 0, max_wrlen);
 	memset(readbuf, 0, max_rdlen);
 	cur_wrlen = 0;
+}
+
+/*
+ * allocate and initialize poll array
+ */
+static void init_pollfds(void)
+{
+	pollfds_count = seqifds_count + seqofds_count + 1 + max_connection;
+	pollfds = (struct pollfd *)calloc(pollfds_count, sizeof(struct pollfd));
+	assert(pollfds);
 }
 
 /*
@@ -232,16 +251,28 @@ static void close_files(void)
 static void init_seq(char *source, char *dest)
 {
 	snd_seq_addr_t addr;
-	int err;
-	struct pollfd pfd;
+	int err, counti, counto;
 
 	if (snd_seq_open(&handle, "hw", SND_SEQ_OPEN_DUPLEX, 0) < 0) {
 		perror("snd_seq_open");
 		exit(1);
 	}
-	err = snd_seq_poll_descriptors(handle, &pfd, 1, POLLIN | POLLOUT);
-	assert(err == 1);
-	seqfd = pfd.fd;
+	if (seqifds)
+		free(seqifds);
+	if (seqofds)
+		free(seqofds);
+	counti = seqifds_count = snd_seq_poll_descriptors_count(handle, POLLIN);
+	assert(counti > 0);
+	counto = seqofds_count = snd_seq_poll_descriptors_count(handle, POLLOUT);
+	assert(counto > 0);
+	seqifds = (struct pollfd *)calloc(counti, sizeof(struct pollfd));
+	assert(seqifds);
+	seqofds = (struct pollfd *)calloc(counto, sizeof(struct pollfd));
+	assert(seqofds);
+	err = snd_seq_poll_descriptors(handle, seqifds, counti, POLLIN);
+	assert(err == counti);
+	err = snd_seq_poll_descriptors(handle, seqofds, counto, POLLOUT);
+	assert(err == counto);
 
 	snd_seq_nonblock(handle, 0);
 
@@ -419,48 +450,48 @@ static void init_client(char *server, int port)
 }
 
 /*
- * set file descriptor
- */
-static void set_fd(int fd, fd_set *p, int *width)
-{
-	FD_SET(fd, p);
-	if (fd >= *width)
-		*width = fd + 1;
-}
-
-/*
  * event loop
  */
 static void do_loop(void)
 {
-	fd_set rfd;
 	int i, rc, width;
+	int seqifd_ptr, sockfd_ptr = -1, netfd_ptr;
 
 	for (;;) {
-		FD_ZERO(&rfd);
-		width = 0;
-		set_fd(seqfd, &rfd, &width);
-		if (server_mode)
-			set_fd(sockfd, &rfd, &width);
-		for (i = 0; i < max_connection; i++) {
-			if (netfd[i] >= 0)
-				set_fd(netfd[i], &rfd, &width);
+		memset(pollfds, 0, pollfds_count * sizeof(struct pollfd));
+		seqifd_ptr = 0;
+		memcpy(pollfds, seqifds, width = seqifds_count);
+		if (server_mode) {
+			sockfd_ptr = width;
+			pollfds[width].fd = sockfd;
+			pollfds[width].events = POLLIN;
+			width++;
 		}
-		rc = select(width, &rfd, NULL, NULL, NULL);
+		netfd_ptr = width;
+		for (i = 0; i < max_connection; i++) {
+			if (netfd[i] >= 0) {
+				pollfds[width].fd = netfd[i];
+				pollfds[width].events = POLLIN;
+				width++;
+			}
+		}
+		rc = poll(pollfds, width, -1);
 		if (rc <= 0)
 			exit(1);
 		if (server_mode) {
-			if (FD_ISSET(sockfd, &rfd))
+			if (pollfds[sockfd_ptr].revents & (POLLIN|POLLOUT))
 				start_connection();
 		}
-		if (FD_ISSET(seqfd, &rfd)) {
-			if (copy_local_to_remote())
+		for (i = 0; i < seqifds_count; i++)
+			if (pollfds[seqifd_ptr + i].revents & (POLLIN|POLLOUT)) {
+				if (copy_local_to_remote())
+					return;
 				break;
-		}
+			}
 		for (i = 0; i < max_connection; i++) {
 			if (netfd[i] < 0)
 				continue;
-			if (FD_ISSET(netfd[i], &rfd)) {
+			if (pollfds[netfd_ptr + i].revents & (POLLIN|POLLOUT)) {
 				if (copy_remote_to_local(netfd[i])) {
 					netfd[i] = -1;
 					cur_connected--;
