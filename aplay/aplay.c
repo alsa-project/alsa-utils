@@ -1756,6 +1756,8 @@ static void capture(char *name)
 	fdcount = 0;
 	count = calc_count();
 	count += count % 2;
+	if (count == 0)
+		count -= 2;
 	/* WAVE-file should be even (I'm not sure), but wasting one byte
 	   isn't a problem (this can only be in 8 bit mono) */
 	if (fmt_rec_table[file_type].start)
