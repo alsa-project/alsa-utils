@@ -1315,7 +1315,7 @@ void capture_go(int fd, int loaded, u_long count, int rtype, char *name)
 				}
 				count -= c;
 			}
-			if (l == -EAGAIN) {
+			if (l == -EPIPE) {
 				capture_read_error();
 				l = 0;
 			}
