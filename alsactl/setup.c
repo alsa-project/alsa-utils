@@ -874,5 +874,5 @@ int soundcard_setup_process(int cardno)
 			ctlhandle = NULL;
 		}
 	}
-	return 1;
+	return 0;
 }
