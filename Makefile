@@ -57,5 +57,5 @@ cvsclean: mrproper
 pack: mrproper
 	chown -R root.root ../alsa-utils
 	mv ../alsa-utils ../alsa-utils-$(SND_UTIL_VERSION)
-	tar cvz -C .. -f ../alsa-utils-$(SND_UTIL_VERSION).tar.gz alsa-utils-$(SND_UTIL_VERSION)
+	tar --exclude=CVS -cvz -C .. -f ../alsa-utils-$(SND_UTIL_VERSION).tar.gz alsa-utils-$(SND_UTIL_VERSION)
 	mv ../alsa-utils-$(SND_UTIL_VERSION) ../alsa-utils

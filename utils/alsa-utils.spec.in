@@ -58,7 +58,7 @@ Features
 make
 
 %install
-mkdir -p $RPM_BUILD_ROOT/usr/bin
+mkdir -p $RPM_BUILD_ROOT/usr/bin $RPM_BUILD_ROOT/usr/man/man1
 
 make prefix="$RPM_BUILD_ROOT/usr" install
 
@@ -68,7 +68,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-, root, root)
 
-%doc CHANGELOG COPYING README config.status
+%doc ChangeLog COPYING README config.status
 
 %{prefix}/usr/sbin/*
 %{prefix}/usr/bin/*

@@ -4,12 +4,12 @@ source=.
 version=`cat $source/../version`
 package=$source/../../alsa-utils-$version.tar.gz
 
+make -C .. pack
+
 if [ ! -r $package ]; then
   echo "Error: wrong package: $package"
   exit 1
 fi
-
-make -C .. pack
 
 cp -fv $package /usr/src/redhat/SOURCES
 
