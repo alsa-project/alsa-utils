@@ -944,7 +944,7 @@ static void xrun(void)
 		}
 		return;		/* ok, data should be accepted again */
 	}
-	error("read/write error");
+	error("read/write error, state = %s", snd_pcm_state_name(snd_pcm_status_get_state(status)));
 	exit(EXIT_FAILURE);
 }
 
