@@ -717,6 +717,7 @@ static void mixer_tone_control1(int end)
 
 static void mixer_tone_control1_value(unsigned int effect, int val)
 {
+	Xelement->element.data.tc1.tc |= effect;
 	switch (effect) {
 	case SND_MIXER_TC1_SW:
 		Xelement->element.data.tc1.sw = val ? 1 : 0;
