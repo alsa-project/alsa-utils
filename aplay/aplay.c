@@ -1603,7 +1603,8 @@ void capture_go(int fd, size_t count, int rtype, char *name)
 static void playback(char *name)
 {
 	int fd, ofs;
-	size_t dta, dtawave;
+	size_t dta;
+	ssize_t dtawave;
 
 	count = calc_count();
 	snd_pcm_flush(handle);
