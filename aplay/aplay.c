@@ -683,6 +683,7 @@ static void set_params(void)
 {
 	snd_pcm_hw_info_t info;
 	snd_pcm_strategy_t *strategy;
+	size_t bufsize;
 	int err;
 	snd_pcm_hw_info_any(&info);
 	if (mmap_flag)
@@ -721,16 +722,27 @@ static void set_params(void)
 		error("unable to set hw params");
 		exit(EXIT_FAILURE);
 	}
+	bufsize = hwparams.fragment_size * hwparams.fragments;
 
 	swparams.start_mode = SND_PCM_START_DATA;
 	swparams.ready_mode = ready_mode;
 	swparams.xrun_mode = xrun_mode;
 	swparams.avail_min = hwparams.rate * avail_min / 1000;
+	swparams.xfer_min = hwparams.rate * xfer_min / 1000;
 	if (xrun_mode == SND_PCM_XRUN_FRAGMENT)
 		swparams.xfer_align = hwparams.fragment_size;
 	else
 		swparams.xfer_align = 1;
-	swparams.xfer_min = hwparams.rate * xfer_min / 1000;
+	swparams.xfer_min -= swparams.xfer_min % swparams.xfer_align;
+	swparams.avail_min -= swparams.avail_min % swparams.xfer_align;
+	if (swparams.xfer_min == 0)
+		swparams.xfer_min = swparams.xfer_align;
+	else if (swparams.xfer_min >= bufsize)
+		swparams.xfer_min = bufsize - swparams.xfer_align;
+	if (swparams.avail_min == 0)
+		swparams.avail_min = swparams.xfer_align;
+	else if (swparams.avail_min >= bufsize)
+		swparams.avail_min = bufsize - swparams.xfer_align;
 	swparams.time = 0;
 	if (snd_pcm_sw_params(handle, &swparams) < 0) {
 		snd_pcm_dump_sw_params_fail(&swparams, stderr);
