@@ -265,7 +265,7 @@ static void pcm_list(void)
 
 static void version(void)
 {
-	fprintf(stderr, "%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@suse.cz>", command);
+	fprintf(stderr, "%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@suse.cz>\n", command);
 }
 
 static void signal_handler(int sig)
