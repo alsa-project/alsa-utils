@@ -651,7 +651,7 @@ alias sound-slot-0 $CARD_DRIVER" >> $addcfg
 	cmp -s "$addcfg" "$cfgout" || cat "$addcfg" > "$cfgout"
     else
 	echo "$ACB
-# --- ALSACONF verion $version ---" >> $TMP
+# --- ALSACONF version $version ---" >> $TMP
         cat "$addcfg" >> "$TMP"
 	echo "$ACE
 " >> $TMP
