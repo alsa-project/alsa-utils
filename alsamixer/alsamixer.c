@@ -581,9 +581,10 @@ mixer_write_cbar (int elem_index)
       vright = mixer_calc_volume(elem, mixer_volume_delta[MIXER_CHN_RIGHT], type, chn_right);
       vbalance += vright;
       vbalance /= 2;
-    } else
+    } else {
       vright = vleft;
-    if (vleft >= 0 && vright >= 0) {
+    }
+
       if (joined) {
 	for (chn = 0; chn < SND_MIXER_SCHN_LAST; chn++)
 	  if (type != MIXER_ELEM_CAPTURE) {
@@ -617,7 +618,6 @@ mixer_write_cbar (int elem_index)
 	  }
 	}
       }
-    }
   }
 
   /* mute
