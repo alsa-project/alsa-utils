@@ -53,6 +53,13 @@ struct smf_track {
 /* timing/sysex + 16 channels */
 #define TRACKS_PER_PORT 17
 
+/* metronome settings */
+/* TODO: create options for this */
+#define METRONOME_CHANNEL 9
+#define METRONOME_STRONG_NOTE 34
+#define METRONOME_WEAK_NOTE 33
+#define METRONOME_VELOCITY 100
+#define METRONOME_PROGRAM 0
 
 static snd_seq_t *seq;
 static int client;
@@ -68,6 +75,17 @@ static int channel_split;
 static int num_tracks;
 static struct smf_track *tracks;
 static volatile sig_atomic_t stop = 0;
+static int dump = 0;
+static int use_metronome = 0;
+static snd_seq_addr_t metronome_port;
+static int metronome_weak_note = METRONOME_WEAK_NOTE;
+static int metronome_strong_note = METRONOME_STRONG_NOTE;
+static int metronome_velocity = METRONOME_VELOCITY;
+static int metronome_program = METRONOME_PROGRAM;
+static int metronome_channel = METRONOME_CHANNEL;
+static int ts_num = 4; /* time signature: numerator */
+static int ts_div = 4; /* time signature: denominator */
+static int ts_dd = 2; /* time signature: denominator as a power of two */
 
 
 /* prints an error message to stderr, and dies */
@@ -140,6 +158,171 @@ static void parse_ports(const char *arg)
 	}
 
 	free(buf);
+}
+
+/* parses the metronome port address */
+static void init_metronome(const char *arg)
+{
+	int err;
+
+	err = snd_seq_parse_address(seq, &metronome_port, arg);
+	if (err < 0)
+		fatal("Invalid port %s - %s", arg, snd_strerror(err));
+	use_metronome = 1;
+}
+
+/* parses time signature specification */
+static void time_signature(const char *arg)
+{
+	long x = 0;
+	char *sep;
+
+	x = strtol(arg, &sep, 10);
+	if (x < 1 || x > 64 || *sep != ':')
+		fatal("Invalid time signature (%s)", arg);
+	ts_num = x;
+	x = strtol(++sep, NULL, 10);
+	if (x < 1 || x > 64)
+		fatal("Invalid time signature (%s)", arg);
+	ts_div = x;
+	for (ts_dd = 0; x > 1; x /= 2)
+		++ts_dd;
+}
+
+/*
+ * Dump incoming events
+ */
+static void print_syx(unsigned int len, unsigned char *data)
+{
+	unsigned int i;
+
+	for (i = 0; i < len; ++i) {
+		printf(" %02x", data[i]);
+	}
+	printf("\n");
+}
+
+static void print_time(snd_seq_event_t *ev)
+{
+	printf("%11d ", ev->time.tick);
+}
+
+static void print_midi_event(snd_seq_event_t *ev)
+{
+	switch (ev->type) {
+	case SND_SEQ_EVENT_NOTEON:
+		print_time(ev);
+		printf("Note on                %2d %3d %3d\n",
+		       ev->data.note.channel, ev->data.note.note, ev->data.note.velocity);
+		break;
+	case SND_SEQ_EVENT_NOTEOFF:
+		print_time(ev);
+		printf("Note off               %2d %3d %3d\n",
+		       ev->data.note.channel, ev->data.note.note, ev->data.note.velocity);
+		break;
+	case SND_SEQ_EVENT_KEYPRESS:
+		print_time(ev);
+		printf("Polyphonic aftertouch  %2d %3d %3d\n",
+		       ev->data.note.channel, ev->data.note.note, ev->data.note.velocity);
+		break;
+	case SND_SEQ_EVENT_CONTROLLER:
+		print_time(ev);
+		printf("Control change         %2d %3d %3d\n",
+		       ev->data.control.channel, ev->data.control.param, ev->data.control.value);
+		break;
+	case SND_SEQ_EVENT_PGMCHANGE:
+		print_time(ev);
+		printf("Program change         %2d %3d\n",
+		       ev->data.control.channel, ev->data.control.value);
+		break;
+	case SND_SEQ_EVENT_CHANPRESS:
+		print_time(ev);
+		printf("Channel aftertouch     %2d %3d\n",
+		       ev->data.control.channel, ev->data.control.value);
+		break;
+	case SND_SEQ_EVENT_PITCHBEND:
+		print_time(ev);
+		printf("Pitch bend             %2d  %6d\n",
+		       ev->data.control.channel, ev->data.control.value);
+		break;
+	case SND_SEQ_EVENT_CONTROL14:
+		print_time(ev);
+		printf("Control change         %2d %3d %5d\n",
+		       ev->data.control.channel, ev->data.control.param, ev->data.control.value);
+		break;
+	case SND_SEQ_EVENT_NONREGPARAM:
+		print_time(ev);
+		printf("Non-reg. parameter     %2d %5d %5d\n",
+		       ev->data.control.channel, ev->data.control.param, ev->data.control.value);
+		break;
+	case SND_SEQ_EVENT_REGPARAM:
+		print_time(ev);
+		printf("Reg. parameter         %2d %5d %5d\n",
+		       ev->data.control.channel, ev->data.control.param, ev->data.control.value);
+		break;
+	case SND_SEQ_EVENT_SENSING:
+		print_time(ev);
+		printf("Active Sensing\n");
+		break;
+	case SND_SEQ_EVENT_SYSEX:
+		print_time(ev);
+		printf("System exclusive      ");
+		print_syx(ev->data.ext.len, ev->data.ext.ptr);
+		break;
+	default:
+		print_time(ev);
+		printf("Event type %d\n",  ev->type);
+	}
+}
+
+/*
+ * Metronome implementation
+ */
+static void metronome_note(unsigned char note, unsigned int tick)
+{
+	snd_seq_event_t ev;
+	snd_seq_ev_clear(&ev);
+	snd_seq_ev_set_note(&ev, metronome_channel, note, metronome_velocity, 1);
+	snd_seq_ev_schedule_tick(&ev, queue, 0, tick);
+	snd_seq_ev_set_source(&ev, port_count);
+	snd_seq_ev_set_subs(&ev);
+	snd_seq_event_output(seq, &ev);
+}
+
+static void metronome_echo(unsigned int tick)
+{
+	snd_seq_event_t ev;
+	snd_seq_ev_clear(&ev);
+	ev.type = SND_SEQ_EVENT_USR0;
+	snd_seq_ev_schedule_tick(&ev, queue, 0, tick);
+	snd_seq_ev_set_source(&ev, port_count);
+	snd_seq_ev_set_dest(&ev, client, port_count);
+	snd_seq_event_output(seq, &ev);
+}
+
+static void metronome_pattern(unsigned int tick)
+{
+	int j, t, duration;
+
+	t = tick;
+	duration = ticks * 4 / ts_div;
+	for (j = 0; j < ts_num; j++) {
+		metronome_note(j ? metronome_weak_note : metronome_strong_note, t);
+		t += duration;
+	}
+	metronome_echo(t);
+	snd_seq_drain_output(seq);
+}
+
+static void metronome_set_program(void)
+{
+	snd_seq_event_t ev;
+
+	snd_seq_ev_clear(&ev);
+	snd_seq_ev_set_pgmchange(&ev, metronome_channel, metronome_program);
+	snd_seq_ev_set_source(&ev, port_count);
+	snd_seq_ev_set_subs(&ev);
+	snd_seq_event_output(seq, &ev);
 }
 
 static void init_tracks(void)
@@ -237,6 +420,20 @@ static void create_ports(void)
 		err = snd_seq_create_port(seq, pinfo);
 		check_snd("create port", err);
 	}
+
+	/* create an optional metronome port */
+	if (use_metronome) {
+		snd_seq_port_info_set_port(pinfo, port_count);
+		snd_seq_port_info_set_name(pinfo, "arecordmidi metronome");
+		snd_seq_port_info_set_capability(pinfo,
+						 SND_SEQ_PORT_CAP_READ |
+						 SND_SEQ_PORT_CAP_WRITE);
+		snd_seq_port_info_set_type(pinfo, SND_SEQ_PORT_TYPE_APPLICATION);
+		snd_seq_port_info_set_midi_channels(pinfo, 0);
+		snd_seq_port_info_set_timestamping(pinfo, 0);
+		err = snd_seq_create_port(seq, pinfo);
+		check_snd("create metronome port", err);
+	}
 }
 
 static void connect_ports(void)
@@ -248,6 +445,14 @@ static void connect_ports(void)
 		if (err < 0)
 			fatal("Cannot connect from port %d:%d - %s",
 			      ports[i].client, ports[i].port, snd_strerror(err));
+	}
+
+	/* subscribe the metronome port */
+	if (use_metronome) {
+	        err = snd_seq_connect_to(seq, port_count, metronome_port.client, metronome_port.port);
+		if (err < 0)
+	    		fatal("Cannot connect to port %d:%d - %s",
+			      metronome_port.client, metronome_port.port, snd_strerror(err));
 	}
 }
 
@@ -327,6 +532,11 @@ static void record_event(const snd_seq_event_t *ev)
 
 	/* determine which track to record to */
 	i = ev->dest.port;
+	if (i == port_count) {
+		if (ev->type == SND_SEQ_EVENT_USR0)
+			metronome_pattern(ev->time.tick);
+		return;
+	}
 	if (channel_split) {
 		i *= TRACKS_PER_PORT;
 		if (snd_seq_ev_is_channel_type(ev))
@@ -561,7 +771,10 @@ static void help(const char *argv0)
 		"  -b,--bpm=beats             tempo in beats per minute\n"
 		"  -f,--fps=frames            resolution in frames per second (SMPTE)\n"
 		"  -t,--ticks=ticks           resolution in ticks per beat or frame\n"
-		"  -s,--split-channels        create a track for each channel\n",
+		"  -s,--split-channels        create a track for each channel\n"
+		"  -d,--dump                  dump events on standard output\n"
+		"  -m,--metronome=client:port play a metronome signal\n"
+		"  -i,--timesig=nn:dd         time signature\n",
 		argv0);
 }
 
@@ -577,7 +790,7 @@ static void sighandler(int sig)
 
 int main(int argc, char *argv[])
 {
-	static char short_options[] = "hVlp:b:f:t:s";
+	static char short_options[] = "hVlp:b:f:t:sdm:i:";
 	static struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
@@ -587,6 +800,9 @@ int main(int argc, char *argv[])
 		{"fps", 1, NULL, 'f'},
 		{"ticks", 1, NULL, 't'},
 		{"split-channels", 0, NULL, 's'},
+		{"dump", 0, NULL, 'd'},
+		{"metronome", 1, NULL, 'm'},
+		{"timesig", 1, NULL, 'i'},
 		{ }
 	};
 
@@ -634,6 +850,15 @@ int main(int argc, char *argv[])
 		case 's':
 			channel_split = 1;
 			break;
+		case 'd':
+			dump = 1;
+			break;
+		case 'm':
+			init_metronome(optarg);
+			break;
+		case 'i':
+			time_signature(optarg);
+			break;
 		default:
 			help(argv[0]);
 			return 1;
@@ -678,7 +903,18 @@ int main(int argc, char *argv[])
 		add_byte(&tracks[0], usecs_per_quarter >> 16);
 		add_byte(&tracks[0], usecs_per_quarter >> 8);
 		add_byte(&tracks[0], usecs_per_quarter);
+
+		/* time signature */
+		var_value(&tracks[0], 0); /* delta time */
+		add_byte(&tracks[0], 0xff);
+		add_byte(&tracks[0], 0x58);
+		var_value(&tracks[0], 4);
+		add_byte(&tracks[0], ts_num);
+		add_byte(&tracks[0], ts_dd);
+		add_byte(&tracks[0], 24); /* MIDI clocks per metronome click */
+		add_byte(&tracks[0], 8); /* notated 32nd-notes per MIDI quarter note */
 	}
+	
 	/* always write at least one track */
 	tracks[0].used = 1;
 
@@ -692,6 +928,16 @@ int main(int argc, char *argv[])
 
 	err = snd_seq_nonblock(seq, 1);
 	check_snd("set nonblock mode", err);
+	
+	if (dump) {
+		printf("Waiting for data. Press Ctrl+C to end\n");
+		printf("_______Tick Event_________________ Ch _Data__\n");
+	}
+	
+	if (use_metronome) {
+		metronome_set_program();
+		metronome_pattern(0);
+	}
 
 	signal(SIGINT, sighandler);
 	signal(SIGTERM, sighandler);
@@ -709,6 +955,8 @@ int main(int argc, char *argv[])
 				break;
 			if (event)
 				record_event(event);
+			if (dump && event->dest.port < port_count)
+				print_midi_event(event);
 		} while (err > 0);
 		if (stop)
 			break;
