@@ -212,6 +212,7 @@ static snd_mixer_selem_channel_id_t mixer_elem_chn[][2] = {
 
 static void 	*mixer_sid = NULL;
 static int	 mixer_n_selems = 0;
+static int       mixer_changed_state = 1;
 
 /* split scontrols */
 static int	 mixer_n_elems = 0;
@@ -1241,6 +1242,13 @@ mixer_show_procinfo (void)
   vbuffer_kill (&vbuf);
 }
 
+static int
+mixer_event (snd_mixer_t *mixer, unsigned int mask, snd_mixer_elem_t *elem)
+{
+  mixer_changed_state = 1;
+  return 0;
+}
+
 static void
 mixer_init (void)
 {
@@ -1262,6 +1270,7 @@ mixer_init (void)
     mixer_abort (ERR_FCN, "snd_mixer_attach", err);
   if ((err = snd_mixer_selem_register (mixer_handle, NULL, NULL)) < 0)
     mixer_abort (ERR_FCN, "snd_mixer_selem_register", err);
+  snd_mixer_set_callback (mixer_handle, mixer_event);
   if ((err = snd_mixer_load (mixer_handle)) < 0)
     mixer_abort (ERR_FCN, "snd_mixer_load", err);
   
@@ -1281,10 +1290,14 @@ mixer_reinit (void)
   int focus_type = -1;
   snd_mixer_selem_id_alloca(&focus_gid);
   
+  if (!mixer_changed_state)
+    return;
   if (mixer_sid) {
     snd_mixer_selem_id_copy(focus_gid, (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * mixer_grpidx[mixer_focus_elem]));
     focus_type = mixer_type[mixer_focus_elem];
   }
+__again:
+  mixer_changed_state = 0;
   if (mixer_sid != NULL)
     free(mixer_sid);
   mixer_sid = malloc(snd_mixer_selem_id_sizeof() * snd_mixer_get_count(mixer_handle));
@@ -1294,6 +1307,10 @@ mixer_reinit (void)
   mixer_n_selems = 0;
   for (elem = snd_mixer_first_elem(mixer_handle); elem; elem = snd_mixer_elem_next(elem)) {
     sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * mixer_n_selems);
+    if (mixer_changed_state)
+      goto __again;
+    if (!snd_mixer_selem_is_active(elem))
+      continue;
     snd_mixer_selem_get_id(elem, sid);
     mixer_n_selems++;
   }
@@ -1301,12 +1318,16 @@ mixer_reinit (void)
   mixer_n_elems = 0;
   for (idx = 0; idx < mixer_n_selems; idx++) {
     sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * idx);
+    if (mixer_changed_state)
+      goto __again;
     elem = snd_mixer_find_selem(mixer_handle, sid);
     if (elem == NULL)
       CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
     for (i = 0; i < MIXER_ELEM_END; i++) {
       int ok;
       for (j = ok = 0; j < 2; j++) {
+        if (mixer_changed_state)
+          goto __again;
         if (snd_mixer_selem_has_playback_channel(elem, mixer_elem_chn[i][j]))
 	  ok++;
       }
@@ -1328,12 +1349,16 @@ mixer_reinit (void)
   elem_index = 0;
   for (idx = 0; idx < mixer_n_selems; idx++) {
     sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * idx);
+    if (mixer_changed_state)
+      goto __again;
     elem = snd_mixer_find_selem(mixer_handle, sid);
     if (elem == NULL)
       CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
     for (i = 0; i < MIXER_ELEM_END; i++) {
       int ok;
       for (j = ok = 0; j < 2; j++) {
+        if (mixer_changed_state)
+          goto __again;
         if (snd_mixer_selem_has_playback_channel(elem, mixer_elem_chn[i][j]))
           ok++;
       }
@@ -1362,6 +1387,8 @@ mixer_reinit (void)
     }
   }
 
+  if (mixer_changed_state)
+    goto __again;
 }
 
 static void
@@ -1464,9 +1491,8 @@ static int
 mixer_iteration (void)
 {
   struct timeval delay = { 0, 0 };
-  int count;
+  int idx, count, err;
   struct pollfd *fds;
-  int err;
   int finished = 0;
   int key = 0;
   int old_view;
@@ -1503,9 +1529,12 @@ mixer_iteration (void)
   }
   
   if (finished) {
-    if (fds->revents & POLLIN) {
-      snd_mixer_handle_events(mixer_handle);
-      finished = 0;
+    for (idx = 1; idx <= count; idx++) {
+      if (fds[idx].revents & (POLLIN|POLLOUT)) {
+        snd_mixer_handle_events(mixer_handle);
+        mixer_reinit();
+        break;
+      }
     }
   }
 
