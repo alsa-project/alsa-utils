@@ -615,8 +615,10 @@ static void set_params(void)
 
 	align = (snd_pcm_format_physical_width(format.format) + 7) / 8;
 
+#if 0
 	if (mmap_flag)
 		snd_pcm_munmap(pcm_handle, stream);
+#endif
 	snd_pcm_stream_flush(pcm_handle, stream);		/* to be in right state */
 
 	memset(&params, 0, sizeof(params));
