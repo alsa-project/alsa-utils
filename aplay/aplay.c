@@ -619,27 +619,62 @@ static int test_vocfile(void *buffer)
 }
 
 /*
+ * helper for test_wavefile
+ */
+
+size_t test_wavefile_read(int fd, char *buffer, size_t *size, size_t reqsize, int line)
+{
+	if (*size >= reqsize)
+		return *size;
+	if (safe_read(fd, buffer + *size, reqsize - *size) != reqsize - *size) {
+		error("read error (called from line %i)", line);
+		exit(EXIT_FAILURE);
+	}
+	return *size = reqsize;
+}
+
+
+/*
  * test, if it's a .WAV file, > 0 if ok (and set the speed, stereo etc.)
  *                            == 0 if not
  * Value returned is bytes to be discarded.
  */
-static int test_wavefile(void *buffer, size_t size)
+static ssize_t test_wavefile(int fd, char *buffer, size_t size)
 {
-	WaveHeader *h = buffer;
-	WaveFmtHeader *f;
+	WaveHeader *h = (WaveHeader *)buffer;
+	WaveFmtBody *f;
 	WaveChunkHeader *c;
+	u_int type, len;
 
+	if (size < sizeof(WaveHeader))
+		return -1;
 	if (h->magic != WAV_RIFF || h->type != WAV_WAVE)
-		return 0;
-	c = (WaveChunkHeader*)((char *)buffer + sizeof(WaveHeader));
-	while (c->type != WAV_FMT) {
-		c = (WaveChunkHeader*)((char*)c + sizeof(*c) + LE_INT(c->length));
-		if ((char *)c + sizeof(*c) > (char*) buffer + size) {
-			error("cannot found WAVE fmt chunk");
-			exit(EXIT_FAILURE);
-		}
+		return -1;
+	if (size > sizeof(WaveHeader))
+		memmove(buffer, buffer + sizeof(WaveHeader), size - sizeof(WaveHeader));
+	size -= sizeof(WaveHeader);
+	while (1) {
+		test_wavefile_read(fd, buffer, &size, sizeof(WaveChunkHeader), __LINE__);
+		c = (WaveChunkHeader*)buffer;
+		type = c->type;
+		len = LE_INT(c->length);
+		if (size > sizeof(WaveChunkHeader))
+			memmove(buffer, buffer + sizeof(WaveChunkHeader), size - sizeof(WaveChunkHeader));
+		size -= sizeof(WaveChunkHeader);
+		if (type == WAV_FMT)
+			break;
+		test_wavefile_read(fd, buffer, &size, len, __LINE__);
+		if (size > len)
+			memmove(buffer, buffer + len, size - len);
+		size -= len;
 	}
-	f = (WaveFmtHeader*) c;
+
+	if (len < sizeof(WaveFmtBody)) {
+		error("unknown length of 'fmt ' chunk (read %u, should be %u at least)", len, (u_int)sizeof(WaveFmtBody));
+		exit(EXIT_FAILURE);
+	}
+	test_wavefile_read(fd, buffer, &size, len, __LINE__);
+	f = (WaveFmtBody*) buffer;
 	if (LE_SHORT(f->format) != WAV_PCM_CODE) {
 		error("can't play not PCM-coded WAVE-files");
 		exit(EXIT_FAILURE);
@@ -661,18 +696,35 @@ static int test_wavefile(void *buffer, size_t size)
 		exit(EXIT_FAILURE);
 	}
 	format.rate = LE_INT(f->sample_fq);
-	while (c->type != WAV_DATA) {
-		c = (WaveChunkHeader*)((char*)c + sizeof(*c) + LE_INT(c->length));
-		if ((char *)c + sizeof(*c) > (char*) buffer + size) {
-			error("cannot found WAVE data chunk");
-			exit(EXIT_FAILURE);
+	
+	if (size > len)
+		memmove(buffer, buffer + len, size - len);
+	size -= len;
+	
+	while (1) {
+		u_int type, len;
+
+		test_wavefile_read(fd, buffer, &size, sizeof(WaveChunkHeader), __LINE__);
+		c = (WaveChunkHeader*)buffer;
+		type = c->type;
+		len = LE_INT(c->length);
+		if (size > sizeof(WaveChunkHeader))
+			memmove(buffer, buffer + sizeof(WaveChunkHeader), size - sizeof(WaveChunkHeader));
+		size -= sizeof(WaveChunkHeader);
+		if (type == WAV_DATA) {
+			if (len < count)
+				count = len;
+			check_new_format(&format);
+			return size;
 		}
+		test_wavefile_read(fd, buffer, &size, len, __LINE__);
+		if (size > len)
+			memmove(buffer, buffer + len, size - len);
+		size -= len;
 	}
 
-	if (LE_INT(c->length) < count)
-		count = LE_INT(c->length);
-	check_new_format(&format);
-	return (char *)c + sizeof(*c) - (char *) buffer;
+	/* shouldn't be reached */
+	return -1;
 }
 
 /*
@@ -1348,8 +1400,8 @@ static void begin_voc(int fd, size_t cnt)
 static void begin_wave(int fd, size_t cnt)
 {
 	WaveHeader h;
-	WaveFmtHeader f;
-	WaveChunkHeader c;
+	WaveFmtBody f;
+	WaveChunkHeader cf, cd;
 	int bits;
 	u_int tmp;
 	u_short tmp2;
@@ -1367,12 +1419,13 @@ static void begin_wave(int fd, size_t cnt)
 		exit(EXIT_FAILURE);
 	}
 	h.magic = WAV_RIFF;
-	tmp = cnt + sizeof(WaveHeader) + sizeof(WaveFmtHeader) + sizeof(WaveChunkHeader) - 8;
+	tmp = cnt + sizeof(WaveHeader) + sizeof(WaveChunkHeader) + sizeof(WaveFmtBody) + sizeof(WaveChunkHeader) - 8;
 	h.length = LE_INT(tmp);
 	h.type = WAV_WAVE;
 
-	f.type = WAV_FMT;
-	f.length = LE_INT(16);
+	cf.type = WAV_FMT;
+	cf.length = LE_INT(16);
+
 	f.format = LE_INT(WAV_PCM_CODE);
 	f.modus = LE_SHORT(format.channels);
 	f.sample_fq = LE_INT(format.rate);
@@ -1389,12 +1442,13 @@ static void begin_wave(int fd, size_t cnt)
 #endif
 	f.bit_p_spl = LE_SHORT(bits);
 
-	c.type = WAV_DATA;
-	c.length = LE_INT(cnt);
+	cd.type = WAV_DATA;
+	cd.length = LE_INT(cnt);
 
 	if (write(fd, &h, sizeof(WaveHeader)) != sizeof(WaveHeader) ||
-	    write(fd, &f, sizeof(WaveFmtHeader)) != sizeof(WaveFmtHeader) ||
-	    write(fd, &c, sizeof(WaveChunkHeader)) != sizeof(WaveChunkHeader)) {
+	    write(fd, &cf, sizeof(WaveChunkHeader)) != sizeof(WaveChunkHeader) ||
+	    write(fd, &f, sizeof(WaveFmtBody)) != sizeof(WaveFmtBody) ||
+	    write(fd, &cd, sizeof(WaveChunkHeader)) != sizeof(WaveChunkHeader)) {
 		error("write error");
 		exit(EXIT_FAILURE);
 	}
@@ -1550,6 +1604,7 @@ void capture_go(int fd, size_t count, int rtype, char *name)
 static void playback(char *name)
 {
 	int fd, ofs;
+	size_t dta, dtawave;
 
 	count = calc_count();
 	snd_pcm_flush(handle);
@@ -1563,7 +1618,8 @@ static void playback(char *name)
 		}
 	}
 	/* read the file header */
-	if (safe_read(fd, audiobuf, sizeof(AuHeader)) != sizeof(AuHeader)) {
+	dta = sizeof(AuHeader);
+	if (safe_read(fd, audiobuf, dta) != dta) {
 		error("read error");
 		exit(EXIT_FAILURE);
 	}
@@ -1572,9 +1628,9 @@ static void playback(char *name)
 		playback_go(fd, 0, count, FORMAT_AU, name);
 		goto __end;
 	}
+	dta = sizeof(VocHeader);
 	if (safe_read(fd, audiobuf + sizeof(AuHeader),
-		 sizeof(VocHeader) - sizeof(AuHeader)) !=
-		 sizeof(VocHeader) - sizeof(AuHeader)) {
+		 dta - sizeof(AuHeader)) != dta - sizeof(AuHeader)) {
 		error("read error");
 		exit(EXIT_FAILURE);
 	}
@@ -1583,20 +1639,13 @@ static void playback(char *name)
 		goto __end;
 	}
 	/* read bytes for WAVE-header */
-	if (safe_read(fd, audiobuf + sizeof(VocHeader),
-		 64 - sizeof(VocHeader)) !=
-	    64 - sizeof(VocHeader)) {
-		error("read error");
-		exit(EXIT_FAILURE);
-	}
-	if ((ofs = test_wavefile(audiobuf, 64)) > 0) {
-		memmove(audiobuf, audiobuf + ofs, 64 - ofs);
-		playback_go(fd, 64 - ofs, count, FORMAT_WAVE, name);
+	if ((dtawave = test_wavefile(fd, audiobuf, dta)) >= 0) {
+		playback_go(fd, dtawave, count, FORMAT_WAVE, name);
 	} else {
 		/* should be raw data */
 		check_new_format(&rformat);
 		init_raw_data();
-		playback_go(fd, 64, count, FORMAT_RAW, name);
+		playback_go(fd, dta, count, FORMAT_RAW, name);
 	}
       __end:
 	if (fd != 0)

@@ -75,15 +75,13 @@ typedef struct {
 } WaveHeader;
 
 typedef struct {
-	u_int type;		/* 'fmt ' */
-	u_int length;		/* length of chunk */
 	u_short format;		/* should be 1 for PCM-code */
 	u_short modus;		/* 1 Mono, 2 Stereo */
 	u_int sample_fq;	/* frequence of sample */
 	u_int byte_p_sec;
 	u_short byte_p_spl;	/* samplesize; 1 or 2 bytes */
 	u_short bit_p_spl;	/* 8, 12 or 16 bit */
-} WaveFmtHeader;
+} WaveFmtBody;
 
 typedef struct {
 	u_int type;		/* 'data' */
