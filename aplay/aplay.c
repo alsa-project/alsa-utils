@@ -1094,7 +1094,7 @@ static void playback(char *name)
 	int fd, ofs;
 
 	snd_pcm_flush_playback(pcm_handle);
-	if (!name) {
+	if (!name || !strcmp(name, "-")) {
 		fd = 0;
 		name = "stdin";
 	} else {
@@ -1147,7 +1147,7 @@ static void record(char *name)
 	int fd;
 
 	snd_pcm_flush_record(pcm_handle);
-	if (!name) {
+	if (!name || !strcmp(name, "-")) {
 		fd = 1;
 		name = "stdout";
 	} else {
