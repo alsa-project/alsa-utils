@@ -33,10 +33,11 @@
 
 #define HELPID_HELP             1000
 #define HELPID_CARD             1001
-#define HELPID_QUIET		1002
-#define HELPID_INACTIVE		1003
-#define HELPID_DEBUG            1004
-#define HELPID_VERSION		1005
+#define HELPID_DEVICE		1002
+#define HELPID_QUIET		1003
+#define HELPID_INACTIVE		1004
+#define HELPID_DEBUG            1005
+#define HELPID_VERSION		1006
 
 #define LEVEL_BASIC		(1<<0)
 #define LEVEL_INACTIVE		(1<<1)
@@ -44,7 +45,7 @@
 
 int quiet = 0;
 int debugflag = 0;
-char *card = "default";
+char card[64] = "default";
 
 static void error(const char *fmt,...)
 {
@@ -62,8 +63,9 @@ static int help(void)
 	printf("Usage: amixer <options> command\n");
 	printf("\nAvailable options:\n");
 	printf("  -h,--help       this help\n");
-	printf("  -c,--card N     select the card, default %s\n", card);
-	printf("  -D,--debug      debug mode\n");
+	printf("  -c,--card N     select the card\n", card);
+	printf("  -D,--device N   select the device, default '%s'\n", card);
+	printf("  -d,--debug      debug mode\n");
 	printf("  -v,--version    print version of this program\n");
 	printf("  -q,--quiet      be quiet\n");
 	printf("  -i,--inactive   show also inactive controls\n");
@@ -1410,6 +1412,7 @@ int main(int argc, char *argv[])
 	{
 		{"help", 0, NULL, HELPID_HELP},
 		{"card", 1, NULL, HELPID_CARD},
+		{"device", 1, NULL, HELPID_DEVICE},
 		{"quiet", 0, NULL, HELPID_QUIET},
 		{"inactive", 0, NULL, HELPID_INACTIVE},
 		{"debug", 0, NULL, HELPID_DEBUG},
@@ -1421,7 +1424,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hc:qiDv", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hc:D:qidv", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
@@ -1430,7 +1433,20 @@ int main(int argc, char *argv[])
 			break;
 		case 'c':
 		case HELPID_CARD:
-			card = optarg;
+			{
+				int i;
+				i = snd_card_get_index(optarg);
+				if (i >= 0 && i < 32)
+					sprintf(card, "hw:%i", i);
+				else {
+					fprintf(stderr, "\07Invalid card number.\n");
+					morehelp++;
+				}
+			}
+			break;
+		case 'D':
+		case HELPID_DEVICE:
+			strcpy(card, optarg);
 			break;
 		case 'q':
 		case HELPID_QUIET:
@@ -1440,7 +1456,7 @@ int main(int argc, char *argv[])
 		case HELPID_INACTIVE:
 			level |= LEVEL_INACTIVE;
 			break;
-		case 'D':
+		case 'd':
 		case HELPID_DEBUG:
 			debugflag = 1;
 			break;
