@@ -78,10 +78,9 @@ static int info(void)
 	snd_ctl_t *handle;
 	snd_mixer_t *mhandle;
 	snd_ctl_card_info_t *info;
-	snd_ctl_element_list_t *clist;
-	snd_mixer_simple_element_list_t slist;
+	snd_ctl_elem_list_t *clist;
 	snd_ctl_card_info_alloca(&info);
-	snd_ctl_element_list_alloca(&clist);
+	snd_ctl_elem_list_alloca(&clist);
 	
 	if ((err = snd_ctl_open(&handle, card)) < 0) {
 		error("Control device %i open error: %s", card, snd_strerror(err));
@@ -95,56 +94,47 @@ static int info(void)
 	       snd_ctl_card_info_get_longname(info));
 	printf("  Mixer ID	: '%s'\n", snd_ctl_card_info_get_mixerid(info));
 	printf("  Mixer name	: '%s'\n", snd_ctl_card_info_get_mixername(info));
-	if ((err = snd_ctl_clist(handle, clist)) < 0) {
-		error("snd_ctl_clist failure: %s", snd_strerror(err));
+	if ((err = snd_ctl_elem_list(handle, clist)) < 0) {
+		error("snd_ctl_elem_list failure: %s", snd_strerror(err));
 	} else {
-		printf("  Controls      : %i\n", snd_ctl_element_list_get_count(clist));
+		printf("  Controls      : %i\n", snd_ctl_elem_list_get_count(clist));
 	}
 	snd_ctl_close(handle);
 	if ((err = snd_mixer_open(&mhandle, card)) < 0) {
 		error("Mixer %s open error: %s", card, snd_strerror(err));
 		return err;
 	}
-	if ((err = snd_mixer_simple_element_list(mhandle, &slist)) < 0) {
-		error("snd_mixer_simple_element_list failure: %s\n", snd_strerror(err));
+	err = snd_mixer_simple_build(mhandle);
+	if (err < 0) {
+		error("Mixer %s build error: %s", card, snd_strerror(err));
 	} else {
-		printf("  Simple ctrls  : %i\n", slist.controls);
+		printf("  Simple ctrls  : %i\n", snd_mixer_get_count(mhandle));
 	}
 	snd_mixer_close(mhandle);
 	return 0;
 }
 
-static const char *control_iface(snd_ctl_element_id_t *id)
+static const char *control_iface(snd_ctl_elem_id_t *id)
 {
-	return snd_ctl_element_iface_name(snd_ctl_element_id_get_interface(id));
+	return snd_ctl_elem_iface_name(snd_ctl_elem_id_get_interface(id));
 }
 
-static const char *control_type(snd_ctl_element_info_t *info)
+static const char *control_type(snd_ctl_elem_info_t *info)
 {
-	return snd_ctl_element_type_name(snd_ctl_element_info_get_type(info));
+	return snd_ctl_elem_type_name(snd_ctl_elem_info_get_type(info));
 }
 
-static const char *control_access(snd_ctl_element_info_t *info)
+static const char *control_access(snd_ctl_elem_info_t *info)
 {
 	static char result[10];
 	char *res = result;
 
-	*res++ = snd_ctl_element_info_is_readable(info) ? 'r' : '-';
-	*res++ = snd_ctl_element_info_is_writable(info) ? 'w' : '-';
-	*res++ = snd_ctl_element_info_is_inactive(info) ? 'i' : '-';
-	*res++ = snd_ctl_element_info_is_volatile(info) ? 'v' : '-';
-	*res++ = snd_ctl_element_info_is_locked(info) ? 'l' : '-';
+	*res++ = snd_ctl_elem_info_is_readable(info) ? 'r' : '-';
+	*res++ = snd_ctl_elem_info_is_writable(info) ? 'w' : '-';
+	*res++ = snd_ctl_elem_info_is_inactive(info) ? 'i' : '-';
+	*res++ = snd_ctl_elem_info_is_volatile(info) ? 'v' : '-';
+	*res++ = snd_ctl_elem_info_is_locked(info) ? 'l' : '-';
 	*res++ = '\0';
-	return result;
-}
-
-static snd_mixer_sid_t __simple_id ATTRIBUTE_UNUSED;
-#define simple_name_size (sizeof(__simple_id.name)+1)
-
-static char *simple_name(const char *name, char *result)
-{
-	strncpy(result, name, simple_name_size - 1);
-	result[simple_name_size - 1] = '\0';
 	return result;
 }
 
@@ -293,16 +283,16 @@ static int get_volume_simple(char **ptr, int min, int max, int orig)
 	return tmp1;
 }
 
-static void show_control_id(snd_ctl_element_id_t *id)
+static void show_control_id(snd_ctl_elem_id_t *id)
 {
 	unsigned int index, device, subdevice;
 	printf("numid=%u,iface=%s,name='%s'",
-	       snd_ctl_element_id_get_numid(id),
+	       snd_ctl_elem_id_get_numid(id),
 	       control_iface(id),
-	       snd_ctl_element_id_get_name(id));
-	index = snd_ctl_element_id_get_index(id);
-	device = snd_ctl_element_id_get_device(id);
-	subdevice = snd_ctl_element_id_get_subdevice(id);
+	       snd_ctl_elem_id_get_name(id));
+	index = snd_ctl_elem_id_get_index(id);
+	device = snd_ctl_elem_id_get_device(id);
+	subdevice = snd_ctl_elem_id_get_subdevice(id);
 	if (index)
 		printf(",index=%i", index);
 	if (device)
@@ -311,47 +301,48 @@ static void show_control_id(snd_ctl_element_id_t *id)
 		printf(",subdevice=%i", subdevice);
 }
 
-static int show_control(const char *space, snd_ctl_t *handle, snd_ctl_element_id_t *id, int level)
+static int show_control(const char *space, snd_ctl_t *handle, 
+			snd_ctl_elem_id_t *id, int level)
 {
 	int err;
 	unsigned int item, idx;
-	snd_ctl_element_info_t *info;
-	snd_ctl_element_t *control;
 	unsigned int count;
-	snd_ctl_element_type_t type;
-	snd_ctl_element_info_alloca(&info);
-	snd_ctl_element_alloca(&control);
-	snd_ctl_element_info_set_id(info, id);
-	if ((err = snd_ctl_element_info(handle, info)) < 0) {
+	snd_ctl_elem_type_t type;
+	snd_ctl_elem_info_t *info;
+	snd_ctl_elem_t *control;
+	snd_ctl_elem_info_alloca(&info);
+	snd_ctl_elem_alloca(&control);
+	snd_ctl_elem_info_set_id(info, id);
+	if ((err = snd_ctl_elem_info(handle, info)) < 0) {
 		error("Control %s cinfo error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	if (level & 2) {
-		snd_ctl_element_info_get_id(info, id);
+		snd_ctl_elem_info_get_id(info, id);
 		show_control_id(id);
 		printf("\n");
 	}
-	count = snd_ctl_element_info_get_count(info);
-	type = snd_ctl_element_info_get_type(info);
+	count = snd_ctl_elem_info_get_count(info);
+	type = snd_ctl_elem_info_get_type(info);
 	printf("%s; type=%s,access=%s,values=%i", space, control_type(info), control_access(info), count);
 	switch (snd_enum_to_int(type)) {
-	case SND_CTL_ELEMENT_TYPE_INTEGER:
+	case SND_CTL_ELEM_TYPE_INTEGER:
 		printf(",min=%li,max=%li,step=%li\n", 
-		       snd_ctl_element_info_get_min(info),
-		       snd_ctl_element_info_get_max(info),
-		       snd_ctl_element_info_get_step(info));
+		       snd_ctl_elem_info_get_min(info),
+		       snd_ctl_elem_info_get_max(info),
+		       snd_ctl_elem_info_get_step(info));
 		break;
-	case SND_CTL_ELEMENT_TYPE_ENUMERATED:
+	case SND_CTL_ELEM_TYPE_ENUMERATED:
 	{
-		unsigned int items = snd_ctl_element_info_get_items(info);
+		unsigned int items = snd_ctl_elem_info_get_items(info);
 		printf(",items=%u\n", items);
 		for (item = 0; item < items; item++) {
-			snd_ctl_element_info_set_item(info, item);
-			if ((err = snd_ctl_element_info(handle, info)) < 0) {
-				error("Control %s cinfo error: %s\n", card, snd_strerror(err));
+			snd_ctl_elem_info_set_item(info, item);
+			if ((err = snd_ctl_elem_info(handle, info)) < 0) {
+				error("Control %s element info error: %s\n", card, snd_strerror(err));
 				return err;
 			}
-			printf("%s; Item #%u '%s'\n", space, item, snd_ctl_element_info_get_item_name(info));
+			printf("%s; Item #%u '%s'\n", space, item, snd_ctl_elem_info_get_item_name(info));
 		}
 		break;
 	}
@@ -360,9 +351,9 @@ static int show_control(const char *space, snd_ctl_t *handle, snd_ctl_element_id
 		break;
 	}
 	if (level & 1) {
-		snd_ctl_element_set_id(control, id);
-		if ((err = snd_ctl_element_read(handle, control)) < 0) {
-			error("Control %s cread error: %s\n", card, snd_strerror(err));
+		snd_ctl_elem_set_id(control, id);
+		if ((err = snd_ctl_elem_read(handle, control)) < 0) {
+			error("Control %s element read error: %s\n", card, snd_strerror(err));
 			return err;
 		}
 		printf("%s: values=", space);
@@ -370,17 +361,17 @@ static int show_control(const char *space, snd_ctl_t *handle, snd_ctl_element_id
 			if (idx > 0)
 				printf(",");
 			switch (snd_enum_to_int(type)) {
-			case SND_CTL_ELEMENT_TYPE_BOOLEAN:
-				printf("%s", snd_ctl_element_get_boolean(control, idx) ? "on" : "off");
+			case SND_CTL_ELEM_TYPE_BOOLEAN:
+				printf("%s", snd_ctl_elem_get_boolean(control, idx) ? "on" : "off");
 				break;
-			case SND_CTL_ELEMENT_TYPE_INTEGER:
-				printf("%li", snd_ctl_element_get_integer(control, idx));
+			case SND_CTL_ELEM_TYPE_INTEGER:
+				printf("%li", snd_ctl_elem_get_integer(control, idx));
 				break;
-			case SND_CTL_ELEMENT_TYPE_ENUMERATED:
-				printf("%u", snd_ctl_element_get_enumerated(control, idx));
+			case SND_CTL_ELEM_TYPE_ENUMERATED:
+				printf("%u", snd_ctl_elem_get_enumerated(control, idx));
 				break;
-			case SND_CTL_ELEMENT_TYPE_BYTES:
-				printf("0x%02x", snd_ctl_element_get_byte(control, idx));
+			case SND_CTL_ELEM_TYPE_BYTES:
+				printf("0x%02x", snd_ctl_elem_get_byte(control, idx));
 				break;
 			default:
 				printf("?");
@@ -395,151 +386,132 @@ static int show_control(const char *space, snd_ctl_t *handle, snd_ctl_element_id
 static int controls(int level)
 {
 	int err;
-	unsigned int idx;
 	snd_ctl_t *handle;
-	unsigned int count;
-	snd_hctl_element_list_t *list;
-	snd_ctl_element_id_t *id;
-	snd_hctl_element_list_alloca(&list);
-	snd_ctl_element_id_alloca(&id);
+	snd_hctl_elem_t *elem;
+	snd_ctl_elem_id_t *id;
+	snd_ctl_elem_id_alloca(&id);
 	
 	if ((err = snd_ctl_open(&handle, card)) < 0) {
 		error("Control %s open error: %s", card, snd_strerror(err));
 		return err;
 	}
-	if ((err = snd_ctl_hbuild(handle, NULL)) < 0) {
+	if ((err = snd_hctl_build(handle)) < 0) {
 		error("Control %s hbuild error: %s\n", card, snd_strerror(err));
 		return err;
 	}
-	if ((err = snd_ctl_hlist(handle, list)) < 0) {
-		error("Control %s clist error: %s", card, snd_strerror(err));
-		return err;
-	}
-	count = snd_hctl_element_list_get_count(list);
-	snd_hctl_element_list_set_offset(list, 0);
-	if (snd_hctl_element_list_alloc_space(list, count) < 0) {
-		error("Not enough memory");
-		return -ENOMEM;
-	}
-	if ((err = snd_ctl_hlist(handle, list)) < 0) {
-		error("Control %s hlist error: %s", card, snd_strerror(err));
-		return err;
-	}
-	for (idx = 0; idx < count; idx++) {
-		snd_hctl_element_list_get_id(list, idx, id);
+	for (elem = snd_hctl_first_elem(handle); elem; elem = snd_hctl_elem_next(elem)) {
+		snd_hctl_elem_get_id(elem, id);
 		show_control_id(id);
 		printf("\n");
 		if (level > 0)
 			show_control("  ", handle, id, 1);
 	}
-	snd_hctl_element_list_free_space(list);
 	snd_ctl_close(handle);
 	return 0;
 }
 
-static int show_simple_element(void *handle, snd_mixer_sid_t *sid, const char *space, int level)
+static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char *space, int level)
 {
 	int err;
 	snd_mixer_channel_id_t chn;
-	snd_mixer_simple_element_t scontrol;
+	long min, max;
+	snd_mixer_elem_t *elem;
+	snd_mixer_selem_t *scontrol;
+	snd_mixer_selem_alloca(&scontrol);
 	
-	bzero(&scontrol, sizeof(scontrol));
-	scontrol.sid = *sid;
-	if ((err = snd_mixer_simple_element_read(handle, &scontrol)) < 0) {
-		error("Mixer %s simple_element error: %s", card, snd_strerror(err));
+	elem = snd_mixer_find_selem(handle, id);
+	if (!elem) {
+		error("Mixer %s simple element not found", card);
+		return -ENOENT;
+	}
+
+	if ((err = snd_mixer_selem_read(elem, scontrol)) < 0) {
+		error("Mixer %s selem error: %s", card, snd_strerror(err));
 		return err;
 	}
-	if ((level & 1) != 0 && scontrol.channels) {
+	if ((level & 1) != 0) {
 		printf("%sCapabilities:", space);
-		if (scontrol.caps & SND_MIXER_SCTCAP_VOLUME)
+		if (snd_mixer_selem_has_volume(scontrol))
 			printf(" volume");
-		if (scontrol.caps & SND_MIXER_SCTCAP_MUTE)
+		if (snd_mixer_selem_has_joined_volume(scontrol))
+			printf(" joined-volume");
+		if (snd_mixer_selem_has_mute(scontrol))
 			printf(" mute");
-		if (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_MUTE)
-			printf(" jointly-mute");
-		if (scontrol.caps & SND_MIXER_SCTCAP_CAPTURE) {
+		if (snd_mixer_selem_has_joined_mute(scontrol))
+			printf(" joined-mute");
+		if (snd_mixer_selem_has_capture(scontrol)) {
 			printf(" capture");
-		} else {
-			scontrol.capture = 0;
 		}
-		if (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_CAPTURE)
-			printf(" jointly-capture");
-		if (scontrol.caps & SND_MIXER_SCTCAP_EXCL_CAPTURE)
+		if (snd_mixer_selem_has_joined_capture(scontrol))
+			printf(" joined-capture");
+		if (snd_mixer_selem_has_exclusive_capture(scontrol))
 			printf(" exclusive-capture");
 		printf("\n");
-		if ((scontrol.caps & SND_MIXER_SCTCAP_CAPTURE) &&
-		    (scontrol.caps & SND_MIXER_SCTCAP_EXCL_CAPTURE))
-			printf("%sCapture exclusive scontrol: %i\n", space, scontrol.capture_group);
+		if (snd_mixer_selem_has_capture(scontrol) &&
+		    snd_mixer_selem_has_exclusive_capture(scontrol))
+			printf("%sCapture exclusive scontrol: %i\n", space,
+			       snd_mixer_selem_get_capture_group(scontrol));
 		printf("%sChannels: ", space);
-		if (scontrol.channels == SND_MIXER_CHN_MASK_MONO) {
+		if (snd_mixer_selem_is_mono(scontrol)) {
 			printf("Mono");
 		} else {
 			for (chn = 0; chn <= SND_MIXER_CHN_LAST; snd_enum_incr(chn)){
-				if (!(scontrol.channels & (1<<snd_enum_to_int(chn))))
+				if (!snd_mixer_selem_has_channel(scontrol, chn))
 					continue;
-				printf("%s ", snd_mixer_simple_channel_name(chn));
+				printf("%s ", snd_mixer_channel_name(chn));
 			}
 		}
 		printf("\n");
-		printf("%sLimits: min = %li, max = %li\n", space, scontrol.min, scontrol.max);
-		if (scontrol.channels == SND_MIXER_CHN_MASK_MONO) {
-			printf("%sMono: %s [%s]\n", space, get_percent(scontrol.volume.names.front_left, scontrol.min, scontrol.max), scontrol.mute & SND_MIXER_CHN_MASK_MONO ? "mute" : "on");
+		min = snd_mixer_selem_get_min(scontrol);
+		max = snd_mixer_selem_get_max(scontrol);
+		printf("%sLimits: min = %li, max = %li\n", space, min, max);
+		if (snd_mixer_selem_is_mono(scontrol)) {
+			printf("%sMono: %s [%s]\n", space, 
+			       get_percent(snd_mixer_selem_get_volume(scontrol, SND_MIXER_CHN_MONO), min, max), 
+			       snd_mixer_selem_get_mute(scontrol, SND_MIXER_CHN_MONO) ? "mute" : "on");
 		} else {
 			for (chn = 0; chn <= SND_MIXER_CHN_LAST; snd_enum_incr(chn)) {
-				int c = snd_enum_to_int(chn);
-				if (!(scontrol.channels & (1<<c)))
+				if (!snd_mixer_selem_has_channel(scontrol, chn))
 					continue;
 				printf("%s%s: %s [%s] [%s]\n",
 						space,
-						snd_mixer_simple_channel_name(chn),
-						get_percent(scontrol.volume.values[c], scontrol.min, scontrol.max),
-						scontrol.mute & (1<<c) ? "mute" : "on",
-						scontrol.capture & (1<<c) ? "capture" : "---");
+						snd_mixer_channel_name(chn),
+						get_percent(snd_mixer_selem_get_volume(scontrol, chn), min, max),
+						snd_mixer_selem_get_mute(scontrol, chn) ? "mute" : "on",
+						snd_mixer_selem_get_capture(scontrol, chn) ? "capture" : "---");
 			}
 		}
 	}
 	return 0;
 }
 
-static int simple_elements(int level)
+static int selems(int level)
 {
 	int err;
-	unsigned int idx;
 	snd_mixer_t *handle;
-	snd_mixer_simple_element_list_t list;
-	snd_mixer_sid_t *sid;
-	char name[simple_name_size];
+	snd_mixer_selem_id_t *sid;
+	snd_mixer_elem_t *elem;
+	snd_mixer_selem_id_alloca(&sid);
 	
 	if ((err = snd_mixer_open(&handle, card)) < 0) {
 		error("Mixer %s open error: %s", card, snd_strerror(err));
 		return err;
 	}
-	memset(&list, 0, sizeof(list));
-	if ((err = snd_mixer_simple_element_list(handle, &list)) < 0) {
-		error("Mixer %s simple_element_list error: %s", card, snd_strerror(err));
+	err = snd_mixer_simple_build(handle);
+	if (err < 0) {
+		error("Mixer %s build error: %s", card, snd_strerror(err));
 		return err;
 	}
-	list.pids = (snd_mixer_sid_t *)malloc(list.controls * sizeof(snd_mixer_sid_t));
-	if (list.pids == NULL) {
-		error("Not enough memory");
-		return -ENOMEM;
+	for (elem = snd_mixer_first_elem(handle); elem; elem = snd_mixer_elem_next(elem)) {
+		snd_mixer_selem_get_id(elem, sid);
+		printf("Simple mixer control '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
+		show_selem(handle, sid, "  ", level);
 	}
-	list.controls_request = list.controls;
-	if ((err = snd_mixer_simple_element_list(handle, &list)) < 0) {
-		error("Mixer %s simple_element_list (2) error: %s", card, snd_strerror(err));
-		return err;
-	}
-	for (idx = 0; idx < list.controls_count; idx++) {
-		sid = &list.pids[idx];
-		printf("Simple mixer control '%s',%i\n", simple_name(sid->name, name), sid->index);
-		show_simple_element(handle, sid, "  ", level);
-	}
-	free(list.pids);
 	snd_mixer_close(handle);
 	return 0;
 }
 
-static int parse_control_id(const char *str, snd_ctl_element_id_t *id)
+static int parse_control_id(const char *str, snd_ctl_elem_id_t *id)
 {
 	int c, size;
 	char *ptr;
@@ -548,32 +520,32 @@ static int parse_control_id(const char *str, snd_ctl_element_id_t *id)
 		str++;
 	if (!(*str))
 		return -EINVAL;
-	snd_ctl_element_id_set_interface(id, SND_CTL_ELEMENT_IFACE_MIXER);	/* default */
+	snd_ctl_elem_id_set_interface(id, SND_CTL_ELEM_IFACE_MIXER);	/* default */
 	while (*str) {
 		if (!strncasecmp(str, "numid=", 6)) {
 			str += 6;
-			snd_ctl_element_id_set_numid(id, atoi(str));
+			snd_ctl_elem_id_set_numid(id, atoi(str));
 			while (isdigit(*str))
 				str++;
 		} else if (!strncasecmp(str, "iface=", 6)) {
 			str += 6;
 			if (!strncasecmp(str, "card", 4)) {
-				snd_ctl_element_id_set_interface(id, SND_CTL_ELEMENT_IFACE_CARD);
+				snd_ctl_elem_id_set_interface(id, SND_CTL_ELEM_IFACE_CARD);
 				str += 4;
 			} else if (!strncasecmp(str, "mixer", 5)) {
-				snd_ctl_element_id_set_interface(id, SND_CTL_ELEMENT_IFACE_MIXER);
+				snd_ctl_elem_id_set_interface(id, SND_CTL_ELEM_IFACE_MIXER);
 				str += 5;
 			} else if (!strncasecmp(str, "pcm", 3)) {
-				snd_ctl_element_id_set_interface(id, SND_CTL_ELEMENT_IFACE_PCM);
+				snd_ctl_elem_id_set_interface(id, SND_CTL_ELEM_IFACE_PCM);
 				str += 3;
 			} else if (!strncasecmp(str, "rawmidi", 7)) {
-				snd_ctl_element_id_set_interface(id, SND_CTL_ELEMENT_IFACE_RAWMIDI);
+				snd_ctl_elem_id_set_interface(id, SND_CTL_ELEM_IFACE_RAWMIDI);
 				str += 7;
 			} else if (!strncasecmp(str, "timer", 5)) {
-				snd_ctl_element_id_set_interface(id, SND_CTL_ELEMENT_IFACE_TIMER);
+				snd_ctl_elem_id_set_interface(id, SND_CTL_ELEM_IFACE_TIMER);
 				str += 5;
 			} else if (!strncasecmp(str, "sequencer", 9)) {
-				snd_ctl_element_id_set_interface(id, SND_CTL_ELEMENT_IFACE_SEQUENCER);
+				snd_ctl_elem_id_set_interface(id, SND_CTL_ELEM_IFACE_SEQUENCER);
 				str += 9;
 			} else {
 				return -EINVAL;
@@ -604,20 +576,20 @@ static int parse_control_id(const char *str, snd_ctl_element_id_t *id)
 				}
 				*ptr = '\0';
 			}
-			snd_ctl_element_id_set_name(id, buf);
+			snd_ctl_elem_id_set_name(id, buf);
 		} else if (!strncasecmp(str, "index=", 6)) {
 			str += 6;
-			snd_ctl_element_id_set_index(id, atoi(str));
+			snd_ctl_elem_id_set_index(id, atoi(str));
 			while (isdigit(*str))
 				str++;
 		} else if (!strncasecmp(str, "device=", 7)) {
 			str += 7;
-			snd_ctl_element_id_set_device(id, atoi(str));
+			snd_ctl_elem_id_set_device(id, atoi(str));
 			while (isdigit(*str))
 				str++;
 		} else if (!strncasecmp(str, "subdevice=", 10)) {
 			str += 10;
-			snd_ctl_element_id_set_subdevice(id, atoi(str));
+			snd_ctl_elem_id_set_subdevice(id, atoi(str));
 			while (isdigit(*str))
 				str++;
 		}
@@ -631,21 +603,20 @@ static int parse_control_id(const char *str, snd_ctl_element_id_t *id)
 	return 0;
 }
 
-static int parse_simple_id(const char *str, snd_mixer_sid_t *sid)
+static int parse_simple_id(const char *str, snd_mixer_selem_id_t *sid)
 {
 	int c, size;
-	char *ptr;
+	char buf[128];
+	char *ptr = buf;
 
 	while (*str == ' ' || *str == '\t')
 		str++;
 	if (!(*str))
 		return -EINVAL;
-	memset(sid, 0, sizeof(*sid));
-	ptr = sid->name;
 	size = 0;
 	if (*str != '"' && *str != '\'') {
 		while (*str && *str != ',') {
-			if (size < sizeof(sid->name)) {
+			if (size < sizeof(buf)) {
 				*ptr++ = *str;
 				size++;
 			}
@@ -654,7 +625,7 @@ static int parse_simple_id(const char *str, snd_mixer_sid_t *sid)
 	} else {
 		c = *str++;
 		while (*str && *str != c) {
-			if (size < sizeof(sid->name)) {
+			if (size < sizeof(buf)) {
 				*ptr++ = *str;
 				size++;
 			}
@@ -670,7 +641,8 @@ static int parse_simple_id(const char *str, snd_mixer_sid_t *sid)
 	str++;
 	if (!isdigit(*str))
 		return -EINVAL;
-	sid->index = atoi(str);
+	snd_mixer_selem_id_set_index(sid, atoi(str));
+	snd_mixer_selem_id_set_name(sid, buf);
 	return 0;
 }
 
@@ -678,16 +650,16 @@ static int cset(int argc, char *argv[], int roflag)
 {
 	int err;
 	snd_ctl_t *handle;
-	snd_ctl_element_info_t *info;
-	snd_ctl_element_id_t *id;
-	snd_ctl_element_t *control;
+	snd_ctl_elem_info_t *info;
+	snd_ctl_elem_id_t *id;
+	snd_ctl_elem_t *control;
 	char *ptr;
 	unsigned int idx, count;
 	long tmp;
-	snd_ctl_element_type_t type;
-	snd_ctl_element_info_alloca(&info);
-	snd_ctl_element_id_alloca(&id);
-	snd_ctl_element_alloca(&control);
+	snd_ctl_elem_type_t type;
+	snd_ctl_elem_info_alloca(&info);
+	snd_ctl_elem_id_alloca(&id);
+	snd_ctl_elem_alloca(&control);
 
 	if (argc < 1) {
 		fprintf(stderr, "Specify a full control identifier: [[iface=<iface>,][name='name',][index=<index>,][device=<device>,][subdevice=<subdevice>]]|[numid=<numid>]\n");
@@ -706,20 +678,20 @@ static int cset(int argc, char *argv[], int roflag)
 		error("Control %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
-	snd_ctl_element_info_set_id(info, id);
-	if ((err = snd_ctl_element_info(handle, info)) < 0) {
+	snd_ctl_elem_info_set_id(info, id);
+	if ((err = snd_ctl_elem_info(handle, info)) < 0) {
 		error("Control %s cinfo error: %s\n", card, snd_strerror(err));
 		return err;
 	}
-	type = snd_ctl_element_info_get_type(info);
-	count = snd_ctl_element_info_get_count(info);
-	snd_ctl_element_set_id(control, id);
+	type = snd_ctl_elem_info_get_type(info);
+	count = snd_ctl_elem_info_get_count(info);
+	snd_ctl_elem_set_id(control, id);
 	
 	if (!roflag) {
 		ptr = argv[1];
 		for (idx = 0; idx < count && idx < 128 && *ptr; idx++) {
 			switch (snd_enum_to_int(type)) {
-			case SND_CTL_ELEMENT_TYPE_BOOLEAN:
+			case SND_CTL_ELEM_TYPE_BOOLEAN:
 				tmp = 0;
 				if (!strncasecmp(ptr, "on", 2) || !strncasecmp(ptr, "up", 2)) {
 					tmp = 1;
@@ -732,21 +704,21 @@ static int cset(int argc, char *argv[], int roflag)
 					while (isdigit(*ptr))
 						ptr++;
 				}
-				snd_ctl_element_set_boolean(control, idx, tmp);
+				snd_ctl_elem_set_boolean(control, idx, tmp);
 				break;
-			case SND_CTL_ELEMENT_TYPE_INTEGER:
+			case SND_CTL_ELEM_TYPE_INTEGER:
 				tmp = get_integer(&ptr,
-						  snd_ctl_element_info_get_min(info),
-						  snd_ctl_element_info_get_max(info));
-				snd_ctl_element_set_integer(control, idx, tmp);
+						  snd_ctl_elem_info_get_min(info),
+						  snd_ctl_elem_info_get_max(info));
+				snd_ctl_elem_set_integer(control, idx, tmp);
 				break;
-			case SND_CTL_ELEMENT_TYPE_ENUMERATED:
-				tmp = get_integer(&ptr, 0, snd_ctl_element_info_get_items(info) - 1);
-				snd_ctl_element_set_enumerated(control, idx, tmp);
+			case SND_CTL_ELEM_TYPE_ENUMERATED:
+				tmp = get_integer(&ptr, 0, snd_ctl_elem_info_get_items(info) - 1);
+				snd_ctl_elem_set_enumerated(control, idx, tmp);
 				break;
-			case SND_CTL_ELEMENT_TYPE_BYTES:
+			case SND_CTL_ELEM_TYPE_BYTES:
 				tmp = get_integer(&ptr, 0, 255);
-				snd_ctl_element_set_byte(control, idx, tmp);
+				snd_ctl_elem_set_byte(control, idx, tmp);
 				break;
 			default:
 				break;
@@ -756,8 +728,8 @@ static int cset(int argc, char *argv[], int roflag)
 			else if (*ptr == ',')
 				ptr++;
 		}
-		if ((err = snd_ctl_element_write(handle, control)) < 0) {
-			error("Control %s cwrite error: %s\n", card, snd_strerror(err));
+		if ((err = snd_ctl_elem_write(handle, control)) < 0) {
+			error("Control %s element write error: %s\n", card, snd_strerror(err));
 			return err;
 		}
 	}
@@ -772,29 +744,29 @@ typedef struct channel_mask {
 	unsigned int mask;
 } channel_mask_t;
 static channel_mask_t chanmask[] = {
-	{"frontleft", SND_MIXER_CHN_MASK_FRONT_LEFT},
-	{"frontright", SND_MIXER_CHN_MASK_FRONT_RIGHT},
-	{"frontcenter", SND_MIXER_CHN_MASK_FRONT_CENTER},
-	{"front", SND_MIXER_CHN_MASK_FRONT_LEFT|SND_MIXER_CHN_MASK_FRONT_RIGHT},
-	{"center", SND_MIXER_CHN_MASK_FRONT_CENTER},
-	{"rearleft", SND_MIXER_CHN_MASK_REAR_LEFT},
-	{"rearright", SND_MIXER_CHN_MASK_REAR_RIGHT},
-	{"rear", SND_MIXER_CHN_MASK_REAR_LEFT|SND_MIXER_CHN_MASK_REAR_RIGHT},
-	{"woofer", SND_MIXER_CHN_MASK_WOOFER},
+	{"frontleft", 1 << SND_MIXER_CHN_FRONT_LEFT},
+	{"frontright", 1 << SND_MIXER_CHN_FRONT_RIGHT},
+	{"frontcenter", 1 << SND_MIXER_CHN_FRONT_CENTER},
+	{"front", ((1 << SND_MIXER_CHN_FRONT_LEFT) |
+		   (1 << SND_MIXER_CHN_FRONT_RIGHT))},
+	{"center", 1 << SND_MIXER_CHN_FRONT_CENTER},
+	{"rearleft", 1 << SND_MIXER_CHN_REAR_LEFT},
+	{"rearright", 1 << SND_MIXER_CHN_REAR_RIGHT},
+	{"rear", ((1 << SND_MIXER_CHN_REAR_LEFT) |
+		  (1 << SND_MIXER_CHN_REAR_RIGHT))},
+	{"woofer", 1 << SND_MIXER_CHN_WOOFER},
 	{NULL, 0}
 };
 
-static int check_channels(char *arg, unsigned int mask, unsigned int *mask_return)
+static unsigned int channels_mask(char *arg)
 {
 	channel_mask_t *c;
 
 	for (c = chanmask; c->name; c++) {
-		if (! strncmp(arg, c->name, strlen(c->name))) {
-			*mask_return = c->mask & mask;
-			return 1;
-		}
+		if (strncmp(arg, c->name, strlen(c->name)) == 0)
+			return c->mask;
 	}
-	return 0;
+	return ~0U;
 }
 
 static int sset(unsigned int argc, char *argv[], int roflag)
@@ -803,16 +775,19 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 	unsigned int idx;
 	snd_mixer_channel_id_t chn;
 	unsigned int channels;
+	long min, max;
 	snd_mixer_t *handle;
-	snd_mixer_sid_t sid;
-	snd_mixer_simple_element_t control;
-	char name[simple_name_size];
+	snd_mixer_elem_t *elem;
+	snd_mixer_selem_id_t *sid;
+	snd_mixer_selem_t *control;
+	snd_mixer_selem_id_alloca(&sid);
+	snd_mixer_selem_alloca(&control);
 
 	if (argc < 1) {
 		fprintf(stderr, "Specify a scontrol identifier: 'name',index\n");
 		return 1;
 	}
-	if (parse_simple_id(argv[0], &sid)) {
+	if (parse_simple_id(argv[0], sid)) {
 		fprintf(stderr, "Wrong scontrol identifier: %s\n", argv[0]);
 		return 1;
 	}
@@ -824,36 +799,40 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 		error("Mixer %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
-	memset(&control, 0, sizeof(control));
-	control.sid = sid;
-	if ((err = snd_mixer_simple_element_read(handle, &control))<0) {
-		error("Unable to read simple control '%s',%i: %s\n", simple_name(sid.name, name), sid.index, snd_strerror(err));
+	elem = snd_mixer_find_selem(handle, sid);
+	if (!elem) {
+		error("Unable to find simple control '%s',%i: %s\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid), snd_strerror(err));
+		snd_mixer_close(handle);
+		return -ENOENT;
+	}
+	if ((err = snd_mixer_selem_read(elem, control))<0) {
+		error("Unable to read simple control '%s',%i: %s\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid), snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
 	}
+	min = snd_mixer_selem_get_min(control);
+	max = snd_mixer_selem_get_min(control);
 	if (roflag)
 		goto __skip_write;
-	channels = control.channels; /* all channels */
 	for (idx = 1; idx < argc; idx++) {
 		if (!strncmp(argv[idx], "mute", 4) ||
 		    !strncmp(argv[idx], "off", 3)) {
-			control.mute = control.channels;
+			snd_mixer_selem_set_mute_all(control, 1);
 			continue;
 		} else if (!strncmp(argv[idx], "unmute", 6) ||
 		           !strncmp(argv[idx], "on", 2)) {
-			control.mute = 0;
+			snd_mixer_selem_set_mute_all(control, 0);
 			continue;
 		} else if (!strncmp(argv[idx], "cap", 3) ||
 		           !strncmp(argv[idx], "rec", 3)) {
-			control.capture = control.channels;
+			snd_mixer_selem_set_capture_all(control, 1);
 			continue;
 		} else if (!strncmp(argv[idx], "nocap", 5) ||
 		           !strncmp(argv[idx], "norec", 5)) {
-			control.capture = 0;
+			snd_mixer_selem_set_capture_all(control, 0);
 			continue;
 		}
-		if (check_channels(argv[idx], control.channels, &channels))
-			continue;
+		channels = channels_mask(argv[idx]);
 		if (isdigit(argv[idx][0]) ||
 		    argv[idx][0] == '+' ||
 		    argv[idx][0] == '-') {
@@ -863,14 +842,13 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 			multi = (strchr(argv[idx], ',') != NULL);
 			ptr = argv[idx];
 			for (chn = 0; chn <= SND_MIXER_CHN_LAST; snd_enum_incr(chn)) {
-				int c = snd_enum_to_int(chn);
-				if (!(control.channels & (1<<c)) ||
-				    !(channels & (1<<c)))
+				if (!(channels & (1 << chn)) ||
+				    !snd_mixer_selem_has_channel(control, chn))
 					continue;
 
 				if (! multi)
 					ptr = argv[idx];
-				control.volume.values[c] = get_volume_simple(&ptr, control.min, control.max, control.volume.values[c]);
+				snd_mixer_selem_set_volume(control, chn, get_volume_simple(&ptr, min, max, snd_mixer_selem_get_volume(control, chn)));
 			}
 		} else {
 			error("Unknown setup '%s'..\n", argv[idx]);
@@ -878,96 +856,119 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 			return err;
 		}
 	} 
-	if ((err = snd_mixer_simple_element_write(handle, &control))<0) {
-		error("Unable to write control '%s',%i: %s\n", simple_name(sid.name, name), sid.index, snd_strerror(err));
+	if ((err = snd_mixer_selem_write(elem, control))<0) {
+		error("Unable to write control '%s',%i: %s\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid), snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
 	}
       __skip_write:
 	if (!quiet) {
-		printf("Simple mixer control '%s',%i\n", simple_name(sid.name, name), sid.index);
-		show_simple_element(handle, &sid, "  ", 1);
+		printf("Simple mixer control '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
+		show_selem(handle, sid, "  ", 1);
 	}
 	snd_mixer_close(handle);
 	return 0;
 }
 
-static void events_change(snd_ctl_t *handle ATTRIBUTE_UNUSED, snd_hctl_element_t *helem)
+static void events_change(snd_hctl_elem_t *helem)
 {
-	snd_ctl_element_id_t *id;
-	snd_ctl_element_id_alloca(&id);
-	snd_hctl_element_get_id(helem, id);
+	snd_ctl_elem_id_t *id;
+	snd_ctl_elem_id_alloca(&id);
+	snd_hctl_elem_get_id(helem, id);
 	printf("event change: ");
 	show_control_id(id);
 	printf("\n");
 }
 
-static void events_value(snd_ctl_t *handle ATTRIBUTE_UNUSED, snd_hctl_element_t *helem)
+static void events_value(snd_hctl_elem_t *helem)
 {
-	snd_ctl_element_id_t *id;
-	snd_ctl_element_id_alloca(&id);
-	snd_hctl_element_get_id(helem, id);
+	snd_ctl_elem_id_t *id;
+	snd_ctl_elem_id_alloca(&id);
+	snd_hctl_elem_get_id(helem, id);
 	printf("event value: ");
 	show_control_id(id);
 	printf("\n");
 }
 
-static void events_remove(snd_ctl_t *handle ATTRIBUTE_UNUSED, snd_hctl_element_t *helem)
+static void events_remove(snd_hctl_elem_t *helem)
 {
-	snd_ctl_element_id_t *id;
-	snd_ctl_element_id_alloca(&id);
-	snd_hctl_element_get_id(helem, id);
+	snd_ctl_elem_id_t *id;
+	snd_ctl_elem_id_alloca(&id);
+	snd_hctl_elem_get_id(helem, id);
 	printf("event remove: ");
 	show_control_id(id);
 	printf("\n");
 }
 
-static void events_rebuild(snd_ctl_t *handle ATTRIBUTE_UNUSED, void *private_data)
+static void events_rebuild()
 {
-	assert(private_data != (void *)1);
 	printf("event rebuild\n");
 }
 
-static void events_add(snd_ctl_t *handle ATTRIBUTE_UNUSED, void *private_data, snd_hctl_element_t *helem)
+int element_callback(snd_hctl_elem_t *elem, snd_ctl_event_type_t event)
 {
-	snd_ctl_element_id_t *id;
-	snd_ctl_element_id_alloca(&id);
-	snd_hctl_element_get_id(helem, id);
-	assert(private_data != (void *)1);
+	switch (event) {
+	case SND_CTL_EVENT_CHANGE:
+		events_change(elem);
+		break;
+	case SND_CTL_EVENT_VALUE:
+		events_value(elem);
+		break;
+	case SND_CTL_EVENT_REMOVE:
+		events_remove(elem);
+		break;
+	default:
+		assert(0);
+		break;
+	}
+	return 0;
+}
+
+static void events_add(snd_hctl_elem_t *helem)
+{
+	snd_ctl_elem_id_t *id;
+	snd_ctl_elem_id_alloca(&id);
+	snd_hctl_elem_get_id(helem, id);
 	printf("event add: ");
 	show_control_id(id);
 	printf("\n");
-	snd_hctl_element_set_callback_change(helem, events_change);
-	snd_hctl_element_set_callback_value(helem, events_value);
-	snd_hctl_element_set_callback_remove(helem, events_remove);	
+	snd_hctl_elem_set_callback(helem, element_callback);
+}
+
+int ctl_callback(snd_ctl_t *ctl, snd_ctl_event_type_t event,
+		 snd_hctl_elem_t *elem)
+{
+	switch (event) {
+	case SND_CTL_EVENT_REBUILD:
+		events_rebuild();
+		break;
+	case SND_CTL_EVENT_ADD:
+		events_add(elem);
+		break;
+	default:
+		assert(0);
+		break;
+	}
+	return 0;
 }
 
 static int events(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 {
 	snd_ctl_t *handle;
-	snd_hctl_element_t *helem;
+	snd_hctl_elem_t *helem;
 	int err;
 
 	if ((err = snd_ctl_open(&handle, card)) < 0) {
 		error("Control %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
-	if ((err = snd_ctl_hbuild(handle, NULL)) < 0) {
+	snd_hctl_set_callback(handle, ctl_callback);
+	if ((err = snd_hctl_build(handle)) < 0) {
 		error("Control %s hbuild error: %s\n", card, snd_strerror(err));
 		return err;
 	}
-	if ((err = snd_ctl_hcallback_rebuild(handle, events_rebuild, (void *)1)) < 0) {
-		error("Control %s hcallback_rebuild error: %s\n", card, snd_strerror(err));
-		return err;
-	}
-	if ((err = snd_ctl_hcallback_add(handle, events_add, (void *)2)) < 0) {
-		error("Control %s hcallback_add error: %s\n", card, snd_strerror(err));
-		return err;
-	}
-	for (helem = snd_ctl_hfirst(handle); helem; helem = snd_ctl_hnext(handle, helem)) {
-		snd_hctl_element_set_callback_change(helem, events_change);
-		snd_hctl_element_set_callback_value(helem, events_value);
-		snd_hctl_element_set_callback_remove(helem, events_remove);
+	for (helem = snd_hctl_first_elem(handle); helem; helem = snd_hctl_elem_next(helem)) {
+		snd_hctl_elem_set_callback(helem, element_callback);
 	}
 	printf("Ready to listen...\n");
 	while (1) {
@@ -978,7 +979,7 @@ static int events(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 		ctl_poll.revents = 0;
 		if ((res = poll(&ctl_poll, 1, -1)) > 0) {
 			printf("Poll ok: %i\n", res);
-			res = snd_ctl_hevent(handle);
+			res = snd_hctl_events(handle);
 			if (res > 0)
 				printf("%i events processed\n", res);
 		}
@@ -986,57 +987,91 @@ static int events(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 	snd_ctl_close(handle);
 }
 
-static void sevents_rebuild(snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED)
+static void sevents_value(snd_mixer_selem_id_t *sid)
+{
+	printf("event value: '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
+}
+
+static void sevents_change(snd_mixer_selem_id_t *sid)
+{
+	printf("event change: '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
+}
+
+static void sevents_remove(snd_mixer_selem_id_t *sid)
+{
+	printf("event remove: '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
+}
+
+int selem_callback(snd_mixer_elem_t *elem, snd_ctl_event_type_t event)
+{
+	snd_mixer_selem_id_t *sid;
+	snd_mixer_selem_id_alloca(&sid);
+	snd_mixer_selem_get_id(elem, sid);
+	switch (event) {
+	case SND_CTL_EVENT_CHANGE:
+		sevents_change(sid);
+		break;
+	case SND_CTL_EVENT_VALUE:
+		sevents_value(sid);
+		break;
+	case SND_CTL_EVENT_REMOVE:
+		sevents_remove(sid);
+		break;
+	default:
+		assert(0);
+		break;
+	}
+	return 0;
+}
+
+static void sevents_rebuild()
 {
 	printf("event rebuild\n");
 }
 
-static void sevents_value(snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED, snd_mixer_sid_t *sid)
+static void sevents_add(snd_mixer_elem_t *elem)
 {
-	char name[simple_name_size];
-
-	printf("event value: '%s',%i\n", simple_name(sid->name, name), sid->index);
+	snd_mixer_selem_id_t *sid;
+	snd_mixer_selem_id_alloca(&sid);
+	snd_mixer_selem_get_id(elem, sid);
+	printf("event add: '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
+	snd_mixer_elem_set_callback(elem, selem_callback);
 }
 
-static void sevents_change(snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED, snd_mixer_sid_t *sid)
+int mixer_event(snd_mixer_t *mixer, snd_ctl_event_type_t event,
+		snd_mixer_elem_t *elem)
 {
-	char name[simple_name_size];
-
-	printf("event change: '%s',%i\n", simple_name(sid->name, name), sid->index);
-}
-
-static void sevents_add(snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED, snd_mixer_sid_t *sid)
-{
-	char name[simple_name_size];
-
-	printf("event add: '%s',%i\n", simple_name(sid->name, name), sid->index);
-}
-
-static void sevents_remove(snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED, snd_mixer_sid_t *sid)
-{
-	char name[simple_name_size];
-
-	printf("event remove: '%s',%i\n", simple_name(sid->name, name), sid->index);
+	switch (event) {
+	case SND_CTL_EVENT_REBUILD:
+		sevents_rebuild();
+		break;
+	case SND_CTL_EVENT_ADD:
+		sevents_add(elem);
+		break;
+	default:
+		assert(0);
+		break;
+	}
+	return 0;
 }
 
 static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 {
 	snd_mixer_t *handle;
-	static snd_mixer_simple_callbacks_t callbacks = {
-		private_data: NULL,
-		rebuild: sevents_rebuild,
-		value: sevents_value,
-		change: sevents_change,
-		add: sevents_add,
-		remove: sevents_remove,
-		reserved: { NULL, }
-	};
 	int err;
 
 	if ((err = snd_mixer_open(&handle, card)) < 0) {
 		error("Mixer %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
+	snd_mixer_set_callback(handle, mixer_event);
+	err = snd_mixer_simple_build(handle);
+	if (err < 0) {
+		error("Mixer %s build error: %s\n", card, snd_strerror(err));
+		snd_mixer_close(handle);
+		return err;
+	}
+
 	printf("Ready to listen...\n");
 	while (1) {
 		struct pollfd mixer_poll;
@@ -1046,7 +1081,7 @@ static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 		mixer_poll.revents = 0;
 		if ((res = poll(&mixer_poll, 1, -1)) > 0) {
 			printf("Poll ok: %i\n", res);
-			res = snd_mixer_simple_read(handle, &callbacks);
+			res = snd_mixer_events(handle);
 			if (res > 0)
 				printf("%i events processed\n", res);
 		}
@@ -1104,7 +1139,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	if (argc - optind <= 0) {
-		return simple_elements(1) ? 1 : 0;
+		return selems(1) ? 1 : 0;
 	}
 	if (!strcmp(argv[optind], "help")) {
 		return help() ? 1 : 0;
@@ -1115,9 +1150,9 @@ int main(int argc, char *argv[])
 	} else if (!strcmp(argv[optind], "contents")) {
 		return controls(1) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "scontrols") || !strcmp(argv[optind], "simple")) {
-		return simple_elements(0) ? 1 : 0;
+		return selems(0) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "scontents")) {
-		return simple_elements(1) ? 1 : 0;
+		return selems(1) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "sset") || !strcmp(argv[optind], "set")) {
 		return sset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 0) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "sget") || !strcmp(argv[optind], "get")) {
