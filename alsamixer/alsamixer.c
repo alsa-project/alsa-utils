@@ -18,6 +18,11 @@
  *
  * ChangeLog:
  *
+ * Fri Jun 23 14:10:00 MEST 2000  Jaroslav Kysela <perex@suse.cz>
+ *
+ *      * ported to new mixer 0.6.x API (simple control)
+ *      * improved error handling (mixer_abort)
+ *
  * Thu Mar  9 22:54:16 MET 2000  Takashi iwai <iwai@ww.uni-erlangen.de>
  *
  *	* a group is split into front, rear, center and woofer elements.
@@ -26,7 +31,7 @@
  *
  *      * version 1.00
  *
- *      * ported to new mixer API (group control)
+ *      * ported to new mixer API (scontrol control)
  *
  * Sun Feb 21 19:55:01 1999  Tim Janik  <timj@gtk.org>
  *
@@ -121,7 +126,7 @@
 #define	PRGNAME		 "alsamixer"
 #define	PRGNAME_UPPER	 "AlsaMixer"
 #define	VERSION		 "v1.00"
-#define	CHECK_ABORT(e,s) ({ if (errno != EINTR) mixer_abort ((e), (s)); })
+#define	CHECK_ABORT(e,s,n) ({ if ((n) != -EINTR) mixer_abort ((e), (s), (n)); })
 #define GETCH_BLOCK(w)	 ({ timeout ((w) ? -1 : 0); })
 
 #undef MAX
@@ -174,10 +179,9 @@ static float	 mixer_extra_space = 0;
 static int	 mixer_cbar_height = 0;
 
 static int	 card_id = 0;
-static int	 mixer_id = 0;
 static snd_mixer_t *mixer_handle;
-static char	*mixer_card_name = NULL;
-static char	*mixer_device_name = NULL;
+static char	 mixer_card_name[128];
+static char	 mixer_device_name[128];
 
 /* mixer bar channel : left or right */
 #define MIXER_CHN_LEFT		0
@@ -210,10 +214,10 @@ static int mixer_elem_chn[][2] = {
   { SND_MIXER_CHN_WOOFER, -1 },
 };
 
-static snd_mixer_gid_t *mixer_gid = NULL;
-static int	 mixer_n_groups = 0;
+static snd_mixer_sid_t *mixer_sid = NULL;
+static int	 mixer_n_scontrols = 0;
 
-/* split groups */
+/* split scontrols */
 static int	 mixer_n_elems = 0;
 static int	 mixer_n_vis_elems = 0;
 static int	 mixer_first_vis_elem = 0;
@@ -349,7 +353,8 @@ typedef enum
 /* --- prototypes --- */
 static void
 mixer_abort (ErrType error,
-	     const char *err_string)
+	     const char *err_string,
+	     int xerrno)
      __attribute__
 ((noreturn));
 
@@ -376,7 +381,8 @@ mixer_clear (int full_redraw)
 
 static void
 mixer_abort (ErrType     error,
-	     const char *err_string)
+	     const char *err_string,
+	     int	 xerrno)
 {
   if (mixer_window)
     {
@@ -393,16 +399,15 @@ mixer_abort (ErrType     error,
     {
     case ERR_OPEN:
       fprintf (stderr,
-	       PRGNAME ": failed to open mixer #%i/#%i: %s\n",
+	       PRGNAME ": failed to open mixer #%i: %s\n",
 	       card_id,
-	       mixer_id,
-	       snd_strerror (errno));
+	       snd_strerror (xerrno));
       break;
     case ERR_FCN:
       fprintf (stderr,
 	       PRGNAME ": function %s failed: %s\n",
 	       err_string,
-	       snd_strerror (errno));
+	       snd_strerror (xerrno));
       break;
     case ERR_SIGNAL:
       fprintf (stderr,
@@ -464,23 +469,23 @@ mixer_conv(int val, int omin, int omax, int nmin, int nmax)
 }
 
 static int
-mixer_calc_volume(snd_mixer_group_t *group, int vol, int chn)
+mixer_calc_volume(snd_mixer_simple_control_t *scontrol, int vol, int chn)
 {
   int vol1;
 
   vol1 = (vol < 0) ? -vol : vol;
   if (vol1 > 0) {
     if (vol1 > 100)
-      vol1 = group->max;
+      vol1 = scontrol->max;
     else
-      vol1 = mixer_conv(vol1, 0, 100, group->min, group->max);
+      vol1 = mixer_conv(vol1, 0, 100, scontrol->min, scontrol->max);
     if (vol1 <= 0)
       vol1 = 1;
     if (vol < 0)
       vol1 = -vol1;
   }
-  vol1 += group->volume.values[chn];
-  return CLAMP(vol1, group->min, group->max);
+  vol1 += scontrol->volume.values[chn];
+  return CLAMP(vol1, scontrol->min, scontrol->max);
 }
 
 /* set new channel values
@@ -488,22 +493,24 @@ mixer_calc_volume(snd_mixer_group_t *group, int vol, int chn)
 static void
 mixer_write_cbar (int elem_index)
 {
-  snd_mixer_group_t group;
+  snd_mixer_simple_control_t scontrol;
   int vleft, vright, vbalance;
   int type, chn_left, chn_right;
-  int i, changed;
+  int i, err, changed;
 
-  bzero(&group, sizeof(group));
-  group.gid = mixer_gid[mixer_grpidx[elem_index]];
-  if (snd_mixer_group_read (mixer_handle, &group) < 0)
-    CHECK_ABORT (ERR_FCN, "snd_mixer_group_read()");
+  bzero(&scontrol, sizeof(scontrol));
+  if (mixer_sid == NULL)
+    return;
+  scontrol.sid = mixer_sid[mixer_grpidx[elem_index]];
+  if ((err = snd_mixer_simple_control_read (mixer_handle, &scontrol)) < 0)
+    CHECK_ABORT (ERR_FCN, "snd_mixer_simple_control_read()", err);
   
   type = mixer_type[elem_index];
   chn_left = mixer_elem_chn[type][MIXER_CHN_LEFT];
-  if (! (group.channels & (1 << chn_left)))
+  if (! (scontrol.channels & (1 << chn_left)))
     return; /* ..??.. */
   chn_right = mixer_elem_chn[type][MIXER_CHN_RIGHT];
-  if (chn_right >= 0 && ! (group.channels & (1 << chn_right)))
+  if (chn_right >= 0 && ! (scontrol.channels & (1 << chn_right)))
     chn_right = -1;
 
   changed = 0;
@@ -513,31 +520,31 @@ mixer_write_cbar (int elem_index)
   if ((mixer_volume_delta[MIXER_CHN_LEFT] ||
        mixer_volume_delta[MIXER_CHN_RIGHT] ||
        mixer_balance_volumes) &&
-      (group.caps & SND_MIXER_GRPCAP_VOLUME)) {
+      (scontrol.caps & SND_MIXER_SCTCAP_VOLUME)) {
     int mono = 
-      (chn_right < 0 || (group.caps & SND_MIXER_GRPCAP_JOINTLY_VOLUME));
+      (chn_right < 0 || (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_VOLUME));
     if (mono && !mixer_volume_delta[MIXER_CHN_LEFT])
       mixer_volume_delta[MIXER_CHN_LEFT] = mixer_volume_delta[MIXER_CHN_RIGHT];
-    vleft = mixer_calc_volume(&group, mixer_volume_delta[MIXER_CHN_LEFT], chn_left);
+    vleft = mixer_calc_volume(&scontrol, mixer_volume_delta[MIXER_CHN_LEFT], chn_left);
     vbalance = vleft;
     if (! mono) {
-      vright = mixer_calc_volume(&group, mixer_volume_delta[MIXER_CHN_RIGHT], chn_right);
+      vright = mixer_calc_volume(&scontrol, mixer_volume_delta[MIXER_CHN_RIGHT], chn_right);
       vbalance += vright;
       vbalance /= 2;
     } else
       vright = vleft;
     if (vleft >= 0 && vright >= 0) {
-      if (group.caps & SND_MIXER_GRPCAP_JOINTLY_VOLUME) {
+      if (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_VOLUME) {
 	for (i = 0; i < SND_MIXER_CHN_LAST; i++) {
-	  if (group.channels & (1 << i))
-	    group.volume.values[i] = vleft;
+	  if (scontrol.channels & (1 << i))
+	    scontrol.volume.values[i] = vleft;
 	}
       } else {
 	if (mixer_balance_volumes)
 	  vleft = vright = vbalance;
-	group.volume.values[chn_left] = vleft;
+	scontrol.volume.values[chn_left] = vleft;
 	if (! mono)
-	  group.volume.values[chn_right] = vright;
+	  scontrol.volume.values[chn_right] = vright;
       }
       changed = 1;
     }
@@ -547,15 +554,15 @@ mixer_write_cbar (int elem_index)
 
   /* mute
    */
-  if (mixer_toggle_mute && (group.caps & SND_MIXER_GRPCAP_MUTE)) {
-    group.mute &= group.channels;
-    if (group.caps & SND_MIXER_GRPCAP_JOINTLY_MUTE)
-      group.mute = group.mute ? 0 : group.channels;
+  if (mixer_toggle_mute && (scontrol.caps & SND_MIXER_SCTCAP_MUTE)) {
+    scontrol.mute &= scontrol.channels;
+    if (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_MUTE)
+      scontrol.mute = scontrol.mute ? 0 : scontrol.channels;
     else {
       if (mixer_toggle_mute & MIXER_MASK_LEFT)
-	group.mute ^= (1 << chn_left);
+	scontrol.mute ^= (1 << chn_left);
       if (chn_right >= 0 && (mixer_toggle_mute & MIXER_MASK_RIGHT))
-	group.mute ^= (1 << chn_right);
+	scontrol.mute ^= (1 << chn_right);
     }
     changed = 1;
   }
@@ -563,23 +570,23 @@ mixer_write_cbar (int elem_index)
 
   /* capture
    */
-  if (mixer_toggle_capture && (group.caps & SND_MIXER_GRPCAP_CAPTURE)) {
-    group.capture &= group.channels;
-    if (group.caps & SND_MIXER_GRPCAP_JOINTLY_CAPTURE)
-      group.capture = group.capture ? 0 : group.channels;
+  if (mixer_toggle_capture && (scontrol.caps & SND_MIXER_SCTCAP_CAPTURE)) {
+    scontrol.capture &= scontrol.channels;
+    if (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_CAPTURE)
+      scontrol.capture = scontrol.capture ? 0 : scontrol.channels;
     else {
       if (mixer_toggle_capture & MIXER_MASK_LEFT)
-	group.capture ^= (1 << chn_left);
+	scontrol.capture ^= (1 << chn_left);
       if (chn_right >= 0 && (mixer_toggle_capture & MIXER_MASK_RIGHT))
-	group.capture ^= (1 << chn_right);
+	scontrol.capture ^= (1 << chn_right);
     }
     changed = 1;
   }
   mixer_toggle_capture = 0;
       
   if (changed) {
-    if (snd_mixer_group_write (mixer_handle, &group) < 0)
-      CHECK_ABORT (ERR_FCN, "snd_mixer_group_write()");
+    if ((err = snd_mixer_simple_control_write (mixer_handle, &scontrol)) < 0)
+      CHECK_ABORT (ERR_FCN, "snd_mixer_simple_control_write()", err);
   }
 }
 
@@ -588,37 +595,42 @@ static void
 mixer_update_cbar (int elem_index)
 {
   char string[64], string1[64];
-  int dc;
-  snd_mixer_group_t group;
+  int err, dc;
+  snd_mixer_simple_control_t scontrol;
   int vleft, vright;
   int type, chn_left, chn_right;
   int x, y, i;
 
-  /* set new group indices and read info
+  fprintf(stderr, "update cbar\n");
+
+  /* set new scontrol indices and read info
    */
-  bzero(&group, sizeof(group));
-  group.gid = mixer_gid[mixer_grpidx[elem_index]];
-  if (snd_mixer_group_read (mixer_handle, &group) < 0)
-    CHECK_ABORT (ERR_FCN, "snd_mixer_group_read()");
+  bzero(&scontrol, sizeof(scontrol));
+  if (mixer_sid == NULL)
+    return;
+  scontrol.sid = mixer_sid[mixer_grpidx[elem_index]];
+  if ((err = snd_mixer_simple_control_read (mixer_handle, &scontrol)) < 0)
+    CHECK_ABORT (ERR_FCN, "snd_mixer_simple_control_read()", err);
   
+  fprintf(stderr, "scontrol.channels = 0x%x\n", scontrol.channels);
   type = mixer_type[elem_index];
   chn_left = mixer_elem_chn[type][MIXER_CHN_LEFT];
-  if (! (group.channels & (1 << chn_left)))
+  if (! (scontrol.channels & (1 << chn_left)))
     return; /* ..??.. */
   chn_right = mixer_elem_chn[type][MIXER_CHN_RIGHT];
-  if (chn_right >= 0 && ! (group.channels & (1 << chn_right)))
+  if (chn_right >= 0 && ! (scontrol.channels & (1 << chn_right)))
     chn_right = -1;
   
   /* first, read values for the numbers to be displayed
    */
-  if (snd_mixer_group_read (mixer_handle, &group) < 0)
-    CHECK_ABORT (ERR_FCN, "snd_mixer_group_read()");
+  if ((err = snd_mixer_simple_control_read (mixer_handle, &scontrol)) < 0)
+    CHECK_ABORT (ERR_FCN, "snd_mixer_simple_control_read()", err);
   
-  vleft = group.volume.values[chn_left];
-  vleft = mixer_conv(vleft, group.min, group.max, 0, 100);
+  vleft = scontrol.volume.values[chn_left];
+  vleft = mixer_conv(vleft, scontrol.min, scontrol.max, 0, 100);
   if (chn_right >= 0) {
-    vright = group.volume.values[chn_right];
-    vright = mixer_conv(vright, group.min, group.max, 0, 100);
+    vright = scontrol.volume.values[chn_right];
+    vright = mixer_conv(vright, scontrol.min, scontrol.max, 0, 100);
   } else {
     vright = vleft;
   }
@@ -631,10 +643,10 @@ mixer_update_cbar (int elem_index)
   /* channel bar name
    */
   mixer_dc (elem_index == mixer_focus_elem ? DC_CBAR_FOCUS_LABEL : DC_CBAR_LABEL);
-  if (group.gid.index > 0)
-    sprintf(string1, "%s %d", group.gid.name, group.gid.index);
+  if (scontrol.sid.index > 0)
+    sprintf(string1, "%s %d", scontrol.sid.name, scontrol.sid.index);
   else
-    strcpy(string1, group.gid.name);
+    strcpy(string1, scontrol.sid.name);
   string1[8] = 0;
   for (i = 0; i < 8; i++)
     {
@@ -695,10 +707,10 @@ mixer_update_cbar (int elem_index)
   mvaddstr (y, x, "         ");
   mixer_dc (DC_CBAR_FRAME);
   mvaddch (y, x + 2, ACS_ULCORNER);
-  dc = group.mute & (1 << chn_left) ? DC_CBAR_MUTE : DC_CBAR_NOMUTE;
+  dc = scontrol.mute & (1 << chn_left) ? DC_CBAR_MUTE : DC_CBAR_NOMUTE;
   mvaddch (y, x + 3, mixer_dc (dc));
   if (chn_right >= 0)
-    dc = group.mute & (1 << chn_right) ? DC_CBAR_MUTE : DC_CBAR_NOMUTE;
+    dc = scontrol.mute & (1 << chn_right) ? DC_CBAR_MUTE : DC_CBAR_NOMUTE;
   mvaddch (y, x + 4, mixer_dc (dc));
   mixer_dc (DC_CBAR_FRAME);
   mvaddch (y, x + 5, ACS_URCORNER);
@@ -706,20 +718,20 @@ mixer_update_cbar (int elem_index)
   
   /* capture input?
    */
-  if ((group.capture & (1 << chn_left)) ||
-      (chn_right >= 0 && (group.capture & (1 << chn_right))))
+  if ((scontrol.capture & (1 << chn_left)) ||
+      (chn_right >= 0 && (scontrol.capture & (1 << chn_right))))
     {
       mixer_dc (DC_CBAR_CAPTURE);
       mvaddstr (y, x + 1, "CAPTUR");
-      if (group.capture & (1 << chn_left)) {
+      if (scontrol.capture & (1 << chn_left)) {
 	mvaddstr (y + 1, x + 1, "L");
 	if (chn_right < 0)
 	  mvaddstr (y + 1, x + 6, "R");
       }
-      if (chn_right >= 0 && (group.capture & (1 << chn_right)))
+      if (chn_right >= 0 && (scontrol.capture & (1 << chn_right)))
 	mvaddstr (y + 1, x + 6, "R");
     }
-  else if (group.caps & SND_MIXER_GRPCAP_CAPTURE)
+  else if (scontrol.caps & SND_MIXER_SCTCAP_CAPTURE)
     for (i = 0; i < 6; i++)
       mvaddch (y, x + 1 + i, mixer_dc (DC_CBAR_NOCAPTURE));
   else
@@ -746,6 +758,7 @@ mixer_update_cbars (void)
       mixer_cbar_get_pos (mixer_focus_elem, &x, &y);
     }
   mixer_write_cbar(mixer_focus_elem);
+  fprintf(stderr, "mixer_n_vis_elems = %i\n", mixer_n_vis_elems);
   for (i = 0; i < mixer_n_vis_elems; i++)
     mixer_update_cbar (i + mixer_first_vis_elem);
   
@@ -1178,75 +1191,78 @@ mixer_show_procinfo (void)
 static void
 mixer_init (void)
 {
-  static snd_mixer_info_t mixer_info = { 0, };
-  static struct snd_ctl_hw_info hw_info;
+  snd_ctl_hw_info_t hw_info;
   snd_ctl_t *ctl_handle;
+  int err;
   
-  if (snd_ctl_open (&ctl_handle, card_id) < 0)
-    mixer_abort (ERR_OPEN, "snd_ctl_open");
-  if (snd_ctl_hw_info (ctl_handle, &hw_info) < 0)
-    mixer_abort (ERR_FCN, "snd_ctl_hw_info");
+  if ((err = snd_ctl_open (&ctl_handle, card_id)) < 0)
+    mixer_abort (ERR_OPEN, "snd_ctl_open", err);
+  if ((err = snd_ctl_hw_info (ctl_handle, &hw_info)) < 0)
+    mixer_abort (ERR_FCN, "snd_ctl_hw_info", err);
   snd_ctl_close (ctl_handle);
   /* open mixer device
    */
-  if (snd_mixer_open (&mixer_handle, card_id, mixer_id) < 0)
-    mixer_abort (ERR_OPEN, "snd_mixer_open");
+  if ((err = snd_mixer_open (&mixer_handle, card_id)) < 0)
+    mixer_abort (ERR_OPEN, "snd_mixer_open", err);
   
   /* setup global variables
    */
-  if (snd_mixer_info (mixer_handle, &mixer_info) < 0)
-    mixer_abort (ERR_FCN, "snd_mixer_info");
-  mixer_card_name = hw_info.name;
-  mixer_device_name = mixer_info.name;
+  strcpy(mixer_card_name, hw_info.name);
+  strcpy(mixer_device_name, hw_info.mixername);
 }
 
 static void
 mixer_reinit (void)
 {
-  snd_mixer_groups_t groups;
-  int idx, elem_index, i;
-  snd_mixer_gid_t focus_gid;
+  snd_mixer_simple_control_list_t scontrols;
+  int idx, err, elem_index, i;
+  snd_mixer_sid_t focus_gid;
   int focus_type = -1;
   
-  if (mixer_gid) {
-    focus_gid = mixer_gid[mixer_grpidx[mixer_focus_elem]];
+  if (mixer_sid) {
+    focus_gid = mixer_sid[mixer_grpidx[mixer_focus_elem]];
     focus_type = mixer_type[mixer_focus_elem];
   }
   while (1) {
-    bzero(&groups, sizeof(groups));
-    if (snd_mixer_groups(mixer_handle, &groups) < 0)
-      mixer_abort (ERR_FCN, "snd_mixer_groups");
-    mixer_n_groups = groups.groups_over;
-    if (mixer_n_groups > 0) {
-      groups.groups_size = mixer_n_groups;
-      groups.pgroups = (snd_mixer_gid_t *)malloc(sizeof(snd_mixer_gid_t) * mixer_n_groups);
-      if (groups.pgroups == NULL)
-        mixer_abort (ERR_FCN, "malloc");
-      groups.groups_over = 0;
-      groups.groups = 0;
-      if (snd_mixer_groups(mixer_handle, &groups) < 0)
-        mixer_abort (ERR_FCN, "snd_mixer_groups");
-      if (groups.groups_over > 0) {
-        free(groups.pgroups);
+    bzero(&scontrols, sizeof(scontrols));
+    if ((err = snd_mixer_simple_control_list(mixer_handle, &scontrols)) < 0)
+      mixer_abort (ERR_FCN, "snd_mixer_simple_control_list", err);
+    mixer_n_scontrols = scontrols.controls;
+    fprintf(stderr, "controls = %i\n", scontrols.controls);
+    if (mixer_n_scontrols > 0) {
+      scontrols.controls_request = mixer_n_scontrols;
+      scontrols.pids = (snd_mixer_sid_t *)malloc(sizeof(snd_mixer_sid_t) * mixer_n_scontrols);
+      if (scontrols.pids == NULL)
+        mixer_abort (ERR_FCN, "malloc", 0);
+      scontrols.controls_offset = 0;
+      scontrols.controls_count = 0;
+      if ((err = snd_mixer_simple_control_list(mixer_handle, &scontrols)) < 0)
+        mixer_abort (ERR_FCN, "snd_mixer_simple_control_list", err);
+      if (scontrols.controls > scontrols.controls_count) {
+        free(scontrols.pids);
         continue;
       }
     }
-    if (mixer_gid)
-      free(mixer_gid);
-    mixer_gid = groups.pgroups;
+    if (mixer_sid)
+      free(mixer_sid);
+    mixer_sid = scontrols.pids;
+    fprintf(stderr, "mixer_sid = 0x%x\n", (int)mixer_sid);
     break;
   }
-  snd_mixer_sort_gid_table(mixer_gid, mixer_n_groups, snd_mixer_default_weights);
+#if 0
+  snd_mixer_sort_gid_table(mixer_sid, mixer_n_scontrols, snd_mixer_default_weights);
+#endif
 
   mixer_n_elems = 0;
-  for (idx = 0; idx < mixer_n_groups; idx++) {
-    snd_mixer_group_t group;
-    bzero(&group, sizeof(group));
-    group.gid = mixer_gid[idx];
-    if (snd_mixer_group_read(mixer_handle, &group) < 0)
-      CHECK_ABORT (ERR_FCN, "snd_mixer_group_read()");
+  for (idx = 0; idx < mixer_n_scontrols; idx++) {
+    snd_mixer_simple_control_t scontrol;
+    bzero(&scontrol, sizeof(scontrol));
+    scontrol.sid = mixer_sid[idx];
+    if ((err = snd_mixer_simple_control_read(mixer_handle, &scontrol)) < 0)
+      CHECK_ABORT (ERR_FCN, "snd_mixer_simple_control_read()", 0);
+    fprintf(stderr, "scontrol.channels = 0x%x\n", scontrol.channels);
     for (i = 0; i < MIXER_ELEM_END; i++) {
-      if (group.channels & mixer_elem_mask[i])
+      if (scontrol.channels & mixer_elem_mask[i])
 	mixer_n_elems++;
     }
   }
@@ -1255,21 +1271,21 @@ mixer_reinit (void)
     free(mixer_type);
   mixer_type = (int *)malloc(sizeof(int) * mixer_n_elems);
   if (mixer_type == NULL)
-    mixer_abort(ERR_FCN, "malloc");
+    mixer_abort(ERR_FCN, "malloc", 0);
   if (mixer_grpidx)
     free(mixer_grpidx);
   mixer_grpidx = (int *)malloc(sizeof(int) * mixer_n_elems);
   if (mixer_grpidx == NULL)
-    mixer_abort(ERR_FCN, "malloc");
+    mixer_abort(ERR_FCN, "malloc", 0);
   elem_index = 0;
-  for (idx = 0; idx < mixer_n_groups; idx++) {
-    snd_mixer_group_t group;
-    bzero(&group, sizeof(group));
-    group.gid = mixer_gid[idx];
-    if (snd_mixer_group_read(mixer_handle, &group) < 0)
-      CHECK_ABORT (ERR_FCN, "snd_mixer_group_read()");
+  for (idx = 0; idx < mixer_n_scontrols; idx++) {
+    snd_mixer_simple_control_t scontrol;
+    bzero(&scontrol, sizeof(scontrol));
+    scontrol.sid = mixer_sid[idx];
+    if ((err = snd_mixer_simple_control_read(mixer_handle, &scontrol)) < 0)
+      CHECK_ABORT (ERR_FCN, "snd_mixer_simple_control_read()", err);
     for (i = 0; i < MIXER_ELEM_END; i++) {
-      if (group.channels & mixer_elem_mask[i]) {
+      if (scontrol.channels & mixer_elem_mask[i]) {
 	mixer_grpidx[elem_index] = idx;
 	mixer_type[elem_index] = i;
 	elem_index++;
@@ -1282,7 +1298,7 @@ mixer_reinit (void)
   mixer_focus_elem = 0;
   if (focus_type >= 0) {
     for (elem_index = 0; elem_index < mixer_n_elems; elem_index++) {
-      if (!memcmp(&focus_gid, &mixer_gid[mixer_grpidx[elem_index]], sizeof(focus_gid)) &&
+      if (!memcmp(&focus_gid, &mixer_sid[mixer_grpidx[elem_index]], sizeof(focus_gid)) &&
 	  mixer_type[elem_index] == focus_type) {
         mixer_focus_elem = elem_index;
         break;
@@ -1371,7 +1387,7 @@ mixer_resize (void)
 }
 
 static void
-mixer_callback_rebuild (void *private_data)
+mixer_callback_rebuild (snd_mixer_t *handle, void *private_data)
 {
   /* we don't actually need to update the individual channels because
    * we redraw the whole screen upon every main iteration anyways.
@@ -1380,7 +1396,7 @@ mixer_callback_rebuild (void *private_data)
 }
 
 static void
-mixer_callback_group (void *private_data, int cmd, snd_mixer_gid_t *gid)
+mixer_callback_scontrol (snd_mixer_t *handle, void *private_data, snd_mixer_sid_t *gid)
 {
   mixer_reinit ();
 }
@@ -1407,7 +1423,7 @@ static int
 mixer_iteration (void)
 {
   struct timeval delay = { 0, };
-  snd_mixer_callbacks_t callbacks = { 0, };
+  snd_mixer_simple_callbacks_t callbacks = { 0, };
   int mixer_fd;
   fd_set rfds;
   int finished = 0;
@@ -1415,7 +1431,10 @@ mixer_iteration (void)
   int old_view;
   
   callbacks.rebuild = mixer_callback_rebuild;
-  callbacks.group = mixer_callback_group;
+  callbacks.value = mixer_callback_scontrol;
+  callbacks.change = mixer_callback_scontrol;
+  callbacks.add = mixer_callback_scontrol;
+  callbacks.remove = mixer_callback_scontrol;
 
   /* setup for select on stdin and the mixer fd */
   mixer_fd = snd_mixer_file_descriptor (mixer_handle);
@@ -1438,7 +1457,7 @@ mixer_iteration (void)
     mixer_resize ();
 
   if (FD_ISSET (mixer_fd, &rfds))
-    snd_mixer_read (mixer_handle, &callbacks);
+    snd_mixer_simple_read (mixer_handle, &callbacks);
 
   if (FD_ISSET (fileno (stdin), &rfds))
     key = getch ();
@@ -1676,7 +1695,7 @@ static void
 mixer_signal_handler (int signal)
 {
   if (signal != SIGSEGV)
-    mixer_abort (ERR_SIGNAL, sys_siglist[signal]);
+    mixer_abort (ERR_SIGNAL, sys_siglist[signal], 0);
   else
     {
       fprintf (stderr, "\nSegmentation fault.\n");
@@ -1694,22 +1713,19 @@ main (int    argc,
    */
   do
     {
-      opt = getopt (argc, argv, "c:m:shg");
+      opt = getopt (argc, argv, "c:shg");
       switch (opt)
 	{
 	case '?':
 	case 'h':
 	  fprintf (stderr, "%s %s\n", PRGNAME_UPPER, VERSION);
-	  fprintf (stderr, "Usage: %s [-c <card: 1..%i>] [-m <mixer: 0..1>] [-z]\n", PRGNAME, snd_cards ());
-	  mixer_abort (ERR_NONE, "");
+	  fprintf (stderr, "Usage: %s [-c <card: 0..%i>] [-z]\n", PRGNAME, snd_cards () - 1);
+	  mixer_abort (ERR_NONE, "", 0);
 	case 'c':
 	  card_id = snd_card_name (optarg);
 	  break;
 	case 'g':
 	  mixer_do_color = !mixer_do_color;
-	  break;
-	case 'm':
-	  mixer_id = CLAMP (optarg[0], '0', '1') - '0';
 	  break;
 	case 's':
 	  mixer_minimize = 1;
@@ -1766,5 +1782,5 @@ main (int    argc,
     }
   while (!mixer_iteration ());
   
-  mixer_abort (ERR_NONE, "");
+  mixer_abort (ERR_NONE, "", 0);
 };

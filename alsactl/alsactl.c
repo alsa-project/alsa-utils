@@ -79,11 +79,7 @@ static int store_setup(const char *cardname)
 		soundcard_setup_init();
 		for (idx = 0; idx < 32; idx++) {
 			if (card_mask & (1 << idx)) {	/* find each installed soundcards */
-				if ((err = soundcard_setup_collect_switches(idx))) {
-					soundcard_setup_done();
-					return err;
-				}
-				if ((err = soundcard_setup_collect_data(idx))) {
+				if ((err = soundcard_setup_collect_controls(idx))) {
 					soundcard_setup_done();
 					return err;
 				}
@@ -99,11 +95,7 @@ static int store_setup(const char *cardname)
 			error("Cannot find soundcard '%s'...", cardname);
 			return 1;
 		}
-		if ((err = soundcard_setup_collect_switches(cardno))) {
-			soundcard_setup_done();
-			return err;
-		}
-		if ((err = soundcard_setup_collect_data(cardno))) {
+		if ((err = soundcard_setup_collect_controls(cardno))) {
 			soundcard_setup_done();
 			return err;
 		}
@@ -126,27 +118,15 @@ static int restore_setup(const char *cardname)
 	}
 	if ((err = soundcard_setup_load(cfgfile, 0)))
 		return err;
-	if ((err = soundcard_setup_collect_switches(cardno))) {
+	if ((err = soundcard_setup_collect_controls(cardno))) {
 		soundcard_setup_done();
 		return err;
 	}
-	if ((err = soundcard_setup_merge_switches(cardno))) {
+	if ((err = soundcard_setup_merge_controls(cardno))) {
 		soundcard_setup_done();
 		return err;
 	}
-	if ((err = soundcard_setup_process_switches(cardno))) {
-		soundcard_setup_done();
-		return err;
-	}
-	if ((err = soundcard_setup_collect_data(cardno))) {
-		soundcard_setup_done();
-		return err;
-	}
-	if ((err = soundcard_setup_merge_data(cardno))) {
-		soundcard_setup_done();
-		return err;
-	}
-	if ((err = soundcard_setup_process_data(cardno))) {
+	if ((err = soundcard_setup_process_controls(cardno))) {
 		soundcard_setup_done();
 		return err;
 	}

@@ -37,53 +37,22 @@ extern int debugflag;
 
 extern void error(const char *fmt,...);
 
-struct ctl_switch {
+struct ctl_control {
 	int change;
-	snd_switch_t s;
-	struct ctl_switch *next;
+	snd_control_type_t type;
+	snd_control_info_t info;
+	snd_control_t c;
+	struct ctl_control *next;
 };
 
 struct ctl {
 	snd_ctl_hw_info_t hwinfo;
-	struct ctl_switch *switches;
-};
-
-struct mixer_element {
-	snd_mixer_element_info_t info;
-	snd_mixer_element_t element;
-	struct mixer_element *next;
-};
-
-struct mixer {
-	int no;
-	snd_mixer_info_t info;
-	struct mixer_element *elements;
-	struct ctl_switch *switches;
-	struct mixer *next;
-};
-
-struct pcm {
-	int no;
-	snd_pcm_info_t info;
-	struct ctl_switch *pswitches;
-	struct ctl_switch *rswitches;
-	struct pcm *next;
-};
-
-struct rawmidi {
-	int no;
-	snd_rawmidi_info_t info;
-	struct ctl_switch *iswitches;
-	struct ctl_switch *oswitches;
-	struct rawmidi *next;
+	struct ctl_control *controls;
 };
 
 struct soundcard {
 	int no;			/* card number */
 	struct ctl control;
-	struct mixer *mixers;
-	struct pcm *pcms;
-	struct rawmidi *rawmidis;
 	struct soundcard *next;
 };
 
@@ -94,11 +63,8 @@ void soundcard_setup_init(void);
 void soundcard_setup_done(void);
 int soundcard_setup_load(const char *filename, int skip);
 int soundcard_setup_write(const char *filename, int cardno);
-int soundcard_setup_collect_switches(int cardno);
-int soundcard_setup_collect_data(int cardno);
-int soundcard_setup_merge_switches(int cardno);
-int soundcard_setup_merge_data(int cardno);
-int soundcard_setup_process_switches(int cardno);
-int soundcard_setup_process_data(int cardno);
+int soundcard_setup_collect_controls(int cardno);
+int soundcard_setup_merge_controls(int cardno);
+int soundcard_setup_process_controls(int cardno);
 
-char *mixer_element_id(snd_mixer_eid_t *eid);
+char *control_id(snd_control_id_t *id);

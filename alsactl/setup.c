@@ -37,24 +37,13 @@ struct soundcard *rsoundcards = NULL;
  *  misc functions
  */
 
-static char *mixer_element_name(snd_mixer_eid_t *eid)
+char *control_id(snd_control_id_t *id)
 {
-	static char str[32];
+	static char str[128];
 	
-	if (!eid)
+	if (!id)
 		return "???"; 
-	strncpy(str, eid->name, sizeof(eid->name));
-	str[sizeof(eid->name)] = '\0';
-	return str;
-}
-
-char *mixer_element_id(snd_mixer_eid_t *eid)
-{
-	static char str[64];
-	
-	if (!eid)
-		return "???"; 
-	sprintf(str, "%s:%i:%i", mixer_element_name(eid), eid->index, eid->type);
+	sprintf(str, "%i,%i,%i,%s,%i", id->iface, id->device, id->subdevice, id->name, id->index);
 	return str;
 }
 
@@ -62,86 +51,13 @@ char *mixer_element_id(snd_mixer_eid_t *eid)
  *  free functions
  */
 
-static void soundcard_ctl_switch_free(struct ctl_switch *first)
+static void soundcard_ctl_control_free(struct ctl_control *first)
 {
-	struct ctl_switch *next;
+	struct ctl_control *next;
 
 	while (first) {
 		next = first->next;
 		free(first);
-		first = next;
-	}
-}
-
-static void soundcard_mixer_element_free(struct mixer_element *first)
-{
-	struct mixer_element *next;
-
-	while (first) {
-		next = first->next;
-		snd_mixer_element_info_free(&first->info);
-		snd_mixer_element_free(&first->element);
-		free(first);
-		first = next;
-	}
-}
-
-static void soundcard_mixer_free1(struct mixer *mixer)
-{
-	if (!mixer)
-		return;
-	soundcard_mixer_element_free(mixer->elements);
-	soundcard_ctl_switch_free(mixer->switches);
-	free(mixer);
-}
-
-static void soundcard_mixer_free(struct mixer *first)
-{
-	struct mixer *next;
-
-	while (first) {
-		next = first->next;
-		soundcard_mixer_free1(first);
-		first = next;
-	}
-}
-
-static void soundcard_pcm_free1(struct pcm *pcm)
-{
-	if (!pcm)
-		return;
-	soundcard_ctl_switch_free(pcm->pswitches);
-	soundcard_ctl_switch_free(pcm->rswitches);
-	free(pcm);
-}
-
-static void soundcard_pcm_free(struct pcm *first)
-{
-	struct pcm *next;
-
-	while (first) {
-		next = first->next;
-		soundcard_pcm_free1(first);
-		first = next;
-	}
-}
-
-static void soundcard_rawmidi_free1(struct rawmidi *rawmidi)
-{
-	if (!rawmidi)
-		return;
-	soundcard_ctl_switch_free(rawmidi->iswitches);
-	soundcard_ctl_switch_free(rawmidi->oswitches);
-	free(rawmidi);
-}
-
-static void soundcard_rawmidi_free(struct rawmidi *first)
-{
-	struct rawmidi *next;
-
-	while (first) {
-		next = first->next;
-		soundcard_rawmidi_free1(first);
 		first = next;
 	}
 }
@@ -150,10 +66,7 @@ static void soundcard_free1(struct soundcard *soundcard)
 {
 	if (!soundcard)
 		return;
-	soundcard_ctl_switch_free(soundcard->control.switches);
-	soundcard_mixer_free(soundcard->mixers);
-	soundcard_pcm_free(soundcard->pcms);
-	soundcard_rawmidi_free(soundcard->rawmidis);
+	soundcard_ctl_control_free(soundcard->control.controls);
 	free(soundcard);
 }
 
@@ -205,77 +118,74 @@ void soundcard_setup_done(void)
 	soundcards = NULL;
 }
 
-static int determine_switches(void *handle, struct ctl_switch **csw, int iface, int device, int stream)
+static int determine_controls(void *handle, struct ctl_control **cctl)
 {
 	int err, idx;
-	snd_switch_list_t list;
-	snd_switch_list_item_t *item;
-	snd_switch_t sw;
-	struct ctl_switch *prev_csw;
-	struct ctl_switch *new_csw;
+	snd_control_list_t list;
+	snd_control_id_t *item;
+	snd_control_t ctl;
+	struct ctl_control *prev_control;
+	struct ctl_control *new_control;
 
-	*csw = NULL;
+	*cctl = NULL;
 	bzero(&list, sizeof(list));
-	list.iface = iface;
-	list.device = device;
-	list.stream = stream;
-	if ((err = snd_ctl_switch_list(handle, &list)) < 0) {
-		error("Cannot determine switches for interface %i and device %i and stream %i: %s", iface, device, stream, snd_strerror(err));
+	if ((err = snd_ctl_clist(handle, &list)) < 0) {
+		error("Cannot determine controls: %s", snd_strerror(err));
 		return 1;
 	}
-	if (list.switches_over <= 0)
+	if (list.controls <= 0)
 		return 0;
-	list.switches_size = list.switches_over + 16;
-	list.switches = list.switches_over = 0;
-	list.pswitches = malloc(sizeof(snd_switch_list_item_t) * list.switches_size);
-	if (!list.pswitches) {
+	list.controls_request = list.controls + 16;
+	list.controls_offset = list.controls_count = 0;
+	list.pids = malloc(sizeof(snd_control_id_t) * list.controls_request);
+	if (!list.pids) {
 		error("No enough memory...");
 		return 1;
 	}
-	if ((err = snd_ctl_switch_list(handle, &list)) < 0) {
-		error("Cannot determine switches (2) for interface %i and device %i and stream %i: %s", iface, device, stream, snd_strerror(err));
+	if ((err = snd_ctl_clist(handle, &list)) < 0) {
+		error("Cannot determine controls (2): %s", snd_strerror(err));
 		return 1;
 	}
-	for (idx = 0, prev_csw = NULL; idx < list.switches; idx++) {
-		item = &list.pswitches[idx];
-		bzero(&sw, sizeof(sw));
-		sw.iface = iface;
-		sw.device = device;
-		sw.stream = stream;
-		strncpy(sw.name, item->name, sizeof(sw.name));
-		if ((err = snd_ctl_switch_read(handle, &sw)) < 0) {
-			error("Cannot read switch '%s' for interface %i and device %i and stream %i: %s", sw.name, iface, device, stream, snd_strerror(err));
-			free(list.pswitches);
+	for (idx = 0, prev_control = NULL; idx < list.controls_count; idx++) {
+		item = &list.pids[idx];
+		bzero(&ctl, sizeof(ctl));
+		ctl.id = *item;
+		if ((err = snd_ctl_cread(handle, &ctl)) < 0) {
+			error("Cannot read control '%s': %s", control_id(item), snd_strerror(err));
+			free(list.pids);
 			return 1;
 		}
-		new_csw = malloc(sizeof(*new_csw));
-		if (!new_csw) {
+		new_control = malloc(sizeof(*new_control));
+		if (!new_control) {
 			error("No enough memory...");
-			free(list.pswitches);
+			free(list.pids);
 			return 1;
 		}
-		bzero(new_csw, sizeof(*new_csw));
-		memcpy(&new_csw->s, &sw, sizeof(new_csw->s));
-		if (*csw) {
-			prev_csw->next = new_csw;
-			prev_csw = new_csw;
+		bzero(new_control, sizeof(*new_control));
+		memcpy(&new_control->c, &ctl, sizeof(new_control->c));
+		new_control->info.id = ctl.id;
+		if ((err = snd_ctl_cinfo(handle, &new_control->info)) < 0) {
+			error("Cannot read control info '%s': %s", control_id(item), snd_strerror(err));
+			free(new_control);
+			free(list.pids);
+			return 1;
+		}
+		if (*cctl) {
+			prev_control->next = new_control;
+			prev_control = new_control;
 		} else {
-			*csw = prev_csw = new_csw;
+			*cctl = prev_control = new_control;
 		}
 	}
-	free(list.pswitches);
+	free(list.pids);
 	return 0;
 }
 
-static int soundcard_setup_collect_switches1(int cardno)
+static int soundcard_setup_collect_controls1(int cardno)
 {
 	snd_ctl_t *handle;
-	snd_mixer_t *mhandle;
 	struct soundcard *card, *first, *prev;
-	int err, device;
-	struct mixer *mixer, *mixerprev;
-	struct pcm *pcm, *pcmprev;
-	struct rawmidi *rawmidi, *rawmidiprev;
+	int err;
 
 	soundcard_remove(cardno);
 	if ((err = snd_ctl_open(&handle, cardno)) < 0) {
@@ -316,246 +226,43 @@ static int soundcard_setup_collect_switches1(int cardno)
 		return 1;
 	}
 	/* --- */
-	if (determine_switches(handle, &card->control.switches, SND_CTL_IFACE_CONTROL, 0, 0)) {
+	if (determine_controls(handle, &card->control.controls)) {
 		snd_ctl_close(handle);
 		return 1;
-	}
-	/* --- */
-	for (device = 0, mixerprev = NULL; device < card->control.hwinfo.mixerdevs; device++) {
-		mixer = (struct mixer *) malloc(sizeof(struct mixer));
-		if (!mixer) {
-			snd_ctl_close(handle);
-			error("malloc problem");
-			return 1;
-		}
-		bzero(mixer, sizeof(struct mixer));
-		mixer->no = device;
-		if (determine_switches(handle, &mixer->switches, SND_CTL_IFACE_MIXER, device, 0)) {
-			snd_ctl_close(handle);
-			return 1;
-		}
-		if (!mixerprev) {
-			card->mixers = mixer;
-		} else {
-			mixerprev->next = mixer;
-		}
-		mixerprev = mixer;
-		if ((err = snd_mixer_open(&mhandle, cardno, device)) < 0) {
-			snd_ctl_close(handle);
-			error("MIXER open error: %s", snd_strerror(err));
-			return 1;
-		}
-		if ((err = snd_mixer_info(mhandle, &mixer->info)) < 0) {
-			snd_mixer_close(mhandle);
-			snd_ctl_close(handle);
-			error("MIXER info error: %s", snd_strerror(err));
-			return 1;
-		}
-		snd_mixer_close(mhandle);
-	}
-	/* --- */
-	for (device = 0, pcmprev = NULL; device < card->control.hwinfo.pcmdevs; device++) {
-		pcm = (struct pcm *) malloc(sizeof(struct pcm));
-		if (!pcm) {
-			snd_ctl_close(handle);
-			error("malloc problem");
-			return 1;
-		}
-		bzero(pcm, sizeof(struct pcm));
-		pcm->no = device;
-		pcm->info.device = device;
-		pcm->info.stream = -1;
-		pcm->info.subdevice = -1;
-		if ((err = snd_ctl_pcm_info(handle, &pcm->info)) < 0) {
-			snd_ctl_close(handle);
-			error("PCM info error: %s", snd_strerror(err));
-			return 1;
-		}
-		if (determine_switches(handle, &pcm->pswitches, SND_CTL_IFACE_PCM, device, SND_PCM_STREAM_PLAYBACK)) {
-			snd_ctl_close(handle);
-			return 1;
-		}
-		if (determine_switches(handle, &pcm->rswitches, SND_CTL_IFACE_PCM, device, SND_PCM_STREAM_CAPTURE)) {
-			snd_ctl_close(handle);
-			return 1;
-		}
-		if (!pcmprev) {
-			card->pcms = pcm;
-		} else {
-			pcmprev->next = pcm;
-		}
-		pcmprev = pcm;
-	}
-	/* --- */
-	for (device = 0, rawmidiprev = NULL; device < card->control.hwinfo.mididevs; device++) {
-		rawmidi = (struct rawmidi *) malloc(sizeof(struct rawmidi));
-		if (!rawmidi) {
-			snd_ctl_close(handle);
-			error("malloc problem");
-			return 1;
-		}
-		bzero(rawmidi, sizeof(struct rawmidi));
-		rawmidi->no = device;
-		rawmidi->info.device = device;
-		if ((err = snd_ctl_rawmidi_info(handle, &rawmidi->info)) < 0) {
-			snd_ctl_close(handle);
-			error("RAWMIDI info error: %s", snd_strerror(err));
-			return 1;
-		}
-		if (determine_switches(handle, &rawmidi->oswitches, SND_CTL_IFACE_RAWMIDI, device, SND_RAWMIDI_STREAM_OUTPUT)) {
-			snd_ctl_close(handle);
-			return 1;
-		}
-		if (determine_switches(handle, &rawmidi->iswitches, SND_CTL_IFACE_RAWMIDI, device, SND_RAWMIDI_STREAM_INPUT)) {
-			snd_ctl_close(handle);
-			return 1;
-		}
-		if (!rawmidiprev) {
-			card->rawmidis = rawmidi;
-		} else {
-			rawmidiprev->next = rawmidi;
-		}
-		rawmidiprev = rawmidi;
-	}
+	}        
 	/* --- */
 	snd_ctl_close(handle);
 	return 0;
 }
 
-int soundcard_setup_collect_switches(int cardno)
+int soundcard_setup_collect_controls(int cardno)
 {
 	int err;
 	unsigned int mask;
 
 	if (cardno >= 0) {
-		return soundcard_setup_collect_switches1(cardno);
+		return soundcard_setup_collect_controls1(cardno);
 	} else {
 		mask = snd_cards_mask();
 		for (cardno = 0; cardno < SND_CARDS; cardno++) {
 			if (!(mask & (1 << cardno)))
 				continue;
-			err = soundcard_setup_collect_switches1(cardno);
+			err = soundcard_setup_collect_controls1(cardno);
 			if (err)
 				return err;
 		}
 		return 0;
 	}
 }
-
-static int soundcard_setup_collect_data1(int cardno)
-{
-	snd_ctl_t *handle; 
-	snd_mixer_t *mhandle;
-	struct soundcard *card;
-	int err, idx;
-	struct mixer *mixer;
-	snd_mixer_elements_t elements;
-	struct mixer_element *mixerelement, *mixerelementprev;
-
-	if ((err = snd_ctl_open(&handle, cardno)) < 0) {
-		error("SND CTL open error: %s", snd_strerror(err));
-		return 1;
-	}
-	/* --- */
-	for (card = soundcards; card && card->no != cardno; card = card->next);
-	if (!card) {
-		snd_ctl_close(handle);
-		error("The soundcard %i does not exist.", cardno);
-		return 1;
-	}
-	for (mixer = card->mixers; mixer; mixer = mixer->next) {
-		if ((err = snd_mixer_open(&mhandle, cardno, mixer->no)) < 0) {
-			snd_ctl_close(handle);
-			error("MIXER open error: %s", snd_strerror(err));
-			return 1;
-		}
-		if (mixer->elements)
-			soundcard_mixer_element_free(mixer->elements);
-		mixer->elements = NULL;
-		bzero(&elements, sizeof(elements));
-		if ((err = snd_mixer_elements(mhandle, &elements)) < 0) {
-			snd_mixer_close(mhandle);
-			snd_ctl_close(handle);
-			error("MIXER elements error: %s", snd_strerror(err));
-			return 1;
-		}
-		elements.elements_size = elements.elements_over + 16;
-		elements.elements = elements.elements_over = 0;
-		elements.pelements = (snd_mixer_eid_t *)malloc(elements.elements_size * sizeof(snd_mixer_eid_t));
-		if ((err = snd_mixer_elements(mhandle, &elements)) < 0) {
-			snd_mixer_close(mhandle);
-			snd_ctl_close(handle);
-			error("MIXER elements (2) error: %s", snd_strerror(err));
-			return 1;
-		}
-		for (idx = 0, mixerelementprev = NULL; idx < elements.elements; idx++) {
-			mixerelement = (struct mixer_element *) malloc(sizeof(struct mixer_element));
-			if (!mixerelement) {
-				snd_mixer_close(mhandle);
-				snd_ctl_close(handle);
-				error("malloc problem");
-				return 1;
-			}
-			bzero(mixerelement, sizeof(*mixerelement));
-			mixerelement->info.eid = elements.pelements[idx];
-			mixerelement->element.eid = elements.pelements[idx];
-			if (snd_mixer_element_has_info(&elements.pelements[idx]) == 1) {
-				if ((err = snd_mixer_element_info_build(mhandle, &mixerelement->info)) < 0) {
-					free(mixerelement);
-					error("MIXER element %s info error (%s) - skipping", mixer_element_id(&mixerelement->info.eid), snd_strerror(err));
-					break;
-				}
-			}
-			if (snd_mixer_element_has_control(&elements.pelements[idx]) == 1) {
-				if ((err = snd_mixer_element_build(mhandle, &mixerelement->element)) < 0) {
-					free(mixerelement);
-					error("MIXER element %s build error (%s) - skipping", mixer_element_id(&mixerelement->element.eid), snd_strerror(err));
-					break;
-				}
-			}
-			if (!mixerelementprev) {
-				mixer->elements = mixerelement;
-			} else {
-				mixerelementprev->next = mixerelement;
-			}
-			mixerelementprev = mixerelement;
-		}
-		free(elements.pelements);
-		snd_mixer_close(mhandle);
-	}
-	/* --- */
-	snd_ctl_close(handle);
-	return 0;
-}
-
-int soundcard_setup_collect_data(int cardno)
-{
-	int err;
-	unsigned int mask;
-
-	if (cardno >= 0) {
-		return soundcard_setup_collect_data1(cardno);
-	} else {
-		mask = snd_cards_mask();
-		for (cardno = 0; cardno < SND_CARDS; cardno++) {
-			if (!(mask & (1 << cardno)))
-				continue;
-			err = soundcard_setup_collect_data1(cardno);
-			if (err)
-				return err;
-		}
-		return 0;
-	}
-}
-
-
 
 int soundcard_setup_load(const char *cfgfile, int skip)
 {
 	extern int yyparse(void);
 	extern int linecount;
 	extern FILE *yyin;
+#ifdef YYDEBUG
 	extern int yydebug;
+#endif
 	int xtry;
 
 #ifdef YYDEBUG
@@ -579,268 +286,98 @@ int soundcard_setup_load(const char *cfgfile, int skip)
 	return 0;
 }
 
-static void soundcard_setup_write_switch(FILE * out, const char *space, int card, int interface, snd_switch_t *sw)
+static void soundcard_setup_write_control(FILE * out, const char *space, int card, struct ctl_control *control)
 {
 	char *s, v[16];
-	int idx, first, switchok = 0;
+	int err, idx;
+	snd_ctl_t *handle;
+	snd_control_info_t info;
 
+	memcpy(&info, &control->info, sizeof(info));
 	v[0] = '\0';
-	switch (sw->type) {
-	case SND_SW_TYPE_BOOLEAN:
-		s = "bool";
-		strcpy(v, sw->value.enable ? "true" : "false");
-		break;
-	case SND_SW_TYPE_BYTE:
-		s = "byte";
-		if (sw->subtype == SND_SW_SUBTYPE_HEXA) {
-			sprintf(v, "0x%x", (unsigned int) sw->value.data8[0]);
-		} else {
-			sprintf(v, "%u", (unsigned int) sw->value.data8[0]);
-		}
-		break;
-	case SND_SW_TYPE_WORD:
-		s = "word";
-		if (sw->subtype == SND_SW_SUBTYPE_HEXA) {
-		    	sprintf(v, "0x%x", (unsigned int) sw->value.data16[0]);
-		} else {
-			sprintf(v, "%u", (unsigned int) sw->value.data16[0]);
-		}
-		break;
-	case SND_SW_TYPE_DWORD:
-		s = "dword";
-		if (sw->subtype == SND_SW_SUBTYPE_HEXA) {
-			sprintf(v, "0x%x", sw->value.data32[0]);
-		} else {
-			sprintf(v, "%u", sw->value.data32[0]);
-		}
-		break;
-	case SND_SW_TYPE_USER:
-		s = "user";
-		break;
-	case SND_SW_TYPE_LIST:
-		s = "list";
-		sprintf(v, "%u", sw->value.item_number);
-		break;
-	case SND_SW_TYPE_USER_READ_ONLY:
-		return;
-	default:
-		s = "unknown";
+	switch (info.type) {
+	case SND_CONTROL_TYPE_BOOLEAN:	s = "bool";	break;
+	case SND_CONTROL_TYPE_INTEGER:	s = "integer";	break;
+	case SND_CONTROL_TYPE_ENUMERATED: s = "enumerated"; break;
+	case SND_CONTROL_TYPE_BYTES: s = "bytes"; break;
+	default: s = "unknown";
 	}
-	fprintf(out, "%s; The type is '%s'.\n", space, s);
-	if (sw->low != 0 || sw->high != 0)
-		fprintf(out, "%s; The accepted switch range is from %u to %u.\n", space, sw->low, sw->high);
-	if (sw->type == SND_SW_TYPE_LIST) {
-		snd_ctl_t *handle;
-		snd_switch_t swi;
-		memset(&swi, 0, sizeof(swi));
-		swi.iface = sw->iface;
-		swi.device = sw->device;
-		swi.stream = sw->stream;
-		strncpy(swi.name, sw->name, sizeof(swi.name));
-		swi.type = SND_SW_TYPE_LIST_ITEM;
-		if (snd_ctl_open(&handle, card) >= 0) {
-			for (idx = sw->low; idx <= sw->high; idx++) {
-				swi.low = swi.high = idx;
-				if (snd_ctl_switch_read(handle, &swi) >= 0)
-					fprintf(out, "%s; Item #%i - %s\n", space, swi.low, swi.value.item);
+	fprintf(out, "\n%s; The type is '%s'. Access:", space, s);
+	if (info.access & SND_CONTROL_ACCESS_READ)
+		fprintf(out, " read");
+	if (info.access & SND_CONTROL_ACCESS_WRITE)
+		fprintf(out, " write");
+	if (info.access & SND_CONTROL_ACCESS_INACTIVE)
+		fprintf(out, " inactive");
+	fprintf(out, ". Count is %i.\n", info.values_count);
+	switch (info.type) {
+	case SND_CONTROL_TYPE_BOOLEAN:
+		if (info.value.integer.min != 0 || info.value.integer.max != 1 ||
+		    info.value.integer.step != 0)
+			error("Wrong control '%s' (boolean)\n", control_id(&info.id));
+		break;
+	case SND_CONTROL_TYPE_INTEGER:
+		fprintf(out, "%s;   The range is %li-%li (step %li)\n", space, info.value.integer.min, info.value.integer.max, info.value.integer.step);
+		break;
+	case SND_CONTROL_TYPE_ENUMERATED:
+		if ((err = snd_ctl_open(&handle, card)) >= 0) {
+			for (idx = 0; idx < info.value.enumerated.items; idx++) {
+				info.value.enumerated.item = idx;
+				if (snd_ctl_cinfo(handle, &info) >= 0)
+					fprintf(out, "%s;   Item #%i - %s\n", space, idx, info.value.enumerated.name);
 			}
 			snd_ctl_close(handle);
 		}
+		break;
+	default:
+		break;
 	}
-	if (interface == SND_INTERFACE_CONTROL && sw->type == SND_SW_TYPE_WORD &&
-	    !strcmp(sw->name, SND_CTL_SW_JOYSTICK_ADDRESS)) {
-		for (idx = 1, first = 1; idx < 16; idx++) {
-			if (sw->value.data16[idx]) {
-				if (first) {
-					fprintf(out, "%s; Available addresses - 0x%x", space, sw->value.data16[idx]);
-					first = 0;
-				} else {
-					fprintf(out, ", 0x%x", sw->value.data16[idx]);
-				}
-			}
+	switch (info.id.iface) {
+	case SND_CONTROL_IFACE_CARD: s = "global"; break;
+	case SND_CONTROL_IFACE_HWDEP: s = "hwdep"; break;
+	case SND_CONTROL_IFACE_MIXER: s = "mixer"; break;
+	case SND_CONTROL_IFACE_PCM: s = "pcm"; break;
+	case SND_CONTROL_IFACE_RAWMIDI: s = "rawmidi"; break;
+	case SND_CONTROL_IFACE_TIMER: s = "timer"; break;
+	case SND_CONTROL_IFACE_SEQUENCER: s = "sequencer"; break;
+	default: sprintf(v, "%i", info.id.iface); s = v; break;
+	}
+	fprintf(out, "%scontrol(%s, %i, %i, \"%s\", %i", space, s, info.id.device, info.id.subdevice, info.id.name, info.id.index);
+	if (info.type == SND_CONTROL_TYPE_BYTES)
+		fprintf(out, "rawdata(@");
+	for (idx = 0; idx < info.values_count; idx++) {
+		switch (info.type) {
+		case SND_CONTROL_TYPE_BOOLEAN:
+			fprintf(out, ", %s", control->c.value.integer.value[idx] ? "true" : "false");
+			break;
+		case SND_CONTROL_TYPE_INTEGER:
+			fprintf(out, ", %li", control->c.value.integer.value[idx]);
+			break;
+		case SND_CONTROL_TYPE_ENUMERATED:
+			fprintf(out, ", %u", control->c.value.enumerated.item[idx]);
+			break;
+		case SND_CONTROL_TYPE_BYTES:
+			if (idx > 0)
+				fprintf(out, ":");
+			fprintf(out, "%02x", control->c.value.bytes.data[idx]);
+			break;
+		default:
+			break;
 		}
-		if (!first)
-			fprintf(out, "\n");
-	}
-	if (interface == SND_INTERFACE_MIXER && sw->type == SND_SW_TYPE_BOOLEAN &&
-	    !strcmp(sw->name, SND_MIXER_SW_IEC958_OUTPUT)) {
-		fprintf(out, "%sswitch(\"%s\",", space, sw->name);
-		if (sw->value.data32[1] == (('C' << 8) | 'S')) {	/* Cirrus Crystal */
-			switchok = 0;
-			fprintf(out, "iec958ocs(%s", sw->value.enable ? "enable" : "disable");
-			if (sw->value.data16[4] & 0x2000)
-				fprintf(out, ",3d");
-			if (sw->value.data16[4] & 0x0040)
-				fprintf(out, ",reset");
-			if (sw->value.data16[4] & 0x0020)
-				fprintf(out, ",user");
-			if (sw->value.data16[4] & 0x0010)
-				fprintf(out, ",valid");
-			if (sw->value.data16[5] & 0x0002)
-				fprintf(out, ",data");
-			if (!(sw->value.data16[5] & 0x0004))
-				fprintf(out, ",protect");
-			switch (sw->value.data16[5] & 0x0018) {
-			case 0x0008:
-				fprintf(out, ",pre2");
-				break;
-			default:
-				break;
-			}
-			if (sw->value.data16[5] & 0x0020)
-				fprintf(out, ",fsunlock");
-			fprintf(out, ",type(0x%x)", (sw->value.data16[5] >> 6) & 0x7f);
-			if (sw->value.data16[5] & 0x2000)
-				fprintf(out, ",gstatus");
-			fprintf(out, ")");
-			goto __end;
-		}
-	}
-	fprintf(out, "%sswitch(\"%s\", ", space, sw->name);
-	if (!switchok) {
-		fprintf(out, v);
-		if (sw->type < 0 || sw->type > SND_SW_TYPE_LAST) {
-			/* TODO: some well known types should be verbose */
-			fprintf(out, "rawdata(@");
-			for (idx = 0; idx < 31; idx++) {
-				fprintf(out, "%02x:", sw->value.data8[idx]);
-			}
-			fprintf(out, "%02x@)", sw->value.data8[31]);
-		}
-	}
-      __end:
+	}		
+	if (info.type == SND_CONTROL_TYPE_BYTES)
+		fprintf(out, ")");
 	fprintf(out, ")\n");
 }
 
-static void soundcard_setup_write_switches(FILE *out, const char *space, int card, int interface, struct ctl_switch **switches)
+static void soundcard_setup_write_controls(FILE *out, const char *space, int card, struct ctl_control **controls)
 {
-	struct ctl_switch *sw;
+	struct ctl_control *ctl;
 
-	if (!(*switches))
+	if (!(*controls))
 		return;
-	for (sw = *switches; sw; sw = sw->next)
-		soundcard_setup_write_switch(out, space, card, interface, &sw->s);
-}
-
-static void soundcard_setup_write_mixer_element(FILE * out, struct mixer_element * xelement)
-{
-	snd_mixer_element_info_t *info;
-	snd_mixer_element_t *element;
-	int idx;
-	
-	info = &xelement->info;
-	element = &xelement->element;
-	if (snd_mixer_element_has_control(&element->eid) != 1)
-		return;
-	switch (element->eid.type) {
-	case SND_MIXER_ETYPE_SWITCH1:
-		fprintf(out, "    element(\"%s\",%i,%i,Switch1(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
-		for (idx = 0; idx < element->data.switch1.sw; idx++)
-			fprintf(out, "%s%s", idx > 0 ? "," : "", snd_mixer_get_bit(element->data.switch1.psw, idx) ? "on" : "off");
-		fprintf(out, "))\n");
-		break;
-	case SND_MIXER_ETYPE_SWITCH2:
-		fprintf(out, "    element(\"%s\",%i,%i,Switch2(%s))\n", mixer_element_name(&element->eid), element->eid.index, element->eid.type, element->data.switch2.sw ? "on" : "off");
-		break;
-	case SND_MIXER_ETYPE_SWITCH3:
-		fprintf(out, "    element(\"%s\",%i,%i,Switch3(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
-		for (idx = 0; idx < element->data.switch3.rsw; idx++)
-			fprintf(out, "%s%s", idx > 0 ? "," : "", snd_mixer_get_bit(element->data.switch3.prsw, idx) ? "on" : "off");
-		fprintf(out, "))\n");
-		break;
-	case SND_MIXER_ETYPE_VOLUME1:
-		for (idx = 0; idx < info->data.volume1.range; idx++)
-			fprintf(out, "    ; Channel %i : Min %i Max %i\n", idx, info->data.volume1.prange[idx].min, info->data.volume1.prange[idx].max);
-		fprintf(out, "    element(\"%s\",%i,%i,Volume1(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
-		for (idx = 0; idx < element->data.volume1.channels; idx++)
-			fprintf(out, "%s%i", idx > 0 ? "," : "", element->data.volume1.pchannels[idx]);
-		fprintf(out, "))\n");
-		break;
-	case SND_MIXER_ETYPE_ACCU3:
-		for (idx = 0; idx < info->data.accu3.range; idx++)
-			fprintf(out, "    ; Channel %i : Min %i Max %i\n", idx, info->data.accu3.prange[idx].min, info->data.accu3.prange[idx].max);
-		fprintf(out, "    element(\"%s\",%i,%i,Accu3(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
-		for (idx = 0; idx < element->data.accu3.channels; idx++)
-			fprintf(out, "%s%i", idx > 0 ? "," : "", element->data.accu3.pchannels[idx]);
-		fprintf(out, "))\n");
-		break;
-	case SND_MIXER_ETYPE_MUX1:
-		fprintf(out, "    element(\"%s\",%i,%i,Mux1(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
-		for (idx = 0; idx < element->data.mux1.sel; idx++) {
-			fprintf(out, "%selement(\"%s\",%i,%i)", idx > 0 ? "," : "", mixer_element_name(&element->data.mux1.psel[idx]), element->data.mux1.psel[idx].index, element->data.mux1.psel[idx].type);
-		}
-		fprintf(out, "))\n");
-		break;
-	case SND_MIXER_ETYPE_MUX2:
-		fprintf(out, "    element(\"%s\",%i,%i,Mux2(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
-		fprintf(out, "element(\"%s\",%i,%i)", mixer_element_name(&element->data.mux2.sel), element->data.mux2.sel.index, element->data.mux2.sel.type);
-		fprintf(out, "))\n");
-		break;
-	case SND_MIXER_ETYPE_TONE_CONTROL1:
-		if (info->data.tc1.tc & SND_MIXER_TC1_SW)
-			fprintf(out, "    ; The tone control has an on/off switch.\n");
-		if (info->data.tc1.tc & SND_MIXER_TC1_BASS) 
-			fprintf(out, "    ; Bass : Min %i Max %i\n", info->data.tc1.min_bass, info->data.tc1.max_bass);
-		if (info->data.tc1.tc & SND_MIXER_TC1_TREBLE)
-			fprintf(out, "    ; Treble : Min %i Max %i\n", info->data.tc1.min_treble, info->data.tc1.max_treble);
-		fprintf(out, "    element(\"%s\",%i,%i,ToneControl1(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
-		idx = 0;
-		if (element->data.tc1.tc & SND_MIXER_TC1_SW) 
-			fprintf(out, "%ssw=%s", idx++ > 0 ? "," : "", element->data.tc1.sw ? "on" : "off");
-		if (element->data.tc1.tc & SND_MIXER_TC1_BASS) 
-			fprintf(out, "%sbass=%i", idx++ > 0 ? "," : "", element->data.tc1.bass);
-		if (element->data.tc1.tc & SND_MIXER_TC1_TREBLE)
-			fprintf(out, "%streble=%i", idx++ > 0 ? "," : "", element->data.tc1.treble);
-		fprintf(out, "))\n");
-		break; 
-	case SND_MIXER_ETYPE_3D_EFFECT1:
-		if (info->data.teffect1.effect & SND_MIXER_EFF1_SW) 
-			fprintf(out, "    ; The 3D effect has an on/off switch.\n");
-		if (info->data.teffect1.effect & SND_MIXER_EFF1_MONO_SW) 
-			fprintf(out, "    ; The 3D effect has an mono processing on/off switch.\n");
-		if (info->data.teffect1.effect & SND_MIXER_EFF1_WIDE) 
-			fprintf(out, "    ; Wide : Min %i Max %i\n", info->data.teffect1.min_wide, info->data.teffect1.max_wide);
-		if (info->data.teffect1.effect & SND_MIXER_EFF1_VOLUME)
-			fprintf(out, "    ; Volume : Min %i Max %i\n", info->data.teffect1.min_volume, info->data.teffect1.max_volume);
-		if (info->data.teffect1.effect & SND_MIXER_EFF1_CENTER)
-			fprintf(out, "    ; Center : Min %i Max %i\n", info->data.teffect1.min_center, info->data.teffect1.max_center);
-		if (info->data.teffect1.effect & SND_MIXER_EFF1_SPACE)
-			fprintf(out, "    ; Space : Min %i Max %i\n", info->data.teffect1.min_space, info->data.teffect1.max_space);
-		if (info->data.teffect1.effect & SND_MIXER_EFF1_DEPTH)
-			fprintf(out, "    ; Depth : Min %i Max %i\n", info->data.teffect1.min_depth, info->data.teffect1.max_depth);
-		if (info->data.teffect1.effect & SND_MIXER_EFF1_DELAY)
-			fprintf(out, "    ; Delay : Min %i Max %i\n", info->data.teffect1.min_delay, info->data.teffect1.max_delay);
-		if (info->data.teffect1.effect & SND_MIXER_EFF1_FEEDBACK)
-			fprintf(out, "    ; Feedback : Min %i Max %i\n", info->data.teffect1.min_feedback, info->data.teffect1.max_feedback);
-		if (info->data.teffect1.effect & SND_MIXER_EFF1_DEPTH_REAR)
-			fprintf(out, "    ; Depth rear : Min %i Max %i\n", info->data.teffect1.min_depth_rear, info->data.teffect1.max_depth_rear);
-		fprintf(out, "    element(\"%s\",%i,%i,_3D_Effect1(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
-		idx = 0;
-		if (element->data.teffect1.effect & SND_MIXER_EFF1_SW) 
-			fprintf(out, "%ssw=%s", idx++ > 0 ? "," : "", element->data.teffect1.sw ? "on" : "off");
-		if (element->data.teffect1.effect & SND_MIXER_EFF1_MONO_SW) 
-			fprintf(out, "%smono_sw=%s", idx++ > 0 ? "," : "", element->data.teffect1.mono_sw ? "on" : "off");
-		if (element->data.teffect1.effect & SND_MIXER_EFF1_WIDE) 
-			fprintf(out, "%swide=%i", idx++ > 0 ? "," : "", element->data.teffect1.wide);
-		if (element->data.teffect1.effect & SND_MIXER_EFF1_VOLUME)
-			fprintf(out, "%svolume=%i", idx++ > 0 ? "," : "", element->data.teffect1.volume);
-		if (element->data.teffect1.effect & SND_MIXER_EFF1_CENTER)
-			fprintf(out, "%scenter=%i", idx++ > 0 ? "," : "", element->data.teffect1.center);
-		if (element->data.teffect1.effect & SND_MIXER_EFF1_SPACE)
-			fprintf(out, "%sspace=%i", idx++ > 0 ? "," : "", element->data.teffect1.space);
-		if (element->data.teffect1.effect & SND_MIXER_EFF1_DEPTH)
-			fprintf(out, "%sdepth=%i", idx++ > 0 ? "," : "", element->data.teffect1.depth);
-		if (element->data.teffect1.effect & SND_MIXER_EFF1_DELAY)
-			fprintf(out, "%sdelay=%i", idx++ > 0 ? "," : "", element->data.teffect1.delay);
-		if (element->data.teffect1.effect & SND_MIXER_EFF1_FEEDBACK)
-			fprintf(out, "%sfeedback=%i", idx++ > 0 ? "," : "", element->data.teffect1.feedback);
-		if (element->data.teffect1.effect & SND_MIXER_EFF1_DEPTH_REAR)
-			fprintf(out, "%sdepth_rear=%i", idx++ > 0 ? "," : "", element->data.teffect1.depth_rear);
-		fprintf(out, "))\n");
-		break; 
-	default:
-		fprintf(out, "    ; Unknown element %s\n", mixer_element_id(&element->eid));
-	}
+	for (ctl = *controls; ctl; ctl = ctl->next)
+		soundcard_setup_write_control(out, space, card, ctl);
 }
 
 #define MAX_LINE	(32 * 1024)
@@ -850,10 +387,6 @@ int soundcard_setup_write(const char *cfgfile, int cardno)
 	FILE *out, *out1, *out2, *in;
 	char *tmpfile1, *tmpfile2;
 	struct soundcard *first, *sel = NULL;
-	struct mixer *mixer;
-	struct mixer_element *mixerelement;
-	struct pcm *pcm;
-	struct rawmidi *rawmidi;
 	char *line, cardname[sizeof(first->control.hwinfo.name)+16], *ptr1;
 	int mark, size, ok;
 
@@ -904,49 +437,8 @@ int soundcard_setup_write(const char *cfgfile, int cardno)
 			continue;
 		sel = first;
 		fprintf(out, "soundcard(\"%s\") {\n", first->control.hwinfo.id);
-		if (first->control.switches) {
-			fprintf(out, "  control {\n");
-			soundcard_setup_write_switches(out, "    ", first->no, SND_INTERFACE_CONTROL, &first->control.switches);
-			fprintf(out, "  }\n");
-		}
-		for (mixer = first->mixers; mixer; mixer = mixer->next) {
-			fprintf(out, "  mixer(\"%s\") {\n", mixer->info.name);
-			soundcard_setup_write_switches(out, "    ", first->no, SND_INTERFACE_MIXER, &mixer->switches);
-			for (mixerelement = mixer->elements; mixerelement; mixerelement = mixerelement->next)
-				soundcard_setup_write_mixer_element(out, mixerelement);
-			fprintf(out, "  }\n");
-		}
-		for (pcm = first->pcms; pcm; pcm = pcm->next) {
-			if (!pcm->pswitches && !pcm->rswitches)
-				continue;
-			fprintf(out, "  pcm(\"%s\") {\n", pcm->info.name);
-			if (pcm->pswitches) {
-				fprintf(out, "    playback {\n");
-				soundcard_setup_write_switches(out, "      ", first->no, SND_INTERFACE_PCM, &pcm->pswitches);
-				fprintf(out, "    }\n");
-			}
-			if (pcm->rswitches) {
-				fprintf(out, "    capture {\n");
-				soundcard_setup_write_switches(out, "      ", first->no, SND_INTERFACE_PCM, &pcm->rswitches);
-				fprintf(out, "    }\n");
-			}
-			fprintf(out, "  }\n");
-		}
-		for (rawmidi = first->rawmidis; rawmidi; rawmidi = rawmidi->next) {
-			if (!rawmidi->oswitches && !rawmidi->iswitches)
-				continue;
-			fprintf(out, "  rawmidi(\"%s\") {\n", rawmidi->info.name);
-			if (rawmidi->oswitches) {
-				fprintf(out, "    output {\n");
-				soundcard_setup_write_switches(out, "      ", first->no, SND_INTERFACE_RAWMIDI, &rawmidi->oswitches);
-				fprintf(out, "    }\n");
-			}
-			if (rawmidi->iswitches) {
-				fprintf(out, "    input {\n");
-				soundcard_setup_write_switches(out, "      ", first->no, SND_INTERFACE_RAWMIDI, &rawmidi->iswitches);
-				fprintf(out, "    }\n");
-			}
-			fprintf(out, "  }\n");
+		if (first->control.controls) {
+			soundcard_setup_write_controls(out, "  ", first->no, &first->control.controls);
 		}
 		fprintf(out, "}\n%s", cardno < 0 && first->next ? "\n" : "");
 	}
