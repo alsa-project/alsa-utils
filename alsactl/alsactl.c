@@ -67,7 +67,12 @@ char *id_str(snd_control_id_t *id)
 {
 	static char str[128];
 	assert(id);
-	sprintf(str, "%i,%i,%i,%s,%i", id->iface, id->device, id->subdevice, id->name, id->index);
+	sprintf(str, "%i,%i,%i,%s,%i", 
+		snd_enum_to_int(snd_control_id_get_interface(id)),
+		snd_control_id_get_device(id),
+		snd_control_id_get_subdevice(id),
+		snd_control_id_get_name(id),
+		snd_control_id_get_index(id));
 	return str;
 }
 
@@ -98,7 +103,7 @@ static int snd_config_integer_add(snd_config_t *father, char *id, long integer)
 	return 0;
 }
 
-static int snd_config_string_add(snd_config_t *father, char *id, char *string)
+static int snd_config_string_add(snd_config_t *father, const char *id, const char *string)
 {
 	int err;
 	snd_config_t *leaf;
@@ -118,7 +123,7 @@ static int snd_config_string_add(snd_config_t *father, char *id, char *string)
 	return 0;
 }
 
-static int snd_config_compound_add(snd_config_t *father, char *id, int join,
+static int snd_config_compound_add(snd_config_t *father, const char *id, int join,
 				   snd_config_t **node)
 {
 	int err;
@@ -137,33 +142,36 @@ static int snd_config_compound_add(snd_config_t *father, char *id, int join,
 
 static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *top)
 {
-	snd_control_t ctl;
-	snd_control_info_t info;
+	snd_control_t *ctl;
+	snd_control_info_t *info;
 	snd_config_t *control, *comment, *item, *value;
-	char *s;
+	const char *s;
 	char buf[256];
 	unsigned int idx;
 	int err;
-
-	memset(&info, 0, sizeof(info));
-	info.id = *id;
-	err = snd_ctl_cinfo(handle, &info);
+	unsigned int device, subdevice, index;
+	const char *name;
+	snd_control_type_t type;
+	unsigned int count;
+	snd_control_alloca(&ctl);
+	snd_control_info_alloca(&info);
+	snd_control_info_set_id(info, id);
+	err = snd_ctl_cinfo(handle, info);
 	if (err < 0) {
 		error("Cannot read control info '%s': %s", id_str(id), snd_strerror(err));
 		return err;
 	}
 
-	if (!(info.access & SND_CONTROL_ACCESS_READ))
+	if (!snd_control_info_is_readable(info))
 		return 0;
-	memset(&ctl, 0, sizeof(ctl));
-	ctl.id = info.id;
-	err = snd_ctl_cread(handle, &ctl);
+	snd_control_set_id(ctl, id);
+	err = snd_ctl_cread(handle, ctl);
 	if (err < 0) {
 		error("Cannot read control '%s': %s", id_str(id), snd_strerror(err));
 		return err;
 	}
 
-	err = snd_config_compound_add(top, num_str(info.id.numid), 0, &control);
+	err = snd_config_compound_add(top, num_str(snd_control_info_get_numid(info)), 0, &control);
 	if (err < 0) {
 		error("snd_config_compound_add: %s", snd_strerror(err));
 		return err;
@@ -176,180 +184,154 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 
 	buf[0] = '\0';
 	buf[1] = '\0';
-	if (info.access & SND_CONTROL_ACCESS_READ)
+	if (snd_control_info_is_readable(info))
 		strcat(buf, " read");
-	if (info.access & SND_CONTROL_ACCESS_WRITE)
+	if (snd_control_info_is_writable(info))
 		strcat(buf, " write");
-	if (info.access & SND_CONTROL_ACCESS_INACTIVE)
+	if (snd_control_info_is_inactive(info))
 		strcat(buf, " inactive");
+	if (snd_control_info_is_volatile(info))
+		strcat(buf, " volatile");
+	if (snd_control_info_is_locked(info))
+		strcat(buf, " locked");
+	if (snd_control_info_is_indirect(info))
+		strcat(buf, " indirect");
 	err = snd_config_string_add(comment, "access", buf + 1);
 	if (err < 0) {
 		error("snd_config_string_add: %s", snd_strerror(err));
 		return err;
 	}
 
-	switch (info.type) {
-	case SND_CONTROL_TYPE_BOOLEAN:
-		s = "bool";
-		break;
-	case SND_CONTROL_TYPE_INTEGER:
-		s = "integer";
-		break;
-	case SND_CONTROL_TYPE_ENUMERATED:
-		s = "enumerated";
-		break;
-	case SND_CONTROL_TYPE_BYTES:
-		s = "bytes";
-		break;
-	case SND_CONTROL_TYPE_IEC958:
-		s = "iec958";
-		break;
-	default:
-		s = "unknown";
-		break;
-	}
+	type = snd_control_info_get_type(info);
+	device = snd_control_info_get_device(info);
+	subdevice = snd_control_info_get_subdevice(info);
+	index = snd_control_info_get_index(info);
+	name = snd_control_info_get_name(info);
+	count = snd_control_info_get_count(info);
+	s = snd_control_type_name(type);
 	err = snd_config_string_add(comment, "type", s);
 	if (err < 0) {
 		error("snd_config_string_add: %s", snd_strerror(err));
 		return err;
 	}
 
-	switch (info.type) {
+	switch (snd_enum_to_int(type)) {
 	case SND_CONTROL_TYPE_BOOLEAN:
-		if (info.value.integer.min != 0 || info.value.integer.max != 1 ||
-		    info.value.integer.step != 0)
-			error("Bad boolean control '%s'", id_str(id));
-		
 		break;
 	case SND_CONTROL_TYPE_INTEGER:
-		if (info.value.integer.step)
-			sprintf(buf, "%li - %li (step %li)", info.value.integer.min, info.value.integer.max, info.value.integer.step);
+	{
+		long min = snd_control_info_get_min(info);
+		long max = snd_control_info_get_max(info);
+		long step = snd_control_info_get_step(info);
+		if (step)
+			sprintf(buf, "%li - %li (step %li)", min, max, step);
 		else
-			sprintf(buf, "%li - %li", info.value.integer.min, info.value.integer.max);
+			sprintf(buf, "%li - %li", min, max);
 		err = snd_config_string_add(comment, "range", buf);
 		if (err < 0) {
 			error("snd_config_string_add: %s", snd_strerror(err));
 			return err;
 		}
 		break;
+	}
 	case SND_CONTROL_TYPE_ENUMERATED:
+	{
+		unsigned int items;
 		err = snd_config_compound_add(comment, "item", 1, &item);
 		if (err < 0) {
 			error("snd_config_compound_add: %s", snd_strerror(err));
 			return err;
 		}
-		for (idx = 0; idx < info.value.enumerated.items; idx++) {
-			info.value.enumerated.item = idx;
-			err = snd_ctl_cinfo(handle, &info);
+		items = snd_control_info_get_items(info);
+		for (idx = 0; idx < items; idx++) {
+			snd_control_info_set_item(info, idx);
+			err = snd_ctl_cinfo(handle, info);
 			if (err < 0) {
 				error("snd_ctl_info: %s", snd_strerror(err));
 				return err;
 			}
-			err = snd_config_string_add(item, num_str(idx), info.value.enumerated.name);
+			err = snd_config_string_add(item, num_str(idx), snd_control_info_get_item_name(info));
 			if (err < 0) {
 				error("snd_config_string_add: %s", snd_strerror(err));
 				return err;
 			}
 		}
 		break;
+	}
 	default:
 		break;
 	}
-	switch (info.id.iface) {
-	case SND_CONTROL_IFACE_CARD:
-		s = "card";
-		break;
-	case SND_CONTROL_IFACE_HWDEP:
-		s = "hwdep";
-		break;
-	case SND_CONTROL_IFACE_MIXER:
-		s = "mixer";
-		break;
-	case SND_CONTROL_IFACE_PCM:
-		s = "pcm";
-		break;
-	case SND_CONTROL_IFACE_RAWMIDI:
-		s = "rawmidi";
-		break;
-	case SND_CONTROL_IFACE_TIMER:
-		s = "timer";
-		break;
-	case SND_CONTROL_IFACE_SEQUENCER:
-		s = "sequencer";
-		break;
-	default:
-		s = num_str(info.id.iface);
-		break;
-	}
+	s = snd_control_iface_name(snd_control_info_get_interface(info));
 	err = snd_config_string_add(control, "iface", s);
 	if (err < 0) {
 		error("snd_config_string_add: %s", snd_strerror(err));
 		return err;
 	}
-	if (info.id.device != 0) {
-		err = snd_config_integer_add(control, "device", info.id.device);
+	if (device != 0) {
+		err = snd_config_integer_add(control, "device", device);
 		if (err < 0) {
 			error("snd_config_integer_add: %s", snd_strerror(err));
 			return err;
 		}
 	}
-	if (info.id.subdevice != 0) {
-		err = snd_config_integer_add(control, "subdevice", info.id.subdevice);
+	if (subdevice != 0) {
+		err = snd_config_integer_add(control, "subdevice", subdevice);
 		if (err < 0) {
 			error("snd_config_integer_add: %s", snd_strerror(err));
 			return err;
 		}
 	}
-	err = snd_config_string_add(control, "name", info.id.name);
+	err = snd_config_string_add(control, "name", name);
 	if (err < 0) {
 		error("snd_config_string_add: %s", snd_strerror(err));
 		return err;
 	}
-	if (info.id.index != 0) {
-		err = snd_config_integer_add(control, "index", info.id.index);
+	if (index != 0) {
+		err = snd_config_integer_add(control, "index", index);
 		if (err < 0) {
 			error("snd_config_integer_add: %s", snd_strerror(err));
 			return err;
 		}
 	}
 
-	switch (info.type) {
+	switch (snd_enum_to_int(type)) {
 	case SND_CONTROL_TYPE_BYTES:
 	case SND_CONTROL_TYPE_IEC958:
-		{
-			size_t count = info.type == SND_CONTROL_TYPE_BYTES ?
-					info.values_count : sizeof(snd_aes_iec958_t);
-			char buf[count * 2 + 1];
-			char *p = buf;
-			char *hex = "0123456789abcdef";
-			for (idx = 0; idx < count; idx++) {
-				int v = ctl.value.bytes.data[idx];
-				*p++ = hex[v >> 4];
-				*p++ = hex[v & 0x0f];
-			}
-			*p = '\0';
-			err = snd_config_string_add(control, "value", buf);
-			if (err < 0) {
-				error("snd_config_string_add: %s", snd_strerror(err));
-				return err;
-			}
-			return 0;
+	{
+		size_t size = type == SND_CONTROL_TYPE_BYTES ?
+			count : sizeof(snd_aes_iec958_t);
+		char buf[count * 2 + 1];
+		char *p = buf;
+		char *hex = "0123456789abcdef";
+		const char *bytes = snd_control_get_bytes(ctl);
+		for (idx = 0; idx < size; idx++) {
+			int v = bytes[idx];
+			*p++ = hex[v >> 4];
+			*p++ = hex[v & 0x0f];
 		}
+		*p = '\0';
+		err = snd_config_string_add(control, "value", buf);
+		if (err < 0) {
+			error("snd_config_string_add: %s", snd_strerror(err));
+			return err;
+		}
+		return 0;
+	}
 	default:
 		break;
 	}
 
-	if (info.values_count == 1) {
-		switch (info.type) {
+	if (count == 1) {
+		switch (snd_enum_to_int(type)) {
 		case SND_CONTROL_TYPE_BOOLEAN:
-			err = snd_config_string_add(control, "value", ctl.value.integer.value[0] ? "true" : "false");
+			err = snd_config_string_add(control, "value", snd_control_get_boolean(ctl, 0) ? "true" : "false");
 			if (err < 0) {
 				error("snd_config_string_add: %s", snd_strerror(err));
 				return err;
 			}
 			return 0;
 		case SND_CONTROL_TYPE_INTEGER:
-			err = snd_config_integer_add(control, "value", ctl.value.integer.value[0]);
+			err = snd_config_integer_add(control, "value", snd_control_get_integer(ctl, 0));
 			if (err < 0) {
 				error("snd_config_integer_add: %s", snd_strerror(err));
 				return err;
@@ -357,7 +339,7 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 			return 0;
 		case SND_CONTROL_TYPE_ENUMERATED:
 		{
-			unsigned int v = ctl.value.enumerated.item[0];
+			unsigned int v = snd_control_get_enumerated(ctl, 0);
 			snd_config_t *c;
 			err = snd_config_search(item, num_str(v), &c);
 			if (err == 0) {
@@ -372,7 +354,7 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 			return 0;
 		}
 		default:
-			error("Unknown control type: %d\n", info.type);
+			error("Unknown control type: %d\n", snd_enum_to_int(type));
 			return -EINVAL;
 		}
 	}
@@ -383,10 +365,10 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 		return err;
 	}
 
-	switch (info.type) {
+	switch (snd_enum_to_int(type)) {
 	case SND_CONTROL_TYPE_BOOLEAN:
-		for (idx = 0; idx < info.values_count; idx++) {
-			err = snd_config_string_add(value, num_str(idx), ctl.value.integer.value[idx] ? "true" : "false");
+		for (idx = 0; idx < count; idx++) {
+			err = snd_config_string_add(value, num_str(idx), snd_control_get_boolean(ctl, idx) ? "true" : "false");
 			if (err < 0) {
 				error("snd_config_string_add: %s", snd_strerror(err));
 				return err;
@@ -394,8 +376,8 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 		}
 		break;
 	case SND_CONTROL_TYPE_INTEGER:
-		for (idx = 0; idx < info.values_count; idx++) {
-			err = snd_config_integer_add(value, num_str(idx), ctl.value.integer.value[idx]);
+		for (idx = 0; idx < count; idx++) {
+			err = snd_config_integer_add(value, num_str(idx), snd_control_get_integer(ctl, idx));
 			if (err < 0) {
 				error("snd_config_integer_add: %s", snd_strerror(err));
 				return err;
@@ -403,8 +385,8 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 		}
 		break;
 	case SND_CONTROL_TYPE_ENUMERATED:
-		for (idx = 0; idx < info.values_count; idx++) {
-			unsigned int v = ctl.value.enumerated.item[idx];
+		for (idx = 0; idx < count; idx++) {
+			unsigned int v = snd_control_get_enumerated(ctl, idx);
 			snd_config_t *c;
 			err = snd_config_search(item, num_str(v), &c);
 			if (err == 0) {
@@ -421,7 +403,7 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 		}
 		break;
 	default:
-		error("Unknown control type: %d\n", info.type);
+		error("Unknown control type: %d\n", snd_enum_to_int(type));
 		return -EINVAL;
 	}
 	
@@ -431,12 +413,16 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 static int get_controls(int cardno, snd_config_t *top)
 {
 	snd_ctl_t *handle;
-	snd_ctl_hw_info_t info;
+	snd_ctl_info_t *info;
 	snd_config_t *state, *card, *control;
-	snd_control_list_t list;
+	snd_control_list_t *list;
 	unsigned int idx;
 	int err;
 	char name[32];
+	unsigned int count;
+	const char *id;
+	snd_ctl_info_alloca(&info);
+	snd_control_list_alloca(&list);
 
 	sprintf(name, "hw:%d", cardno);
 	err = snd_ctl_open(&handle, name);
@@ -444,11 +430,12 @@ static int get_controls(int cardno, snd_config_t *top)
 		error("snd_ctl_open error: %s", snd_strerror(err));
 		return err;
 	}
-	err = snd_ctl_hw_info(handle, &info);
+	err = snd_ctl_info(handle, info);
 	if (err < 0) {
-		error("snd_ctl_hw_info error: %s", snd_strerror(err));
+		error("snd_ctl_info error: %s", snd_strerror(err));
 		goto _close;
 	}
+	id = snd_ctl_info_get_id(info);
 	err = snd_config_search(top, "state", &state);
 	if (err == 0 &&
 	    snd_config_type(state) != SND_CONFIG_TYPE_COMPOUND) {
@@ -463,15 +450,15 @@ static int get_controls(int cardno, snd_config_t *top)
 			goto _close;
 		}
 	}
-	err = snd_config_search(state, info.id, &card);
+	err = snd_config_search(state, id, &card);
 	if (err == 0 &&
 	    snd_config_type(state) != SND_CONFIG_TYPE_COMPOUND) {
-		error("config state.%s node is not a compound", info.id);
+		error("config state.%s node is not a compound", id);
 		err = -EINVAL;
 		goto _close;
 	}
 	if (err < 0) {
-		err = snd_config_compound_add(state, info.id, 0, &card);
+		err = snd_config_compound_add(state, id, 0, &card);
 		if (err < 0) {
 			error("snd_config_compound_add: %s", snd_strerror(err));
 			goto _close;
@@ -490,36 +477,37 @@ static int get_controls(int cardno, snd_config_t *top)
 		error("snd_config_compound_add: %s", snd_strerror(err));
 		goto _close;
 	}
-	memset(&list, 0, sizeof(list));
-	err = snd_ctl_clist(handle, &list);
+	err = snd_ctl_clist(handle, list);
 	if (err < 0) {
 		error("Cannot determine controls: %s", snd_strerror(err));
 		goto _close;
 	}
-	if (list.controls <= 0) {
+	count = snd_control_list_get_count(list);
+	if (count <= 0) {
 		err = 0;
 		goto _close;
 	}
-	list.controls_request = list.controls;
-	list.controls_offset = list.controls_count = 0;
-	list.pids = malloc(sizeof(snd_control_id_t) * list.controls_request);
-	if (!list.pids) {
+	snd_control_list_set_offset(list, 0);
+	if (snd_control_list_alloc_space(list, count) < 0) {
 		error("No enough memory...");
 		goto _close;
 	}
-	if ((err = snd_ctl_clist(handle, &list)) < 0) {
+	if ((err = snd_ctl_clist(handle, list)) < 0) {
 		error("Cannot determine controls (2): %s", snd_strerror(err));
 		goto _free;
 	}
-	for (idx = 0; idx < list.controls_count; ++idx) {
-		err = get_control(handle, &list.pids[idx], control);
+	for (idx = 0; idx < count; ++idx) {
+		snd_control_id_t *id;
+		snd_control_id_alloca(&id);
+		snd_control_list_get_id(list, idx, id);
+		err = get_control(handle, id, control);
 		if (err < 0)
 			goto _free;
 	}		
 		
 	err = 0;
  _free:
-	free(list.pids);
+	snd_control_list_free_space(list);
  _close:
 	snd_ctl_close(handle);
 	return err;
@@ -528,21 +516,9 @@ static int get_controls(int cardno, snd_config_t *top)
 
 static int config_iface(snd_config_t *n)
 {
-	static struct {
-		int val;
-		char *str;
-	} v[] = {
-		{ SND_CONTROL_IFACE_CARD, "card" },
-		{ SND_CONTROL_IFACE_HWDEP, "hwdep" },
-		{ SND_CONTROL_IFACE_MIXER, "mixer" },
-		{ SND_CONTROL_IFACE_PCM, "pcm" },
-		{ SND_CONTROL_IFACE_RAWMIDI, "rawmidi" },
-		{ SND_CONTROL_IFACE_TIMER, "timer" },
-		{ SND_CONTROL_IFACE_SEQUENCER, "sequencer" }
-	};
 	unsigned long i;
-	unsigned int idx;
-	char *str;
+	snd_control_iface_t idx;
+	const char *str;
 	switch (snd_enum_to_int(snd_config_type(n))) {
 	case SND_CONFIG_TYPE_INTEGER:
 		snd_config_integer_get(n, &i);
@@ -553,16 +529,16 @@ static int config_iface(snd_config_t *n)
 	default:
 		return -1;
 	}
-	for (idx = 0; idx < sizeof(v) / sizeof(v[0]); ++idx) {
-		if (strcmp(v[idx].str, str) == 0)
-			return idx;
+	for (idx = 0; idx <= SND_CONTROL_IFACE_LAST; snd_enum_incr(idx)) {
+		if (strcasecmp(snd_control_iface_name(idx), str) == 0)
+			return snd_enum_to_int(idx);
 	}
 	return -1;
 }
 
 static int config_bool(snd_config_t *n)
 {
-	char *str;
+	const char *str;
 	long val;
 	switch (snd_enum_to_int(snd_config_type(n))) {
 	case SND_CONFIG_TYPE_INTEGER:
@@ -586,9 +562,9 @@ static int config_bool(snd_config_t *n)
 static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 			     snd_control_info_t *info)
 {
-	char *str;
+	const char *str;
 	long val;
-	unsigned int idx;
+	unsigned int idx, items;
 	switch (snd_enum_to_int(snd_config_type(n))) {
 	case SND_CONFIG_TYPE_INTEGER:
 		snd_config_integer_get(n, &val);
@@ -599,15 +575,16 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 	default:
 		return -1;
 	}
-	for (idx = 0; idx < info->value.enumerated.items; idx++) {
+	items = snd_control_info_get_items(info);
+	for (idx = 0; idx < items; idx++) {
 		int err;
-		info->value.enumerated.item = idx;
+		snd_control_info_set_item(info, idx);
 		err = snd_ctl_cinfo(handle, info);
 		if (err < 0) {
 			error("snd_ctl_info: %s", snd_strerror(err));
 			return err;
 		}
-		if (strcmp(str, info->value.enumerated.name) == 0)
+		if (strcmp(str, snd_control_info_get_name(info)) == 0)
 			return idx;
 	}
 	return -1;
@@ -615,20 +592,26 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 
 static int set_control(snd_ctl_t *handle, snd_config_t *control)
 {
-	snd_control_t ctl;
-	snd_control_info_t info;
+	snd_control_t *ctl;
+	snd_control_info_t *info;
 	snd_config_iterator_t i;
+	unsigned int numid1, iface1, device1, subdevice1, index1;
+	const char *name1;
 	unsigned int numid;
+	snd_control_type_t type;
+	unsigned int count;
 	long iface = -1;
 	long device = -1;
 	long subdevice = -1;
-	char *name = NULL;
+	const char *name = NULL;
 	long index = -1;
 	snd_config_t *value = NULL;
 	long val;
 	unsigned int idx;
 	int err;
 	char *set;
+	snd_control_alloca(&ctl);
+	snd_control_info_alloca(&info);
 	if (snd_config_type(control) != SND_CONFIG_TYPE_COMPOUND) {
 		error("control is not a compound");
 		return -EINVAL;
@@ -695,63 +678,70 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		subdevice = 0;
 	if (index < 0)
 		index = 0;
-	memset(&info, 0, sizeof(info));
-	info.id.numid = numid;
-	err = snd_ctl_cinfo(handle, &info);
+
+	snd_control_info_set_numid(info, numid);
+	err = snd_ctl_cinfo(handle, info);
 	if (err < 0) {
 		if (iface >= 0 && name) {
-			info.id.numid = 0;
-			info.id.iface = iface;
-			info.id.device = device;
-			info.id.subdevice = subdevice;
-			strncmp(info.id.name, name, sizeof(info.id.name));
-			info.id.index = index;
-			err = snd_ctl_cinfo(handle, &info);
+			snd_control_info_set_numid(info, 0);
+			snd_control_info_set_interface(info, snd_int_to_enum(iface));
+			snd_control_info_set_device(info, device);
+			snd_control_info_set_subdevice(info, subdevice);
+			snd_control_info_set_name(info, name);
+			snd_control_info_set_index(info, index);
+			err = snd_ctl_cinfo(handle, info);
 		}
 	}
 	if (err < 0) {
 		error("failed to obtain info for control #%d (%s)", numid, snd_strerror(err));
 		return -ENOENT;
 	}
-	if (info.id.numid != numid)
-		error("warning: numid mismatch (%d/%d) for control #%d", numid, info.id.numid, numid);
-	if (info.id.iface != iface)
-		error("warning: iface mismatch (%ld/%d) for control #%d", iface, info.id.iface, numid);
-	if (info.id.device != device)
-		error("warning: device mismatch (%ld/%d) for control #%d", device, info.id.device, numid);
-	if (info.id.subdevice != subdevice)
-		error("warning: subdevice mismatch (%ld/%d) for control #%d", subdevice, info.id.subdevice, numid);
-	if (strcmp(info.id.name, name))
-		error("warning: name mismatch (%s/%s) for control #%d", name, info.id.name, numid);
-	if (info.id.index != index)
-		error("warning: index mismatch (%ld/%d) for control #%d", index, info.id.index, numid);
+	numid1 = snd_control_info_get_numid(info);
+	iface1 = snd_enum_to_int(snd_control_info_get_interface(info));
+	device1 = snd_control_info_get_device(info);
+	subdevice1 = snd_control_info_get_subdevice(info);
+	name1 = snd_control_info_get_name(info);
+	index1 = snd_control_info_get_index(info);
+	count = snd_control_info_get_count(info);
+	type = snd_control_info_get_type(info);
+	if (numid != numid1)
+		error("warning: numid mismatch (%d/%d) for control #%d", 
+		      numid, numid1, numid);
+	if (iface != iface1)
+		error("warning: iface mismatch (%ld/%d) for control #%d", iface, iface1, numid);
+	if (device != device1)
+		error("warning: device mismatch (%ld/%d) for control #%d", device, device1, numid);
+	if (subdevice != subdevice1)
+		error("warning: subdevice mismatch (%ld/%d) for control #%d", subdevice, subdevice1, numid);
+	if (strcmp(name, name1))
+		error("warning: name mismatch (%s/%s) for control #%d", name, name1, numid);
+	if (index != index1)
+		error("warning: index mismatch (%ld/%d) for control #%d", index, index1, numid);
 
-	if (!(info.access & SND_CONTROL_ACCESS_WRITE))
+	if (!snd_control_info_is_writable(info))
 		return 0;
+	snd_control_set_numid(ctl, numid);
 
-	memset(&ctl, 0, sizeof(ctl));
-	ctl.id = info.id;
-
-	if (info.values_count == 1) {
-		switch (info.type) {
+	if (count == 1) {
+		switch (snd_enum_to_int(type)) {
 		case SND_CONTROL_TYPE_BOOLEAN:
 			val = config_bool(value);
 			if (val >= 0) {
-				ctl.value.integer.value[0] = val;
+				snd_control_set_boolean(ctl, 0, val);
 				goto _ok;
 			}
 			break;
 		case SND_CONTROL_TYPE_INTEGER:
 			err = snd_config_integer_get(value, &val);
 			if (err == 0) {
-				ctl.value.integer.value[0] = val;
+				snd_control_set_integer(ctl, 0, val);
 				goto _ok;
 			}
 			break;
 		case SND_CONTROL_TYPE_ENUMERATED:
-			val = config_enumerated(value, handle, &info);
+			val = config_enumerated(value, handle, info);
 			if (val >= 0) {
-				ctl.value.enumerated.item[0] = val;
+				snd_control_set_enumerated(ctl, 0, val);
 				goto _ok;
 			}
 			break;
@@ -759,47 +749,47 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		case SND_CONTROL_TYPE_IEC958:
 			break;
 		default:
-			error("Unknow control type: %d", info.type);
+			error("Unknow control type: %d", snd_enum_to_int(type));
 			return -EINVAL;
 		}
 	}
-	switch (info.type) {
+	switch (snd_enum_to_int(type)) {
 	case SND_CONTROL_TYPE_BYTES:
 	case SND_CONTROL_TYPE_IEC958:
-		{
-			char *buf;
-			err = snd_config_string_get(value, &buf);
-			if (err >= 0) {
-				int c1 = 0;
-				int len = strlen(buf);
-				unsigned int idx = 0;
-				int count = info.type == SND_CONTROL_TYPE_BYTES ?
-						info.values_count : sizeof(snd_aes_iec958_t);
-				if (count * 2 != len) {
+	{
+		const char *buf;
+		err = snd_config_string_get(value, &buf);
+		if (err >= 0) {
+			int c1 = 0;
+			int len = strlen(buf);
+			unsigned int idx = 0;
+			int size = type == SND_CONTROL_TYPE_BYTES ?
+				count : sizeof(snd_aes_iec958_t);
+			if (size * 2 != len) {
+				error("bad control.%d.value contents\n", numid);
+				return -EINVAL;
+			}
+			while (*buf) {
+				int c = *buf++;
+				if (c >= '0' && c <= '9')
+					c -= '0';
+				else if (c <= 'a' && c <= 'f')
+					c = c - 'a' + 10;
+				else if (c <= 'A' && c <= 'F')
+					c = c - 'A' + 10;
+				else {
 					error("bad control.%d.value contents\n", numid);
 					return -EINVAL;
 				}
-				while (*buf) {
-					int c = *buf++;
-					if (c >= '0' && c <= '9')
-						c -= '0';
-						else if (c <= 'a' && c <= 'f')
-						c = c - 'a' + 10;
-					else if (c <= 'A' && c <= 'F')
-						c = c - 'A' + 10;
-					else {
-						error("bad control.%d.value contents\n", numid);
-						return -EINVAL;
-					}
-					idx++;
-					if (idx % 2 == 0)
-						ctl.value.bytes.data[idx / 2] = c1 << 4 | c;
-					else
-						c1 = c;
-				}
-				goto _ok;
+				idx++;
+				if (idx % 2 == 0)
+					snd_control_set_byte(ctl, idx / 2, c1 << 4 | c);
+				else
+					c1 = c;
 			}
+			goto _ok;
 		}
+	}
 	default:
 		break;
 	}
@@ -808,24 +798,24 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		return -EINVAL;
 	}
 
-	set = alloca(info.values_count);
-	memset(set, 0, info.values_count);
+	set = alloca(count);
+	memset(set, 0, count);
 	snd_config_foreach(i, value) {
 		snd_config_t *n = snd_config_entry(i);
 		idx = atoi(snd_config_id(n));
-		if (idx < 0 || idx >= info.values_count || 
+		if (idx < 0 || idx >= count || 
 		    set[idx]) {
 			error("bad control.%d.value index", numid);
 			return -EINVAL;
 		}
-		switch (info.type) {
+		switch (snd_enum_to_int(type)) {
 		case SND_CONTROL_TYPE_BOOLEAN:
 			val = config_bool(n);
 			if (val < 0) {
 				error("bad control.%d.value.%d content", numid, idx);
 				return -EINVAL;
 			}
-			ctl.value.integer.value[idx] = val;
+			snd_control_set_boolean(ctl, idx, val);
 			break;
 		case SND_CONTROL_TYPE_INTEGER:
 			err = snd_config_integer_get(n, &val);
@@ -833,15 +823,15 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 				error("bad control.%d.value.%d content", numid, idx);
 				return -EINVAL;
 			}
-			ctl.value.integer.value[idx] = val;
+			snd_control_set_integer(ctl, idx, val);
 			break;
 		case SND_CONTROL_TYPE_ENUMERATED:
-			val = config_enumerated(n, handle, &info);
+			val = config_enumerated(n, handle, info);
 			if (val < 0) {
 				error("bad control.%d.value.%d content", numid, idx);
 				return -EINVAL;
 			}
-			ctl.value.enumerated.item[idx] = val;
+			snd_control_set_enumerated(ctl, idx, val);
 			break;
 		case SND_CONTROL_TYPE_BYTES:
 		case SND_CONTROL_TYPE_IEC958:
@@ -850,14 +840,14 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 				error("bad control.%d.value.%d content", numid, idx);
 				return -EINVAL;
 			}
-			ctl.value.bytes.data[idx] = val;
+			snd_control_set_byte(ctl, idx, val);
 			break;
 		default:
 			break;
 		}
 		set[idx] = 1;
 	}
-	for (idx = 0; idx < info.values_count; ++idx) {
+	for (idx = 0; idx < count; ++idx) {
 		if (!set[idx]) {
 			error("control.%d.value.%d is not specified", numid, idx);
 			return -EINVAL;
@@ -865,9 +855,12 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	}
 
  _ok:
-	err = snd_ctl_cwrite(handle, &ctl);
+	err = snd_ctl_cwrite(handle, ctl);
 	if (err < 0) {
-		error("Cannot write control '%s': %s", id_str(&ctl.id), snd_strerror(err));
+		snd_control_id_t *id;
+		snd_control_id_alloca(&id);
+		snd_control_get_id(ctl, id);
+		error("Cannot write control '%s': %s", id_str(id), snd_strerror(err));
 		return err;
 	}
 	return 0;
@@ -876,11 +869,13 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 static int set_controls(int card, snd_config_t *top)
 {
 	snd_ctl_t *handle;
-	snd_ctl_hw_info_t info;
+	snd_ctl_info_t *info;
 	snd_config_t *control;
 	snd_config_iterator_t i;
 	int err;
 	char name[32];
+	const char *id;
+	snd_ctl_info_alloca(&info);
 
 	sprintf(name, "hw:%d", card);
 	err = snd_ctl_open(&handle, name);
@@ -888,19 +883,20 @@ static int set_controls(int card, snd_config_t *top)
 		error("snd_ctl_open error: %s", snd_strerror(err));
 		return err;
 	}
-	err = snd_ctl_hw_info(handle, &info);
+	err = snd_ctl_info(handle, info);
 	if (err < 0) {
-		error("snd_ctl_hw_info error: %s", snd_strerror(err));
+		error("snd_ctl_info error: %s", snd_strerror(err));
 		goto _close;
 	}
-	err = snd_config_searchv(top, &control, "state", info.id, "control", 0);
+	id = snd_ctl_info_get_id(info);
+	err = snd_config_searchv(top, &control, "state", id, "control", 0);
 	if (err < 0) {
 		err = 0;
-		fprintf(stderr, "No state is present for card %s\n", info.id);
+		fprintf(stderr, "No state is present for card %s\n", id);
 		goto _close;
 	}
 	if (snd_config_type(control) != SND_CONFIG_TYPE_COMPOUND) {
-		error("state.%s.control is not a compound\n", info.id);
+		error("state.%s.control is not a compound\n", id);
 		return -EINVAL;
 	}
 	snd_config_foreach(i, control) {

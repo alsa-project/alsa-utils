@@ -1213,14 +1213,15 @@ mixer_show_procinfo (void)
 static void
 mixer_init (void)
 {
-  snd_ctl_hw_info_t hw_info;
+  snd_ctl_info_t *hw_info;
   snd_ctl_t *ctl_handle;
   int err;
+  snd_ctl_info_alloca(&hw_info);
   
   if ((err = snd_ctl_open (&ctl_handle, card_id)) < 0)
     mixer_abort (ERR_OPEN, "snd_ctl_open", err);
-  if ((err = snd_ctl_hw_info (ctl_handle, &hw_info)) < 0)
-    mixer_abort (ERR_FCN, "snd_ctl_hw_info", err);
+  if ((err = snd_ctl_info (ctl_handle, hw_info)) < 0)
+    mixer_abort (ERR_FCN, "snd_ctl_info", err);
   snd_ctl_close (ctl_handle);
   /* open mixer device
    */
@@ -1229,8 +1230,8 @@ mixer_init (void)
   
   /* setup global variables
    */
-  strcpy(mixer_card_name, hw_info.name);
-  strcpy(mixer_device_name, hw_info.mixername);
+  strcpy(mixer_card_name, snd_ctl_info_get_name(hw_info));
+  strcpy(mixer_device_name, snd_ctl_info_get_mixername(hw_info));
 }
 
 static void

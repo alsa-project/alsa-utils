@@ -83,8 +83,8 @@ static int verbose = 0;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t chunk_bytes;
-static int digtype = SND_CONTROL_TYPE_NONE;
-static snd_digital_audio_t diga;
+static snd_control_type_t digtype = SND_CONTROL_TYPE_NONE;
+static snd_aes_iec958_t spdif;
 static snd_output_t *log;
 
 static int count;
@@ -173,8 +173,9 @@ static void device_list(void)
 {
 	snd_ctl_t *handle;
 	int card, err, dev, idx;
-	snd_ctl_hw_info_t info;
+	snd_ctl_info_t *info;
 	snd_pcm_info_t *pcminfo;
+	snd_ctl_info_alloca(&info);
 	snd_pcm_info_alloca(&pcminfo);
 
 	card = -1;
@@ -189,7 +190,7 @@ static void device_list(void)
 			error("control open (%i): %s", card, snd_strerror(err));
 			continue;
 		}
-		if ((err = snd_ctl_hw_info(handle, &info)) < 0) {
+		if ((err = snd_ctl_info(handle, info)) < 0) {
 			error("control hardware info (%i): %s", card, snd_strerror(err));
 			snd_ctl_close(handle);
 			continue;
@@ -210,7 +211,7 @@ static void device_list(void)
 				continue;
 			}
 			fprintf(stderr, "card %i: %s [%s], device %i: %s [%s]\n",
-				card, info.id, info.name,
+				card, snd_ctl_info_get_id(info), snd_ctl_info_get_name(info),
 				dev,
 				snd_pcm_info_get_id(pcminfo),
 				snd_pcm_info_get_name(pcminfo));
@@ -312,7 +313,7 @@ int main(int argc, char *argv[])
 	rhwparams.format = SND_PCM_FORMAT_U8;
 	rhwparams.rate = DEFAULT_SPEED;
 	rhwparams.channels = 1;
-	memset(&diga, 0, sizeof(diga));
+	memset(&spdif, 0, sizeof(spdif));
 
 	while ((c = getopt_long(argc, argv, short_options, long_options, &option_index)) != -1) {
 		switch (c) {
@@ -410,23 +411,23 @@ int main(int argc, char *argv[])
 			break;
 		case 'C':
 			digtype = SND_CONTROL_TYPE_IEC958;
-			diga.aes.status[0] = IEC958_AES0_NONAUDIO |
+			spdif.status[0] = IEC958_AES0_NONAUDIO |
 					     IEC958_AES0_CON_EMPHASIS_NONE;
-			diga.aes.status[1] = IEC958_AES1_CON_ORIGINAL |
+			spdif.status[1] = IEC958_AES1_CON_ORIGINAL |
 					     IEC958_AES1_CON_PCM_CODER;
-			diga.aes.status[2] = 0;
-			diga.aes.status[3] = IEC958_AES3_CON_FS_48000;
+			spdif.status[2] = 0;
+			spdif.status[3] = IEC958_AES3_CON_FS_48000;
 			break;
 		case 'P':
 			digtype = SND_CONTROL_TYPE_IEC958;
-			diga.aes.status[0] = IEC958_AES0_PROFESSIONAL |
+			spdif.status[0] = IEC958_AES0_PROFESSIONAL |
 					     IEC958_AES0_NONAUDIO |
 					     IEC958_AES0_PRO_EMPHASIS_NONE |
 					     IEC958_AES0_PRO_FS_48000;
-			diga.aes.status[1] = IEC958_AES1_PRO_MODE_NOTID |
+			spdif.status[1] = IEC958_AES1_PRO_MODE_NOTID |
 					     IEC958_AES1_PRO_USERBITS_NOTID;
-			diga.aes.status[2] = IEC958_AES2_PRO_WORDLEN_NOTID;
-			diga.aes.status[3] = 0;
+			spdif.status[2] = IEC958_AES2_PRO_WORDLEN_NOTID;
+			spdif.status[3] = 0;
 			break;
 		default:
 			fprintf(stderr, "Try `%s --help' for more information.\n", command);
@@ -447,16 +448,16 @@ int main(int argc, char *argv[])
 	}
 
 	if (digtype != SND_CONTROL_TYPE_NONE) {
-		snd_control_t ctl;
+		snd_control_t *ctl;
 		snd_ctl_t *ctl_handle;
 		char ctl_name[12];
 		int ctl_card;
-		memset(&ctl, 0, sizeof(ctl));
-		ctl.id.numid = 0;
-		ctl.id.iface = SND_CONTROL_IFACE_PCM;
-		ctl.id.device = snd_pcm_info_get_device(info);
-		ctl.id.subdevice = snd_pcm_info_get_subdevice(info);
-		strcpy(ctl.id.name, "IEC958 (S/PDIF) Stream");
+		snd_control_alloca(&ctl);
+		snd_control_set_interface(ctl, SND_CONTROL_IFACE_PCM);
+		snd_control_set_device(ctl, snd_pcm_info_get_device(info));
+		snd_control_set_subdevice(ctl, snd_pcm_info_get_subdevice(info));
+		snd_control_set_name(ctl, "IEC958 (S/PDIF) Stream");
+		snd_control_set_iec958(ctl, &spdif);
 		ctl_card = snd_pcm_info_get_card(info);
 		if (ctl_card < 0) {
 			error("Unable to setup the IEC958 (S/PDIF) interface - PCM has no assigned card");
@@ -467,7 +468,7 @@ int main(int argc, char *argv[])
 			error("Unable to open the control interface '%s': %s", ctl_name, snd_strerror(err));
 			goto __diga_end;
 		}
-		if ((err = snd_ctl_cwrite(ctl_handle, &ctl)) < 0) {
+		if ((err = snd_ctl_cwrite(ctl_handle, ctl)) < 0) {
 			error("Unable to update the IEC958 control: %s", snd_strerror(err));
 			goto __diga_end;
 		}
@@ -736,31 +737,30 @@ static void set_params(void)
 		snd_pcm_access_mask_set(mask, SND_PCM_ACCESS_MMAP_INTERLEAVED);
 		snd_pcm_access_mask_set(mask, SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
 		snd_pcm_access_mask_set(mask, SND_PCM_ACCESS_MMAP_COMPLEX);
-		err = snd_pcm_hw_params_set_access_mask(handle, params,
-							SND_CHANGE, mask);
+		err = snd_pcm_hw_params_set_access_mask(handle, params, mask);
 	} else if (interleaved)
-		err = snd_pcm_hw_params_set_access(handle, params, SND_CHANGE, 
+		err = snd_pcm_hw_params_set_access(handle, params,
 						   SND_PCM_ACCESS_RW_INTERLEAVED);
 	else
-		err = snd_pcm_hw_params_set_access(handle, params, SND_CHANGE,
+		err = snd_pcm_hw_params_set_access(handle, params,
 						   SND_PCM_ACCESS_RW_NONINTERLEAVED);
 	if (err < 0) {
 		error("Access type not available");
 		exit(EXIT_FAILURE);
 	}
-	err = snd_pcm_hw_params_set_format(handle, params, SND_CHANGE, hwparams.format);
+	err = snd_pcm_hw_params_set_format(handle, params, hwparams.format);
 	if (err < 0) {
 		error("Sample format non available");
 		exit(EXIT_FAILURE);
 	}
-	err = snd_pcm_hw_params_set_channels(handle, params, SND_CHANGE, hwparams.channels);
+	err = snd_pcm_hw_params_set_channels(handle, params, hwparams.channels);
 	if (err < 0) {
 		error("Channels count non available");
 		exit(EXIT_FAILURE);
 	}
 
 #if 0
-	err = snd_pcm_hw_params_set_periods_min(handle, params, SND_CHANGE, 2);
+	err = snd_pcm_hw_params_set_periods_min(handle, params, 2);
 	assert(err >= 0);
 #endif
 	err = snd_pcm_hw_params_set_rate_near(handle, params, hwparams.rate, 0);
