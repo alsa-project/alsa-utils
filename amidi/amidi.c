@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
 		return 1;
 
 	if (receive_file_name) {
-		receive_file = creat(receive_file_name, 0);
+		receive_file = creat(receive_file_name, 0666);
 		if (receive_file == -1) {
 			error("cannot create %s: %s", receive_file_name, strerror(errno));
 			return -1;
