@@ -75,10 +75,10 @@ static int interleaved = 1;
 static int nonblock = 0;
 static char *audiobuf = NULL;
 static int buffer_size = -1;
-static int frag_length = 125;
-static int buffer_length = 500;
-static int avail_min = 50;
-static int xfer_min = 50;
+static int frag_length = 125000;
+static int buffer_length = 500000;
+static int avail_min = 50000;
+static int xfer_min = 50000;
 static int verbose = 0;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
@@ -146,10 +146,10 @@ Usage: %s [OPTION]... [FILE]...
 -e, --frame-mode         use frame mode instead of default fragment mode
 -M, --mmap               mmap stream
 -N, --nonblock           nonblocking mode
--F, --fragment-length=#  fragment length is # milliseconds
--B, --buffer-length=#    buffer length is # milliseconds
--A, --avail-min=#        min available space for wakeup is # milliseconds
--X, --xfer-min=#	 min xfer size is # milliseconds
+-F, --fragment-length=#  fragment length is # microseconds
+-B, --buffer-length=#    buffer length is # microseconds
+-A, --avail-min=#        min available space for wakeup is # microseconds
+-X, --xfer-min=#	 min xfer size is # microseconds
 -v, --verbose            show PCM structure and setup
 -I, --separate-channels  one file for each channel
 -P, --iec958p            AES IEC958 professional
@@ -703,14 +703,14 @@ static void set_params(void)
 	info.fragments_min = 2;
 	err = snd_pcm_strategy_simple(&strategy, 1000000, 2000000);
 	assert(err >= 0);
-	err = snd_pcm_strategy_simple_near(strategy, 0, SND_PCM_HW_PARAM_RATE,
-					   hwparams.rate, 10);
+	err = snd_pcm_strategy_simple_near(strategy, 0, SND_PCM_HW_INFO_RATE,
+					   hwparams.rate, 1);
 	assert(err >= 0);
-	err = snd_pcm_strategy_simple_near(strategy, 1, SND_PCM_HW_PARAM_FRAGMENT_SIZE,
-					   hwparams.rate * frag_length / 1000, 1);
+	err = snd_pcm_strategy_simple_near(strategy, 1, SND_PCM_HW_INFO_FRAGMENT_LENGTH,
+					   frag_length, 1);
 	assert(err >= 0);
-	err = snd_pcm_strategy_simple_near(strategy, 2, SND_PCM_HW_PARAM_BUFFER_SIZE,
-					   hwparams.rate * buffer_length / 1000, 1);
+	err = snd_pcm_strategy_simple_near(strategy, 2, SND_PCM_HW_INFO_BUFFER_LENGTH,
+					   buffer_length, 1);
 	assert(err >= 0);
 	err = snd_pcm_hw_info_strategy(handle, &info, strategy);
 	snd_pcm_strategy_free(strategy);
@@ -733,8 +733,8 @@ static void set_params(void)
 	swparams.start_mode = SND_PCM_START_DATA;
 	swparams.ready_mode = ready_mode;
 	swparams.xrun_mode = xrun_mode;
-	swparams.avail_min = hwparams.rate * avail_min / 1000;
-	swparams.xfer_min = hwparams.rate * xfer_min / 1000;
+	swparams.avail_min = hwparams.rate * avail_min / 1000000;
+	swparams.xfer_min = hwparams.rate * xfer_min / 1000000;
 	if (xrun_mode == SND_PCM_XRUN_FRAGMENT)
 		swparams.xfer_align = hwparams.fragment_size;
 	else
