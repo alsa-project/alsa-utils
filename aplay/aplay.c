@@ -104,6 +104,7 @@ static void begin_voc(int fd, size_t count);
 static void end_voc(int fd);
 static void begin_wave(int fd, size_t count);
 static void end_wave(int fd);
+static void end_raw(int fd);
 static void begin_au(int fd, size_t count);
 static void end_au(int fd);
 
@@ -112,7 +113,7 @@ struct fmt_capture {
 	void (*end) (int fd);
 	char *what;
 } fmt_rec_table[] = {
-	{	NULL,		end_wave,	"raw data"	},
+	{	NULL,		end_raw,	"raw data"	},
 	{	begin_voc,	end_voc,	"VOC"		},
 	{	begin_wave,	end_wave,	"WAVE"		},
 	{	begin_au,	end_au,		"Sparc Audio"	}
@@ -1576,6 +1577,12 @@ static void end_voc(int fd)
 		write(fd, &bt, sizeof(VocBlockType));
 	if (fd != 1)
 		close(fd);
+}
+
+static void end_raw(int fd)
+{                              /* REALLY only close output */
+       if (fd != 1)
+               close(fd);
 }
 
 static void end_wave(int fd)
