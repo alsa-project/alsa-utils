@@ -38,6 +38,7 @@
 #define HELPID_INACTIVE		1004
 #define HELPID_DEBUG            1005
 #define HELPID_VERSION		1006
+#define HELPID_NOCHECK		1007
 
 #define LEVEL_BASIC		(1<<0)
 #define LEVEL_INACTIVE		(1<<1)
@@ -45,6 +46,7 @@
 
 int quiet = 0;
 int debugflag = 0;
+int no_check = 0;
 char card[64] = "default";
 
 static void error(const char *fmt,...)
@@ -66,6 +68,7 @@ static int help(void)
 	printf("  -c,--card N     select the card\n");
 	printf("  -D,--device N   select the device, default '%s'\n", card);
 	printf("  -d,--debug      debug mode\n");
+	printf("  -n,--nocheck    do not perform range checking\n");
 	printf("  -v,--version    print version of this program\n");
 	printf("  -q,--quiet      be quiet\n");
 	printf("  -i,--inactive   show also inactive controls\n");
@@ -161,6 +164,8 @@ static const char *control_access(snd_ctl_elem_info_t *info)
 
 static int check_range(int val, int min, int max)
 {
+	if (no_check)
+		return val;
 	if (val < min)
 		return min;
 	if (val > max)
@@ -1456,6 +1461,7 @@ int main(int argc, char *argv[])
 		{"quiet", 0, NULL, HELPID_QUIET},
 		{"inactive", 0, NULL, HELPID_INACTIVE},
 		{"debug", 0, NULL, HELPID_DEBUG},
+		{"nocheck", 0, NULL, HELPID_NOCHECK},
 		{"version", 0, NULL, HELPID_VERSION},
 		{NULL, 0, NULL, 0},
 	};
@@ -1464,7 +1470,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hc:D:qidv", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hc:D:qidnv", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
@@ -1500,6 +1506,10 @@ int main(int argc, char *argv[])
 		case 'd':
 		case HELPID_DEBUG:
 			debugflag = 1;
+			break;
+		case 'n':
+		case HELPID_NOCHECK:
+			no_check = 1;
 			break;
 		case 'v':
 		case HELPID_VERSION:
