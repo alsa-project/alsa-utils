@@ -264,10 +264,10 @@ gint conf_win( void ) {
 			}
 			ccard[i].m[j].ee_en=(gint *)g_malloc(cards[i].mixer[j].ee_n *
 												 sizeof(gint));
-			if( ccard[i].m[j].ee_en == NULL ) {
+			if( cards[i].mixer[j].ee_n && ccard[i].m[j].ee_en == NULL) {
 				fprintf(stderr,nomem_msg);
-				g_free(ccard[i].m);
 				g_free(ccard[i].m[j].g_en);
+				g_free(ccard[i].m);
 				g_free(ccard);
 				return -1;
 			}
