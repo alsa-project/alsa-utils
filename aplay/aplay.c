@@ -111,44 +111,6 @@ struct fmt_capture {
 	{	begin_au,	end_wave,	"Sparc Audio"	}
 };
 
-typedef struct {
-	int value;
-	const char* desc;
-} assoc_t;
-
-static const char *assoc(int value, assoc_t *alist)
-{
-	while (alist->desc) {
-		if (value == alist->value)
-			return alist->desc;
-		alist++;
-	}
-	return "UNKNOWN";
-}
-
-#define CHN(v) { SND_PCM_CHANNEL_##v, #v }
-#define MODE(v) { SND_PCM_MODE_##v, #v }
-#define FMT(v) { SND_PCM_SFMT_##v, #v }
-#define XRUN(v) { SND_PCM_XRUN_##v, #v }
-#define START(v) { SND_PCM_START_##v, #v }
-#define FILL(v) { SND_PCM_FILL_##v, #v }
-#define END { 0, NULL }
-
-static assoc_t chns[] = { CHN(PLAYBACK), CHN(CAPTURE), END };
-static assoc_t modes[] = { MODE(STREAM), MODE(BLOCK), END };
-static assoc_t fmts[] = { FMT(S8), FMT(U8),
-			  FMT(S16_LE), FMT(S16_BE), FMT(U16_LE), FMT(U16_BE), 
-			  FMT(S24_LE), FMT(S24_BE), FMT(U24_LE), FMT(U24_BE), 
-			  FMT(S32_LE), FMT(S32_BE), FMT(U32_LE), FMT(U32_BE),
-			  FMT(FLOAT_LE), FMT(FLOAT_BE), FMT(FLOAT64_LE), FMT(FLOAT64_BE),
-			  FMT(IEC958_SUBFRAME_LE), FMT(IEC958_SUBFRAME_BE),
-			  FMT(MU_LAW), FMT(A_LAW), FMT(IMA_ADPCM),
-			  FMT(MPEG), FMT(GSM), FMT(SPECIAL), END };
-static assoc_t starts[] = { START(GO), START(DATA), START(FULL), END };
-static assoc_t xruns[] = { XRUN(FLUSH), XRUN(DRAIN), END };
-static assoc_t fills[] = { FILL(NONE), FILL(SILENCE_WHOLE), FILL(SILENCE), END };
-static assoc_t onoff[] = { {0, "OFF"}, {1, "ON"}, {-1, "ON"}, END };
-
 static void check_new_format(snd_pcm_format_t * format)
 {
         if (cinfo.rates & (SND_PCM_RATE_CONTINUOUS|SND_PCM_RATE_KNOT)) {
@@ -201,7 +163,7 @@ static void check_new_format(snd_pcm_format_t * format)
 
 static void usage(char *command)
 {
-	assoc_t *f;
+	int k;
 	fprintf(stderr,
 		"Usage: %s [switches] [filename] <filename> ...\n"
 		"Available switches:\n"
@@ -230,8 +192,11 @@ static void usage(char *command)
 		"  -S            Show setup\n"
 		,command, snd_cards()-1);
 	fprintf(stderr, "\nRecognized data formats are:");
-	for (f = fmts; f->desc; ++f)
-		fprintf(stderr, " %s", f->desc);
+	for (k = 0; k < 32; ++k) {
+		const char *s = snd_pcm_get_format_name(k);
+		if (s)
+			fprintf(stderr, " %s", s);
+	}
 	fprintf(stderr, " (some of these may not be available on selected hardware)\n");
 }
 
@@ -406,21 +371,14 @@ int main(int argc, char *argv[])
 			verbose_mode = 1;
 			quiet_mode = 0;
 			break;
-		case 'f': {
-			assoc_t *f;
-			for (f = fmts; f->desc; ++f) {
-				if (!strcasecmp(optarg, f->desc)) {
-					break;
-				}
-			}
-			if (!f->desc) {
+		case 'f':
+			rformat.format = snd_pcm_get_format_value(optarg);
+			if (rformat.format < 0) {
 				fprintf(stderr, "Error: wrong extended format '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 			}
-			rformat.format = f->value;
 			active_format = FORMAT_RAW;
 			break;
-		}
 		case 'm':
 		case 'M':
 			rformat.format = SND_PCM_SFMT_S16_LE;
@@ -634,31 +592,6 @@ static int test_au(int fd, void *buffer)
 	return 0;
 }
 
-static void setup_print(snd_pcm_channel_setup_t *setup)
-{
-	fprintf(stderr, "channel: %s\n", assoc(setup->channel, chns));
-	fprintf(stderr, "mode: %s\n", assoc(setup->mode, modes));
-	fprintf(stderr, "format: %s\n", assoc(setup->format.format, fmts));
-	fprintf(stderr, "voices: %d\n", setup->format.voices);
-	fprintf(stderr, "rate: %d\n", setup->format.rate);
-	// digital
-	fprintf(stderr, "start_mode: %s\n", assoc(setup->start_mode, starts));
-	fprintf(stderr, "xrun_mode: %s\n", assoc(setup->xrun_mode, xruns));
-	fprintf(stderr, "time: %s\n", assoc(setup->time, onoff));
-	// ust_time
-	// sync
-	fprintf(stderr, "buffer_size: %d\n", setup->buffer_size);
-	fprintf(stderr, "frag_size: %d\n", setup->frag_size);
-	fprintf(stderr, "frags: %d\n", setup->frags);
-	fprintf(stderr, "byte_boundary: %d\n", setup->byte_boundary);
-	fprintf(stderr, "msbits_per_sample: %d\n", setup->msbits_per_sample);
-	fprintf(stderr, "bytes_min: %d\n", setup->bytes_min);
-	fprintf(stderr, "bytes_align: %d\n", setup->bytes_align);
-	fprintf(stderr, "bytes_xrun_max: %d\n", setup->bytes_xrun_max);
-	fprintf(stderr, "fill: %s\n", assoc(setup->fill_mode, fills));
-	fprintf(stderr, "bytes_fill_max: %d\n", setup->bytes_fill_max);
-}
-
 static void set_params(void)
 {
 	snd_pcm_channel_params_t params;
@@ -708,7 +641,7 @@ static void set_params(void)
 	}
 
 	if (show_setup)
-		setup_print(&setup);
+		snd_pcm_dump_setup(pcm_handle, channel, stderr);
 
 	buffer_size = setup.frag_size;
 	audiobuf = (char *)realloc(audiobuf, buffer_size > 1024 ? buffer_size : 1024);
@@ -1370,7 +1303,7 @@ static void header(int rtype, char *name)
 			(channel == SND_PCM_CHANNEL_PLAYBACK) ? "Playing" : "Recording",
 			fmt_rec_table[rtype].what,
 			name);
-		fprintf(stderr, "%s, ", snd_pcm_get_format_name(format.format));
+		fprintf(stderr, "%s, ", snd_pcm_get_format_description(format.format));
 		fprintf(stderr, "Rate %d Hz, ", format.rate);
 		if (format.voices == 1)
 			fprintf(stderr, "Mono");
