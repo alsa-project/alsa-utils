@@ -98,7 +98,8 @@ static int soundcard_setup_merge_control(struct ctl_control *cctl, struct ctl_co
 			if (cctl1->c.id.iface == uctl->c.id.iface &&
 			    cctl1->c.id.device == uctl->c.id.device &&
 			    cctl1->c.id.subdevice == uctl->c.id.subdevice &&
-			    !strncmp(cctl1->c.id.name, uctl->c.id.name, sizeof(cctl1->c.id.name))) {
+			    !strncmp(cctl1->c.id.name, uctl->c.id.name, sizeof(cctl1->c.id.name)) &&
+			    cctl1->c.id.index == uctl->c.id.index) {
 				merge_one_control(cctl1, uctl, cardno);
 				break;
 			}
