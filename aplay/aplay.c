@@ -788,7 +788,6 @@ static void set_params(void)
 	params.start_mode = SND_PCM_START_DATA;
 	params.xfer_mode = xfer_mode;
 	params.xrun_mode = xrun_mode;
-	params.xrun_act = SND_PCM_XRUN_ACT_DRAIN;
 	params.frag_size = format.rate * frag_length / 1000;
 	params.buffer_size = format.rate * buffer_length / 1000;
 	params.avail_min = format.rate * avail_min / 1000;
