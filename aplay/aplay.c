@@ -92,7 +92,7 @@ static size_t chunk_bytes;
 static snd_output_t *log;
 
 static int fd = -1;
-static size_t count, fdcount;
+static size_t pbrec_count = (size_t)-1, fdcount;
 static int vocmajor, vocminor;
 
 /* needed prototypes */
@@ -224,7 +224,7 @@ static void device_list(void)
 				snd_pcm_info_get_name(pcminfo));
 			count = snd_pcm_info_get_subdevices_count(pcminfo);
 			fprintf(stderr, "  Subdevices: %i/%i\n", snd_pcm_info_get_subdevices_avail(pcminfo), count);
-			for (idx = 0; idx < count; idx++) {
+			for (idx = 0; idx < (int)count; idx++) {
 				snd_pcm_info_set_subdevice(pcminfo, idx);
 				if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
 					error("control digital audio playback info (%i): %s", card, snd_strerror(err));
@@ -574,7 +574,7 @@ size_t test_wavefile_read(int fd, char *buffer, size_t *size, size_t reqsize, in
 {
 	if (*size >= reqsize)
 		return *size;
-	if (safe_read(fd, buffer + *size, reqsize - *size) != reqsize - *size) {
+	if ((size_t)safe_read(fd, buffer + *size, reqsize - *size) != reqsize - *size) {
 		error("read error (called from line %i)", line);
 		exit(EXIT_FAILURE);
 	}
@@ -691,8 +691,8 @@ static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
 			memmove(buffer, buffer + sizeof(WaveChunkHeader), size - sizeof(WaveChunkHeader));
 		size -= sizeof(WaveChunkHeader);
 		if (type == WAV_DATA) {
-			if (len < count)
-				count = len;
+			if (len < pbrec_count)
+				pbrec_count = len;
 			if (size > 0)
 				memcpy(_buffer, buffer, size);
 			free(buffer);
@@ -721,7 +721,7 @@ static int test_au(int fd, void *buffer)
 		return -1;
 	if (BE_INT(ap->hdr_size) > 128 || BE_INT(ap->hdr_size) < 24)
 		return -1;
-	count = BE_INT(ap->data_size);
+	pbrec_count = BE_INT(ap->data_size);
 	switch (BE_INT(ap->encoding)) {
 	case AU_FMT_ULAW:
 		hwparams.format = SND_PCM_FORMAT_MU_LAW;
@@ -741,7 +741,7 @@ static int test_au(int fd, void *buffer)
 	hwparams.channels = BE_INT(ap->channels);
 	if (hwparams.channels < 1 || hwparams.channels > 128)
 		return -1;
-	if (safe_read(fd, buffer + sizeof(AuHeader), BE_INT(ap->hdr_size) - sizeof(AuHeader)) != BE_INT(ap->hdr_size) - sizeof(AuHeader)) {
+	if ((size_t)safe_read(fd, buffer + sizeof(AuHeader), BE_INT(ap->hdr_size) - sizeof(AuHeader)) != BE_INT(ap->hdr_size) - sizeof(AuHeader)) {
 		error("read error");
 		exit(EXIT_FAILURE);
 	}
@@ -990,7 +990,7 @@ static ssize_t pcm_write(u_char *data, size_t count)
 	}
 	while (count > 0) {
 		r = writei_func(handle, data, count);
-		if (r == -EAGAIN || (r >= 0 && r < count)) {
+		if (r == -EAGAIN || (r >= 0 && (size_t)r < count)) {
 			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
 			xrun();
@@ -1032,7 +1032,7 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
 		for (channel = 0; channel < channels; channel++)
 			bufs[channel] = data[channel] + offset * bits_per_sample / 8;
 		r = writen_func(handle, bufs, count);
-		if (r == -EAGAIN || (r >= 0 && r < count)) {
+		if (r == -EAGAIN || (r >= 0 && (size_t)r < count)) {
 			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
 			xrun();
@@ -1071,7 +1071,7 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 
 	while (count > 0) {
 		r = readi_func(handle, data, count);
-		if (r == -EAGAIN || (r >= 0 && r < count)) {
+		if (r == -EAGAIN || (r >= 0 && (size_t)r < count)) {
 			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
 			xrun();
@@ -1110,7 +1110,7 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 		for (channel = 0; channel < channels; channel++)
 			bufs[channel] = data[channel] + offset * bits_per_sample / 8;
 		r = readn_func(handle, bufs, count);
-		if (r == -EAGAIN || (r >= 0 && r < count)) {
+		if (r == -EAGAIN || (r >= 0 && (size_t)r < count)) {
 			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
 			xrun();
@@ -1149,8 +1149,8 @@ static ssize_t voc_pcm_write(u_char *data, size_t count)
 		data += size;
 		count -= size;
 		buffer_pos += size;
-		if (buffer_pos == chunk_bytes) {
-			if ((r = pcm_write(audiobuf, chunk_size)) != chunk_size)
+		if ((size_t)buffer_pos == chunk_bytes) {
+			if ((size_t)(r = pcm_write(audiobuf, chunk_size)) != chunk_size)
 				return r;
 			buffer_pos = 0;
 		}
@@ -1173,7 +1173,7 @@ static void voc_write_silence(unsigned x)
 		l = x;
 		if (l > chunk_size)
 			l = chunk_size;
-		if (voc_pcm_write(buf, l) != l) {
+		if (voc_pcm_write(buf, l) != (ssize_t)l) {
 			error("write error");
 			exit(EXIT_FAILURE);
 		}
@@ -1192,7 +1192,7 @@ static void voc_pcm_flush(void)
 		} else {
 			b = buffer_pos * 8 / bits_per_frame;
 		}
-		if (pcm_write(audiobuf, b) != b)
+		if (pcm_write(audiobuf, b) != (ssize_t)b)
 			error("voc_pcm_flush error");
 	}
 	snd_pcm_drain(handle);
@@ -1224,8 +1224,8 @@ static void voc_play(int fd, int ofs, char *name)
 		fprintf(stderr, "Playing Creative Labs Channel file '%s'...\n", name);
 	}
 	/* first we waste the rest of header, ugly but we don't need seek */
-	while (ofs > chunk_bytes) {
-		if (safe_read(fd, buf, chunk_bytes) != chunk_bytes) {
+	while (ofs > (ssize_t)chunk_bytes) {
+		if ((size_t)safe_read(fd, buf, chunk_bytes) != chunk_bytes) {
 			error("read error");
 			exit(EXIT_FAILURE);
 		}
@@ -1396,7 +1396,7 @@ static void voc_play(int fd, int ofs, char *name)
 		}		/* while (! nextblock)  */
 		/* put nextblock data bytes to dsp */
 		l = in_buffer;
-		if (nextblock < l)
+		if (nextblock < (size_t)l)
 			l = nextblock;
 		if (l) {
 			if (output && !quiet_mode) {
@@ -1431,13 +1431,13 @@ static size_t calc_count(void)
 	size_t count;
 
 	if (!timelimit) {
-		count = -1;
+		count = (size_t)-1;
 	} else {
 		count = snd_pcm_format_size(hwparams.format,
 					    timelimit * hwparams.rate *
 					    hwparams.channels);
 	}
-	return count;
+	return count < pbrec_count ? count : pbrec_count;
 }
 
 /* write a .VOC-header */
@@ -1713,7 +1713,7 @@ void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
 			if (r == 0)
 				break;
 			l += r;
-		} while (sleep_min == 0 && l < chunk_bytes);
+		} while (sleep_min == 0 && (size_t)l < chunk_bytes);
 		l = l * 8 / bits_per_frame;
 		r = pcm_write(audiobuf, l);
 		if (r != l)
@@ -1740,7 +1740,7 @@ void capture_go(int fd, size_t count, int rtype, char *name)
 		if (c > chunk_bytes)
 			c = chunk_bytes;
 		c = c * 8 / bits_per_frame;
-		if ((r = pcm_read(audiobuf, c)) != c)
+		if ((size_t)(r = pcm_read(audiobuf, c)) != c)
 			break;
 		r = r * bits_per_frame / 8;
 		if ((err = write(fd, audiobuf, r)) != r) {
@@ -1775,36 +1775,36 @@ static void playback(char *name)
 	}
 	/* read the file header */
 	dta = sizeof(AuHeader);
-	if (safe_read(fd, audiobuf, dta) != dta) {
+	if ((size_t)safe_read(fd, audiobuf, dta) != dta) {
 		error("read error");
 		exit(EXIT_FAILURE);
 	}
 	if (test_au(fd, audiobuf) >= 0) {
 		rhwparams.format = SND_PCM_FORMAT_MU_LAW;
-		count = calc_count();
-		playback_go(fd, 0, count, FORMAT_AU, name);
+		pbrec_count = calc_count();
+		playback_go(fd, 0, pbrec_count, FORMAT_AU, name);
 		goto __end;
 	}
 	dta = sizeof(VocHeader);
-	if (safe_read(fd, audiobuf + sizeof(AuHeader),
+	if ((size_t)safe_read(fd, audiobuf + sizeof(AuHeader),
 		 dta - sizeof(AuHeader)) != dta - sizeof(AuHeader)) {
 		error("read error");
 		exit(EXIT_FAILURE);
 	}
 	if ((ofs = test_vocfile(audiobuf)) >= 0) {
-		count = calc_count();
+		pbrec_count = calc_count();
 		voc_play(fd, ofs, name);
 		goto __end;
 	}
 	/* read bytes for WAVE-header */
 	if ((dtawave = test_wavefile(fd, audiobuf, dta)) >= 0) {
-		count = calc_count();
-		playback_go(fd, dtawave, count, FORMAT_WAVE, name);
+		pbrec_count = calc_count();
+		playback_go(fd, dtawave, pbrec_count, FORMAT_WAVE, name);
 	} else {
 		/* should be raw data */
 		init_raw_data();
-		count = calc_count();
-		playback_go(fd, dta, count, FORMAT_RAW, name);
+		pbrec_count = calc_count();
+		playback_go(fd, dta, pbrec_count, FORMAT_RAW, name);
 	}
       __end:
 	if (fd != 0)
@@ -1824,15 +1824,15 @@ static void capture(char *name)
 		}
 	}
 	fdcount = 0;
-	count = calc_count();
-	count += count % 2;
-	if (count == 0)
-		count -= 2;
+	pbrec_count = calc_count();
 	/* WAVE-file should be even (I'm not sure), but wasting one byte
 	   isn't a problem (this can only be in 8 bit mono) */
+	pbrec_count += pbrec_count % 2;
+	if (pbrec_count == 0)
+		pbrec_count -= 2;
 	if (fmt_rec_table[file_type].start)
-		fmt_rec_table[file_type].start(fd, count);
-	capture_go(fd, count, file_type, name);
+		fmt_rec_table[file_type].start(fd, pbrec_count);
+	capture_go(fd, pbrec_count, file_type, name);
 	fmt_rec_table[file_type].end(fd);
 }
 
@@ -1878,7 +1878,7 @@ void playbackv_go(int* fds, unsigned int channels, size_t loaded, size_t count, 
 		} while (sleep_min == 0 && c < expected);
 		c = c * 8 / bits_per_sample;
 		r = pcm_writev(bufs, channels, c);
-		if (r != c)
+		if ((size_t)r != c)
 			break;
 		r = r * bits_per_frame / 8;
 		count -= r;
@@ -1908,11 +1908,11 @@ void capturev_go(int* fds, unsigned int channels, size_t count, int rtype, char 
 		if (c > chunk_bytes)
 			c = chunk_bytes;
 		c = c * 8 / bits_per_frame;
-		if ((r = pcm_readv(bufs, channels, c)) != c)
+		if ((size_t)(r = pcm_readv(bufs, channels, c)) != c)
 			break;
 		rv = r * bits_per_sample / 8;
 		for (channel = 0; channel < channels; ++channel) {
-			if (write(fds[channel], bufs[channel], rv) != rv) {
+			if ((size_t)write(fds[channel], bufs[channel], rv) != rv) {
 				perror(names[channel]);
 				exit(EXIT_FAILURE);
 			}
@@ -1960,8 +1960,8 @@ static void playbackv(char **names, unsigned int count)
 	}
 	/* should be raw data */
 	init_raw_data();
-	count = calc_count();
-	playbackv_go(fds, channels, 0, count, FORMAT_RAW, names);
+	pbrec_count = calc_count();
+	playbackv_go(fds, channels, 0, pbrec_count, FORMAT_RAW, names);
 
       __end:
 	for (channel = 0; channel < channels; ++channel) {
@@ -2013,8 +2013,8 @@ static void capturev(char **names, unsigned int count)
 	}
 	/* should be raw data */
 	init_raw_data();
-	count = calc_count();
-	capturev_go(fds, channels, count, FORMAT_RAW, names);
+	pbrec_count = calc_count();
+	capturev_go(fds, channels, pbrec_count, FORMAT_RAW, names);
 
       __end:
 	for (channel = 0; channel < channels; ++channel) {
