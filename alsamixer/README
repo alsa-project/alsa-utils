@@ -79,5 +79,6 @@ You can exit with ALT + Q, or by hitting ESC.
 
 -----------------------------------------------------------------
 
-alsamixer is by Jaroslav Kysela <perex@jcu.cz>
-This document is by Paul Winkler <zarmzarm@erols.com>
+Alsamixer has been written by Tim Janik <timj@gtk.org> and
+been furtherly improved by Jaroslav Kysela <perex@jcu.cz>.
+This document was provided by Paul Winkler <zarmzarm@erols.com>.
