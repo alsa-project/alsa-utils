@@ -178,8 +178,8 @@ static snd_mixer_sid_t __simple_id ATTRIBUTE_UNUSED;
 
 static char *simple_name(const char *name, char *result)
 {
-	strncpy(result, name, simple_name_size);
-	result[simple_name_size] = '\0';
+	strncpy(result, name, simple_name_size - 1);
+	result[simple_name_size - 1] = '\0';
 	return result;
 }
 
