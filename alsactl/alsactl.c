@@ -68,7 +68,7 @@ char *id_str(snd_ctl_elem_id_t *id)
 	static char str[128];
 	assert(id);
 	sprintf(str, "%i,%i,%i,%s,%i", 
-		snd_enum_to_int(snd_ctl_elem_id_get_interface(id)),
+		snd_ctl_elem_id_get_interface(id),
 		snd_ctl_elem_id_get_device(id),
 		snd_ctl_elem_id_get_subdevice(id),
 		snd_ctl_elem_id_get_name(id),
@@ -215,7 +215,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		return err;
 	}
 
-	switch (snd_enum_to_int(type)) {
+	switch (type) {
 	case SND_CTL_ELEM_TYPE_BOOLEAN:
 		break;
 	case SND_CTL_ELEM_TYPE_INTEGER:
@@ -294,7 +294,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		}
 	}
 
-	switch (snd_enum_to_int(type)) {
+	switch (type) {
 	case SND_CTL_ELEM_TYPE_BYTES:
 	case SND_CTL_ELEM_TYPE_IEC958:
 	{
@@ -322,7 +322,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 	}
 
 	if (count == 1) {
-		switch (snd_enum_to_int(type)) {
+		switch (type) {
 		case SND_CTL_ELEM_TYPE_BOOLEAN:
 			err = snd_config_string_add(control, "value", snd_ctl_elem_value_get_boolean(ctl, 0) ? "true" : "false");
 			if (err < 0) {
@@ -354,7 +354,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 			return 0;
 		}
 		default:
-			error("Unknown control type: %d\n", snd_enum_to_int(type));
+			error("Unknown control type: %d\n", type);
 			return -EINVAL;
 		}
 	}
@@ -365,7 +365,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		return err;
 	}
 
-	switch (snd_enum_to_int(type)) {
+	switch (type) {
 	case SND_CTL_ELEM_TYPE_BOOLEAN:
 		for (idx = 0; idx < count; idx++) {
 			err = snd_config_string_add(value, num_str(idx), snd_ctl_elem_value_get_boolean(ctl, idx) ? "true" : "false");
@@ -403,7 +403,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		}
 		break;
 	default:
-		error("Unknown control type: %d\n", snd_enum_to_int(type));
+		error("Unknown control type: %d\n", type);
 		return -EINVAL;
 	}
 	
@@ -519,7 +519,7 @@ static int config_iface(snd_config_t *n)
 	unsigned long i;
 	snd_ctl_elem_iface_t idx;
 	const char *str;
-	switch (snd_enum_to_int(snd_config_get_type(n))) {
+	switch (snd_config_get_type(n)) {
 	case SND_CONFIG_TYPE_INTEGER:
 		snd_config_get_integer(n, &i);
 		return i;
@@ -531,7 +531,7 @@ static int config_iface(snd_config_t *n)
 	}
 	for (idx = 0; idx <= SND_CTL_ELEM_IFACE_LAST; snd_enum_incr(idx)) {
 		if (strcasecmp(snd_ctl_elem_iface_name(idx), str) == 0)
-			return snd_enum_to_int(idx);
+			return idx;
 	}
 	return -1;
 }
@@ -540,7 +540,7 @@ static int config_bool(snd_config_t *n)
 {
 	const char *str;
 	long val;
-	switch (snd_enum_to_int(snd_config_get_type(n))) {
+	switch (snd_config_get_type(n)) {
 	case SND_CONFIG_TYPE_INTEGER:
 		snd_config_get_integer(n, &val);
 		if (val < 0 || val > 1)
@@ -565,7 +565,7 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 	const char *str;
 	long val;
 	unsigned int idx, items;
-	switch (snd_enum_to_int(snd_config_get_type(n))) {
+	switch (snd_config_get_type(n)) {
 	case SND_CONFIG_TYPE_INTEGER:
 		snd_config_get_integer(n, &val);
 		return val;
@@ -697,7 +697,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		return -ENOENT;
 	}
 	numid1 = snd_ctl_elem_info_get_numid(info);
-	iface1 = snd_enum_to_int(snd_ctl_elem_info_get_interface(info));
+	iface1 = snd_ctl_elem_info_get_interface(info);
 	device1 = snd_ctl_elem_info_get_device(info);
 	subdevice1 = snd_ctl_elem_info_get_subdevice(info);
 	name1 = snd_ctl_elem_info_get_name(info);
@@ -723,7 +723,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	snd_ctl_elem_value_set_numid(ctl, numid);
 
 	if (count == 1) {
-		switch (snd_enum_to_int(type)) {
+		switch (type) {
 		case SND_CTL_ELEM_TYPE_BOOLEAN:
 			val = config_bool(value);
 			if (val >= 0) {
@@ -749,11 +749,11 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		case SND_CTL_ELEM_TYPE_IEC958:
 			break;
 		default:
-			error("Unknow control type: %d", snd_enum_to_int(type));
+			error("Unknow control type: %d", type);
 			return -EINVAL;
 		}
 	}
-	switch (snd_enum_to_int(type)) {
+	switch (type) {
 	case SND_CTL_ELEM_TYPE_BYTES:
 	case SND_CTL_ELEM_TYPE_IEC958:
 	{
@@ -808,7 +808,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 			error("bad control.%d.value index", numid);
 			return -EINVAL;
 		}
-		switch (snd_enum_to_int(type)) {
+		switch (type) {
 		case SND_CTL_ELEM_TYPE_BOOLEAN:
 			val = config_bool(n);
 			if (val < 0) {

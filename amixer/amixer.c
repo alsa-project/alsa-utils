@@ -337,7 +337,7 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 	count = snd_ctl_elem_info_get_count(info);
 	type = snd_ctl_elem_info_get_type(info);
 	printf("%s; type=%s,access=%s,values=%i", space, control_type(info), control_access(info), count);
-	switch (snd_enum_to_int(type)) {
+	switch (type) {
 	case SND_CTL_ELEM_TYPE_INTEGER:
 		printf(",min=%li,max=%li,step=%li\n", 
 		       snd_ctl_elem_info_get_min(info),
@@ -371,7 +371,7 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 		for (idx = 0; idx < count; idx++) {
 			if (idx > 0)
 				printf(",");
-			switch (snd_enum_to_int(type)) {
+			switch (type) {
 			case SND_CTL_ELEM_TYPE_BOOLEAN:
 				printf("%s", snd_ctl_elem_value_get_boolean(control, idx) ? "on" : "off");
 				break;
@@ -477,7 +477,7 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 			if (snd_mixer_selem_is_playback_mono(elem)) {
 				printf("Mono");
 			} else {
-				for (chn = 0; chn <= SND_MIXER_SCHN_LAST; snd_enum_incr(chn)){
+				for (chn = 0; chn <= SND_MIXER_SCHN_LAST; chn++){
 					if (!snd_mixer_selem_has_playback_channel(elem, chn))
 						continue;
 					printf("%s ", snd_mixer_selem_channel_name(chn));
@@ -491,7 +491,7 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 			if (snd_mixer_selem_is_capture_mono(elem)) {
 				printf("Mono");
 			} else {
-				for (chn = 0; chn <= SND_MIXER_SCHN_LAST; snd_enum_incr(chn)){
+				for (chn = 0; chn <= SND_MIXER_SCHN_LAST; chn++){
 					if (!snd_mixer_selem_has_capture_channel(elem, chn))
 						continue;
 					printf("%s ", snd_mixer_selem_channel_name(chn));
@@ -521,7 +521,7 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 			(snd_mixer_selem_is_capture_mono(elem) || 
 			 (!snd_mixer_selem_has_capture_volume(elem) &&
 			  !snd_mixer_selem_has_capture_switch(elem))));
-		for (chn = 0; chn <= SND_MIXER_SCHN_LAST; snd_enum_incr(chn)) {
+		for (chn = 0; chn <= SND_MIXER_SCHN_LAST; chn++) {
 			if (!snd_mixer_selem_has_playback_channel(elem, chn) &&
 			    !snd_mixer_selem_has_capture_channel(elem, chn))
 				continue;
@@ -777,7 +777,7 @@ static int cset(int argc, char *argv[], int roflag)
 	if (!roflag) {
 		ptr = argv[1];
 		for (idx = 0; idx < count && idx < 128 && *ptr; idx++) {
-			switch (snd_enum_to_int(type)) {
+			switch (type) {
 			case SND_CTL_ELEM_TYPE_BOOLEAN:
 				tmp = 0;
 				if (!strncasecmp(ptr, "on", 2) || !strncasecmp(ptr, "up", 2)) {
@@ -952,7 +952,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 		
 			multi = (strchr(argv[idx], ',') != NULL);
 			ptr = argv[idx];
-			for (chn = 0; chn <= SND_MIXER_SCHN_LAST; snd_enum_incr(chn)) {
+			for (chn = 0; chn <= SND_MIXER_SCHN_LAST; chn++) {
 				long vol;
 				if (!(channels & (1 << chn)) ||
 				    !snd_mixer_selem_has_playback_channel(elem, chn))
