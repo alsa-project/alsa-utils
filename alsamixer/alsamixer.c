@@ -1224,7 +1224,7 @@ mixer_show_text (char *title,
 	}
       if (l <= x2 - x1 - 1)
 	{
-	  mixer_dc (DC_ANY_3);
+	  mixer_dc (DC_CBAR_LABEL);
 	  mvaddstr (y1, x1 + 1 + (x2 - x1 - l) / 2, title);
 	}
       mixer_dc (DC_ANY_4);
