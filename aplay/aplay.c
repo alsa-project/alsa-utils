@@ -34,6 +34,7 @@
 #include <getopt.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <netinet/in.h>
 #include <sys/asoundlib.h>
 #include "aconfig.h"
 #include "formats.h"
