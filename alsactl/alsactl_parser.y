@@ -493,7 +493,9 @@ static void set_switch_boolean(int val)
 	if (sw->value.enable != xx)
 		*Xswitchchange = 1;
 	sw->value.enable = xx;
+#if 0
 	printf("name = '%s', sw->value.enable = %i\n", sw->name, xx);
+#endif
 }
 
 static void set_switch_integer(int val)
