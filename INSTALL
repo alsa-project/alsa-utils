@@ -19,8 +19,8 @@ header file asoundlib.h in $prefix/include/sys directory (usually in
 Compilation from CVS sources
 ----------------------------
 
-You need also GNU packages automake and libtool installed in your system
-to compile CVS sources of alsa-lib package.
+You need also GNU packages autoconf and automake installed in your system
+to compile CVS sources of alsa-utils package.
 
 For compilation you can use these commands:
 
