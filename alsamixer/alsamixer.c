@@ -818,7 +818,7 @@ main (int    argc,
       mixer_do_color = !mixer_do_color;
       break;
     case  'm':
-      mixer_id = CLAMP (optarg[0], '0', '1');
+      mixer_id = CLAMP (optarg[0], '0', '1') - '0';
       break;
     }
   }
