@@ -630,11 +630,13 @@ mixer_write_cbar (int elem_index)
 	snd_mixer_selem_get_capture_switch(elem, chn_left, &sw);
 	snd_mixer_selem_set_capture_switch_all(elem, !sw);
       } else {
-	if (mixer_toggle_capture & MIXER_MASK_LEFT) {
+	if ((mixer_toggle_capture & MIXER_MASK_LEFT) &&
+	    snd_mixer_selem_has_capture_channel(elem, chn_left)) {
 	  snd_mixer_selem_get_capture_switch(elem, chn_left, &sw);
 	  snd_mixer_selem_set_capture_switch(elem, chn_left, !sw);
 	}
 	if (chn_right != SND_MIXER_SCHN_UNKNOWN && 
+	    snd_mixer_selem_has_capture_channel(elem, chn_right) &&
 	    (mixer_toggle_capture & MIXER_MASK_RIGHT)) {
 	  snd_mixer_selem_get_capture_switch(elem, chn_right, &sw);
 	  snd_mixer_selem_set_capture_switch(elem, chn_right, !sw);
@@ -830,18 +832,20 @@ mixer_update_cbar (int elem_index)
    */
   if ((mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SWITCH) &&
       snd_mixer_selem_has_capture_switch(elem)) {
+    int has_r_sw = chn_right != SND_MIXER_SCHN_UNKNOWN &&
+      snd_mixer_selem_has_capture_channel(elem, chn_right);
     snd_mixer_selem_get_capture_switch(elem, chn_left, &swl);
-    if (chn_right != SND_MIXER_SCHN_UNKNOWN)
+    if (has_r_sw)
       snd_mixer_selem_get_capture_switch(elem, chn_right, &swr);
-    if (swl || (chn_right != SND_MIXER_SCHN_UNKNOWN && swr)) {
+    if (swl || (has_r_sw && swr)) {
       mixer_dc (DC_CBAR_CAPTURE);
       mvaddstr (y, x + 1, "CAPTUR");
       if (swl) {
 	mvaddstr (y + 1, x + 1, "L");
-	if (chn_right == SND_MIXER_SCHN_UNKNOWN)
+	if (! has_r_sw)
 	  mvaddstr (y + 1, x + 6, "R");
       }
-      if (chn_right != SND_MIXER_SCHN_UNKNOWN && swr)
+      if (has_r_sw && swr)
 	mvaddstr (y + 1, x + 6, "R");
     } else {
       for (i = 0; i < 6; i++)
@@ -1928,7 +1932,7 @@ main (int    argc,
    */
   signal (SIGINT, mixer_signal_handler);
   signal (SIGTRAP, mixer_signal_handler);
-  signal (SIGABRT, mixer_signal_handler);
+  // signal (SIGABRT, mixer_signal_handler);
   signal (SIGQUIT, mixer_signal_handler);
   signal (SIGBUS, mixer_signal_handler);
   signal (SIGSEGV, mixer_signal_handler);
