@@ -1,3 +1,13 @@
+1999-08-16  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* catch.c : add element tone control.
+	* mkmixer.c :  add element tone control.
+
+1999-08-11  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* catch.c : add 3d effect 7th param.
+	* mkmixer.c : add 3d effect 7th param.
+
 1999-08-04  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
 
 	* probe.c: fixed multi haven element problem.

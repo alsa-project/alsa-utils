@@ -2,7 +2,8 @@
 #include "gamix.h"
 
 static gchar *label_3d[]={
-	"wide","volume","center","space","depth","delay","feedback", "depth rear"};
+	"wide","volume","center","space","depth","delay","feedback","depth rear"};
+static gchar *label_tone[]={"B","T"};
 
 static void close_callback(GtkWidget *,s_mixer *);
 static void volume1_callback(GtkAdjustment *,s_element *);
@@ -15,6 +16,8 @@ static void mux1_callback(GtkItem *,s_element *);
 static void mux2_callback(GtkItem *,s_element *);
 static void sw_3d_callback(GtkToggleButton *,s_element *);
 static void vol_3d_callback(GtkAdjustment *,s_element *);
+static void sw_tone_callback(GtkToggleButton *,s_element *);
+static void vol_tone_callback(GtkAdjustment *,s_element *);
 static void chain_callback2(GtkToggleButton *,s_eelements *);
 static gint mk_element(s_element *,GtkBox *);
 
@@ -236,12 +239,48 @@ static void vol_3d_callback(GtkAdjustment *adj,s_element *e) {
 	}
 }
 
+static void sw_tone_callback(GtkToggleButton *b,s_element *e ) {
+	int err;
+
+	e->e.data.tc1.sw = b->active;
+	e->e.data.tc1.tc=SND_MIXER_TC1_SW;
+	err=snd_mixer_element_write(cards[e->card].mixer[e->mdev].handle,&e->e);
+}
+
+static void vol_tone_callback(GtkAdjustment *adj,s_element *e) {
+	int i,err,*v,value;
+
+	for( i=0 ; i<2 ; i++ ) {
+		if( adj == e->adj[i] ) break;
+	}
+	v=NULL;
+	switch( i ) {
+	case 0:
+		v=&e->e.data.tc1.bass;
+		e->e.data.tc1.tc=SND_MIXER_TC1_BASS;
+		break;
+	case 1:
+		v=&e->e.data.tc1.treble;
+		e->e.data.tc1.tc=SND_MIXER_TC1_TREBLE;
+		break;
+	}
+	value=-(int)adj->value;
+	if( v ) {
+		if( value == *v ) return;
+		*v=value;
+	} else return;
+	err=snd_mixer_element_write(cards[e->card].mixer[e->mdev].handle,&e->e);
+	if( err<0 ) {
+		fprintf(stderr,_("Tone controll write error: %s\n"),snd_strerror(err));
+	}
+}
+
 static void chain_callback2(GtkToggleButton *b,s_eelements *ee ) {
 	ee->chain = b->active;
 }
 
 GtkWidget *make_mixer( gint c_n , gint m_n ) {
-	int i,j,err;
+	int i,j,k,err;
 	GtkWidget *mv_box,*m_name;
 	GtkWidget *s_win;
 	GtkWidget *mh_box;
@@ -290,8 +329,13 @@ GtkWidget *make_mixer( gint c_n , gint m_n ) {
 	gtk_widget_show(mh_box);
 
 	for( i=0 ; i<mixer->groups.groups ; i++ ) {
+		group = &mixer->group[i];
+		k=0;
+		for( j=0 ; j<group->g.elements ; j++ ) {
+			if( group->e[j].e.eid.type ) k++;
+		}
+		if( k==0 ) mixer->group[i].enable=FALSE;
 		if( mixer->group[i].enable ) {
-			group = &mixer->group[i];
 			group->v_frame=frame=gtk_frame_new(NULL);
 			gtk_frame_set_shadow_type(GTK_FRAME(frame),GTK_SHADOW_OUT);
 			gtk_box_pack_start(GTK_BOX(mh_box),frame,
@@ -441,10 +485,33 @@ GtkWidget *make_mixer( gint c_n , gint m_n ) {
 	e->w[NO+2]=NULL; \
 	e->adj[NO]=NULL; \
   }
+#define MIX_TONE_VOL(NO,name,min_name,max_name,sname) \
+  if( e->info.data.tc1.tc & sname ) { \
+    tv_box = gtk_vbox_new(FALSE,2); \
+    gtk_box_pack_start(GTK_BOX(ih_box),tv_box,TRUE,TRUE,0); \
+    c_l=gtk_label_new(label_tone[NO]); \
+    gtk_box_pack_start(GTK_BOX(tv_box),c_l,FALSE,FALSE,0); \
+	gtk_widget_show(c_l); \
+	e->adj[NO]=(GtkAdjustment *)gtk_adjustment_new( \
+	  -(gfloat)e->e.data.tc1.name, \
+	  -(gfloat)e->info.data.tc1.max_name-0.5, \
+	  -(gfloat)e->info.data.tc1.min_name+0.5, \
+	  1.0,4.0,1.0); \
+	gtk_signal_connect(GTK_OBJECT(e->adj[NO]), \
+	  "value_changed",GTK_SIGNAL_FUNC(vol_tone_callback),(gpointer)e);\
+	e->w[NO+1]=gtk_vscale_new(GTK_ADJUSTMENT(e->adj[NO])); \
+	gtk_scale_set_draw_value(GTK_SCALE(e->w[NO+1]),FALSE); \
+	gtk_box_pack_start(GTK_BOX(tv_box), e->w[NO+1],FALSE,FALSE,4); \
+	gtk_widget_show(e->w[NO+1]); \
+	gtk_widget_show(tv_box); \
+  } else { ;\
+	e->w[NO+1]=NULL; \
+	e->adj[NO]=NULL; \
+  }
 
 gint mk_element(s_element *e,GtkBox *iv_box) {
 	int i,j,k;
-	GtkWidget *ih_box;
+	GtkWidget *ih_box,*tv_box;
 	GtkWidget *menu,*c_l,*item;
 
 	ih_box=gtk_hbox_new(TRUE,0);
@@ -650,14 +717,14 @@ gint mk_element(s_element *e,GtkBox *iv_box) {
 		break;
 	case SND_MIXER_ETYPE_3D_EFFECT1:
 		if( e->w == NULL ) {
-			e->w = (GtkWidget **)g_malloc(9*sizeof(GtkWidget *));
+			e->w = (GtkWidget **)g_malloc(10*sizeof(GtkWidget *));
 		}
 		if( e->w == NULL ) {
 			fprintf(stderr,nomem_msg);
 			return -1;
 		}
 		if( e->adj == NULL ) {
-			e->adj=(GtkAdjustment **)g_malloc(7*sizeof(GtkAdjustment *));
+			e->adj=(GtkAdjustment **)g_malloc(8*sizeof(GtkAdjustment *));
 		}
 		if( e->adj==NULL ) {
 			printf(nomem_msg);
@@ -708,6 +775,49 @@ gint mk_element(s_element *e,GtkBox *iv_box) {
 		MIX_3D_VOL(6,feedback,min_feedback,max_feedback,SND_MIXER_EFF1_FEEDBACK);
 		MIX_3D_VOL(7,depth_rear,min_depth_rear,max_depth_rear,SND_MIXER_EFF1_DEPTH_REAR);
 		break;
+	case SND_MIXER_ETYPE_TONE_CONTROL1:
+		if( e->w == NULL ) {
+			e->w = (GtkWidget **)g_malloc(3*sizeof(GtkWidget *));
+		}
+		if( e->w == NULL ) {
+			fprintf(stderr,nomem_msg);
+			return -1;
+		}
+		if( e->adj == NULL ) {
+			e->adj=(GtkAdjustment **)g_malloc(2*sizeof(GtkAdjustment *));
+		}
+		if( e->adj==NULL ) {
+			printf(nomem_msg);
+			return -1;
+		}
+		e->e.data.tc1.tc=e->info.data.tc1.tc;
+		snd_mixer_element_read(cards[e->card].mixer[e->mdev].handle,&e->e);
+		if( e->info.data.tc1.tc &
+			(SND_MIXER_TC1_BASS | SND_MIXER_TC1_TREBLE ) ) {
+			gtk_box_pack_start(iv_box,ih_box,TRUE,TRUE,0);
+			MIX_TONE_VOL(0,bass,min_bass,max_bass,SND_MIXER_TC1_BASS);
+			MIX_TONE_VOL(1,treble,min_treble,max_treble,SND_MIXER_TC1_TREBLE);
+		}
+		if( e->info.data.tc1.tc & SND_MIXER_TC1_SW ) {
+			if( e->info.data.tc1.tc &
+				(SND_MIXER_TC1_BASS | SND_MIXER_TC1_TREBLE ) )
+				ih_box=gtk_hbox_new(FALSE,2);
+			gtk_box_pack_start(iv_box,ih_box,FALSE,FALSE,0);
+			e->w[0]=gtk_toggle_button_new();
+			gtk_box_pack_start(GTK_BOX(ih_box),e->w[0],FALSE,FALSE,4);
+			gtk_widget_set_usize(e->w[0],10,10);
+			gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(e->w[0])
+										,e->e.data.tc1.sw);
+			gtk_widget_show(e->w[0]);
+			gtk_signal_connect(GTK_OBJECT(e->w[0]),"toggled",
+							   GTK_SIGNAL_FUNC(sw_tone_callback),(gpointer)e);
+			c_l=gtk_label_new(_("Enable"));
+			gtk_box_pack_start(GTK_BOX(ih_box),c_l,FALSE,FALSE,0);
+			gtk_widget_show(c_l);
+			gtk_widget_show(ih_box);
+		} else {
+			e->w[0]=NULL;
+		}
 	}
 	gtk_widget_show(ih_box);
 	return 0;

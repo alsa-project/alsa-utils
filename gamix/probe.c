@@ -276,6 +276,7 @@ static gint ab_chk( s_mixer *mixer,snd_mixer_eid_t *eid ) {
 	case SND_MIXER_ETYPE_VOLUME1:
 	case SND_MIXER_ETYPE_VOLUME2:
 	case SND_MIXER_ETYPE_3D_EFFECT1:
+	case SND_MIXER_ETYPE_TONE_CONTROL1:
 		break;
 	default:
 		return FALSE;

@@ -185,5 +185,19 @@ void s_e_chk( s_element *e ) {
 			gtk_signal_emit_by_name(GTK_OBJECT(e->adj[7]),"value_changed");
 		}
 		break;
+	case SND_MIXER_ETYPE_TONE_CONTROL1:
+		if( e->info.data.tc1.tc & SND_MIXER_TC1_SW ) {
+			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(e->w[0]),
+										 e->e.data.tc1.sw);
+		}
+		if( e->info.data.tc1.tc & SND_MIXER_TC1_BASS ) {
+			e->adj[0]->value=-(gfloat)e->e.data.tc1.bass;
+			gtk_signal_emit_by_name(GTK_OBJECT(e->adj[0]),"value_changed");
+		}
+		if( e->info.data.tc1.tc & SND_MIXER_TC1_TREBLE ) {
+			e->adj[1]->value=-(gfloat)e->e.data.tc1.treble;
+			gtk_signal_emit_by_name(GTK_OBJECT(e->adj[1]),"value_changed");
+		}
+		break;
 	}
 }
