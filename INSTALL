@@ -2,6 +2,14 @@
 			ALSA utils installation
 			=======================
 
+Requirements
+------------
+
+alsamixer requires the ncurses library.  Some systems need to install
+the develop package additionally to link with this library.
+
+alsaconf requires dialog or whiptail program to run properly.
+
 Installation
 ------------
 
@@ -13,8 +21,8 @@ For installation you can use these commands:
 If ./configure command complain that alsa-lib package isn't installed,
 please, check if --prefix option is same for alsa-lib and alsa-utils
 package. The configure script from alsa-utils package probably cannot find
-header file asoundlib.h in $prefix/include/sys directory (usually in
-/usr/include/sys directory).
+header file asoundlib.h in $prefix/include/alsa directory (usually in
+/usr/include/alsa directory).
 
 Compilation from CVS sources
 ----------------------------
