@@ -1,4 +1,4 @@
-.TH ALSAMIXER 1 "25 Nov 1998"
+.TH ALSAMIXER 1 "15 May 2001"
 .SH NAME
 alsamixer \- soundcard mixer for ALSA soundcard driver, with ncurses interface
 .SH SYNOPSIS
@@ -20,30 +20,21 @@ soundcard drivers. It supports multiple soundcards with multiple devices.
 Help: show available flags.
 
 .TP
-\fI-c\fP <card number>
+\fI-c\fP <card number or idenfication>
 Select the soundcard to use, if you have more than one. Cards are
-numbered from 1 (the default).
+numbered from 0 (the default).
 
 .TP
-\fI-m\fP <device number>
-Select the soundcard device to control, if your card has more than
-one. Devices are numbered from 0 (the default). Not to be confused
-with the soundcard mixer channels, which are sometimes also referred
-to as "devices", just to be annoying. Many soundcards will only have
-device 0. Some more complex cards may have more. This flag corresponds
-to the -d flag for \fBamixer\fP, \fBarecord\fP, and \fBaplay\fP.
+\fI-D\fP <device identification>
+Select the mixer device to control.
 
 .TP
-\fI-e\fP
-Start in "exact mode." This will affect the numbers you see displayed
-for volumes, but does not affect operation of the level controls.
-The default behavior is to show levels in percent from 0 to 100. This
-is easy to read, but can mislead you about how much control the
-soundcard actually lets you have. Exact mode, on the other hand, shows
-you the settings as the soundcard itself understands them. In exact
-mode, each channel level is between 0 and a power of 2 minus one
-(e.g. 0-7, or 0-63). Exact mode may also be toggled while alsamixer is
-running, by using \fITAB\fP.
+\fI-g\fP <toggle color settings>
+Toggle the using of colors.
+
+.TP
+\fI-m\fP <minimize mixer window>
+Minimize the mixer window.
 
 .SH KEYBOARD COMMANDS
 \fBalsamixer\fP recognizes the following keyboard commands to control the soundcard. 
@@ -103,12 +94,12 @@ Quit the program with \fIALT Q\fP, or by hitting \fIESC\fP.
 .SH SEE ALSO
 \fB
 amixer(1),
+aplay(1),
 arecord(1)
 \fP
 
 .SH BUGS 
-There is no help screen implemented yet. Some terminal emulators
-(e.g. \fBnxterm\fP) may not
+Some terminal emulators (e.g. \fBnxterm\fP) may not
 work quite right with ncurses, but that's their own damn
 fault. Plain old \fBxterm\fP seems to be fine.
 
