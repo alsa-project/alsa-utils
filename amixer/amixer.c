@@ -735,9 +735,66 @@ int show_group(void *handle, snd_mixer_gid_t *gid, const char *space)
 	
 	bzero(&group, sizeof(group));
 	group.gid = *gid;
-	if ((err = snd_mixer_group(handle, &group)) < 0) {
+	if ((err = snd_mixer_group_read(handle, &group)) < 0) {
 		error("Mixer %i/%i group error: %s", card, device, snd_strerror(err));
 		return -1;
+	}
+	if (group.channels) {
+		printf("  Capabilities:");
+		if (group.caps & SND_MIXER_GRPCAP_VOLUME)
+			printf(" volume");
+		if (group.caps & SND_MIXER_GRPCAP_MUTE)
+			printf(" mute");
+		if (group.caps & SND_MIXER_GRPCAP_JOINTLY_MUTE)
+			printf(" jointly-mute");
+		if (group.caps & SND_MIXER_GRPCAP_RECORD) {
+			printf(" record");
+		} else {
+			group.record = 0;
+		}
+		if (group.caps & SND_MIXER_GRPCAP_JOINTLY_RECORD)
+			printf(" jointly-record");
+		if (group.caps & SND_MIXER_GRPCAP_EXCL_RECORD)
+			printf(" exclusive-record");
+		printf("\n");
+		if ((group.caps & SND_MIXER_GRPCAP_RECORD) &&
+		    (group.caps & SND_MIXER_GRPCAP_EXCL_RECORD))
+			printf("  Record exclusive group: %i\n", group.record_group);
+		printf("  Channels: ");
+		if (group.channels == SND_MIXER_CHN_MASK_MONO) {
+			printf("Mono");
+		} else {
+			if (group.channels & SND_MIXER_CHN_MASK_FRONT_LEFT)
+				printf("Front-Left ");
+			if (group.channels & SND_MIXER_CHN_MASK_FRONT_RIGHT)
+				printf("Front-Right ");
+			if (group.channels & SND_MIXER_CHN_MASK_FRONT_CENTER)
+				printf("Front-Center ");
+			if (group.channels & SND_MIXER_CHN_MASK_REAR_LEFT)
+				printf("Rear-Left ");
+			if (group.channels & SND_MIXER_CHN_MASK_REAR_RIGHT)
+				printf("Rear-Right ");
+			if (group.channels & SND_MIXER_CHN_MASK_WOOFER)
+				printf("Woofer");
+		}
+		printf("\n");
+		printf("  Limits: min = %i, max = %i\n", group.min, group.max);
+		if (group.channels == SND_MIXER_CHN_MASK_MONO) {
+			printf("  Mono: %i [%s]\n", group.front_left, group.mute & SND_MIXER_CHN_MASK_MONO ? "mute" : "on");
+		} else {
+			if (group.channels & SND_MIXER_CHN_MASK_FRONT_LEFT)
+				printf("  Front-Left: %i [%s] [%s]\n", group.front_left, group.mute & SND_MIXER_CHN_MASK_FRONT_LEFT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_FRONT_LEFT ? "record" : "---");
+			if (group.channels & SND_MIXER_CHN_MASK_FRONT_RIGHT)
+				printf("  Front-Right: %i [%s] [%s]\n", group.front_right, group.mute & SND_MIXER_CHN_MASK_FRONT_RIGHT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_FRONT_RIGHT ? "record" : "---");
+			if (group.channels & SND_MIXER_CHN_MASK_FRONT_CENTER)
+				printf("  Front-Center: %i [%s] [%s]\n", group.front_center, group.mute & SND_MIXER_CHN_MASK_FRONT_CENTER ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_FRONT_CENTER ? "record" : "---");
+			if (group.channels & SND_MIXER_CHN_MASK_REAR_LEFT)
+				printf("  Rear-Left: %i [%s] [%s]\n", group.rear_left, group.mute & SND_MIXER_CHN_MASK_REAR_LEFT ? "mute" : "on", group.record & SND_MIXER_CHN_MASK_REAR_LEFT ? "record" : "---");
+			if (group.channels & SND_MIXER_CHN_MASK_REAR_RIGHT)
+				printf("  Rear-Right: %i [%s] [%s]\n", group.rear_right, group.mute &  SND_MIXER_CHN_MASK_REAR_RIGHT ? "mute" : "---", group.record & SND_MIXER_CHN_MASK_REAR_RIGHT ? "record" : "---");
+			if (group.channels & SND_MIXER_CHN_MASK_WOOFER)
+				printf("  Woofer: %i [%s] [%s]\n", group.woofer, group.mute & SND_MIXER_CHN_MASK_WOOFER ? "mute" : "---", group.record & SND_MIXER_CHN_MASK_WOOFER ? "record" : "---");
+		}
 	}
 	group.pelements = (snd_mixer_eid_t *)malloc(group.elements_over * sizeof(snd_mixer_eid_t));
 	if (!group.pelements) {
@@ -746,7 +803,7 @@ int show_group(void *handle, snd_mixer_gid_t *gid, const char *space)
 	}
 	group.elements_size = group.elements_over;
 	group.elements = group.elements_over = 0;
-	if ((err = snd_mixer_group(handle, &group)) < 0) {
+	if ((err = snd_mixer_group_read(handle, &group)) < 0) {
 		error("Mixer %i/%i group (2) error: %s", card, device, snd_strerror(err));
 		return -1;
 	}

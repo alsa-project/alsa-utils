@@ -292,8 +292,8 @@ int init_group(void *handle, Group *group)
 	   and the info about the elements in the group, we'll set up the element array. */
 	int idx, err;
 	
-	if((err = snd_mixer_group(handle, 
-				  &group->group)) < 0) {
+	if((err = snd_mixer_group_read(handle, 
+				       &group->group)) < 0) {
 		printf("Unable to get info for group %s!  ", group->group.gid.name);
 		printf("Error: %s\n", snd_strerror(err));
 		printf("elements_size = %i, elements_over=%i, elements=%i\n",
@@ -310,7 +310,7 @@ int init_group(void *handle, Group *group)
 	}
 	group->group.elements_size = group->group.elements_over;
 	group->group.elements = group->group.elements_over = 0;
-	if ((err = snd_mixer_group(handle, &group->group)) < 0) {
+	if ((err = snd_mixer_group_read(handle, &group->group)) < 0) {
 		printf("Unable to get second group info for group %s.  Error: %s\n", 
 		       group->group.gid.name, snd_strerror(err));
 		printf("elements_size = %i, elements_over=%i, elements=%i\n",
