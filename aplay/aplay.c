@@ -186,7 +186,7 @@ static void device_list(void)
 	while (card >= 0) {
 		char name[32];
 		sprintf(name, "hw:%d", card);
-		if ((err = snd_ctl_open(&handle, name)) < 0) {
+		if ((err = snd_ctl_open(&handle, name, 0)) < 0) {
 			error("control open (%i): %s", card, snd_strerror(err));
 			continue;
 		}
@@ -466,7 +466,7 @@ int main(int argc, char *argv[])
 			goto __diga_end;
 		}
 		sprintf(ctl_name, "hw:%d", ctl_card);
-		if ((err = snd_ctl_open(&ctl_handle, ctl_name)) < 0) {
+		if ((err = snd_ctl_open(&ctl_handle, ctl_name, 0)) < 0) {
 			error("Unable to open the control interface '%s': %s", ctl_name, snd_strerror(err));
 			goto __diga_end;
 		}

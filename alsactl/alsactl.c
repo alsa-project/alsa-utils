@@ -425,7 +425,7 @@ static int get_controls(int cardno, snd_config_t *top)
 	snd_ctl_elem_list_alloca(&list);
 
 	sprintf(name, "hw:%d", cardno);
-	err = snd_ctl_open(&handle, name);
+	err = snd_ctl_open(&handle, name, 0);
 	if (err < 0) {
 		error("snd_ctl_open error: %s", snd_strerror(err));
 		return err;
@@ -878,7 +878,7 @@ static int set_controls(int card, snd_config_t *top)
 	snd_ctl_card_info_alloca(&info);
 
 	sprintf(name, "hw:%d", card);
-	err = snd_ctl_open(&handle, name);
+	err = snd_ctl_open(&handle, name, 0);
 	if (err < 0) {
 		error("snd_ctl_open error: %s", snd_strerror(err));
 		return err;

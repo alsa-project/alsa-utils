@@ -82,7 +82,7 @@ static int info(void)
 	snd_ctl_card_info_alloca(&info);
 	snd_ctl_elem_list_alloca(&clist);
 	
-	if ((err = snd_ctl_open(&handle, card)) < 0) {
+	if ((err = snd_ctl_open(&handle, card, 0)) < 0) {
 		error("Control device %i open error: %s", card, snd_strerror(err));
 		return err;
 	}
@@ -100,7 +100,7 @@ static int info(void)
 		printf("  Controls      : %i\n", snd_ctl_elem_list_get_count(clist));
 	}
 	snd_ctl_close(handle);
-	if ((err = snd_mixer_open(&mhandle)) < 0) {
+	if ((err = snd_mixer_open(&mhandle, 0)) < 0) {
 		error("Mixer open error: %s", snd_strerror(err));
 		return err;
 	}
@@ -402,7 +402,7 @@ static int controls(int level)
 	snd_ctl_elem_id_t *id;
 	snd_ctl_elem_id_alloca(&id);
 	
-	if ((err = snd_hctl_open(&handle, card)) < 0) {
+	if ((err = snd_hctl_open(&handle, card, 0)) < 0) {
 		error("Control %s open error: %s", card, snd_strerror(err));
 		return err;
 	}
@@ -566,7 +566,7 @@ static int selems(int level)
 	snd_mixer_elem_t *elem;
 	snd_mixer_selem_id_alloca(&sid);
 	
-	if ((err = snd_mixer_open(&handle)) < 0) {
+	if ((err = snd_mixer_open(&handle, 0)) < 0) {
 		error("Mixer %s open error: %s", card, snd_strerror(err));
 		return err;
 	}
@@ -759,7 +759,7 @@ static int cset(int argc, char *argv[], int roflag)
 		show_control_id(id);
 		printf("\n");
 	}
-	if ((err = snd_ctl_open(&handle, card)) < 0) {
+	if ((err = snd_ctl_open(&handle, card, 0)) < 0) {
 		error("Control %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
@@ -823,7 +823,7 @@ static int cset(int argc, char *argv[], int roflag)
 	if (!quiet) {
 		snd_hctl_t *hctl;
 		snd_hctl_elem_t *elem;
-		if ((err = snd_hctl_open(&hctl, card)) < 0) {
+		if ((err = snd_hctl_open(&hctl, card, 0)) < 0) {
 			error("Control %s open error: %s\n", card, snd_strerror(err));
 			return err;
 		}
@@ -895,7 +895,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 		fprintf(stderr, "Specify what you want to set...\n");
 		return 1;
 	}
-	if ((err = snd_mixer_open(&handle)) < 0) {
+	if ((err = snd_mixer_open(&handle, 0)) < 0) {
 		error("Mixer %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
@@ -1046,7 +1046,7 @@ static int events(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 	snd_hctl_elem_t *helem;
 	int err;
 
-	if ((err = snd_hctl_open(&handle, card)) < 0) {
+	if ((err = snd_hctl_open(&handle, card, 0)) < 0) {
 		error("Control %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
@@ -1123,7 +1123,7 @@ static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 	snd_mixer_t *handle;
 	int err;
 
-	if ((err = snd_mixer_open(&handle)) < 0) {
+	if ((err = snd_mixer_open(&handle, 0)) < 0) {
 		error("Mixer %s open error: %s", card, snd_strerror(err));
 		return err;
 	}

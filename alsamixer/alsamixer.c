@@ -1252,14 +1252,14 @@ mixer_init (void)
   int err;
   snd_ctl_card_info_alloca(&hw_info);
   
-  if ((err = snd_ctl_open (&ctl_handle, card_id)) < 0)
+  if ((err = snd_ctl_open (&ctl_handle, card_id, 0)) < 0)
     mixer_abort (ERR_OPEN, "snd_ctl_open", err);
   if ((err = snd_ctl_card_info (ctl_handle, hw_info)) < 0)
     mixer_abort (ERR_FCN, "snd_ctl_card_info", err);
   snd_ctl_close (ctl_handle);
   /* open mixer device
    */
-  if ((err = snd_mixer_open (&mixer_handle)) < 0)
+  if ((err = snd_mixer_open (&mixer_handle, 0)) < 0)
     mixer_abort (ERR_FCN, "snd_mixer_open", err);
   if ((err = snd_mixer_attach (mixer_handle, card_id)) < 0)
     mixer_abort (ERR_FCN, "snd_mixer_attach", err);
