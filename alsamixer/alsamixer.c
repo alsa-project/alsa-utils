@@ -1270,7 +1270,7 @@ mixer_reinit (void)
   }
   if (mixer_sid != NULL)
     free(mixer_sid);
-  mixer_sid = malloc(snd_mixer_selem_id_sizeof() * snd_mixer_elem_count(mixer_handle));
+  mixer_sid = malloc(snd_mixer_selem_id_sizeof() * snd_mixer_get_count(mixer_handle));
   if (mixer_sid == NULL)
     mixer_abort (ERR_FCN, "malloc", 0);
   
