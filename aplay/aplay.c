@@ -1305,8 +1305,8 @@ void capture_go(int fd, int loaded, u_long count, int rtype, char *name)
 				}
 				count -= c;
 			}
-			if (l < -1) {
-				fprintf(stderr, "write error\n");
+			if (l < 0) {
+				fprintf(stderr, "read error: %s\n", snd_strerror(l));
 				exit(-1);
 			}
 			if (l == 0)
