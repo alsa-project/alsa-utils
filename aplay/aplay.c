@@ -173,7 +173,7 @@ static void usage(char *command)
 "-I, --separate-channels one file for each channel\n"
 		, command);
 	fprintf(stderr, "Recognized sample formats are:");
-	for (k = 0; k < SND_PCM_FORMAT_LAST; ++(unsigned long) k) {
+	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
 		const char *s = snd_pcm_format_name(k);
 		if (s)
 			fprintf(stderr, " %s", s);
@@ -588,7 +588,7 @@ ssize_t safe_read(int fd, void *buf, size_t count)
 			return result > 0 ? result : res;
 		count -= res;
 		result += res;
-		(char *)buf += res;
+		buf = (char *)buf + res;
 	}
 	return result;
 }
