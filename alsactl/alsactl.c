@@ -218,7 +218,10 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 		
 		break;
 	case SND_CONTROL_TYPE_INTEGER:
-		sprintf(buf, "%li - %li (step %li)", info.value.integer.min, info.value.integer.max, info.value.integer.step);
+		if (info.value.integer.step)
+			sprintf(buf, "%li - %li (step %li)", info.value.integer.min, info.value.integer.max, info.value.integer.step);
+		else
+			sprintf(buf, "%li - %li", info.value.integer.min, info.value.integer.max);
 		err = snd_config_string_add(comment, "range", buf);
 		if (err < 0) {
 			error("snd_config_string_add: %s", snd_strerror(err));
@@ -743,7 +746,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	if (info.type == SND_CONTROL_TYPE_BYTES) {
 		char *buf;
 		err = snd_config_string_get(value, &buf);
-		if (err > 0) {
+		if (err >= 0) {
 			int c1 = 0;
 			int len = strlen(buf);
 			int idx = 0;
@@ -752,7 +755,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 				return -EINVAL;
 			}
 			while (*buf) {
-				int c = *buf;
+				int c = *buf++;
 				if (c >= '0' && c <= '9')
 					c -= '0';
 				else if (c <= 'a' && c <= 'f')
@@ -887,16 +890,18 @@ static int save_state(char *file, const char *cardname)
 	int err;
 	snd_config_t *config;
 	FILE *fp;
+	int stdio;
 
 	err = snd_config_top(&config);
 	if (err < 0) {
 		error("snd_config_top error: %s", snd_strerror(err));
 		return err;
 	}
-	fp = fopen(file, "r");
-	if (fp) {
+	stdio = !strcmp(file, "-");
+	if (!stdio && (fp = fopen(file, "r"))) {
 		err = snd_config_load(config, fp);
-		fclose(fp);
+		if (!stdio)
+			fclose(fp);
 #if 0
 		if (err < 0) {
 			error("snd_config_load error: %s", snd_strerror(err));
@@ -933,13 +938,17 @@ static int save_state(char *file, const char *cardname)
 		}
 	}
 	
-	fp = fopen(file, "w");
+	if (stdio) 
+		fp = stdout;
+	else
+		fp = fopen(file, "w");
 	if (!fp) {
 		error("Cannot open %s for writing", file);
 		return -errno;
 	}
 	err = snd_config_save(config, fp);
-	fclose(fp);
+	if (!stdio)
+		fclose(fp);
 	if (err < 0)
 		error("snd_config_save: %s", snd_strerror(err));
 	return 0;
@@ -951,16 +960,22 @@ static int load_state(char *file, const char *cardname)
 	int err;
 	snd_config_t *config;
 	FILE *fp;
+	int stdio;
 
 	err = snd_config_top(&config);
 	if (err < 0) {
 		error("snd_config_top error: %s", snd_strerror(err));
 		return err;
 	}
-	fp = fopen(file, "r");
+	stdio = !strcmp(file, "-");
+	if (stdio)
+		fp = stdin;
+	else
+		fp = fopen(file, "r");
 	if (fp) {
 		err = snd_config_load(config, fp);
-		fclose(fp);
+		if (!stdio)
+			fclose(fp);
 		if (err < 0) {
 			error("snd_config_load error: %s", snd_strerror(err));
 			return err;
