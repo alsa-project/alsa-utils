@@ -19,12 +19,6 @@
 
 version=@VERSION@
 
-# Check for root privileges
-if [ `id -u` -ne 0 ]; then
-  echo "You must be root to use this script."
-  exit 1
-fi
-
 # Check for GNU/Linux distributions
 if [ -f /etc/SuSE-release -o -f /etc/UnitedLinux-release ]; then
   distribution="suse"
@@ -53,7 +47,7 @@ usage() {
     echo "  -u|--uid uid   set the uid for the ALSA devices (default = 0) [obsoleted]"
     echo "  -g|--gid gid   set the gid for the ALSA devices (default = 0) [obsoleted]"
     echo "  -d|--devmode mode"
-    echo "                 set the device mode for the ALSA devices (default = 0666) [obs.]"
+    echo "                 set the permission for ALSA devices (default = 0666) [obs.]"
     echo "  -r|--strict    set strict device mode (equiv. with -g 17 -d 0660) [obsoleted]"
     echo "  -L|--log       logging on $LOGFILE"
     echo "  -p|--probe card-name"
@@ -108,6 +102,12 @@ while true ; do
     *) usage ; exit 1 ;;
     esac
 done
+
+# Check for root privileges
+if [ `id -u` -ne 0 ]; then
+  echo "You must be root to use this script."
+  exit 1
+fi
 
 #
 # check the snd_ prefix for ALSA module options
@@ -267,6 +267,9 @@ set_mixers() {
     # some notebooks use headphone instead of master
     mixer Headphone 75%
     mixer Playback 100%
+    # turn off digital switches
+    amixer set "SB Live Analog/Digital Output Jack" off >/dev/null 2>&1
+    amixer set "Audigy Analog/Digital Output Jack" off >/dev/null 2>&1
 }
 
 
@@ -416,6 +419,16 @@ build_card_db () {
 	    echo "ISAPNP: $id1$dev1=$id2$dev2"
 	fi
     done < $MODDIR/modules.isapnpmap >> $1
+
+    while read driver id dev devs; do
+	if expr $driver : 'snd-.*' >/dev/null ; then
+	    if [ "$last_driver" != "$driver" ]; then
+		echo $driver.o
+		last_driver=$driver
+	    fi
+	    echo "ISAPNP: $id=$dev"
+	fi
+    done < $MODDIR/modules.pnpmap >> $1
 }
 
 #
@@ -426,6 +439,16 @@ probe_cards () {
     test -r /proc/isapnp || /sbin/modprobe isa-pnp >/dev/null 2>&1
     if [ -r /proc/isapnp ]; then
 	cat /proc/isapnp >"$DUMP"
+    elif [ -d /sys/bus/pnp/devices/00:01.00 ]; then
+	# use 2.6 kernel's sysfs output
+	# fake the isapnp dump
+	# unfortunately, there is no card name information!
+	( cd /sys/bus/pnp/devices
+	  for i in *:*.00; do
+	    id=`cat $i/id`
+	    echo "Card 0 '$id:ISAPnP $id' " >> "$DUMP"
+	  done
+	)
     else
 	echo -n >"$DUMP"
     fi
@@ -458,13 +481,13 @@ BEGIN {
 	sub(/.o$/, "");
 	driver=$0;
 	perc=(idx * 100) / (ncards + 1);
-	print perc;
+	print int(perc);
 	idx++;
 }
 /^[<literal space><literal tab>]*PCI: /{
 	gsub(/0x/, "");
 	gsub(/=/, ":");
-	x = sprintf ("'$lspci' -n | grep '"'Class 0401'"' | grep %s", $2);
+	x = sprintf ("'$lspci' -n 2>/dev/null| grep '"'Class 0401'"' | grep %s", $2);
 	if (system (x) == 0)
 		printf "%s %s\n", $2, driver >>"'"$FOUND"'"
 }
@@ -484,6 +507,7 @@ BEGIN {
 	while read i; do
 	    i=${i##*/}
 	    i=${i%%.o}
+	    i=${i%%.ko}
 	    echo "PowerMac $i" >> $FOUND
 	done
     fi
@@ -494,7 +518,7 @@ BEGIN {
 #
 find_device_name () {
     if expr "$1" : '[0-9a-f][0-9a-f][0-9a-f][0-9a-f]:[0-9a-f][0-9a-f][0-9a-f][0-9a-f]' >/dev/null; then
-	$lspci -d $1 | sed -e 's/^..:..\.. Multimedia audio controller: //g'
+	$lspci -d $1 2>/dev/null| sed -e 's/^.*:..\.. Multimedia audio controller: //g'
 	return
     elif expr "$1" : '[A-Z@][A-Z@][A-Z@][0-9a-f][0-9a-f][0-9a-f][0-9a-f]' >/dev/null; then
 	cardname=`grep '^Card [0-9]\+ '\'$1':' $DUMP | head -n 1 | sed -e 's/^Card [0-9]\+ '\''.*:\(.*\)'\'' .*$/\1/'`
@@ -1034,7 +1058,7 @@ devs_found=()
 
 if [ -s "$FOUND" ]; then
     while read dev card ; do
-	/sbin/modprobe -a -l | grep $card'\.o' >/dev/null 2>&1 || continue
+	/sbin/modprobe -a -l | grep -E $card'\.(o|ko)' >/dev/null 2>&1 || continue
 	cardname=`find_device_name $dev | cut -c 1-64`
 	if [ -z "$cardname" ]; then
 	    cardname="$card"
@@ -1048,7 +1072,7 @@ if [ x$devs_found != x ]; then
     # check for TP600E
     #
     if [ ${devs_found[0]} = cs46xx ]; then
-	if $lspci -nv | grep -q "Subsystem: 1014:1010"; then
+	if $lspci -nv 2>/dev/null| grep -q "Subsystem: 1014:1010"; then
 	    if $DIALOG --yesno "
  Looks like you having a Thinkpad 600E or 770 notebook.
  On this notebook, CS4236 driver should be used
