@@ -51,4 +51,4 @@ if test "x$GTK_LIBS" = "x"; then
 fi
 AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amixer/Makefile aplay/Makefile \
           include/Makefile utils/Makefile utils/alsa-utils.spec xamixer2/Makefile
-	  gamix/Makefile)
+	  gamix/Makefile seq/Makefile seq/aconnect/Makefile seq/aseqnet/Makefile)

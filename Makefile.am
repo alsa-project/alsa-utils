@@ -1,5 +1,5 @@
 INCLUDES=-I$(top_srcdir)/include
-SUBDIRS1=include alsactl alsamixer amixer aplay utils
+SUBDIRS1=include alsactl alsamixer amixer aplay seq utils
 if COND_XAMIXER2
 SUBDIRS2=$(SUBDIRS1) xamixer2
 else
