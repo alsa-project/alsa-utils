@@ -126,7 +126,7 @@ static int info(void)
 	}
 	err = snd_mixer_load(mhandle);
 	if (err < 0) {
-		error("Mixer load error: %s", card, snd_strerror(err));
+		error("Mixer load %s error: %s", card, snd_strerror(err));
 		snd_mixer_close(mhandle);
 		return err;
 	}
