@@ -730,17 +730,17 @@ static void display_item_info(int elem_index, snd_mixer_selem_id_t *sid, int is_
   if (xlen > sizeof(string) - 1)
     xlen = sizeof(string) - 1;
   mixer_dc (DC_PROMPT);
-  mvaddstr (3, 2, "View: ");
+  mvaddstr (3, 2, "View:  Playback  Capture  All ");
   mixer_dc (DC_TEXT);
   switch (mixer_view) {
   case VIEW_PLAYBACK:
-    mvaddstr (3, 8, "Playback");
+    mvaddstr (3, 8, "[Playback]");
     break;
   case VIEW_CAPTURE:
-    mvaddstr (3, 8, "Capture");
+    mvaddstr (3, 18, "[Capture]");
     break;
   default:
-    mvaddstr (3, 8, "All");
+    mvaddstr (3, 27, "[All]");
     break;
   }
   mixer_dc (DC_PROMPT);
