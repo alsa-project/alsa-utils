@@ -229,7 +229,7 @@ int soundcard_setup_collect( int cardno )
   }
   bzero( card, sizeof( struct soundcard ) );
   card -> no = cardno;
-  for ( first = soundcards, prev = NULL; first; prev = first, first = first -> next )
+  for ( first = soundcards, prev = NULL; first; first = first -> next ) {
     if ( first -> no > cardno ) {
       if ( !prev ) {
         soundcards = card;
@@ -239,7 +239,15 @@ int soundcard_setup_collect( int cardno )
       card -> next = first;
       break;
     }
-  if ( !soundcards ) soundcards = card;
+    prev = first;
+  }
+  if ( !first ) {
+    if ( !soundcards ) {
+      soundcards = card;
+    } else {
+      prev -> next = card;
+    }
+  }
   if ( (err = snd_ctl_hw_info( handle, &card -> control.hwinfo )) < 0 ) {
     snd_ctl_close( handle );
     error( "SND CTL HW INFO error: %s", snd_strerror( err ) );
@@ -533,16 +541,16 @@ static void soundcard_setup_write_switch( FILE *out, int interface, const unsign
   v[0] = '\0';
   switch ( type ) {
     case SND_CTL_SW_TYPE_BOOLEAN: 	s = "bool"; strcpy( v, pdata -> enable ? "true" : "false" ); break;
-    case SND_CTL_SW_TYPE_BYTE:		s = "byte"; sprintf( v, "%ui", (unsigned int)pdata -> data8[0] ); break;
-    case SND_CTL_SW_TYPE_WORD:		s = "word"; sprintf( v, "%ui", (unsigned int)pdata -> data16[0] ); break;
-    case SND_CTL_SW_TYPE_DWORD:		s = "dword"; sprintf( v, "%ui", pdata -> data32[0] ); break;
+    case SND_CTL_SW_TYPE_BYTE:		s = "byte"; sprintf( v, "%u", (unsigned int)pdata -> data8[0] ); break;
+    case SND_CTL_SW_TYPE_WORD:		s = "word"; sprintf( v, "%u", (unsigned int)pdata -> data16[0] ); break;
+    case SND_CTL_SW_TYPE_DWORD:		s = "dword"; sprintf( v, "%u", pdata -> data32[0] ); break;
     case SND_CTL_SW_TYPE_USER:		s = "user"; break;
     default:
       s = "unknown";
   }
   fprintf( out, "%s; Type is '%s'.\n", space, s );
   if ( low != 0 || high != 0 )
-    fprintf( out, "%s; Accepted switch range is from %ui to %ui.\n", space, low, high );
+    fprintf( out, "%s; Accepted switch range is from %u to %u.\n", space, low, high );
   if ( interface == SND_INTERFACE_CONTROL && type == SND_CTL_SW_TYPE_WORD &&
        !strcmp( name, SND_CTL_SW_JOYSTICK_ADDRESS ) ) {
     for ( idx = 1, first = 1; idx < 16; idx++ ) {
