@@ -1513,11 +1513,15 @@ static off64_t calc_count(void)
 {
 	off64_t count;
 
-	if (!timelimit) {
+	if (!timelimit && pbrec_count == (size_t)-1) {
 		count = (off64_t)-1;
 	} else {
-		count = snd_pcm_format_size(hwparams.format, hwparams.rate * hwparams.channels);
-		count *= (off64_t)timelimit;
+		if (timelimit == 0) {
+			count = pbrec_count;
+		} else {
+			count = snd_pcm_format_size(hwparams.format, hwparams.rate * hwparams.channels);
+			count *= (off64_t)timelimit;
+		}
 	}
 	return count < pbrec_count ? count : pbrec_count;
 }
