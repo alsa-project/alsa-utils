@@ -589,7 +589,8 @@ ssize_t safe_read(int fd, void *buf, size_t count)
 	ssize_t result = 0, res;
 
 	while (count > 0) {
-		res = read(fd, buf, count);
+		if ((res = read(fd, buf, count)) == 0)
+			break;
 		if (res < 0)
 			return result > 0 ? result : res;
 		count -= res;
