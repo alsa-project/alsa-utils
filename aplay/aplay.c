@@ -787,14 +787,16 @@ static void set_params(void)
 		n = (double) rate * avail_min / 1000000;
 	err = snd_pcm_sw_params_set_avail_min(handle, swparams, n);
 
-	if (start_delay <= 0) 
-		start_threshold = buffer_size + (double) rate * start_delay / 1000000;
-	else
+	/* round up to closest transfer boundary */
+	n = (buffer_size / xfer_align) * xfer_align;
+	if (start_delay <= 0) {
+		start_threshold = n + (double) rate * start_delay / 1000000;
+	} else
 		start_threshold = (double) rate * start_delay / 1000000;
 	if (start_threshold < 1)
 		start_threshold = 1;
-	if (start_threshold > buffer_size)
-		start_threshold = buffer_size;
+	if (start_threshold > n)
+		start_threshold = n;
 	err = snd_pcm_sw_params_set_start_threshold(handle, swparams, start_threshold);
 	assert(err >= 0);
 	if (stop_delay <= 0) 
