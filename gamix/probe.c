@@ -83,7 +83,7 @@ gint probe_mixer( void ) {
 			}
 			groups.pgroups = (snd_mixer_gid_t *)g_malloc(groups.groups_over
 													*sizeof(snd_mixer_eid_t));
-			if( groups.pgroups == NULL ) {
+			if( groups.pgroups == NULL && groups.groups_over) {
 				fprintf(stderr,nomem_msg);
 				snd_ctl_close(p_handle);
 				snd_mixer_close(m_handle);
@@ -107,7 +107,7 @@ gint probe_mixer( void ) {
 			}
 			es.pelements = (snd_mixer_eid_t *)g_malloc(
 								es.elements_over * sizeof(snd_mixer_eid_t));
-			if( es.pelements == NULL ) {
+			if( es.pelements == NULL && es.elements_over) {
 				fprintf(stderr,nomem_msg);
 				snd_ctl_close(p_handle);
 				snd_mixer_close(m_handle);
@@ -123,7 +123,7 @@ gint probe_mixer( void ) {
 				return -1;
 			}
 			es_nums = (int *)g_malloc(es.elements * sizeof(int));
-			if( es_nums == NULL ) {
+			if( es_nums == NULL && es.elements) {
 				fprintf(stderr,nomem_msg);
 				snd_ctl_close(p_handle);
 				snd_mixer_close(m_handle);
@@ -176,7 +176,7 @@ gint probe_mixer( void ) {
 				}
 				group->g.pelements = (snd_mixer_eid_t *)g_malloc(
 							group->g.elements_over*sizeof(snd_mixer_eid_t));
-				if( group->g.pelements == NULL ) {
+				if( group->g.pelements == NULL && group->g.elements_over) {
 					snd_ctl_close(p_handle);
 					fprintf(stderr,nomem_msg);
 					snd_mixer_close(m_handle);
@@ -193,7 +193,7 @@ gint probe_mixer( void ) {
 				}
 				group->e=(s_element_t *)g_malloc(group->g.elements_size*
 											   sizeof(s_element_t));
-				if( group->e == NULL ) {
+				if( group->e == NULL && group->g.elements_size) {
 					fprintf(stderr,nomem_msg);
 					snd_ctl_close(p_handle);
 					snd_mixer_close(m_handle);

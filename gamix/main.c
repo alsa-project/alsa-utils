@@ -5,7 +5,7 @@ GtkWidget *window;
 GtkWidget *main_vbox;
 GtkWidget *mixer_container;
 GtkWidget *exit_item;
-unsigned char *nomem_msg = N_("No enough ememory.\n");
+unsigned char *nomem_msg = N_("No enough memory.\n");
 
 int main(int , char **);
 int disp_mixer( void );

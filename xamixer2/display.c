@@ -62,9 +62,11 @@ GtkWidget *create_mixer_page(int card_num, int mixer_num)
 	w = (int)(1.5 * 
 		  (float)card[i].mixer[j].info.elements / 
 		  (float)card[i].mixer[j].info.groups);
-
-	/* Compute the number of groups in a column */
-	col = (card[i].mixer[j].info.groups + w - 1)/ w;
+	if (w == 0)
+		col = 0;
+	else
+		/* Compute the number of groups in a column */
+		col = (card[i].mixer[j].info.groups + w - 1)/ w;
 
 	/* Create the main bounding box */
 	hbox = gtk_hbox_new(FALSE, 0);
