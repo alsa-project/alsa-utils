@@ -889,7 +889,7 @@ static void compute_max_peak(u_char *data, size_t count)
 	max = 1 << (bits_per_sample-1);
 	if (max == 0)
 		max = 0x7fffffff;
-	printf("Max peak (%li samples): %i (0x%x) %i%%\n", ocount, max_peak, max_peak, max_peak / (max / 100));
+	printf("Max peak (%li samples): %i (0x%x) %i%%\n", (long)ocount, max_peak, max_peak, max_peak / (max / 100));
 }
 
 /*
