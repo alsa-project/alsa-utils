@@ -31,7 +31,6 @@ CBData *create_cb_data(Group *group, void *handle, int element, int index);
 /* Begin Macros */
 
 #define EAZERO(S, L) S[L-1] = '\0';
-#define MIXER(m) ((Mixer *)m)
 
 /* End Macros */
 /*****************************************************************************/

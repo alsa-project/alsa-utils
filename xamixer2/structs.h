@@ -125,34 +125,13 @@ typedef struct _Config Config;
 /******************************************************************************/
 
 
-#if 0
-struct _Channel
-{
-        int num; /* The channel's number */
-        snd_mixer_channel_t data; /* the data */
-        snd_mixer_channel_info_t info; /* The info */
-        unsigned int flags; /* The Channel's flags */
-        GtkWidget *lm, *rm, *mm, *rec; /* The associated widgets */
-        GtkWidget *lrec, *rrec; /* More associated widgets */
-        GtkObject *ladj, *radj, *madj; /* The associated objects */
-        GtkTooltips *left_tt, *right_tt, *mono_tt; /* The tooltips */
-        GtkWidget *lscal, *rscal, *mscal; /* The scale widgets */
-        GtkWidget *label, *lock;
-        GtkWidget *ltor_in, *rtol_in;
-        void *mixer; /* A pointer to the mixer */
-};
-typedef struct _Channel Channel;
-#endif
+/******************************************************************************/
+/* Begin type macros */
 
+#define MIXER(x) ((Mixer *)(x))
+#define CARD(x) ((Card *)(x))
 
-
-
-
-
-
-
-
-
-
+/* End type macros */
+/******************************************************************************/
 
 

@@ -14,6 +14,7 @@ void adjust_volume1(GtkWidget *widget, CBData *data);
 void adjust_switch1(GtkWidget *widget, CBData *data);
 void adjust_switch2(GtkWidget *widget, CBData *data);
 void adjust_teffect1(GtkWidget *widget, CBData *data);
+void mixer_change_cb(gpointer data, gint source, GdkInputCondition condition);
 
 /* End function prototypes */
 /*****************************************************************************/

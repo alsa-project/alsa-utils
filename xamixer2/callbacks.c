@@ -37,6 +37,50 @@ extern Config config; /* The system config */
 /* End Global Variables */
 /*****************************************************************************/
 
+void mixer_rebuild_cb(void *data)
+{
+
+/* 	printf("A rebuild event happened.\n"); */
+/* 	fflush(NULL); */
+
+	return;
+}
+
+void mixer_element_cb(void *data, int cmd, snd_mixer_eid_t *eid)
+{
+
+/* 	printf("An element event happened.\n"); */
+/* 	fflush(NULL); */
+
+	return;
+}
+
+void mixer_group_cb(void *data, int cmd, snd_mixer_gid_t *gid)
+{
+
+/* 	printf("A group event happened.\n"); */
+/* 	fflush(NULL); */
+
+	return;
+}
+
+void mixer_change_cb(gpointer data, gint source, GdkInputCondition condition)
+{
+	snd_mixer_callbacks_t callbacks;  
+
+	/* Set up the callback structure */
+	callbacks.private_data = data;
+	callbacks.rebuild = mixer_rebuild_cb;
+	callbacks.element = mixer_element_cb;
+	callbacks.group = mixer_group_cb;
+	bzero(callbacks.reserved, sizeof(void *) * 28);
+			
+	
+	/* Actually deal with the event. */
+	snd_mixer_read(MIXER(data)->handle, &callbacks);
+
+	return;
+}
 
 void adjust_teffect1(GtkWidget *widget, CBData *data)
 {

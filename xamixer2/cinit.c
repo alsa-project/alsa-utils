@@ -77,7 +77,8 @@ int init_cards()
 			card[i].hw_info.mixerdevs = 1;
 		}
 
-		
+		card[i].nmixers = card[i].hw_info.mixerdevs;
+
 		/* Allocate out the mixer array */
 		card[i].mixer = calloc(card[i].hw_info.mixerdevs, sizeof(Mixer));
 

@@ -58,6 +58,7 @@ int main(int argc, char **argv)
         char *home_env, *home_dir;
         GtkStyle *style;
         GtkWidget *hbox;
+	snd_mixer_filter_t mixer_filter;
         /* End Variable Declarations */
 
 	/* Go through gtk initialization */
@@ -175,6 +176,15 @@ int main(int argc, char **argv)
         if(config.flags & CONFIG_ICON_XPM && config.icon_xpm)
                 gdk_window_set_icon(window->window, NULL, 
                                     config.icon_xpm, config.icon_mask);
+
+
+	/* Set up the update callback for every mixer */
+	for(i = 0; i < cards; i++)
+		for(j = 0; j < card[i].nmixers; j++)
+			gdk_input_add(snd_mixer_file_descriptor(card[i].mixer[j].handle),
+				      GDK_INPUT_READ,
+				      mixer_change_cb,
+				      &card[i].mixer[j]);
 
 
 	/* Show the whole kit and kaboodle */
