@@ -848,16 +848,8 @@ static void set_params(void)
 		}
 	}
 	rate = hwparams.rate;
-	if (buffer_time == 0 && buffer_frames > 0) {
-		err = snd_pcm_hw_params_set_buffer_size_near(handle, params,
-							     &buffer_frames);
-	} else {
-		if (buffer_time == 0)
-			buffer_time = 500000;
-		err = snd_pcm_hw_params_set_buffer_time_near(handle, params,
-							     &buffer_time, 0);
-	}
-	assert(err >= 0);
+	if (buffer_time == 0 && buffer_frames == 0)
+		buffer_time = 500000;
 	if (period_time == 0 && period_frames == 0) {
 		if (buffer_time > 0)
 			period_time = buffer_time / 4;
@@ -870,6 +862,14 @@ static void set_params(void)
 	else
 		err = snd_pcm_hw_params_set_period_size_near(handle, params,
 							     &period_frames, 0);
+	assert(err >= 0);
+	if (buffer_time > 0) {
+		err = snd_pcm_hw_params_set_buffer_time_near(handle, params,
+							     &buffer_time, 0);
+	} else {
+		err = snd_pcm_hw_params_set_buffer_size_near(handle, params,
+							     &buffer_frames);
+	}
 	assert(err >= 0);
 	err = snd_pcm_hw_params(handle, params);
 	if (err < 0) {
