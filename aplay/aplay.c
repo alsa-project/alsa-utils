@@ -203,6 +203,7 @@ static void device_list(void)
 			snd_ctl_close(handle);
 			continue;
 		}
+		fprintf(stderr, "**** List of %s Hardware Devices ****\n", snd_pcm_stream_name(stream));
 		dev = -1;
 		while (1) {
 			unsigned int count;
