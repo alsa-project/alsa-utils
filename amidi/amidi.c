@@ -245,6 +245,7 @@ static void load_file(void)
 	goto _exit;
 _error:
 	free(send_data);
+	send_data = NULL;
 _exit:
 	close(fd);
 }
