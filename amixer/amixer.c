@@ -666,6 +666,7 @@ static int parse_simple_id(const char *str, snd_mixer_selem_id_t *sid)
 		return 0;
 	if (*str != ',')
 		return -EINVAL;
+	*ptr = 0;	/* terminate the string */
 	str++;
 	if (!isdigit(*str))
 		return -EINVAL;
@@ -879,7 +880,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 		return err;
 	}
 	min = snd_mixer_selem_info_get_min(info);
-	max = snd_mixer_selem_info_get_min(info);
+	max = snd_mixer_selem_info_get_max(info);
 	if (roflag)
 		goto __skip_write;
 	for (idx = 1; idx < argc; idx++) {
