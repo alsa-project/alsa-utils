@@ -728,7 +728,7 @@ check_dma_avail () {
     if [ -r /proc/dma ]; then
 	list=""
 	for dma in $*; do
-	    grep '^ *'$dma': ' /proc/dma >/dev/null 2>&1 || list="$list $dma"
+	    grep -q '^ *'$dma': ' /proc/dma || list="$list $dma"
 	done
 	echo $list
     fi
@@ -738,7 +738,7 @@ check_irq_avail () {
     if [ -r /proc/interrupts ]; then
 	list=""
 	for irq in $*; do
-	    grep '^ *'$irq': ' /proc/interrupts >/dev/null 2>&1 || list="$list $irq"
+	    grep -q '^ *'$irq': ' /proc/interrupts || list="$list $irq"
 	done
 	echo $list
     fi
@@ -749,7 +749,7 @@ check_irq_avail () {
 ac_try_load () {
     test -n "$LOGFILE" && echo "$1 ${*:2}" >> "$LOGFILE"
     /sbin/modprobe snd-$1 ${*:2} >/dev/null 2>&1
-    if $lsmod | grep -E '^(snd-|snd_)'$1' ' >/dev/null 2>&1; then
+    if $lsmod | grep -q -E '^(snd-|snd_)'$1' '; then
 	: ;
     else
 	modprobe -r snd-$1 >/dev/null 2>&1
@@ -788,7 +788,7 @@ ac_try_load () {
 ac_try_capture () {
     test -n "$LOGFILE" && echo "$1 ${*:2}" >> "$LOGFILE"
     /sbin/modprobe snd-$1 ${*:3} >/dev/null 2>&1
-    if $lsmod | grep -E '^(snd-|snd_)'$1' ' >/dev/null 2>&1; then
+    if $lsmod | grep -q -E '^(snd-|snd_)'$1' '; then
 	: ;
     else
 	modprobe -r snd-$1 >/dev/null 2>&1
@@ -913,11 +913,11 @@ ac_try_dmas () {
 
 # check if the option $2 exists in card $1: set value $3
 ac_check_option () {
-    if /sbin/modinfo -p snd-$1 | grep $2 > /dev/null 2>&1 ; then
+    if /sbin/modinfo -p snd-$1 | grep -q $2; then
       echo "$2=$3"
     fi
 }
-   
+
 ac_try_card_sb8 () {
     card=sb8
     irq_list=`check_irq_avail 5 3 9 10 7`
@@ -1142,7 +1142,7 @@ devs_found=()
 
 if [ -s "$FOUND" ]; then
     while read dev card ; do
-	/sbin/modprobe -a -l | grep -E $card'\.(o|ko)' >/dev/null 2>&1 || continue
+	/sbin/modprobe -a -l | grep -q -E $card'\.(o|ko)' || continue
 	cardname=`find_device_name $dev | cut -c 1-64`
 	if [ -z "$cardname" ]; then
 	    cardname="$card"
