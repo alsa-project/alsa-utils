@@ -60,6 +60,8 @@ static void select_rawmidi_input_switch( char *name );
 
 static void set_switch_boolean( int val );
 static void set_switch_integer( int val );
+static void set_switch_iec958ocs_begin( void );
+static void set_switch_iec958ocs( int idx, unsigned short val, unsigned short mask );
 
 	/* local variables */
 
@@ -98,6 +100,8 @@ static void *Xswitch = NULL;
 	/* other keywords */
 %token L_SOUNDCARD L_MIXER L_CHANNEL L_STEREO L_MONO L_SWITCH L_RAWDATA
 %token L_CONTROL L_PCM L_RAWMIDI L_PLAYBACK L_RECORD L_OUTPUT L_INPUT
+%token L_IEC958OCS L_3D L_RESET L_USER L_VALID L_DATA L_PROTECTED L_PRE2
+%token L_FSLOCK L_TYPE L_GSTATUS L_ENABLE L_DISABLE
 
 %type <b_value> boolean
 %type <i_value> integer
@@ -208,7 +212,26 @@ switches : switch
 switch	: L_TRUE		{ set_switch_boolean( 1 ); }
 	| L_FALSE		{ set_switch_boolean( 0 ); }
 	| L_INTEGER		{ set_switch_integer( $1 ); }
+	| L_IEC958OCS '(' { set_switch_iec958ocs_begin(); } iec958ocs ')'
 	| error			{ yyerror( "unknown keyword in switch() data parameter" ); }
+	;
+
+iec958ocs : iec958ocs1
+	| iec958ocs iec958ocs1
+	;
+
+iec958ocs1 : L_ENABLE		{ set_switch_iec958ocs( 0, 1, 0 ); }
+	| L_DISABLE		{ set_switch_iec958ocs( 0, 0, 0 ); }
+	| L_3D			{ set_switch_iec958ocs( 4, 0x2000, ~0x2000 ); }
+	| L_RESET		{ set_switch_iec958ocs( 4, 0x0040, ~0x0040 ); }
+	| L_USER		{ set_switch_iec958ocs( 4, 0x0020, ~0x0020 ); }
+	| L_VALID		{ set_switch_iec958ocs( 4, 0x0010, ~0x0010 ); }
+	| L_DATA		{ set_switch_iec958ocs( 5, 0x0002, ~0x0002 ); }
+	| L_PRE2		{ set_switch_iec958ocs( 5, 0x0008, ~0x0018 ); }
+	| L_FSLOCK		{ set_switch_iec958ocs( 5, 0x0020, ~0x0020 ); }
+	| L_TYPE '(' integer ')' { set_switch_iec958ocs( 5, ($3 & 0x7f) << 6, ~(0x7f<<6) ); }
+	| L_GSTATUS		{ set_switch_iec958ocs( 5, 0x2000, ~0x2000 ); }
+	| error			{ yyerror( "unknown keyword in iec958ocs1() arguments" ); }
 	;
 
 boolean	: L_TRUE		{ $$ = 1; }
@@ -433,4 +456,32 @@ static void set_switch_integer( int val )
   xx = val;
   if ( memcmp( &sw -> value, &xx, sizeof(xx) ) ) *Xswitchchange = 1;
   memcpy( &sw -> value, &xx, sizeof(xx) );
+}
+
+static void set_switch_iec958ocs_begin( void )
+{
+  /* ok.. this is a little bit wrong, but at these times are all switches same */
+  snd_ctl_switch_t *sw = (snd_ctl_switch_t *)Xswitch;
+
+  if ( Xswitchtype != SWITCH_MIXER || sw -> type != SND_MIXER_SW_TYPE_BOOLEAN ||
+       !strcmp( sw -> name, SND_MIXER_SW_IEC958OUT ) )
+    yyerror( "Switch '%s' cannot store IEC958 information for Cirrus Logic chips...", sw -> name );
+  if ( sw -> value.data32[1] != (('C'<<8)|'S') )
+    yyerror( "Switch '%s' doesn't have Cirrus Logic signature!!!", sw -> name );
+  sw -> value.enable = 0;
+  sw -> value.data16[4] = 0x0000;
+  sw -> value.data16[5] = 0x0000;
+}
+
+static void set_switch_iec958ocs( int idx, unsigned short val, unsigned short mask )
+{
+  /* ok.. this is a little bit wrong, but at these times are all switches same */
+  snd_ctl_switch_t *sw = (snd_ctl_switch_t *)Xswitch;
+
+  if ( idx == 0 ) {
+    sw -> value.enable = val ? 1 : 0;
+    return;
+  }
+  sw -> value.data16[ idx ] &= ~mask;
+  sw -> value.data16[ idx ] |= val;
 }

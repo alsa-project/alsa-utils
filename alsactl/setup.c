@@ -528,7 +528,8 @@ static void soundcard_setup_write_switch( FILE *out, int interface, const unsign
   };
   char *s, v[16];
   struct data *pdata = (struct data *)data;
-  int idx;
+  int idx, first, switchok = 0;
+  const char *space = "    ";
   
   v[0] = '\0';
   switch ( type ) {
@@ -540,17 +541,55 @@ static void soundcard_setup_write_switch( FILE *out, int interface, const unsign
     default:
       s = "unknown";
   }
-  fprintf( out, "    ; Type is '%s'.\n", s );
+  fprintf( out, "%s; Type is '%s'.\n", space, s );
   if ( low != 0 || high != 0 )
-    fprintf( out, "    ; Accepted switch range is from %ui to %ui.\n", low, high );
-  fprintf( out, "    switch( \"%s\", %s", name, v );
-  if ( type < 0 || type > SND_CTL_SW_TYPE_DWORD ) {
-    /* TODO: some well known types should be verbose */
-    fprintf( out, " rawdata( " );
-    for ( idx = 0; idx < 31; idx++ ) {
-      fprintf( out, "@%02x:", pdata -> data8[idx] );
+    fprintf( out, "%s; Accepted switch range is from %ui to %ui.\n", space, low, high );
+  if ( interface == SND_INTERFACE_CONTROL && type == SND_CTL_SW_TYPE_WORD &&
+       !strcmp( name, SND_CTL_SW_JOYSTICK_ADDRESS ) ) {
+    for ( idx = 1, first = 1; idx < 16; idx++ ) {
+      if ( pdata -> data16[idx] ) {
+        if ( first ) {
+          fprintf( out, "%s; Available addresses - 0x%x", space, pdata -> data16[idx] );
+          first = 0;
+        } else {
+          fprintf( out, ", 0x%x", pdata -> data16[idx] );
+        }
+      }
     }
-    fprintf( out, "%02x@ )\n", pdata -> data8[31] );
+    if ( !first ) fprintf( out, "\n" );
+  }
+  fprintf( out, "%sswitch( \"%s\", ", space, name );
+  if ( interface == SND_INTERFACE_MIXER && type == SND_MIXER_SW_TYPE_BOOLEAN &&
+       !strcmp( name, SND_MIXER_SW_IEC958OUT ) ) {
+    if ( pdata -> data16[0] == (('C'<<8)|'S') ) {	/* Cirrus Crystal */
+      switchok = 0;
+      fprintf( out, "iec958ocs( %s", pdata -> enable ? "enable" : "disable" );
+      if ( pdata -> data16[4] & 0x2000 ) fprintf( out, " 3d" );
+      if ( pdata -> data16[4] & 0x0040 ) fprintf( out, " reset" );
+      if ( pdata -> data16[4] & 0x0020 ) fprintf( out, " user" );
+      if ( pdata -> data16[4] & 0x0010 ) fprintf( out, " valid" );
+      if ( pdata -> data16[5] & 0x0002 ) fprintf( out, " data" );
+      if ( !(pdata -> data16[5] & 0x0004) ) fprintf( out, " protected" );
+      switch ( pdata -> data16[5] & 0x0018 ) {
+        case 0x0008: fprintf( out, " pre2" ); break;
+        default: break;
+      }
+      if ( pdata -> data16[5] & 0x0020 ) fprintf( out, " fslock" );
+      fprintf( out, " type( 0x%x )", (pdata -> data16[5] >> 6) & 0x7f );
+      if ( pdata -> data16[5] & 0x2000 ) fprintf( out, " gstatus" );
+      fprintf( out, ")" );
+    }
+  }
+  if ( !switchok ) {
+    fprintf( out, v );
+    if ( type < 0 || type > SND_CTL_SW_TYPE_DWORD ) {
+      /* TODO: some well known types should be verbose */
+      fprintf( out, " rawdata( " );
+      for ( idx = 0; idx < 31; idx++ ) {
+        fprintf( out, "@%02x:", pdata -> data8[idx] );
+      }
+      fprintf( out, "%02x@ )\n", pdata -> data8[31] );
+    }
   }
   fprintf( out, " )\n" );
 }

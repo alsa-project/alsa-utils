@@ -57,6 +57,19 @@ playback		return L_PLAYBACK;
 record			return L_RECORD;
 output			return L_OUTPUT;
 input			return L_INPUT;
+iec958ocs		return L_IEC958OCS;
+3d			return L_3D;
+reset			return L_RESET;
+user			return L_USER;
+valid			return L_VALID;
+data			return L_DATA;
+protected		return L_PROTECTED;
+pre2			return L_PRE2;
+fslock			return L_FSLOCK;
+type			return L_TYPE;
+gstatus			return L_GSTATUS;
+enable			return L_ENABLE;
+disable			return L_DISABLE;
 
 	/* boolean */
 
