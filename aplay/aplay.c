@@ -797,9 +797,16 @@ static void set_params(void)
 	err = snd_pcm_hw_params_set_periods_min(handle, params, 2);
 	assert(err >= 0);
 #endif
+	rate = hwparams.rate;
 	err = snd_pcm_hw_params_set_rate_near(handle, params, &hwparams.rate, 0);
 	assert(err >= 0);
-	rate = err;
+	if ((float)rate * 1.05 < hwparams.rate || (float)rate * 0.95 > hwparams.rate) {
+		if (!quiet_mode) {
+			fprintf(stderr, "Warning: rate is not accurate (requested = %iHz, got = %iHz)\n", rate, hwparams.rate);
+			fprintf(stderr, "         please, try the plug plugin (-Dplug:%s)\n", snd_pcm_name(handle));
+		}
+	}
+	rate = hwparams.rate;
 	if (buffer_time == 0)
 		buffer_time = 500000;
 	err = snd_pcm_hw_params_set_buffer_time_near(handle, params,
