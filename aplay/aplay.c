@@ -83,6 +83,7 @@ static int verbose = 0;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t buffer_bytes;
+int digital = SND_PCM_DIG_NONE;
 
 static int count;
 static int vocmajor, vocminor;
@@ -151,6 +152,8 @@ Usage: %s [OPTION]... [FILE]...
 -X, --xfer-min=#	 min xfer size is # milliseconds
 -v, --verbose            show PCM structure and setup
 -I, --separate-channels  one file for each channel
+-P, --iec958p            AES IEC958 professional
+-C, --iec958c            AES IEC958 consumer
 ", command);
 	fprintf(stderr, "Recognized sample formats are:");
 	for (k = 0; k < 32; ++k) {
@@ -266,6 +269,8 @@ int main(int argc, char *argv[])
 		{"xfer-min", 1, 0, 'X'},
 		{"buffer-length", 1, 0, 'B'},
 		{"verbose", 0, 0, 'v'},
+		{"iec958c", 0, 0, 'C'},
+		{"iec958p", 0, 0, 'P'},
 		{"separate-channels", 0, 0, 'I'},
 		{0, 0, 0, 0}
 	};
@@ -389,6 +394,12 @@ int main(int argc, char *argv[])
 		case 'I':
 			interleaved = 0;
 			break;
+		case 'C':
+			digital = SND_PCM_DIG_AES_IEC958C;
+			break;
+		case 'P':
+			digital = SND_PCM_DIG_AES_IEC958P;
+			break;
 		default:
 			fprintf(stderr, "Try `%s --help' for more information.\n", command);
 			return 1;
@@ -399,6 +410,29 @@ int main(int argc, char *argv[])
 	if (err < 0) {
 		error("audio open error: %s", snd_strerror(err));
 		return 1;
+	}
+
+	if (digital != SND_PCM_DIG_NONE) {
+		snd_pcm_dig_params_t dig;
+		memset(&dig, 0, sizeof(dig));
+		dig.group = 0;
+		dig.val.aes.status[0] = SND_PCM_AES0_NONAUDIO;
+		dig.type = digital;
+		switch (digital) {
+		case SND_PCM_DIG_AES_IEC958P:
+			dig.val.aes.status[0] |= SND_PCM_AES0_PROFESSIONAL;
+			dig.val.aes.status[0] |= SND_PCM_AES0_PRO_FS_48000;
+			break;
+		case SND_PCM_DIG_AES_IEC958C:
+			dig.type = SND_PCM_DIG_AES_IEC958C;
+			dig.val.aes.status[3] |= SND_PCM_AES3_CON_FS_48000;
+			break;
+		}
+		err = snd_pcm_dig_params(handle, &dig);
+		if (err < 0) {
+			error("dig_params setting error: %s", snd_strerror(err));
+			return 1;
+		}
 	}
 
 	if (nonblock) {
