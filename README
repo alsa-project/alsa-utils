@@ -1,0 +1,15 @@
+
+		Advanced Linux Sound Architecture - Utilities
+		=============================================
+
+This packages contains command line utilities for the ALSA project.
+Package should be compiled only with installed ALSA driver and
+ALSA C library.
+
+aplay/arecord	- utility for playback / record of .wav,.voc,.au files
+amixer		- a command line mixer
+alsamixer	- ncurses mixer
+
+You should look for more info about ALSA project to http://alsa.jcu.cz.
+
+					Jaroslav Kysela <perex@jcu.cz>

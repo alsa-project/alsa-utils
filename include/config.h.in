@@ -1,0 +1,5 @@
+/*
+ *  Configuration header file for compilation of the ALSA utilities
+ */
+
+#undef SND_UTIL_VERSION

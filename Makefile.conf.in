@@ -1,0 +1,29 @@
+#
+# Configuration Makefile for ALSA Utilities
+# Copyright (c) 1994-98 by Jaroslav Kysela <perex@jcu.cz>
+#
+
+srcdir=@srcdir@
+VPATH=@srcdir@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+includedir=@includedir@
+bindir=@bindir@
+libdir=@libdir@
+c_opts=@CFLAGS@
+INSTALL=@INSTALL@
+SND_UTIL_VERSION=@SND_UTIL_VERSION@
+SND_UTIL_MAJOR=@SND_UTIL_MAJOR@
+SND_UTIL_MINOR=@SND_UTIL_MINOR@
+SND_UTIL_SUBMINOR=@SND_UTIL_SUBMINOR@
+
+CC=gcc
+CPP=gcc
+INCLUDE=-I/usr/local/include -I$(TOPDIR)/include
+COPTS = $(c_opts)
+COPTS += -Wall -Wstrict-prototypes -fomit-frame-pointer -pipe
+LINKER=ld
+SNDLIB=-lsound
+NCURSESINC="<ncurses.h>"
+NCURSESLIB=-lncurses
+LN_S=@LN_S@

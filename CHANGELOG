@@ -1,0 +1,19 @@
+0.0.3 -> 0.0.4
+
+* added check for alsa-lib package
+* added spec file for RPM
+
+0.0.2 -> 0.0.3
+
+* included great ncurses alsamixer from Tim Janik <timj@gtk.org>
+* enhanced Mixer from Andy Lo A Foe <arloafoe@cs.vu.nl> renamed to amixer
+
+0.0.1 -> 0.0.2
+
+* fixed small bug in aplay in command line parsing
+* fixed fragment size allocation for low rate files in aplay
+* a little bit corrected output from Mixer
+
+0.0.1
+
+* initial release (aplay, broken Mixer)

@@ -1,0 +1,39 @@
+Intro
+-----
+
+This is a quick mixer program for the ALSA project. It will grow out
+to include a GTK interface eventually, if noone beats me to it :)
+
+
+Building
+--------
+
+Edit the Makefile where the -I (include option) is. This should
+point to the directory where the alsadriver is located. Then
+type "make" and it should build without complaining. If you have
+trouble with it please mail me at <arloafoe@cs.vu.nl>
+
+
+Running
+-------
+
+amixer -h should display the syntax
+
+
+Bugs & Todo
+-----------
+
+A lot, let me know..
+
+
+Changes
+-------
+
+v0.001 March 20 1998 - Initial code
+v0.1   Apr   21 1997 - Actually useful now
+
+
+Contact
+-------
+Andy Lo A Foe
+arloafoe@cs.vu.nl
