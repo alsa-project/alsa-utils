@@ -1,0 +1,17 @@
+
+			ALSA utils installation
+			=======================
+
+Installation
+------------
+
+For installation you can use these commands:
+
+	./configure
+	make install
+
+If ./configure command complain that alsa-lib package isn't installed,
+please, check if --prefix option is same for alsa-lib and alsa-utils
+package. The configure script from alsa-utils package probably cannot find
+header file asoundlib.h in $prefix/include/sys directory (usually in
+/usr/include/sys directory).
