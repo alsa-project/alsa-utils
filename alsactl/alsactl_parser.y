@@ -143,7 +143,7 @@ line	: L_SOUNDCARD '(' string { build_soundcard($3); }
 	| error			{ yyerror("unknown keyword in top level"); }
 	;
 
-soundcards : soundcard
+soundcards :
 	| soundcards soundcard
 	;
 
