@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <sys/asoundlib.h>
+#include <assert.h>
 #include "aconfig.h"
 #include "formats.h"
 #include "version.h"
@@ -1172,6 +1173,8 @@ void playback_go(int fd, int loaded, u_long count, int rtype, char *name)
 	header(rtype, name);
 	format_change = 1;
 	set_format();
+
+	assert(loaded < buffer_size);
 
 	while (count) {
 		l = loaded;
