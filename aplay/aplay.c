@@ -72,6 +72,7 @@ static int direction = SND_PCM_OPEN_PLAYBACK;
 static int stream = SND_PCM_STREAM_PLAYBACK;
 static int mmap_flag = 0;
 static snd_pcm_mmap_control_t *mmap_control = NULL;
+static snd_pcm_mmap_status_t *mmap_status = NULL;
 static char *mmap_data = NULL;
 static int noplugin = 0;
 static int nonblock = 0;
@@ -82,6 +83,8 @@ static int buffer_size = -1;
 static int frag_length = 250;
 static int show_setup = 0;
 static int buffer_pos = 0;
+static size_t bits_per_sample, bits_per_frame;
+static size_t buffer_bytes;
 
 static int count;
 static int vocmajor, vocminor;
@@ -624,26 +627,26 @@ static void set_params(void)
 	memset(&params, 0, sizeof(params));
 	params.mode = mode;
 	params.stream = stream;
-	memcpy(&params.format, &format, sizeof(format));
+	params.format = format;
 	if (stream == SND_PCM_STREAM_PLAYBACK) {
 		params.start_mode = SND_PCM_START_FULL;
 	} else {
 		params.start_mode = SND_PCM_START_DATA;
 	}
 	params.xrun_mode = SND_PCM_XRUN_FLUSH;
-	params.frag_size = snd_pcm_format_bytes_per_second(&format) / 1000.0 * frag_length;
+	params.frag_size = format.rate * frag_length / 1000;
 	params.buffer_size = params.frag_size * 4;
-	params.bytes_min = 0;
-	params.bytes_xrun_max = 0;
+	params.frames_min = format.rate / 16;
+	params.frames_xrun_max = 0;
 	params.fill_mode = SND_PCM_FILL_SILENCE;
-	params.bytes_fill_max = 1024;
-	params.bytes_xrun_max = 0;
+	params.frames_fill_max = 1024;
+	params.frames_xrun_max = 0;
 	if (snd_pcm_stream_params(pcm_handle, &params) < 0) {
 		fprintf(stderr, "%s: unable to set stream params\n", command);
 		exit(EXIT_FAILURE);
 	}
 	if (mmap_flag) {
-		if (snd_pcm_mmap(pcm_handle, stream, &mmap_control, (void **)&mmap_data)<0) {
+		if (snd_pcm_mmap(pcm_handle, stream, &mmap_status, &mmap_control, (void **)&mmap_data)<0) {
 			fprintf(stderr, "%s: unable to mmap memory\n", command);
 			exit(EXIT_FAILURE);
 		}
@@ -663,7 +666,10 @@ static void set_params(void)
 		snd_pcm_dump_setup(pcm_handle, stream, stderr);
 
 	buffer_size = setup.frag_size;
-	audiobuf = (char *)realloc(audiobuf, buffer_size > 1024 ? buffer_size : 1024);
+	bits_per_sample = snd_pcm_format_physical_width(setup.format.format);
+	bits_per_frame = bits_per_sample * setup.format.channels;
+	buffer_bytes = buffer_size * bits_per_frame / 8;
+	audiobuf = malloc(buffer_bytes);
 	if (audiobuf == NULL) {
 		fprintf(stderr, "%s: not enough memory\n", command);
 		exit(EXIT_FAILURE);
@@ -684,7 +690,7 @@ void playback_underrun(void)
 		exit(EXIT_FAILURE);
 	}
 	if (status.state == SND_PCM_STATE_XRUN) {
-		printf("underrun at position %u!!!\n", status.byte_io);
+		fprintf(stderr, "underrun at position %u!!!\n", status.frame_io);
 		if (snd_pcm_stream_prepare(pcm_handle, SND_PCM_STREAM_PLAYBACK)<0) {
 			fprintf(stderr, "underrun: playback stream prepare error\n");
 			exit(EXIT_FAILURE);
@@ -710,7 +716,7 @@ void capture_overrun(void)
 	if (status.state == SND_PCM_STATE_RUNNING)
 		return;		/* everything is ok, but the driver is waiting for data */
 	if (status.state == SND_PCM_STATE_XRUN) {
-		printf("overrun at position %u!!!\n", status.byte_io);
+		fprintf(stderr, "overrun at position %u!!!\n", status.frame_io);
 		if (snd_pcm_stream_prepare(pcm_handle, SND_PCM_STREAM_CAPTURE)<0) {
 			fprintf(stderr, "overrun: capture stream prepare error\n");
 			exit(EXIT_FAILURE);
@@ -732,7 +738,7 @@ static ssize_t pcm_write(u_char *data, size_t count)
 
 	if (mode == SND_PCM_MODE_FRAGMENT &&
 	    count != buffer_size) {
-		snd_pcm_format_set_silence(format.format, data + count, buffer_size - count);
+		snd_pcm_format_set_silence(format.format, data + count * bits_per_frame / 8, buffer_size * format.channels);
 		count = buffer_size;
 	}
 	while (count > 0) {
@@ -751,7 +757,7 @@ static ssize_t pcm_write(u_char *data, size_t count)
 		if (r > 0) {
 			result += r;
 			count -= r;
-			data += r;
+			data += r * bits_per_frame / 8;
 		}
 	}
 	return result;
@@ -765,19 +771,19 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
 	if (mode == SND_PCM_MODE_FRAGMENT &&
 	    count != buffer_size) {
 		unsigned int channel;
-		size_t offset = count / channels;
-		size_t remaining = (buffer_size - count) / channels;
+		size_t offset = count;
+		size_t remaining = buffer_size - count;
 		for (channel = 0; channel < channels; channel++)
-			snd_pcm_format_set_silence(format.format, data[channel] + offset, remaining);
+			snd_pcm_format_set_silence(format.format, data[channel] + offset * bits_per_sample / 8, remaining);
 		count = buffer_size;
 	}
 	while (count > 0) {
 		unsigned int channel;
 		struct iovec vec[channels];
-		size_t offset = result / channels;
-		size_t remaining = count / channels;
+		size_t offset = result;
+		size_t remaining = count;
 		for (channel = 0; channel < channels; channel++) {
-			vec[channel].iov_base = data[channel] + offset;
+			vec[channel].iov_base = data[channel] + offset * bits_per_sample / 8;
 			vec[channel].iov_len = remaining;
 		}
 		r = writev_func(pcm_handle, vec, channels);
@@ -825,7 +831,7 @@ static ssize_t pcm_read(u_char *data, size_t count)
 		if (r > 0) {
 			result += r;
 			count -= r;
-			data += r;
+			data += r * bits_per_frame / 8;
 		}
 	}
 	return result;
@@ -839,10 +845,10 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t count)
 	while (count > 0) {
 		unsigned int channel;
 		struct iovec vec[channels];
-		size_t offset = result / channels;
-		size_t remaining = count / channels;
+		size_t offset = result;
+		size_t remaining = count;
 		for (channel = 0; channel < channels; channel++) {
-			vec[channel].iov_base = data[channel] + offset;
+			vec[channel].iov_base = data[channel] + offset * bits_per_sample / 8;
 			vec[channel].iov_len = remaining;
 		}
 		r = readv_func(pcm_handle, vec, channels);
@@ -876,13 +882,13 @@ static ssize_t voc_pcm_write(u_char *data, size_t count)
 
 	while (count > 0) {
 		size = count;
-		if (size > buffer_size - buffer_pos)
-			size = buffer_size - buffer_pos;
+		if (size > buffer_bytes - buffer_pos)
+			size = buffer_bytes - buffer_pos;
 		memcpy(audiobuf + buffer_pos, data, size);
 		data += size;
 		count -= size;
 		buffer_pos += size;
-		if (buffer_pos == buffer_size) {
+		if (buffer_pos == buffer_bytes) {
 			if ((r = pcm_write(audiobuf, buffer_size)) != buffer_size)
 				return r;
 			buffer_pos = 0;
@@ -896,12 +902,12 @@ static void voc_write_silence(unsigned x)
 	unsigned l;
 	char *buf;
 
-	buf = (char *) malloc(buffer_size);
+	buf = (char *) malloc(buffer_bytes);
 	if (buf == NULL) {
 		fprintf(stderr, "%s: can allocate buffer for silence\n", command);
 		return;		/* not fatal error */
 	}
-	snd_pcm_format_set_silence(format.format, buf, buffer_size);
+	snd_pcm_format_set_silence(format.format, buf, buffer_size * format.channels);
 	while (x > 0) {
 		l = x;
 		if (l > buffer_size)
@@ -917,12 +923,15 @@ static void voc_write_silence(unsigned x)
 static void voc_pcm_flush(void)
 {
 	if (buffer_pos > 0) {
+		size_t b;
 		if (mode == SND_PCM_MODE_FRAGMENT) {
-			if (snd_pcm_format_set_silence(format.format, audiobuf + buffer_pos, buffer_size - buffer_pos) < 0)
+			if (snd_pcm_format_set_silence(format.format, audiobuf + buffer_pos, buffer_bytes - buffer_pos * 8 / bits_per_sample) < 0)
 				fprintf(stderr, "voc_pcm_flush - silence error\n");
-			buffer_pos = buffer_size;
+			b = buffer_size;
+		} else {
+			b = buffer_pos * 8 / bits_per_frame;
 		}
-		if (pcm_write(audiobuf, buffer_pos) != buffer_pos)
+		if (pcm_write(audiobuf, b) != b)
 			fprintf(stderr, "voc_pcm_flush error\n");
 	}
 	snd_pcm_stream_flush(pcm_handle, SND_PCM_STREAM_PLAYBACK);
@@ -954,12 +963,12 @@ static void voc_play(int fd, int ofs, char *name)
 		fprintf(stderr, "Playing Creative Labs Channel file '%s'...\n", name);
 	}
 	/* first we waste the rest of header, ugly but we don't need seek */
-	while (ofs > buffer_size) {
-		if (read(fd, buf, buffer_size) != buffer_size) {
+	while (ofs > buffer_bytes) {
+		if (read(fd, buf, buffer_bytes) != buffer_bytes) {
 			fprintf(stderr, "%s: read error\n", command);
 			exit(EXIT_FAILURE);
 		}
-		ofs -= buffer_size;
+		ofs -= buffer_bytes;
 	}
 	if (ofs) {
 		if (read(fd, buf, ofs) != ofs) {
@@ -980,7 +989,7 @@ static void voc_play(int fd, int ofs, char *name)
 			if (in_buffer)
 				memcpy(buf, data, in_buffer);
 			data = buf;
-			if ((l = read(fd, buf + in_buffer, buffer_size - in_buffer)) > 0)
+			if ((l = read(fd, buf + in_buffer, buffer_bytes - in_buffer)) > 0)
 				in_buffer += l;
 			else if (!in_buffer) {
 				/* the file is truncated, so simulate 'Terminator' 
@@ -1358,11 +1367,11 @@ void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
 	header(rtype, name);
 	set_params();
 
-	while (loaded > buffer_size && written < count) {
+	while (loaded > buffer_bytes && written < count) {
 		if (pcm_write(audiobuf + written, buffer_size) <= 0)
 			return;
-		written += buffer_size;
-		loaded -= buffer_size;
+		written += buffer_bytes;
+		loaded -= buffer_bytes;
 	}
 	if (written > 0 && loaded > 0)
 		memmove(audiobuf, audiobuf + written, loaded);
@@ -1371,8 +1380,8 @@ void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
 	while (written < count) {
 		do {
 			c = count - written;
-			if (c > buffer_size)
-				c = buffer_size;
+			if (c > buffer_bytes)
+				c = buffer_bytes;
 			c -= l;
 
 			if (c == 0)
@@ -1385,10 +1394,12 @@ void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
 			if (r == 0)
 				break;
 			l += r;
-		} while (mode != SND_PCM_MODE_FRAME && l < buffer_size);
+		} while (mode != SND_PCM_MODE_FRAME && l < buffer_bytes);
+		l = l * 8 / bits_per_frame;
 		r = pcm_write(audiobuf, l);
 		if (r != l)
 			break;
+		r = r * bits_per_frame / 8;
 		written += r;
 		l = 0;
 	}
@@ -1407,10 +1418,12 @@ void capture_go(int fd, size_t count, int rtype, char *name)
 
 	while (count > 0) {
 		c = count;
-		if (c > buffer_size)
-			c = buffer_size;
+		if (c > buffer_bytes)
+			c = buffer_bytes;
+		c = c * 8 / bits_per_frame;
 		if ((r = pcm_read(audiobuf, c)) != c)
 			break;
+		r = r * bits_per_frame / 8;
 		if (write(fd, audiobuf, r) != r) {
 			perror(name);
 			exit(EXIT_FAILURE);
@@ -1514,7 +1527,7 @@ void playbackv_go(int* fds, unsigned int channels, size_t loaded, size_t count, 
 	header(rtype, names[0]);
 	set_params();
 
-	vsize = buffer_size / channels;
+	vsize = buffer_bytes / channels;
 
 	// Not yet implemented
 	assert(loaded == 0);
@@ -1543,9 +1556,11 @@ void playbackv_go(int* fds, unsigned int channels, size_t loaded, size_t count, 
 				break;
 			c += r;
 		} while (mode != SND_PCM_MODE_FRAME && c < expected);
-		r = pcm_writev(bufs, channels, c * channels);
-		if (r != c * channels)
+		c = c * 8 / bits_per_sample;
+		r = pcm_writev(bufs, channels, c);
+		if (r != c)
 			break;
+		r = r * bits_per_frame / 8;
 		count -= r;
 	}
 	snd_pcm_stream_flush(pcm_handle, SND_PCM_STREAM_PLAYBACK);
@@ -1562,7 +1577,7 @@ void capturev_go(int* fds, unsigned int channels, size_t count, int rtype, char 
 	header(rtype, names[0]);
 	set_params();
 
-	vsize = buffer_size / channels;
+	vsize = buffer_bytes / channels;
 
 	for (channel = 0; channel < channels; ++channel)
 		bufs[channel] = audiobuf + vsize * channel;
@@ -1570,17 +1585,19 @@ void capturev_go(int* fds, unsigned int channels, size_t count, int rtype, char 
 	while (count > 0) {
 		size_t rv;
 		c = count;
-		if (c > buffer_size)
-			c = buffer_size;
+		if (c > buffer_bytes)
+			c = buffer_bytes;
+		c = c * 8 / bits_per_frame;
 		if ((r = pcm_readv(bufs, channels, c)) != c)
 			break;
-		rv = r / channels;
+		rv = r * bits_per_sample / 8;
 		for (channel = 0; channel < channels; ++channel) {
 			if (write(fds[channel], bufs[channel], rv) != rv) {
 				perror(names[channel]);
 				exit(EXIT_FAILURE);
 			}
 		}
+		r = r * bits_per_frame / 8;
 		count -= r;
 	}
 }
