@@ -1,5 +1,7 @@
 /* AlsaMixer - Commandline mixer for the ALSA project
- * Copyright (C) 1998 Jaroslav Kysela <perex@jcu.cz> & Tim Janik <timj@gtk.org>
+ * Copyright (C) 1998 Jaroslav Kysela <perex@jcu.cz>,
+ *                    Tim Janik <timj@gtk.org>,
+ *                    Carl van Schaik <carl@dreamcoat.che.uct.ac.za>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -101,6 +103,16 @@ static int		 mixer_balance_volumes = 0;
 static int		 mixer_toggle_mute_left = 0;
 static int		 mixer_toggle_mute_right = 0;
 static int		 mixer_toggle_record = 0;
+
+/* By Carl */
+static int		 mixer_toggle_rec_left = 0;
+static int		 mixer_toggle_rec_right = 0;
+static int		 mixer_route_ltor_in = 0;
+static int		 mixer_route_rtol_in = 0;
+#if 0
+static int               mixer_route_ltor_out = 0;
+static int               mixer_route_rtol_out = 0;
+#endif
 
 
 /* --- draw contexts --- */
@@ -314,7 +326,9 @@ mixer_update_cbar (int channel_index)
       (mixer_lvolume_delta || mixer_rvolume_delta ||
        mixer_toggle_mute_left || mixer_toggle_mute_right ||
        mixer_balance_volumes ||
-       mixer_toggle_record))
+       mixer_toggle_record || mixer_toggle_rec_left ||
+       mixer_toggle_rec_right ||
+       mixer_route_rtol_in || mixer_route_ltor_in))
   {
     if (snd_mixer_channel_read(mixer_handle, channel_index, &cdata)<0)
       mixer_abort (ERR_FCN, "snd_mixer_channel_read");
@@ -352,6 +366,43 @@ mixer_update_cbar (int channel_index)
 	cdata.flags |= SND_MIXER_FLG_RECORD;
     }
     mixer_toggle_record = 0;
+
+    if (mixer_toggle_rec_left)
+    {
+      if (cdata.flags & SND_MIXER_FLG_RECORD_LEFT)
+        cdata.flags &= ~SND_MIXER_FLG_RECORD_LEFT;
+      else
+        cdata.flags |= SND_MIXER_FLG_RECORD_LEFT;
+    }
+    mixer_toggle_rec_left = 0;
+
+    if (mixer_toggle_rec_right)
+    {
+      if (cdata.flags & SND_MIXER_FLG_RECORD_RIGHT)
+        cdata.flags &= ~SND_MIXER_FLG_RECORD_RIGHT;
+      else
+        cdata.flags |= SND_MIXER_FLG_RECORD_RIGHT;
+    }
+    mixer_toggle_rec_right = 0;
+
+    if (mixer_route_ltor_in)
+    {
+      if (cdata.flags & SND_MIXER_FLG_LTOR_IN)
+        cdata.flags &= ~SND_MIXER_FLG_LTOR_IN;
+      else
+        cdata.flags |= SND_MIXER_FLG_LTOR_IN;
+/*	printf("state : \n %d \n",cdata.flags & SND_MIXER_FLG_LTOR_IN);
+*/    }
+    mixer_route_ltor_in = 0;
+
+    if (mixer_route_rtol_in)
+    {
+      if (cdata.flags & SND_MIXER_FLG_RTOL_IN)
+        cdata.flags &= ~SND_MIXER_FLG_RTOL_IN;
+      else
+        cdata.flags |= SND_MIXER_FLG_RTOL_IN;
+    }
+    mixer_route_rtol_in = 0;
 
     if (snd_mixer_channel_write(mixer_handle, channel_index, &cdata)<0)
       mixer_abort (ERR_FCN, "snd_mixer_channel_write");
@@ -464,6 +515,10 @@ mixer_update_cbar (int channel_index)
   {
     mixer_dc (DC_CBAR_RECORD);
     mvaddstr (y, x + 1, "RECORD");
+    if (cdata.flags & SND_MIXER_FLG_RECORD_LEFT)
+	mvaddstr (y+1, x + 1, "L");
+    if (cdata.flags & SND_MIXER_FLG_RECORD_RIGHT)
+	mvaddstr (y+1, x + 6, "R");
   }
   else if (cinfo.caps & SND_MIXER_CINFO_CAP_RECORD)
     for (i = 0; i < 6; i++)
@@ -746,6 +801,20 @@ mixer_iteration (void)
     break;
   case ' ':
     mixer_toggle_record = 1;
+    break;
+  case KEY_IC:
+  case ';':
+    mixer_toggle_rec_left = 1;
+    break;
+  case '\'':
+  case KEY_DC:
+    mixer_toggle_rec_right = 1;
+    break;
+  case '1':
+    mixer_route_rtol_in = 1;
+    break;
+  case '2':
+    mixer_route_ltor_in = 1;
     break;
   }
   mixer_focus_channel = CLAMP (mixer_focus_channel, 0, mixer_n_channels - 1);
