@@ -528,6 +528,10 @@ mixer_update_cbar (int group_index)
   } else {
     vright = vleft;
     vright1 = vleft1;
+    group.mute &= ~(group.mute & SND_MIXER_CHN_MASK_FRONT_RIGHT);
+    group.mute |= (group.mute & SND_MIXER_CHN_MASK_FRONT_LEFT) << 1;
+    group.capture &= ~(group.capture & SND_MIXER_CHN_MASK_FRONT_RIGHT);
+    group.capture |= (group.capture & SND_MIXER_CHN_MASK_FRONT_LEFT) << 1;
   }
   
   /* get channel bar position
