@@ -25,6 +25,7 @@ all:
 install: all
 	$(INSTALL) -m 755 -o root -g root -d ${sbindir}
 	$(INSTALL) -s -m 755 -o root -g root alsactl/alsactl ${sbindir}
+	$(INSTALL) -m 644 -o root -g root alsactl/alsactl.1 ${mandir}/man1
 	$(INSTALL) -m 755 -o root -g root -d ${bindir}
 	$(INSTALL) -s -m 755 -o root -g root aplay/aplay ${bindir}
 	ln -sf aplay ${bindir}/arecord
