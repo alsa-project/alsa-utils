@@ -780,19 +780,19 @@ int show_group(void *handle, snd_mixer_gid_t *gid, const char *space)
 			printf(" mute");
 		if (group.caps & SND_MIXER_GRPCAP_JOINTLY_MUTE)
 			printf(" jointly-mute");
-		if (group.caps & SND_MIXER_GRPCAP_RECORD) {
-			printf(" record");
+		if (group.caps & SND_MIXER_GRPCAP_CAPTURE) {
+			printf(" capture");
 		} else {
-			group.record = 0;
+			group.capture = 0;
 		}
-		if (group.caps & SND_MIXER_GRPCAP_JOINTLY_RECORD)
-			printf(" jointly-record");
-		if (group.caps & SND_MIXER_GRPCAP_EXCL_RECORD)
-			printf(" exclusive-record");
+		if (group.caps & SND_MIXER_GRPCAP_JOINTLY_CAPTURE)
+			printf(" jointly-capture");
+		if (group.caps & SND_MIXER_GRPCAP_EXCL_CAPTURE)
+			printf(" exclusive-capture");
 		printf("\n");
-		if ((group.caps & SND_MIXER_GRPCAP_RECORD) &&
-		    (group.caps & SND_MIXER_GRPCAP_EXCL_RECORD))
-			printf("%sRecord exclusive group: %i\n", space, group.record_group);
+		if ((group.caps & SND_MIXER_GRPCAP_CAPTURE) &&
+		    (group.caps & SND_MIXER_GRPCAP_EXCL_CAPTURE))
+			printf("%sCapture exclusive group: %i\n", space, group.capture_group);
 		printf("%sChannels: ", space);
 		if (group.channels == SND_MIXER_CHN_MASK_MONO) {
 			printf("Mono");
@@ -816,7 +816,7 @@ int show_group(void *handle, snd_mixer_gid_t *gid, const char *space)
 						snd_mixer_channel_name(chn),
 						get_percent(group.volume.values[chn], group.min, group.max),
 						group.mute & (1<<chn) ? "mute" : "on",
-						group.record & (1<<chn) ? "record" : "---");
+						group.capture & (1<<chn) ? "capture" : "---");
 			}
 		}
 	}
@@ -1348,10 +1348,12 @@ int gset(int argc, char *argv[])
 		} else if (!strncmp(argv[idx], "unmute", 6) ||
 		           !strncmp(argv[idx], "on", 2)) {
 			group.mute = 0;
-		} else if (!strncmp(argv[idx], "rec", 3)) {
-			group.record = group.channels;
-		} else if (!strncmp(argv[idx], "norec", 5)) {
-			group.record = 0;
+		} else if (!strncmp(argv[idx], "capture", 7) ||
+		           !strncmp(argv[idx], "rec", 3)) {
+			group.capture = group.channels;
+		} else if (!strncmp(argv[idx], "nocapture", 9) ||
+		           !strncmp(argv[idx], "norec", 5)) {
+			group.capture = 0;
 		} else if (isdigit(argv[idx][0])) {
 			char *ptr;
 			int vol;
@@ -1361,7 +1363,7 @@ int gset(int argc, char *argv[])
 			for (chn = 0; chn <= SND_MIXER_CHN_LAST; chn++) {
 				if (!(group.channels & (1<<chn)))
 					continue;
-				group.volume.values[idx] = vol;
+				group.volume.values[chn] = vol;
 			}
 		} else {
 			error("Unknown setup '%s'..\n", argv[idx]);
