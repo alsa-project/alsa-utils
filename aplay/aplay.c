@@ -86,6 +86,8 @@ static int verbose = 0;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t buffer_bytes;
+static int digtype = SND_CONTROL_TYPE_NONE;
+static snd_digital_audio_t diga;
 
 static int count;
 static int vocmajor, vocminor;
@@ -303,6 +305,7 @@ int main(int argc, char *argv[])
 	rhwparams.format = SND_PCM_FORMAT_U8;
 	rhwparams.rate = DEFAULT_SPEED;
 	rhwparams.channels = 1;
+	memset(&diga, 0, sizeof(diga));
 
 	while ((c = getopt_long(argc, argv, short_options, long_options, &option_index)) != -1) {
 		switch (c) {
@@ -403,10 +406,24 @@ int main(int argc, char *argv[])
 			interleaved = 0;
 			break;
 		case 'C':
-			// digital = SND_PCM_DIG_AES_IEC958C;
+			digtype = SND_CONTROL_TYPE_IEC958;
+			diga.aes.status[0] = SND_PCM_AES0_NONAUDIO |
+					     SND_PCM_AES0_CON_EMPHASIS_NONE;
+			diga.aes.status[1] = SND_PCM_AES1_CON_ORIGINAL |
+					     SND_PCM_AES1_CON_PCM_CODER;
+			diga.aes.status[2] = 0;
+			diga.aes.status[3] = SND_PCM_AES3_CON_FS_48000;
 			break;
 		case 'P':
-			// digital = SND_PCM_DIG_AES_IEC958P;
+			digtype = SND_CONTROL_TYPE_IEC958;
+			diga.aes.status[0] = SND_PCM_AES0_PROFESSIONAL |
+					     SND_PCM_AES0_NONAUDIO |
+					     SND_PCM_AES0_PRO_EMPHASIS_NONE |
+					     SND_PCM_AES0_PRO_FS_48000;
+			diga.aes.status[1] = SND_PCM_AES1_PRO_MODE_NOTID |
+					     SND_PCM_AES1_PRO_USERBITS_NOTID;
+			diga.aes.status[2] = SND_PCM_AES2_PRO_WORDLEN_NOTID;
+			diga.aes.status[3] = 0;
 			break;
 		default:
 			fprintf(stderr, "Try `%s --help' for more information.\n", command);
@@ -420,32 +437,40 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-#if 1
-#warning "The S/PDIF code needs to be recoded.."
-#else
-	if (digital != SND_PCM_DIG_NONE) {
-		snd_pcm_dig_params_t dig;
-		memset(&dig, 0, sizeof(dig));
-		dig.group = 0;
-		dig.val.aes.status[0] = SND_PCM_AES0_NONAUDIO;
-		dig.type = digital;
-		switch (digital) {
-		case SND_PCM_DIG_AES_IEC958P:
-			dig.val.aes.status[0] |= SND_PCM_AES0_PROFESSIONAL;
-			dig.val.aes.status[0] |= SND_PCM_AES0_PRO_FS_48000;
-			break;
-		case SND_PCM_DIG_AES_IEC958C:
-			dig.type = SND_PCM_DIG_AES_IEC958C;
-			dig.val.aes.status[3] |= SND_PCM_AES3_CON_FS_48000;
-			break;
-		}
-		err = snd_pcm_dig_params(handle, &dig);
-		if (err < 0) {
-			error("dig_params setting error: %s", snd_strerror(err));
-			return 1;
-		}
+	memset(&info, 0, sizeof(info));
+	if ((err = snd_pcm_info(handle, &info)) < 0) {
+		error("info error: %s", snd_strerror(err));
+		return 1;
 	}
-#endif
+
+	if (digtype != SND_CONTROL_TYPE_NONE) {
+		snd_control_t ctl;
+		snd_ctl_t *ctl_handle;
+		char ctl_name[12];
+		int ctl_card;
+		memset(&ctl, 0, sizeof(ctl));
+		ctl.id.numid = 0;
+		ctl.id.iface = SND_CONTROL_IFACE_PCM;
+		ctl.id.device = info.device;
+		ctl.id.subdevice = info.subdevice;
+		strcpy(ctl.id.name, "IEC958 (S/PDIF) Stream");
+		ctl_card = snd_pcm_card(handle);
+		if (ctl_card < 0) {
+			error("Unable to setup the IEC958 (S/PDIF) interface - PCM has no assigned card");
+			goto __diga_end;
+		}
+		sprintf(ctl_name, "hw:%d", ctl_card);
+		if ((err = snd_ctl_open(&ctl_handle, ctl_name)) < 0) {
+			error("Unable to open the control interface '%s': %s", ctl_name, snd_strerror(err));
+			goto __diga_end;
+		}
+		if ((err = snd_ctl_cwrite(ctl_handle, &ctl)) < 0) {
+			error("Unable to update the IEC958 control: %s", snd_strerror(err));
+			goto __diga_end;
+		}
+		snd_ctl_close(ctl_handle);
+	      __diga_end:
+	}
 
 	if (nonblock) {
 		err = snd_pcm_nonblock(handle, 1);
@@ -453,11 +478,6 @@ int main(int argc, char *argv[])
 			error("nonblock setting error: %s", snd_strerror(err));
 			return 1;
 		}
-	}
-	memset(&info, 0, sizeof(info));
-	if ((err = snd_pcm_info(handle, &info)) < 0) {
-		error("info error: %s", snd_strerror(err));
-		return 1;
 	}
 
 	buffer_size = 1024;
