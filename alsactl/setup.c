@@ -575,7 +575,7 @@ int soundcard_setup_load(const char *cfgfile, int skip)
 	return 0;
 }
 
-static void soundcard_setup_write_switch(FILE * out, const char *space, int interface, snd_switch_t *sw)
+static void soundcard_setup_write_switch(FILE * out, const char *space, int card, int interface, snd_switch_t *sw)
 {
 	char *s, v[16];
 	int idx, first, switchok = 0;
@@ -625,6 +625,24 @@ static void soundcard_setup_write_switch(FILE * out, const char *space, int inte
 	fprintf(out, "%s; The type is '%s'.\n", space, s);
 	if (sw->low != 0 || sw->high != 0)
 		fprintf(out, "%s; The accepted switch range is from %u to %u.\n", space, sw->low, sw->high);
+	if (sw->type == SND_SW_TYPE_LIST) {
+		snd_ctl_t *handle;
+		snd_switch_t swi;
+		memset(&swi, 0, sizeof(swi));
+		swi.iface = sw->iface;
+		swi.device = sw->device;
+		swi.channel = sw->channel;
+		strncpy(swi.name, sw->name, sizeof(swi.name));
+		swi.type = SND_SW_TYPE_LIST_ITEM;
+		if (snd_ctl_open(&handle, card) >= 0) {
+			for (idx = sw->low; idx <= sw->high; idx++) {
+				swi.low = swi.high = idx;
+				if (snd_ctl_switch_read(handle, &swi) >= 0)
+					fprintf(out, "%s; Item #%i - %s\n", space, swi.low, swi.value.item);
+			}
+			snd_ctl_close(handle);
+		}
+	}
 	if (interface == SND_INTERFACE_CONTROL && sw->type == SND_SW_TYPE_WORD &&
 	    !strcmp(sw->name, SND_CTL_SW_JOYSTICK_ADDRESS)) {
 		for (idx = 1, first = 1; idx < 16; idx++) {
@@ -677,7 +695,7 @@ static void soundcard_setup_write_switch(FILE * out, const char *space, int inte
 	fprintf(out, "%sswitch(\"%s\", ", space, sw->name);
 	if (!switchok) {
 		fprintf(out, v);
-		if (sw->type < 0 || sw->type > SND_SW_TYPE_LIST_ITEM) {
+		if (sw->type < 0 || sw->type > SND_SW_TYPE_LAST) {
 			/* TODO: some well known types should be verbose */
 			fprintf(out, "rawdata(@");
 			for (idx = 0; idx < 31; idx++) {
@@ -690,14 +708,14 @@ static void soundcard_setup_write_switch(FILE * out, const char *space, int inte
 	fprintf(out, ")\n");
 }
 
-static void soundcard_setup_write_switches(FILE *out, const char *space, int interface, struct ctl_switch **switches)
+static void soundcard_setup_write_switches(FILE *out, const char *space, int card, int interface, struct ctl_switch **switches)
 {
 	struct ctl_switch *sw;
 
 	if (!(*switches))
 		return;
 	for (sw = *switches; sw; sw = sw->next)
-		soundcard_setup_write_switch(out, space, interface, &sw->s);
+		soundcard_setup_write_switch(out, space, card, interface, &sw->s);
 }
 
 static void soundcard_setup_write_mixer_element(FILE * out, struct mixer_element * xelement)
@@ -884,12 +902,12 @@ int soundcard_setup_write(const char *cfgfile, int cardno)
 		fprintf(out, "soundcard(\"%s\") {\n", first->control.hwinfo.id);
 		if (first->control.switches) {
 			fprintf(out, "  control {\n");
-			soundcard_setup_write_switches(out, "    ", SND_INTERFACE_CONTROL, &first->control.switches);
+			soundcard_setup_write_switches(out, "    ", first->no, SND_INTERFACE_CONTROL, &first->control.switches);
 			fprintf(out, "  }\n");
 		}
 		for (mixer = first->mixers; mixer; mixer = mixer->next) {
 			fprintf(out, "  mixer(\"%s\") {\n", mixer->info.name);
-			soundcard_setup_write_switches(out, "    ", SND_INTERFACE_MIXER, &mixer->switches);
+			soundcard_setup_write_switches(out, "    ", first->no, SND_INTERFACE_MIXER, &mixer->switches);
 			for (mixerelement = mixer->elements; mixerelement; mixerelement = mixerelement->next)
 				soundcard_setup_write_mixer_element(out, mixerelement);
 			fprintf(out, "  }\n");
@@ -900,12 +918,12 @@ int soundcard_setup_write(const char *cfgfile, int cardno)
 			fprintf(out, "  pcm(\"%s\") {\n", pcm->info.name);
 			if (pcm->pswitches) {
 				fprintf(out, "    playback {\n");
-				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_PCM, &pcm->pswitches);
+				soundcard_setup_write_switches(out, "      ", first->no, SND_INTERFACE_PCM, &pcm->pswitches);
 				fprintf(out, "    }\n");
 			}
 			if (pcm->rswitches) {
 				fprintf(out, "    capture {\n");
-				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_PCM, &pcm->rswitches);
+				soundcard_setup_write_switches(out, "      ", first->no, SND_INTERFACE_PCM, &pcm->rswitches);
 				fprintf(out, "    }\n");
 			}
 			fprintf(out, "  }\n");
@@ -916,12 +934,12 @@ int soundcard_setup_write(const char *cfgfile, int cardno)
 			fprintf(out, "  rawmidi(\"%s\") {\n", rawmidi->info.name);
 			if (rawmidi->oswitches) {
 				fprintf(out, "    output {\n");
-				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_RAWMIDI, &rawmidi->oswitches);
+				soundcard_setup_write_switches(out, "      ", first->no, SND_INTERFACE_RAWMIDI, &rawmidi->oswitches);
 				fprintf(out, "    }\n");
 			}
 			if (rawmidi->iswitches) {
 				fprintf(out, "    input {\n");
-				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_RAWMIDI, &rawmidi->iswitches);
+				soundcard_setup_write_switches(out, "      ", first->no, SND_INTERFACE_RAWMIDI, &rawmidi->iswitches);
 				fprintf(out, "    }\n");
 			}
 			fprintf(out, "  }\n");
