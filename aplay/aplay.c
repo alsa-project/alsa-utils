@@ -65,6 +65,7 @@ int mode = SND_PCM_MODE_BLOCK;
 int direction = SND_PCM_OPEN_PLAYBACK;
 int channel = SND_PCM_CHANNEL_PLAYBACK;
 int mmap_flag = 0;
+int noplugin = 0;
 int frag = 0;
 int frags = 0;
 char *audiobuf = NULL;
@@ -82,10 +83,14 @@ int vocmajor, vocminor;
 int (*fcn_info)(snd_pcm_t *handle, snd_pcm_channel_info_t *info);
 int (*fcn_params)(snd_pcm_t *handle, snd_pcm_channel_params_t *params);
 int (*fcn_setup)(snd_pcm_t *handle, snd_pcm_channel_setup_t *setup);
+int (*fcn_prepare)(snd_pcm_t *handle, int channel);
 int (*fcn_status)(snd_pcm_t *handle, snd_pcm_channel_status_t *status);
 int (*fcn_flush)(snd_pcm_t *handle, int channel);
 ssize_t (*fcn_write)(snd_pcm_t *handle, const void *buffer, size_t size);
 ssize_t (*fcn_read)(snd_pcm_t *handle, void *buffer, size_t size);
+int (*fcn_mmap)(snd_pcm_t *handle, int channel, snd_pcm_mmap_control_t **control, void **buffer);
+int (*fcn_munmap)(snd_pcm_t *handle, int channel);
+int (*fcn_go)(snd_pcm_t *handle, int channel);
 
 /* needed prototypes */
 
@@ -182,6 +187,7 @@ static void usage(char *command)
 		"  -t <secs>     timelimit (seconds)\n"
 		"  -e            stream mode\n"
 		"  -E            mmap mode\n"
+		"  -N            Don't use plugins\n"
 		,command, snd_cards()-1);
 	fprintf(stderr, "\nRecognized data formats are:");
 	for (i = 0; i < NUMFORMATS; ++i)
@@ -301,7 +307,7 @@ int main(int argc, char *argv[])
 		version();
 		return 0;
 	}
-	while ((c = getopt(argc, argv, "hlc:d:qs:So:t:vrwxB:c:p:mMVeEf:")) != EOF)
+	while ((c = getopt(argc, argv, "hlc:d:qs:So:t:vrwxB:c:p:mMVeEf:N")) != EOF)
 		switch (c) {
 		case 'h':
 			usage(command);
@@ -393,6 +399,9 @@ int main(int argc, char *argv[])
 			if (mode == SND_PCM_MODE_BLOCK)
 				mmap_flag = 1;
 			break;
+		case 'N':
+			noplugin = 1;
+			break;
 		default:
 			usage(command);
 			return 1;
@@ -401,22 +410,30 @@ int main(int argc, char *argv[])
 	if (!quiet_mode)
 		version();
 
-	if (mmap_flag) {
+	if (noplugin) {
 		fcn_info = snd_pcm_channel_info;
 		fcn_params = snd_pcm_channel_params;
 		fcn_setup = snd_pcm_channel_setup;
+		fcn_prepare = snd_pcm_channel_prepare;
 		fcn_status = snd_pcm_channel_status;
 		fcn_flush = snd_pcm_channel_flush;
 		fcn_write = snd_pcm_write;
 		fcn_read = snd_pcm_read;
+		fcn_mmap = snd_pcm_mmap;
+		fcn_munmap = snd_pcm_munmap;
+		fcn_go = snd_pcm_channel_go;
 	} else {
 		fcn_info = snd_pcm_plugin_info;
 		fcn_params = snd_pcm_plugin_params;
 		fcn_setup = snd_pcm_plugin_setup;
+		fcn_prepare = snd_pcm_plugin_prepare;
 		fcn_status = snd_pcm_plugin_status;
 		fcn_flush = snd_pcm_plugin_flush;
 		fcn_write = snd_pcm_plugin_write;
 		fcn_read = snd_pcm_plugin_read;
+		fcn_mmap = snd_pcm_plugin_mmap;
+		fcn_munmap = snd_pcm_plugin_munmap;
+		fcn_go = snd_pcm_plugin_go;
 	}
 
 	if (!quiet_mode) {
@@ -631,7 +648,7 @@ static void set_format(void)
 		size <<= 1;
 
 	if (mmap_flag)
-		snd_pcm_munmap(pcm_handle, channel);
+		fcn_munmap(pcm_handle, channel);
 	fcn_flush(pcm_handle, channel);		/* to be in right state */
 	memset(&params, 0, sizeof(params));
 	params.mode = mode;
@@ -660,12 +677,12 @@ static void set_format(void)
 		exit(1);
 	}
 	if (mmap_flag) {
-		if (snd_pcm_mmap(pcm_handle, channel, &mmap_control, (void **)&mmap_data)<0) {
+		if (fcn_mmap(pcm_handle, channel, &mmap_control, (void **)&mmap_data)<0) {
 			fprintf(stderr, "%s: unable to mmap memory\n", command);
 			exit(1);
 		}
 	}
-	if (snd_pcm_plugin_prepare(pcm_handle, channel) < 0) {
+	if (fcn_prepare(pcm_handle, channel) < 0) {
 		fprintf(stderr, "%s: unable to prepare channel\n", command);
 		exit(1);
 	}
@@ -1124,7 +1141,7 @@ void playback_write_error(void)
 	}
 	if (status.status == SND_PCM_STATUS_UNDERRUN) {
 		printf("underrun at position %u!!!\n", status.scount);
-		if (snd_pcm_plugin_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK)<0) {
+		if (fcn_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK)<0) {
 			fprintf(stderr, "underrun: playback channel prepare error\n");
 			exit(1);
 		}
@@ -1151,7 +1168,7 @@ void capture_read_error(void)
 		return;		/* everything is ok, but the driver is waiting for data */
 	if (status.status == SND_PCM_STATUS_OVERRUN) {
 		printf("overrun at position %u!!!\n", status.scount);
-		if (snd_pcm_plugin_prepare(pcm_handle, SND_PCM_CHANNEL_CAPTURE)<0) {
+		if (fcn_prepare(pcm_handle, SND_PCM_CHANNEL_CAPTURE)<0) {
 			fprintf(stderr, "overrun: capture channel prepare error\n");
 			exit(1);
 		}
@@ -1198,7 +1215,7 @@ void playback_go(int fd, int loaded, u_long count, int rtype, char *name)
 				while (mmap_control->fragments[frag].data) {
 					switch (mmap_control->status.status) {
 					case SND_PCM_STATUS_PREPARED:
-						if (snd_pcm_channel_go(pcm_handle, SND_PCM_CHANNEL_PLAYBACK)<0) {
+						if (fcn_go(pcm_handle, SND_PCM_CHANNEL_PLAYBACK)<0) {
 							fprintf(stderr, "%s: unable to start playback\n", command);
 							exit(1);
 						}
@@ -1275,7 +1292,7 @@ void capture_go(int fd, int loaded, u_long count, int rtype, char *name)
 			while (!mmap_control->fragments[frag].data) {
 				switch (mmap_control->status.status) {
 				case SND_PCM_STATUS_PREPARED:
-					if (snd_pcm_channel_go(pcm_handle, SND_PCM_CHANNEL_CAPTURE)<0) {
+					if (fcn_go(pcm_handle, SND_PCM_CHANNEL_CAPTURE)<0) {
 						fprintf(stderr, "%s: unable to start capture\n", command);
 						exit(1);
 					}
