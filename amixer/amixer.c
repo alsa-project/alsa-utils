@@ -1075,7 +1075,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'c':
 		case HELPID_CARD:
-			card = snd_card_name(optarg);
+			card = snd_card_get_index(optarg);
 			break;
 		case 'q':
 		case HELPID_QUIET:

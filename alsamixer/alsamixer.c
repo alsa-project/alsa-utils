@@ -1715,7 +1715,7 @@ main (int    argc,
 	  fprintf (stderr, "Usage: %s [-c <card: 0..%i>] [-z]\n", PRGNAME, snd_cards () - 1);
 	  mixer_abort (ERR_NONE, "", 0);
 	case 'c':
-	  card_id = snd_card_name (optarg);
+	  card_id = snd_card_get_index(optarg);
 	  break;
 	case 'g':
 	  mixer_do_color = !mixer_do_color;
