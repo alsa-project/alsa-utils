@@ -52,19 +52,38 @@
 
 char *command;
 snd_pcm_t *pcm_handle;
-struct snd_pcm_playback_info pinfo;
-struct snd_pcm_capture_info rinfo;
+struct snd_pcm_channel_info cinfo;
 snd_pcm_format_t rformat, format;
 int timelimit = 0;
 int quiet_mode = 0;
 int verbose_mode = 0;
+int format_change = 0;
 int active_format = FORMAT_DEFAULT;
+int mode = SND_PCM_MODE_BLOCK;
 int direction = SND_PCM_OPEN_PLAYBACK;
+int channel = SND_PCM_CHANNEL_PLAYBACK;
+int mmap_flag = 0;
+int frag = 0;
+int frags = 0;
 char *audiobuf = NULL;
+snd_pcm_mmap_control_t *mmap_control = NULL;
+char *mmap_data = NULL;
+long mmap_size = 0;
 int buffer_size = -1;
+char silence = 0;
 
 int count;
 int vocmajor, vocminor;
+
+/* functions */
+
+int (*fcn_info)(snd_pcm_t *handle, snd_pcm_channel_info_t *info);
+int (*fcn_params)(snd_pcm_t *handle, snd_pcm_channel_params_t *params);
+int (*fcn_setup)(snd_pcm_t *handle, snd_pcm_channel_setup_t *setup);
+int (*fcn_status)(snd_pcm_t *handle, snd_pcm_channel_status_t *status);
+int (*fcn_flush)(snd_pcm_t *handle, int channel);
+ssize_t (*fcn_write)(snd_pcm_t *handle, const void *buffer, size_t size);
+ssize_t (*fcn_read)(snd_pcm_t *handle, void *buffer, size_t size);
 
 /* needed prototypes */
 
@@ -92,15 +111,27 @@ static char *get_format(int format)
 {
 	static char *formats[] =
 	{
-		"Mu-Law",
-		"A-Law",
-		"Ima-ADPCM",
+		"Signed 8-bit",
 		"Unsigned 8-bit",
 		"Signed 16-bit Little Endian",
 		"Signed 16-bit Big Endian",
-		"Signed 8-bit",
 		"Unsigned 16-bit Little Endian",
 		"Unsigned 16-bit Big Endian",
+		"Signed 24-bit Little Endian",
+		"Signed 24-bit Big Endian",
+		"Unsigned 24-bit Little Endian",
+		"Unsigned 24-bit Big Endian",
+		"Signed 32-bit Little Endian",
+		"Signed 32-bit Big Endian",
+		"Unsigned 32-bit Little Endian",
+		"Unsigned 32-bit Big Endian",
+		"Float",
+		"Float64",
+		"IEC-958 Little Endian",
+		"IEC-958 Big Endian",
+		"Mu-Law",
+		"A-Law",
+		"Ima-ADPCM",
 		"MPEG",
 		"GSM"
 	};
@@ -111,24 +142,13 @@ static char *get_format(int format)
 
 static void check_new_format(snd_pcm_format_t * format)
 {
-	if (direction == SND_PCM_OPEN_PLAYBACK) {
-		if (pinfo.min_rate > format->rate || pinfo.max_rate < format->rate) {
-			fprintf(stderr, "%s: unsupported rate %iHz for playback (valid range is %iHz-%iHz)\n", command, format->rate, pinfo.min_rate, pinfo.max_rate);
-			exit(1);
-		}
-		if (!(pinfo.formats & (1 << format->format))) {
-			fprintf(stderr, "%s: requested format %s isn't supported with hardware\n", command, get_format(format->format));
-			exit(1);
-		}
-	} else {
-		if (rinfo.min_rate > format->rate || rinfo.max_rate < format->rate) {
-			fprintf(stderr, "%s: unsupported rate %iHz for capture (valid range is %iHz-%iHz)\n", command, format->rate, rinfo.min_rate, rinfo.max_rate);
-			exit(1);
-		}
-		if (!(rinfo.formats & (1 << format->format))) {
-			fprintf(stderr, "%s: requested format %s isn't supported with hardware\n", command, get_format(rformat.format));
-			exit(1);
-		}
+	if (cinfo.min_rate > format->rate || cinfo.max_rate < format->rate) {
+		fprintf(stderr, "%s: unsupported rate %iHz (valid range is %iHz-%iHz)\n", command, format->rate, cinfo.min_rate, cinfo.max_rate);
+		exit(1);
+	}
+	if (!(cinfo.formats & (1 << format->format))) {
+		fprintf(stderr, "%s: requested format %s isn't supported with hardware\n", command, get_format(format->format));
+		exit(1);
 	}
 }
 
@@ -155,6 +175,8 @@ static void usage(char *command)
 		"  -m            set CD-ROM quality (44100Hz,stereo,16-bit linear)\n"
 		"  -M            set DAT quality (48000Hz,stereo,16-bit linear)\n"
 		"  -p <type>     compression type (alaw, ulaw, adpcm)\n"
+		"  -e		 stream mode\n"
+		"  -E            mmap mode\n"
 		,command, snd_cards()-1);
 }
 
@@ -165,8 +187,7 @@ static void device_list(void)
 	unsigned int mask;
 	struct snd_ctl_hw_info info;
 	snd_pcm_info_t pcminfo;
-	snd_pcm_playback_info_t playinfo;
-	snd_pcm_capture_info_t recinfo;
+	snd_pcm_channel_info_t chninfo;
 
 	mask = snd_cards_mask();
 	if (!mask) {
@@ -203,32 +224,24 @@ static void device_list(void)
 			printf("  Playback subdevices: %i\n", pcminfo.playback + 1);
 			printf("  Capture subdevices: %i\n", pcminfo.capture + 1);
 			if (pcminfo.flags & SND_PCM_INFO_PLAYBACK) {
-				if ((err = snd_ctl_pcm_playback_info(handle, dev, 0, &playinfo)) < 0) {
-					printf("Error: control digital audio playback info (%i): %s\n", card, snd_strerror(err));
-				} else {
-					printf("  Playback:\n");
-					printf("    Rate range: %iHz-%iHz\n", playinfo.min_rate, playinfo.max_rate);
-					printf("    Voices range: %i-%i\n", playinfo.min_channels, playinfo.max_channels);
-					printf("    Formats:\n");
-					for (idx = 0; idx < SND_PCM_SFMT_GSM; idx++) {
-						if (playinfo.formats & (1 << idx))
-							printf("      %s%s\n", get_format(idx),
-							       playinfo.hw_formats & (1 << idx) ? " [hardware]" : "");
+				for (idx = 0; idx <= pcminfo.playback; idx++) {
+					memset(&chninfo, 0, sizeof(chninfo));
+					chninfo.channel = SND_PCM_CHANNEL_PLAYBACK;
+					if ((err = snd_ctl_pcm_channel_info(handle, dev, idx, &chninfo)) < 0) {
+						printf("Error: control digital audio playback info (%i): %s\n", card, snd_strerror(err));
+					} else {
+						printf("  Playback subdevice #%i: %s\n", idx, chninfo.subname);
 					}
 				}
 			}
 			if (pcminfo.flags & SND_PCM_INFO_CAPTURE) {
-				if ((err = snd_ctl_pcm_capture_info(handle, dev, 0, &recinfo)) < 0) {
-					printf("Error: control digital audio capture info (%i): %s\n", card, snd_strerror(err));
-				} else {
-					printf("  Record:\n");
-					printf("    Rate range: %iHz-%iHz\n", recinfo.min_rate, recinfo.max_rate);
-					printf("    Voices range: %i-%i\n", recinfo.min_channels, recinfo.max_channels);
-					printf("    Formats:\n");
-					for (idx = 0; idx < SND_PCM_SFMT_GSM; idx++) {
-						if (recinfo.formats & (1 << idx))
-							printf("      %s%s\n", get_format(idx),
-							       recinfo.hw_formats & (1 << idx) ? " [hardware]" : "");
+				for (idx = 0; idx <= pcminfo.capture; idx++) {
+					memset(&chninfo, 0, sizeof(chninfo));
+					chninfo.channel = SND_PCM_CHANNEL_CAPTURE;
+					if ((err = snd_ctl_pcm_channel_info(handle, dev, 0, &chninfo)) < 0) {
+						printf("Error: control digital audio capture info (%i): %s\n", card, snd_strerror(err));
+					} else {
+						printf("  Capture subdevice #%i: %s\n", idx, chninfo.subname);
 					}
 				}
 			}
@@ -239,7 +252,7 @@ static void device_list(void)
 
 static void version(void)
 {
-	printf("%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@suse.cz>\n", command);
+	fprintf(stderr, "%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@suse.cz>\n", command);
 }
 
 int main(int argc, char *argv[])
@@ -252,10 +265,12 @@ int main(int argc, char *argv[])
 	active_format = FORMAT_DEFAULT;
 	if (strstr(argv[0], "arecord")) {
 		direction = SND_PCM_OPEN_CAPTURE;
+		channel = SND_PCM_CHANNEL_CAPTURE;
 		active_format = FORMAT_WAVE;
 		command = "Arecord";
 	} else if (strstr(argv[0], "aplay")) {
 		direction = SND_PCM_OPEN_PLAYBACK;
+		channel = SND_PCM_CHANNEL_PLAYBACK;
 		command = "Aplay";
 	} else {
 		fprintf(stderr, "Error: command should be named either arecord or aplay\n");
@@ -264,9 +279,10 @@ int main(int argc, char *argv[])
 
 	buffer_size = -1;
 	memset(&rformat, 0, sizeof(rformat));
+	rformat.interleave = 1;
 	rformat.format = SND_PCM_SFMT_U8;
 	rformat.rate = DEFAULT_SPEED;
-	rformat.channels = 1;
+	rformat.voices = 1;
 
 	if (argc > 1 && !strcmp(argv[1], "--help")) {
 		usage(command);
@@ -276,7 +292,7 @@ int main(int argc, char *argv[])
 		version();
 		return 0;
 	}
-	while ((c = getopt(argc, argv, "hlc:d:qs:So:t:b:vrwuxB:c:p:mMV")) != EOF)
+	while ((c = getopt(argc, argv, "hlc:d:qs:So:t:b:vrwuxB:c:p:mMVeE")) != EOF)
 		switch (c) {
 		case 'h':
 			usage(command);
@@ -299,12 +315,12 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'S':
-			rformat.channels = 2;
+			rformat.voices = 2;
 			break;
 		case 'o':
 			tmp = atoi(optarg);
 			if (tmp < 1 || tmp > 32) {
-				fprintf(stderr, "Error: value %i for channels is invalid\n", tmp);
+				fprintf(stderr, "Error: value %i for voices is invalid\n", tmp);
 				return 1;
 			}
 			break;
@@ -373,11 +389,24 @@ int main(int argc, char *argv[])
 		case 'M':
 			rformat.format = SND_PCM_SFMT_S16_LE;
 			rformat.rate = c == 'M' ? 48000 : 44100;
-			rformat.channels = 2;
+			rformat.voices = 2;
 			break;
 		case 'V':
 			version();
 			return 0;
+		case 'e':
+			if (!mmap_flag) {
+				mode = SND_PCM_MODE_STREAM;
+				if (direction == SND_PCM_OPEN_CAPTURE)
+					direction = SND_PCM_OPEN_STREAM_CAPTURE;
+				if (direction == SND_PCM_OPEN_PLAYBACK)
+					direction = SND_PCM_OPEN_STREAM_PLAYBACK;
+			}
+			break;
+		case 'E':
+			if (mode == SND_PCM_MODE_BLOCK)
+				mmap_flag = 1;
+			break;
 		default:
 			usage(command);
 			return 1;
@@ -386,46 +415,51 @@ int main(int argc, char *argv[])
 	if (!quiet_mode)
 		version();
 
+	fcn_info = snd_pcm_plugin_info;
+	fcn_params = snd_pcm_plugin_params;
+	fcn_setup = snd_pcm_plugin_setup;
+	fcn_status = snd_pcm_plugin_status;
+	fcn_flush = snd_pcm_plugin_flush;
+	fcn_write = snd_pcm_plugin_write;
+	fcn_read = snd_pcm_plugin_read;
+	if (mmap_flag) {
+		fcn_info = snd_pcm_channel_info;
+		fcn_params = snd_pcm_channel_params;
+		fcn_setup = snd_pcm_channel_setup;
+		fcn_status = snd_pcm_channel_status;
+		fcn_flush = snd_pcm_flush_channel;
+		fcn_write = snd_pcm_write;
+		fcn_read = snd_pcm_read;
+	}
+
 	if ((err = snd_pcm_open(&pcm_handle, card, dev, direction)) < 0) {
 		fprintf(stderr, "Error: audio open error: %s\n", snd_strerror(err));
 		return 1;
 	}
-	if (direction == SND_PCM_OPEN_PLAYBACK) {
-		if ((err = snd_pcm_playback_info(pcm_handle, &pinfo)) < 0) {
-			fprintf(stderr, "Error: playback info error: %s\n", snd_strerror(err));
-			return 1;
-		}
-		tmp = pinfo.buffer_size;
-		tmp /= 4;	/* 4 fragments are best */
-	} else {
-		if ((err = snd_pcm_capture_info(pcm_handle, &rinfo)) < 0) {
-			fprintf(stderr, "Error: capture info error: %s\n", snd_strerror(err));
-			return 1;
-		}
-		tmp = rinfo.buffer_size;
-		tmp /= 8;	/* 8 fragments are best */
-	}
-
-	buffer_size = tmp;
-	if (buffer_size < 512 || buffer_size > 16L * 1024L * 1024L) {
-		fprintf(stderr, "Error: Invalid audio buffer size %d\n", buffer_size);
+	memset(&cinfo, 0, sizeof(cinfo));
+	cinfo.channel = channel;
+	if ((err = fcn_info(pcm_handle, &cinfo)) < 0) {
+		fprintf(stderr, "Error: channel info error: %s\n", snd_strerror(err));
 		return 1;
 	}
-	check_new_format(&rformat);
+
+	buffer_size = 1024;
 	format = rformat;
 
-	if ((audiobuf = malloc(buffer_size)) == NULL) {
-		fprintf(stderr, "%s: unable to allocate input/output buffer\n", command);
+	audiobuf = (char *)malloc(1024);
+	if (audiobuf == NULL) {
+		fprintf(stderr, "Error: not enough memory\n");
 		return 1;
 	}
+
 	if (optind > argc - 1) {
-		if (direction == SND_PCM_OPEN_PLAYBACK)
+		if (channel == SND_PCM_CHANNEL_PLAYBACK)
 			playback(NULL);
 		else
 			capture(NULL);
 	} else {
 		while (optind <= argc - 1) {
-			if (direction == SND_PCM_OPEN_PLAYBACK)
+			if (channel == SND_PCM_CHANNEL_PLAYBACK)
 				playback(argv[optind++]);
 			else
 				capture(argv[optind++]);
@@ -472,7 +506,7 @@ static int test_wavefile(void *buffer)
 				command, wp->modus);
 			exit(1);
 		}
-		format.channels = wp->modus;
+		format.voices = wp->modus;
 		switch (wp->bit_p_spl) {
 		case 8:
 			format.format = SND_PCM_SFMT_U8;
@@ -521,8 +555,8 @@ static int test_au(int fd, void *buffer)
 	format.rate = ntohl(ap->sample_rate);
 	if (format.rate < 2000 || format.rate > 256000)
 		return -1;
-	format.channels = ntohl(ap->channels);
-	if (format.channels < 1 || format.channels > 128)
+	format.voices = ntohl(ap->channels);
+	if (format.voices < 1 || format.voices > 128)
 		return -1;
 	if (read(fd, buffer + sizeof(AuHeader), ntohl(ap->hdr_size) - sizeof(AuHeader)) < 0) {
 		fprintf(stderr, "%s: read error\n", command);
@@ -551,7 +585,7 @@ static void write_zeros(unsigned x)
 		l = x;
 		if (l > buffer_size)
 			l = buffer_size;
-		if (snd_pcm_write(pcm_handle, buf, l) != l) {
+		if (fcn_write(pcm_handle, buf, l) != l) {
 			fprintf(stderr, "%s: write error\n", command);
 			exit(1);
 		}
@@ -563,54 +597,99 @@ static void set_format(void)
 {
 	unsigned int bps;	/* bytes per second */
 	unsigned int size;	/* fragment size */
-	struct snd_pcm_playback_params pparams;
-	struct snd_pcm_capture_params rparams;
+	struct snd_pcm_channel_params params;
+	struct snd_pcm_channel_setup setup;
 
-	bps = format.rate * format.channels;
+	if (!format_change)
+		return;
+	bps = format.rate * format.voices;
+	silence = 0x00;
 	switch (format.format) {
+	case SND_PCM_SFMT_U8:
+		silence = 0x80;
+		break;
 	case SND_PCM_SFMT_U16_LE:
 	case SND_PCM_SFMT_U16_BE:
 		bps <<= 1;
+		silence = 0x80;
+		break;
+	case SND_PCM_SFMT_S8:
+		silence = 0x00;
+		break;
+	case SND_PCM_SFMT_S16_LE:
+	case SND_PCM_SFMT_S16_BE:
+		bps <<= 1;
+		silence = 0x00;
 		break;
 	case SND_PCM_SFMT_IMA_ADPCM:
 		bps >>= 2;
+		silence = 0x00;
 		break;
 	}
 	bps >>= 2;		/* ok.. this buffer should be 0.25 sec */
 	if (bps < 16)
 		bps = 16;
-	size = buffer_size;
-	while (size > bps)
-		size >>= 1;
-	if (size < 16)
-		size = 16;
+	size = 1;
+	while ((size << 1) < bps)
+		size <<= 1;
 
-	if (direction == SND_PCM_OPEN_PLAYBACK) {
-		if (snd_pcm_playback_format(pcm_handle, &format) < 0) {
-			fprintf(stderr, "%s: unable to set playback format %s, %iHz, %i voices\n", command, get_format(format.format), format.rate, format.channels);
-			exit(1);
-		}
-		memset(&pparams, 0, sizeof(pparams));
-		pparams.fragment_size = size;
-		pparams.fragments_max = -1;	/* little trick */
-		pparams.fragments_room = 1;
-		if (snd_pcm_playback_params(pcm_handle, &pparams) < 0) {
-			fprintf(stderr, "%s: unable to set playback params\n", command);
-			exit(1);
-		}
+	if (mmap_flag)
+		snd_pcm_munmap(pcm_handle, channel);
+	fcn_flush(pcm_handle, channel);		/* to be in right state */
+	memset(&params, 0, sizeof(params));
+	params.mode = mode;
+	params.channel = channel;
+	memcpy(&params.format, &format, sizeof(format));
+	if (channel == SND_PCM_CHANNEL_PLAYBACK) {
+		params.start_mode = SND_PCM_START_FULL;
 	} else {
-		if (snd_pcm_capture_format(pcm_handle, &format) < 0) {
-			fprintf(stderr, "%s: unable to set capture format %s, %iHz, %i voices\n", command, get_format(format.format), format.rate, format.channels);
-			exit(1);
-		}
-		memset(&rparams, 0, sizeof(rparams));
-		rparams.fragment_size = size;
-		rparams.fragments_min = 1;
-		if (snd_pcm_capture_params(pcm_handle, &rparams) < 0) {
-			fprintf(stderr, "%s: unable to set capture params\n", command);
+		params.start_mode = SND_PCM_START_DATA;
+	}
+	params.stop_mode = SND_PCM_STOP_STOP;
+	if (mode == SND_PCM_MODE_BLOCK) {
+		params.buf.block.frag_size = size;
+		// params.buf.block.frag_size = 128;
+		params.buf.block.frags_max = -1;		/* little trick (playback only) */
+		// params.buf.block.frags_max = 1;
+		params.buf.block.frags_min = 1;
+	} else {
+		params.buf.stream.queue_size = 1024 * 1024;	/* maximum */
+		// params.buf.stream.queue_size = 8192;
+		params.buf.stream.fill = SND_PCM_FILL_SILENCE;
+		params.buf.stream.max_fill = 1024;
+	}
+	if (fcn_params(pcm_handle, &params) < 0) {
+		fprintf(stderr, "%s: unable to set channel params\n", command);
+		exit(1);
+	}
+	if (mmap_flag) {
+		if (snd_pcm_mmap(pcm_handle, channel, &mmap_control, (void **)&mmap_data)<0) {
+			fprintf(stderr, "%s: unable to mmap memory\n", command);
 			exit(1);
 		}
 	}
+	if (snd_pcm_channel_prepare(pcm_handle, channel) < 0) {
+		fprintf(stderr, "%s: unable to prepare channel\n", command);
+		exit(1);
+	}
+	memset(&setup, 0, sizeof(setup));
+	setup.mode = mode;
+	setup.channel = channel;
+	if (fcn_setup(pcm_handle, &setup) < 0) {
+		fprintf(stderr, "%s: unable to obtain setup\n", command);
+		exit(1);
+	}
+	frags = setup.buf.block.frags;
+	buffer_size = mode == SND_PCM_MODE_BLOCK ?
+				setup.buf.block.frag_size :
+				setup.buf.stream.queue_size;
+	audiobuf = (char *)realloc(audiobuf, buffer_size);
+	if (audiobuf == NULL) {
+		fprintf(stderr, "%s: not enough memory\n", command);
+		exit(1);
+	}
+	// printf("real buffer_size = %i, frags = %i, total = %i\n", buffer_size, setup.buf.block.frags, setup.buf.block.frags * buffer_size);
+	format_change = 0;
 }
 
 /*
@@ -650,8 +729,9 @@ static void voc_play(int fd, int ofs, char *name)
 			exit(1);
 		}
 	format.format = SND_PCM_SFMT_U8;
-	format.channels = 1;
+	format.voices = 1;
 	format.rate = DEFAULT_SPEED;
+	format_change = 1;
 	set_format();
 
 	in_buffer = nextblock = 0;
@@ -704,14 +784,13 @@ static void voc_play(int fd, int ofs, char *name)
 						fprintf(stderr, "%s: can't play packed .voc files\n", command);
 						return;
 					}
-					if (format.channels == 2) {	/* if we are in Stereo-Mode, switch back */
-						format.channels = 1;
-						set_format();
-					}
+					if (format.voices == 2)		/* if we are in Stereo-Mode, switch back */
+						format.voices = 1;
 				} else {	/* there was extended block */
-					format.channels = 2;
+					format.voices = 2;
 					was_extended = 0;
 				}
+				format_change = 1;
 				set_format();
 				break;
 			case 2:	/* nothing to do, pure data */
@@ -725,6 +804,7 @@ static void voc_play(int fd, int ofs, char *name)
 				format.rate = (int) (*data);
 				COUNT1(1);
 				format.rate = 1000000 / (256 - format.rate);
+				format_change = 1;
 				set_format();
 				silence = (((u_long) * sp) * 1000) / format.rate;
 #if 0
@@ -793,8 +873,8 @@ static void voc_play(int fd, int ofs, char *name)
 				COUNT1(sizeof(VocExtBlock));
 				format.rate = (int) (eb->tc);
 				format.rate = 256000000L / (65536 - format.rate);
-				format.channels = eb->mode == VOC_MODE_STEREO ? 2 : 1;
-				if (format.channels == 2)
+				format.voices = eb->mode == VOC_MODE_STEREO ? 2 : 1;
+				if (format.voices == 2)
 					format.rate = format.rate >> 1;
 				if (eb->pack) {		/* /dev/dsp can't it */
 					fprintf(stderr, "%s: can't play packed .voc files\n", command);
@@ -822,7 +902,7 @@ static void voc_play(int fd, int ofs, char *name)
 					exit(1);
 				}
 			} else {
-				if (snd_pcm_write(pcm_handle, data, l) != l) {
+				if (fcn_write(pcm_handle, data, l) != l) {
 					fprintf(stderr, "%s: write error\n", command);
 					exit(1);
 				}
@@ -847,7 +927,7 @@ static u_long calc_count(void)
 	if (!timelimit)
 		count = 0x7fffffff;
 	else {
-		count = timelimit * format.rate * format.channels;
+		count = timelimit * format.rate * format.voices;
 		switch (format.format) {
 		case SND_PCM_SFMT_S16_LE:
 		case SND_PCM_SFMT_S16_BE:
@@ -881,7 +961,7 @@ static void begin_voc(int fd, u_long cnt)
 		fprintf(stderr, "%s: write error\n", command);
 		exit(1);
 	}
-	if (format.channels > 1) {
+	if (format.voices > 1) {
 		/* write a extended block */
 		bt.type = 8;
 		bt.datalen = 4;
@@ -939,7 +1019,7 @@ static void begin_wave(int fd, u_long cnt)
 	wh.sub_chunk = WAV_FMT;
 	wh.sc_len = 16;
 	wh.format = WAV_PCM_CODE;
-	wh.modus = format.channels;
+	wh.modus = format.voices;
 	wh.sample_fq = format.rate;
 #if 0
 	wh.byte_p_spl = (samplesize == 8) ? 1 : 2;
@@ -972,7 +1052,7 @@ static void begin_au(int fd, u_long cnt)
 	case SND_PCM_SFMT_U8:
 		ah.encoding = htonl(AU_FMT_LIN8);
 		break;
-	case SND_PCM_SFMT_U16_LE:
+	case SND_PCM_SFMT_S16_LE:
 		ah.encoding = htonl(AU_FMT_LIN16);
 		break;
 	default:
@@ -980,7 +1060,7 @@ static void begin_au(int fd, u_long cnt)
 		exit(1);
 	}
 	ah.sample_rate = htonl(format.rate);
-	ah.channels = htonl(format.channels);
+	ah.channels = htonl(format.voices);
 	if (write(fd, &ah, sizeof(AuHeader)) != sizeof(AuHeader)) {
 		fprintf(stderr, "%s: write error\n", command);
 		exit(1);
@@ -1009,56 +1089,158 @@ static void header(int rtype, char *name)
 {
 	if (!quiet_mode) {
 		fprintf(stderr, "%s %s '%s' : ",
-			(direction == SND_PCM_OPEN_PLAYBACK) ? "Playing" : "Recording",
+			(channel == SND_PCM_CHANNEL_PLAYBACK) ? "Playing" : "Recording",
 			fmt_rec_table[rtype].what,
 			name);
 		fprintf(stderr, "%s, ", get_format(format.format));
 		fprintf(stderr, "Rate %d Hz, ", format.rate);
-		if (format.channels == 1)
+		if (format.voices == 1)
 			fprintf(stderr, "Mono");
-		else if (format.channels == 2)
+		else if (format.voices == 2)
 			fprintf(stderr, "Stereo");
 		else
-			fprintf(stderr, "Voices %i", format.channels);
+			fprintf(stderr, "Voices %i", format.voices);
 		fprintf(stderr, "\n");
 	}
+}
+
+/* playback write error hander */
+
+void playback_write_error(void)
+{
+	snd_pcm_channel_status_t status;
+	
+	memset(&status, 0, sizeof(status));
+	status.channel = channel;
+	if (fcn_status(pcm_handle, &status)<0) {
+		fprintf(stderr, "playback channel status error\n");
+		exit(1);
+	}
+	if (status.status == SND_PCM_STATUS_UNDERRUN) {
+		printf("underrun at position %u!!!\n", status.scount);
+		if (snd_pcm_channel_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK)<0) {
+			fprintf(stderr, "underrun: playback channel prepare error\n");
+			exit(1);
+		}
+		frag = 0;
+		return;		/* ok, data should be accepted again */
+	}
+	fprintf(stderr, "write error\n");
+	exit(1);
+}
+
+/* capture read error hander */
+
+void capture_read_error(void)
+{
+	snd_pcm_channel_status_t status;
+	
+	memset(&status, 0, sizeof(status));
+	status.channel = channel;
+	if (fcn_status(pcm_handle, &status)<0) {
+		fprintf(stderr, "capture channel status error\n");
+		exit(1);
+	}
+	if (status.status == SND_PCM_STATUS_OVERRUN) {
+		printf("overrun at position %u!!!\n", status.scount);
+		if (snd_pcm_channel_prepare(pcm_handle, SND_PCM_CHANNEL_CAPTURE)<0) {
+			fprintf(stderr, "overrun: capture channel prepare error\n");
+			exit(1);
+		}
+		frag = 0;
+		return;		/* ok, data should be accepted again */
+	}
+	fprintf(stderr, "read error\n");
+	exit(1);
 }
 
 /* playing raw data */
 
 void playback_go(int fd, int loaded, u_long count, int rtype, char *name)
 {
-	int l;
+	int l, r;
 	u_long c;
 
 	header(rtype, name);
+	format_change = 1;
 	set_format();
 
 	while (count) {
-		c = count;
+		l = loaded;
+		loaded = 0;
+		do {
+			c = count;
 
-		if (c > buffer_size)
-			c = buffer_size;
-
-		if ((l = read(fd, audiobuf + loaded, c - loaded)) > 0) {
-			l += loaded;
-			loaded = 0;	/* correct the count; ugly but ... */
+			if (c + l > buffer_size)
+				c = buffer_size - l;
+				
+			if ((r = read(fd, audiobuf + l, c)) <= 0)
+				break;
+			l += r;
+		} while (mode != SND_PCM_MODE_STREAM || l < buffer_size);
+		if (l > 0) {
 #if 0
 			sleep(1);
 #endif
-			if (snd_pcm_write(pcm_handle, audiobuf, l) != l) {
-				fprintf(stderr, "write error\n");
-				exit(1);
+			if (mmap_flag) {
+				if (l != buffer_size)
+					memset(audiobuf + l, silence, buffer_size - l);
+				while (mmap_control->fragments[frag].data) {
+					switch (mmap_control->status.status) {
+					case SND_PCM_STATUS_PREPARED:
+						if (snd_pcm_channel_go(pcm_handle, SND_PCM_CHANNEL_PLAYBACK)<0) {
+							fprintf(stderr, "%s: unable to start playback\n", command);
+							exit(1);
+						}
+						break;
+					case SND_PCM_STATUS_RUNNING:
+						break;
+					case SND_PCM_STATUS_UNDERRUN:
+						playback_write_error();
+						break;
+					default:
+						fprintf(stderr, "%s: bad status (mmap) = %i\n", command, mmap_control->status.status);
+					}
+					usleep(10000);
+				}
+				memcpy(mmap_data + mmap_control->fragments[frag].addr, audiobuf, buffer_size);
+				mmap_control->fragments[frag].data = 1;
+				frag++; frag %= frags;
+			} else if (mode == SND_PCM_MODE_BLOCK) {
+				if (l != buffer_size)
+					memset(audiobuf + l, silence, buffer_size - l);
+				while (fcn_write(pcm_handle, audiobuf, buffer_size) != buffer_size)
+					playback_write_error();
+				count -= l;
+			} else {
+				char *buf = audiobuf;
+				while (l > 0) {
+					while ((r = fcn_write(pcm_handle, buf, l)) < 0) {
+						playback_write_error();
+					}
+#if 0
+					{
+						static int x = 1024*1024;
+						if (r > 0 && r < x) {
+							x = r;
+							printf("smallest - %i\n", x);
+						}
+					}			
+#endif				
+					l -= r;
+					count -= r;
+					buf += r;
+					if (r < 32)
+						usleep(10000);
+				}
 			}
-			count -= l;
 		} else {
-			if (l == -1) {
+			if (l == -1)
 				perror(name);
-				exit(-1);
-			}
 			count = 0;	/* Stop */
 		}
 	}			/* while (count) */
+	fcn_flush(pcm_handle, SND_PCM_CHANNEL_PLAYBACK);
 }
 
 /* captureing raw data, this proc handels WAVE files and .VOCs (as one block) */
@@ -1069,23 +1251,64 @@ void capture_go(int fd, int loaded, u_long count, int rtype, char *name)
 	u_long c;
 
 	header(rtype, name);
+	format_change = 1;
 	set_format();
 
 	while (count) {
 		c = count;
-		if (c > buffer_size)
-			c = buffer_size;
-
-		if ((l = snd_pcm_read(pcm_handle, audiobuf, c)) > 0) {
-			if (write(fd, audiobuf, l) != l) {
+		if (mmap_flag) {
+			while (!mmap_control->fragments[frag].data) {
+				switch (mmap_control->status.status) {
+				case SND_PCM_STATUS_PREPARED:
+					if (snd_pcm_channel_go(pcm_handle, SND_PCM_CHANNEL_CAPTURE)<0) {
+						fprintf(stderr, "%s: unable to start capture\n", command);
+						exit(1);
+					}
+					break;
+				case SND_PCM_STATUS_RUNNING:
+					break;
+				case SND_PCM_STATUS_OVERRUN:
+					capture_read_error();
+					break;
+				default:
+					fprintf(stderr, "%s: bad status (mmap) = %i\n", command, mmap_control->status.status);
+				}
+				usleep(10000);
+			}
+			if (c > buffer_size)
+				c = buffer_size;
+			if (write(fd, mmap_data + mmap_control->fragments[frag].addr, c) != c) {
 				perror(name);
 				exit(-1);
 			}
-			count -= l;
-		}
-		if (l == -1) {
-			fprintf(stderr, "read error\n");
-			exit(-1);
+			mmap_control->fragments[frag].data = 0;
+			frag++; frag %= frags;
+			count -= c;
+		} else {
+			if ((l = fcn_read(pcm_handle, audiobuf, buffer_size)) > 0) {
+#if 0
+				{
+					static int x = 1024*1024;
+					if (l < x) {
+						x = l;
+						printf("smallest - %i\n", x);
+					}
+				}			
+#endif
+				if (c > l)
+					c = l;
+				if (write(fd, audiobuf, c) != c) {
+					perror(name);
+					exit(-1);
+				}
+				count -= c;
+			}
+			if (l < -1) {
+				fprintf(stderr, "write error\n");
+				exit(-1);
+			}
+			if (l == 0)
+				usleep(10000);
 		}
 	}
 }
@@ -1098,7 +1321,7 @@ static void playback(char *name)
 {
 	int fd, ofs;
 
-	snd_pcm_flush_playback(pcm_handle);
+	fcn_flush(pcm_handle, SND_PCM_CHANNEL_PLAYBACK);
 	if (!name || !strcmp(name, "-")) {
 		fd = 0;
 		name = "stdin";
@@ -1114,12 +1337,13 @@ static void playback(char *name)
 		exit(1);
 	}
 	if (test_au(fd, audiobuf) >= 0) {
+		rformat.format = SND_PCM_SFMT_MU_LAW;
 		playback_go(fd, 0, count, FORMAT_AU, name);
 		goto __end;
 	}
 	if (read(fd, audiobuf + sizeof(AuHeader),
 		 sizeof(VocHeader) - sizeof(AuHeader)) !=
-	    sizeof(VocHeader) - sizeof(AuHeader)) {
+		 sizeof(VocHeader) - sizeof(AuHeader)) {
 		fprintf(stderr, "%s: read error", command);
 		exit(1);
 	}
@@ -1138,6 +1362,7 @@ static void playback(char *name)
 		playback_go(fd, 0, count, FORMAT_WAVE, name);
 	} else {
 		/* should be raw data */
+		check_new_format(&rformat);
 		init_raw_data();
 		count = calc_count();
 		playback_go(fd, sizeof(WaveHeader), count, FORMAT_RAW, name);
@@ -1167,6 +1392,7 @@ static void capture(char *name)
 	   isn't a problem (this can only be in 8 bit mono) */
 	if (fmt_rec_table[active_format].start)
 		fmt_rec_table[active_format].start(fd, count);
+	check_new_format(&rformat);
 	capture_go(fd, 0, count, active_format, name);
 	fmt_rec_table[active_format].end(fd);
 }
