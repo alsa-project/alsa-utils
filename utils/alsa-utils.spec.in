@@ -8,15 +8,22 @@ Release: %rel
 Copyright: GPL
 Group: System/Libraries
 Source: ftp://ftp.alsa-project.org/pub/utils/alsa-utils-%{ver}.tar.bz2
-BuildRoot: /var/tmp/alsa-utils-%{ver}
+BuildRoot: %{_tmppath}/%{name}-%{version}-root
 URL: http://www.alsa-project.org
-Requires: alsa-lib alsa-driver
+Requires: alsa-lib ncurses
+BuildRequires: alsa-lib-devel ncurses-devel
 
 %description
 
 Advanced Linux Sound Architecture (ALSA) - Utils
 
 %changelog
+* Thu Mar  6 2003 Ronny V. Vindenes <sublett@dc-s.com>
+
+- removed wrongly included doc file
+- changed BuildRoot from /var/tmp to %{_tmppath}
+- use standard rpm macros for %build & %install
+- updated dependencies
 
 * Tue Nov 20 2001 Jaroslav Kysela <perex@suse.cz>
 
@@ -36,24 +43,20 @@ Advanced Linux Sound Architecture (ALSA) - Utils
 %prep
 %setup
 %build
-
-./configure --prefix=%_prefix --mandir=%_mandir
+%configure
 make
 
 %install
-[ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
-
-mkdir -p $RPM_BUILD_ROOT/%_prefix/bin $RPM_BUILD_ROOT/%_mandir/man1
-
-make DESTDIR="$RPM_BUILD_ROOT" install
+[ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
+%makeinstall
 
 %clean
-[ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
+[ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-, root, root)
 
-%doc ChangeLog COPYING README config.status
+%doc ChangeLog COPYING README
 
 %{_prefix}/sbin/*
 %{_prefix}/bin/*
