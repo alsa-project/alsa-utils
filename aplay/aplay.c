@@ -777,12 +777,16 @@ static void set_params(void)
 	assert(period_time >= 0);
 	err = snd_pcm_hw_params(handle, params);
 	if (err < 0) {
-		fprintf(stderr, "Unable to install hw params:\n");
+		error("Unable to install hw params:");
 		snd_pcm_hw_params_dump(params, log);
 		exit(EXIT_FAILURE);
 	}
 	chunk_size = snd_pcm_hw_params_get_period_size(params, 0);
 	buffer_size = snd_pcm_hw_params_get_buffer_size(params);
+	if (chunk_size == buffer_size) {
+		error("Can't use period equal to buffer size (%u == %lu)", chunk_size, buffer_size);
+		exit(EXIT_FAILURE);
+	}
 	snd_pcm_sw_params_current(handle, swparams);
 	xfer_align = snd_pcm_sw_params_get_xfer_align(swparams);
 	if (sleep_min)
