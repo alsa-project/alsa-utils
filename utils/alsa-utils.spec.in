@@ -72,3 +72,4 @@ rm -rf $RPM_BUILD_ROOT
 
 %{prefix}/usr/sbin/*
 %{prefix}/usr/bin/*
+%{prefix}/usr/man/man1/*
