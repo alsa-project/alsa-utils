@@ -58,23 +58,12 @@ static void soundcard_mixer_channel_free(struct mixer_channel *first)
 	}
 }
 
-static void soundcard_mixer_switch_free(struct mixer_switch *first)
-{
-	struct mixer_switch *next;
-
-	while (first) {
-		next = first->next;
-		free(first);
-		first = next;
-	}
-}
-
 static void soundcard_mixer_free1(struct mixer *mixer)
 {
 	if (!mixer)
 		return;
 	soundcard_mixer_channel_free(mixer->channels);
-	soundcard_mixer_switch_free(mixer->switches);
+	soundcard_ctl_switch_free(mixer->switches);
 	free(mixer);
 }
 
@@ -89,23 +78,12 @@ static void soundcard_mixer_free(struct mixer *first)
 	}
 }
 
-static void soundcard_pcm_switch_free(struct pcm_switch *first)
-{
-	struct pcm_switch *next;
-
-	while (first) {
-		next = first->next;
-		free(first);
-		first = next;
-	}
-}
-
 static void soundcard_pcm_free1(struct pcm *pcm)
 {
 	if (!pcm)
 		return;
-	soundcard_pcm_switch_free(pcm->pswitches);
-	soundcard_pcm_switch_free(pcm->rswitches);
+	soundcard_ctl_switch_free(pcm->pswitches);
+	soundcard_ctl_switch_free(pcm->rswitches);
 	free(pcm);
 }
 
@@ -120,23 +98,12 @@ static void soundcard_pcm_free(struct pcm *first)
 	}
 }
 
-static void soundcard_rawmidi_switch_free(struct rawmidi_switch *first)
-{
-	struct rawmidi_switch *next;
-
-	while (first) {
-		next = first->next;
-		free(first);
-		first = next;
-	}
-}
-
 static void soundcard_rawmidi_free1(struct rawmidi *rawmidi)
 {
 	if (!rawmidi)
 		return;
-	soundcard_rawmidi_switch_free(rawmidi->iswitches);
-	soundcard_rawmidi_switch_free(rawmidi->oswitches);
+	soundcard_ctl_switch_free(rawmidi->iswitches);
+	soundcard_ctl_switch_free(rawmidi->oswitches);
 	free(rawmidi);
 }
 
@@ -209,19 +176,133 @@ void soundcard_setup_done(void)
 	soundcards = NULL;
 }
 
+static int switch_list(void *handle, snd_switch_list_t *list, int interface, int device)
+{
+	switch (interface) {
+	case 0:
+		return snd_ctl_switch_list(handle, list);
+	case 1:
+		return snd_ctl_mixer_switch_list(handle, device, list);
+	case 2:
+		return snd_ctl_pcm_playback_switch_list(handle, device, list);
+	case 3:
+		return snd_ctl_pcm_record_switch_list(handle, device, list);
+	case 4:
+		return snd_ctl_rawmidi_output_switch_list(handle, device, list);
+	case 5:
+		return snd_ctl_rawmidi_input_switch_list(handle, device, list);
+	default:
+		return -EINVAL;
+	}
+}
+
+static int switch_read(void *handle, snd_switch_t *sw, int interface, int device)
+{
+	switch (interface) {
+	case 0:
+		return snd_ctl_switch_read(handle, sw);
+	case 1:
+		return snd_ctl_mixer_switch_read(handle, device, sw);
+	case 2:
+		return snd_ctl_pcm_playback_switch_read(handle, device, sw);
+	case 3:
+		return snd_ctl_pcm_record_switch_read(handle, device, sw);
+	case 4:
+		return snd_ctl_rawmidi_output_switch_read(handle, device, sw);
+	case 5:
+		return snd_ctl_rawmidi_input_switch_read(handle, device, sw);
+	default:
+		return -EINVAL;
+	}
+}
+
+#if 0
+static int switch_write(void *handle, snd_switch_t *sw, int interface, int device)
+{
+	switch (interface) {
+	case 0:
+		return snd_ctl_switch_write(handle, sw);
+	case 1:
+		return snd_ctl_mixer_switch_write(handle, device, sw);
+	case 2:
+		return snd_ctl_pcm_playback_switch_write(handle, device, sw);
+	case 3:
+		return snd_ctl_pcm_record_switch_write(handle, device, sw);
+	case 4:
+		return snd_ctl_rawmidi_output_switch_write(handle, device, sw);
+	case 5:
+		return snd_ctl_rawmidi_input_switch_write(handle, device, sw);
+	default:
+		return -EINVAL;
+	}
+}
+#endif
+
+static int determine_switches(void *handle, struct ctl_switch **csw, int interface, int device)
+{
+	int err, idx;
+	snd_switch_list_t list;
+	snd_switch_list_item_t *item;
+	snd_switch_t sw;
+	struct ctl_switch *prev_csw;
+	struct ctl_switch *new_csw;
+
+	*csw = NULL;
+	bzero(&list, sizeof(list));
+	if ((err = switch_list(handle, &list, interface, device)) < 0) {
+		error("Cannot determine switches for interface %i and device %i: %s", interface, device, snd_strerror(err));
+		return 1;
+	}
+	if (list.switches_over <= 0)
+		return 0;
+	list.switches_size = list.switches_over + 16;
+	list.switches = list.switches_over = 0;
+	list.pswitches = malloc(sizeof(snd_switch_list_item_t) * list.switches_size);
+	if (!list.pswitches) {
+		error("No enough memory...");
+		return 1;
+	}
+	if ((err = switch_list(handle, &list, interface, device)) < 0) {
+		error("Cannot determine switches (2) for interface %i and device %i: %s", interface, device, snd_strerror(err));
+		return 1;
+	}
+	for (idx = 0, prev_csw = NULL; idx < list.switches; idx++) {
+		item = &list.pswitches[idx];
+		bzero(&sw, sizeof(sw));
+		strncpy(sw.name, item->name, sizeof(sw.name));
+		if ((err = switch_read(handle, &sw, interface, device)) < 0) {
+			error("Cannot read switch for interface %i and device %i: %s", interface, device, snd_strerror(err));
+			free(list.pswitches);
+			return 1;
+		}
+		new_csw = malloc(sizeof(*new_csw));
+		if (!new_csw) {
+			error("No enough memory...");
+			free(list.pswitches);
+			return 1;
+		}
+		bzero(new_csw, sizeof(*new_csw));
+		memcpy(&new_csw->s, &sw, sizeof(new_csw->s));
+		if (*csw) {
+			prev_csw->next = new_csw;
+			prev_csw = new_csw;
+		} else {
+			*csw = prev_csw = new_csw;
+		}
+	}
+	free(list.pswitches);
+	return 0;
+}
+
 int soundcard_setup_collect(int cardno)
 {
 	void *handle, *mhandle;
 	struct soundcard *card, *first, *prev;
 	int err, idx, count, device;
-	struct ctl_switch *ctl, *ctlprev;
 	struct mixer *mixer, *mixerprev;
-	struct mixer_switch *mixsw, *mixswprev;
 	struct mixer_channel *mixerchannel, *mixerchannelprev;
 	struct pcm *pcm, *pcmprev;
-	struct pcm_switch *pcmsw, *pcmswprev;
 	struct rawmidi *rawmidi, *rawmidiprev;
-	struct rawmidi_switch *rawmidisw, *rawmidiswprev;
 
 	soundcard_remove(cardno);
 	if ((err = snd_ctl_open(&handle, cardno)) < 0) {
@@ -262,27 +343,9 @@ int soundcard_setup_collect(int cardno)
 		return 1;
 	}
 	/* --- */
-	count = snd_ctl_switches(handle);
-	for (idx = 0, ctlprev = NULL; idx < count; idx++) {
-		ctl = (struct ctl_switch *) malloc(sizeof(struct ctl_switch));
-		if (!ctl) {
-			snd_ctl_close(handle);
-			error("malloc error");
-			return 1;
-		}
-		bzero(ctl, sizeof(struct ctl_switch));
-		ctl->no = idx;
-		if ((err = snd_ctl_switch_read(handle, idx, &ctl->s)) < 0) {
-			free(ctl);
-			error("CTL switch read error (%s) - skipping", snd_strerror(err));
-			break;
-		}
-		if (!ctlprev) {
-			card->control.switches = ctl;
-		} else {
-			ctlprev->next = ctl;
-		}
-		ctlprev = ctl;
+	if (determine_switches(handle, &card->control.switches, 0, 0)) {
+		snd_ctl_close(handle);
+		return 1;
 	}
 	/* --- */
 	for (device = 0, mixerprev = NULL; device < card->control.hwinfo.mixerdevs; device++) {
@@ -294,27 +357,9 @@ int soundcard_setup_collect(int cardno)
 		}
 		bzero(mixer, sizeof(struct mixer));
 		mixer->no = device;
-		count = snd_ctl_mixer_switches(handle, device);
-		for (idx = 0, mixswprev = NULL; idx < count; idx++) {
-			mixsw = (struct mixer_switch *) malloc(sizeof(struct mixer_switch));
-			if (!mixsw) {
-				snd_ctl_close(handle);
-				error("malloc error");
-				return 1;
-			}
-			bzero(mixsw, sizeof(struct mixer_switch));
-			mixsw->no = idx;
-			if ((err = snd_ctl_mixer_switch_read(handle, device, idx, &mixsw->s)) < 0) {
-				free(mixsw);
-				error("MIXER switch read error (%s) - skipping", snd_strerror(err));
-				break;
-			}
-			if (!mixswprev) {
-				mixer->switches = mixsw;
-			} else {
-				mixswprev->next = mixsw;
-			}
-			mixswprev = mixsw;
+		if (determine_switches(handle, &mixer->switches, 1, device)) {
+			snd_ctl_close(handle);
+			return 1;
 		}
 		if (!mixerprev) {
 			card->mixers = mixer;
@@ -408,49 +453,13 @@ int soundcard_setup_collect(int cardno)
 			error("PCM info error: %s\n", snd_strerror(err));
 			return 1;
 		}
-		count = snd_ctl_pcm_playback_switches(handle, device);
-		for (idx = 0, pcmswprev = NULL; idx < count; idx++) {
-			pcmsw = (struct pcm_switch *) malloc(sizeof(struct pcm_switch));
-			if (!pcmsw) {
-				snd_ctl_close(handle);
-				error("malloc error");
-				return 1;
-			}
-			bzero(pcmsw, sizeof(struct mixer_switch));
-			pcmsw->no = idx;
-			if ((err = snd_ctl_pcm_playback_switch_read(handle, device, idx, &pcmsw->s)) < 0) {
-				free(pcmsw);
-				error("PCM playback switch read error (%s) - skipping", snd_strerror(err));
-				break;
-			}
-			if (!pcmswprev) {
-				pcm->pswitches = pcmsw;
-			} else {
-				pcmswprev->next = pcmsw;
-			}
-			pcmswprev = pcmsw;
+		if (determine_switches(handle, &pcm->pswitches, 2, device)) {
+			snd_ctl_close(handle);
+			return 1;
 		}
-		count = snd_ctl_pcm_record_switches(handle, device);
-		for (idx = 0, pcmswprev = NULL; idx < count; idx++) {
-			pcmsw = (struct pcm_switch *) malloc(sizeof(struct pcm_switch));
-			if (!pcmsw) {
-				snd_ctl_close(handle);
-				error("malloc error");
-				return 1;
-			}
-			bzero(pcmsw, sizeof(struct mixer_switch));
-			pcmsw->no = idx;
-			if ((err = snd_ctl_pcm_record_switch_read(handle, device, idx, &pcmsw->s)) < 0) {
-				free(pcmsw);
-				error("PCM record switch read error (%s) - skipping", snd_strerror(err));
-				break;
-			}
-			if (!pcmswprev) {
-				pcm->rswitches = pcmsw;
-			} else {
-				pcmswprev->next = pcmsw;
-			}
-			pcmswprev = pcmsw;
+		if (determine_switches(handle, &pcm->rswitches, 3, device)) {
+			snd_ctl_close(handle);
+			return 1;
 		}
 		if (!pcmprev) {
 			card->pcms = pcm;
@@ -474,49 +483,13 @@ int soundcard_setup_collect(int cardno)
 			error("RAWMIDI info error: %s\n", snd_strerror(err));
 			return 1;
 		}
-		count = snd_ctl_rawmidi_input_switches(handle, device);
-		for (idx = 0, rawmidiswprev = NULL; idx < count; idx++) {
-			rawmidisw = (struct rawmidi_switch *) malloc(sizeof(struct rawmidi_switch));
-			if (!rawmidisw) {
-				snd_ctl_close(handle);
-				error("malloc error");
-				return 1;
-			}
-			bzero(rawmidisw, sizeof(struct rawmidi_switch));
-			rawmidisw->no = idx;
-			if ((err = snd_ctl_rawmidi_input_switch_read(handle, device, idx, &rawmidisw->s)) < 0) {
-				free(rawmidisw);
-				error("RAWMIDI input switch read error (%s) - skipping", snd_strerror(err));
-				break;
-			}
-			if (!rawmidiswprev) {
-				rawmidi->iswitches = rawmidisw;
-			} else {
-				rawmidiswprev->next = rawmidisw;
-			}
-			rawmidiswprev = rawmidisw;
+		if (determine_switches(handle, &rawmidi->oswitches, 4, device)) {
+			snd_ctl_close(handle);
+			return 1;
 		}
-		count = snd_ctl_rawmidi_output_switches(handle, device);
-		for (idx = 0, rawmidiswprev = NULL; idx < count; idx++) {
-			rawmidisw = (struct rawmidi_switch *) malloc(sizeof(struct rawmidi_switch));
-			if (!rawmidisw) {
-				snd_ctl_close(handle);
-				error("malloc error");
-				return 1;
-			}
-			bzero(rawmidisw, sizeof(struct rawmidi_switch));
-			rawmidisw->no = idx;
-			if ((err = snd_ctl_rawmidi_output_switch_read(handle, device, idx, &rawmidisw->s)) < 0) {
-				free(rawmidisw);
-				error("RAWMIDI output switch read error (%s) - skipping", snd_strerror(err));
-				break;
-			}
-			if (!rawmidiswprev) {
-				rawmidi->oswitches = rawmidisw;
-			} else {
-				rawmidiswprev->next = rawmidisw;
-			}
-			rawmidiswprev = rawmidisw;
+		if (determine_switches(handle, &rawmidi->iswitches, 5, device)) {
+			snd_ctl_close(handle);
+			return 1;
 		}
 		if (!rawmidiprev) {
 			card->rawmidis = rawmidi;
@@ -559,115 +532,121 @@ int soundcard_setup_load(const char *cfgfile, int skip)
 	return 0;
 }
 
-static void soundcard_setup_write_switch(FILE * out, int interface, const unsigned char *name, unsigned int type, unsigned int low, unsigned int high, void *data)
+static void soundcard_setup_write_switch(FILE * out, const char *space, int interface, snd_switch_t *sw)
 {
-	union {
-		unsigned int enable;
-		unsigned char data8[32];
-		unsigned short data16[16];
-		unsigned int data32[8];
-	} *pdata = data;
 	char *s, v[16];
 	int idx, first, switchok = 0;
-	const char *space = "    ";
 
 	v[0] = '\0';
-	switch (type) {
-	case SND_CTL_SW_TYPE_BOOLEAN:
+	switch (sw->type) {
+	case SND_SW_TYPE_BOOLEAN:
 		s = "bool";
-		strcpy(v, pdata->enable ? "true" : "false");
+		strcpy(v, sw->value.enable ? "true" : "false");
 		break;
-	case SND_CTL_SW_TYPE_BYTE:
+	case SND_SW_TYPE_BYTE:
 		s = "byte";
-		sprintf(v, "%u", (unsigned int) pdata->data8[0]);
+		sprintf(v, "%u", (unsigned int) sw->value.data8[0]);
 		break;
-	case SND_CTL_SW_TYPE_WORD:
+	case SND_SW_TYPE_WORD:
 		s = "word";
 		if (interface == SND_INTERFACE_CONTROL &&
-		    !strcmp(name, SND_CTL_SW_JOYSTICK_ADDRESS)) {
-		    	sprintf(v, "0x%x", (unsigned int) pdata->data16[0]);
+		    !strcmp(sw->name, SND_CTL_SW_JOYSTICK_ADDRESS)) {
+		    	sprintf(v, "0x%x", (unsigned int) sw->value.data16[0]);
 		} else {
-			sprintf(v, "%u", (unsigned int) pdata->data16[0]);
+			sprintf(v, "%u", (unsigned int) sw->value.data16[0]);
 		}
 		break;
-	case SND_CTL_SW_TYPE_DWORD:
+	case SND_SW_TYPE_DWORD:
 		s = "dword";
-		sprintf(v, "%u", pdata->data32[0]);
+		sprintf(v, "%u", sw->value.data32[0]);
 		break;
-	case SND_CTL_SW_TYPE_USER:
+	case SND_SW_TYPE_USER:
 		s = "user";
+		break;
+	case SND_SW_TYPE_LIST:
+		s = "list";
+		sprintf(v, "%u", sw->value.item_number);
 		break;
 	default:
 		s = "unknown";
 	}
 	fprintf(out, "%s; Type is '%s'.\n", space, s);
-	if (low != 0 || high != 0)
-		fprintf(out, "%s; Accepted switch range is from %u to %u.\n", space, low, high);
-	if (interface == SND_INTERFACE_CONTROL && type == SND_CTL_SW_TYPE_WORD &&
-	    !strcmp(name, SND_CTL_SW_JOYSTICK_ADDRESS)) {
+	if (sw->low != 0 || sw->high != 0)
+		fprintf(out, "%s; Accepted switch range is from %u to %u.\n", space, sw->low, sw->high);
+	if (interface == SND_INTERFACE_CONTROL && sw->type == SND_SW_TYPE_WORD &&
+	    !strcmp(sw->name, SND_CTL_SW_JOYSTICK_ADDRESS)) {
 		for (idx = 1, first = 1; idx < 16; idx++) {
-			if (pdata->data16[idx]) {
+			if (sw->value.data16[idx]) {
 				if (first) {
-					fprintf(out, "%s; Available addresses - 0x%x", space, pdata->data16[idx]);
+					fprintf(out, "%s; Available addresses - 0x%x", space, sw->value.data16[idx]);
 					first = 0;
 				} else {
-					fprintf(out, ", 0x%x", pdata->data16[idx]);
+					fprintf(out, ", 0x%x", sw->value.data16[idx]);
 				}
 			}
 		}
 		if (!first)
 			fprintf(out, "\n");
 	}
-	if (interface == SND_INTERFACE_MIXER && type == SND_MIXER_SW_TYPE_BOOLEAN &&
-	    !strcmp(name, SND_MIXER_SW_IEC958OUT)) {
-		fprintf(out, "%sswitch( \"%s\", ", space, name);
-		if (pdata->data32[1] == (('C' << 8) | 'S')) {	/* Cirrus Crystal */
+	if (interface == SND_INTERFACE_MIXER && sw->type == SND_SW_TYPE_BOOLEAN &&
+	    !strcmp(sw->name, SND_MIXER_SW_IEC958OUT)) {
+		fprintf(out, "%sswitch( \"%s\", ", space, sw->name);
+		if (sw->value.data32[1] == (('C' << 8) | 'S')) {	/* Cirrus Crystal */
 			switchok = 0;
-			fprintf(out, "iec958ocs( %s", pdata->enable ? "enable" : "disable");
-			if (pdata->data16[4] & 0x2000)
+			fprintf(out, "iec958ocs( %s", sw->value.enable ? "enable" : "disable");
+			if (sw->value.data16[4] & 0x2000)
 				fprintf(out, " 3d");
-			if (pdata->data16[4] & 0x0040)
+			if (sw->value.data16[4] & 0x0040)
 				fprintf(out, " reset");
-			if (pdata->data16[4] & 0x0020)
+			if (sw->value.data16[4] & 0x0020)
 				fprintf(out, " user");
-			if (pdata->data16[4] & 0x0010)
+			if (sw->value.data16[4] & 0x0010)
 				fprintf(out, " valid");
-			if (pdata->data16[5] & 0x0002)
+			if (sw->value.data16[5] & 0x0002)
 				fprintf(out, " data");
-			if (!(pdata->data16[5] & 0x0004))
+			if (!(sw->value.data16[5] & 0x0004))
 				fprintf(out, " protect");
-			switch (pdata->data16[5] & 0x0018) {
+			switch (sw->value.data16[5] & 0x0018) {
 			case 0x0008:
 				fprintf(out, " pre2");
 				break;
 			default:
 				break;
 			}
-			if (pdata->data16[5] & 0x0020)
+			if (sw->value.data16[5] & 0x0020)
 				fprintf(out, " fsunlock");
-			fprintf(out, " type( 0x%x )", (pdata->data16[5] >> 6) & 0x7f);
-			if (pdata->data16[5] & 0x2000)
+			fprintf(out, " type( 0x%x )", (sw->value.data16[5] >> 6) & 0x7f);
+			if (sw->value.data16[5] & 0x2000)
 				fprintf(out, " gstatus");
 			fprintf(out, " )");
 			goto __end;
 		}
 	}
-	fprintf(out, "%sswitch( \"%s\", ", space, name);
+	fprintf(out, "%sswitch(\"%s\", ", space, sw->name);
 	if (!switchok) {
 		fprintf(out, v);
-		if (type < 0 || type > SND_CTL_SW_TYPE_DWORD) {
+		if (sw->type < 0 || sw->type > SND_SW_TYPE_LIST_ITEM) {
 			/* TODO: some well known types should be verbose */
 			fprintf(out, " rawdata( ");
 			for (idx = 0; idx < 31; idx++) {
-				fprintf(out, "@%02x:", pdata->data8[idx]);
+				fprintf(out, "@%02x:", sw->value.data8[idx]);
 			}
-			fprintf(out, "%02x@ )\n", pdata->data8[31]);
+			fprintf(out, "%02x@ )\n", sw->value.data8[31]);
 		}
 	}
       __end:
 	fprintf(out, " )\n");
 }
 
+static void soundcard_setup_write_switches(FILE *out, const char *space, int interface, struct ctl_switch **switches)
+{
+	struct ctl_switch *sw;
+
+	if (!(*switches))
+		return;
+	for (sw = *switches; sw; sw = sw->next)
+		soundcard_setup_write_switch(out, space, interface, &sw->s);
+}
 
 static void soundcard_setup_write_mixer_channel(FILE * out, struct mixer_channel * channel)
 {
@@ -717,7 +696,7 @@ static void soundcard_setup_write_mixer_channel(FILE * out, struct mixer_channel
 		}
 		fprintf(out, "\n");
 	}
-	fprintf(out, "    channel( \"%s\"", channel->info.name);
+	fprintf(out, "    channel(\"%s\"", channel->info.name);
 	for (d = OUTPUT; d <= INPUT; ++d) {
 		snd_mixer_channel_direction_info_t *di;
 		snd_mixer_channel_direction_t *dd;
@@ -741,7 +720,7 @@ static void soundcard_setup_write_mixer_channel(FILE * out, struct mixer_channel
 			if (di->caps & SND_MIXER_CINFO_DCAP_VOLUME)
 				fprintf(out, " %i", dd->right);
 
-			fprintf(out, "%s%s )",
+			fprintf(out, "%s%s)",
 				dd->flags & SND_MIXER_DFLG_MUTE_RIGHT ? " mute" : "",
 				dd->flags & SND_MIXER_DFLG_RTOL ? " swap" : ""
 				);
@@ -750,7 +729,7 @@ static void soundcard_setup_write_mixer_channel(FILE * out, struct mixer_channel
 			fprintf(out, "mono(");
 			if (di->caps & SND_MIXER_CINFO_DCAP_VOLUME)
 				fprintf(out, " %i", (dd->left + dd->right)/2);
-			fprintf(out, "%s )",
+			fprintf(out, "%s)",
 				dd->flags & SND_MIXER_DFLG_MUTE ? " mute" : ""
 				);
 		}
@@ -762,14 +741,10 @@ int soundcard_setup_write(const char *cfgfile)
 {
 	FILE *out;
 	struct soundcard *first;
-	struct ctl_switch *ctlsw;
 	struct mixer *mixer;
-	struct mixer_switch *mixersw;
 	struct mixer_channel *mixerchannel;
 	struct pcm *pcm;
-	struct pcm_switch *pcmsw;
 	struct rawmidi *rawmidi;
-	struct rawmidi_switch *rawmidisw;
 
 	if ((out = fopen(cfgfile, "w+")) == NULL) {
 		error("Cannot open file '%s' for writing...\n", cfgfile);
@@ -779,35 +754,31 @@ int soundcard_setup_write(const char *cfgfile)
 	fprintf(out, "# Generated by alsactl\n");
 	fprintf(out, "\n");
 	for (first = soundcards; first; first = first->next) {
-		fprintf(out, "soundcard( \"%s\" ) {\n", first->control.hwinfo.id);
+		fprintf(out, "soundcard(\"%s\") {\n", first->control.hwinfo.id);
 		if (first->control.switches) {
 			fprintf(out, "  control {\n");
-			for (ctlsw = first->control.switches; ctlsw; ctlsw = ctlsw->next)
-				soundcard_setup_write_switch(out, SND_INTERFACE_CONTROL, ctlsw->s.name, ctlsw->s.type, ctlsw->s.low, ctlsw->s.high, (void *) &ctlsw->s.value);
+			soundcard_setup_write_switches(out, "    ", SND_INTERFACE_CONTROL, &first->control.switches);
 			fprintf(out, "  }\n");
 		}
 		for (mixer = first->mixers; mixer; mixer = mixer->next) {
-			fprintf(out, "  mixer( \"%s\" ) {\n", mixer->info.name);
+			fprintf(out, "  mixer(\"%s\") {\n", mixer->info.name);
+			soundcard_setup_write_switches(out, "    ", SND_INTERFACE_MIXER, &mixer->switches);
 			for (mixerchannel = mixer->channels; mixerchannel; mixerchannel = mixerchannel->next)
 				soundcard_setup_write_mixer_channel(out, mixerchannel);
-			for (mixersw = mixer->switches; mixersw; mixersw = mixersw->next)
-				soundcard_setup_write_switch(out, SND_INTERFACE_MIXER, mixersw->s.name, mixersw->s.type, mixersw->s.low, mixersw->s.high, (void *) (&mixersw->s.value));
 			fprintf(out, "  }\n");
 		}
 		for (pcm = first->pcms; pcm; pcm = pcm->next) {
 			if (!pcm->pswitches && !pcm->rswitches)
 				continue;
-			fprintf(out, "  pcm( \"%s\" ) {\n", pcm->info.name);
+			fprintf(out, "  pcm(\"%s\") {\n", pcm->info.name);
 			if (pcm->pswitches) {
 				fprintf(out, "    playback {");
-				for (pcmsw = pcm->pswitches; pcmsw; pcmsw = pcmsw->next)
-					soundcard_setup_write_switch(out, SND_INTERFACE_PCM, pcmsw->s.name, pcmsw->s.type, pcmsw->s.low, pcmsw->s.high, (void *) &pcmsw->s.value);
+				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_PCM, &pcm->pswitches);
 				fprintf(out, "    }\n");
 			}
 			if (pcm->rswitches) {
 				fprintf(out, "    record {");
-				for (pcmsw = pcm->pswitches; pcmsw; pcmsw = pcmsw->next)
-					soundcard_setup_write_switch(out, SND_INTERFACE_PCM, pcmsw->s.name, pcmsw->s.type, pcmsw->s.low, pcmsw->s.high, (void *) &pcmsw->s.value);
+				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_PCM, &pcm->rswitches);
 				fprintf(out, "    }\n");
 			}
 			fprintf(out, "  }\n");
@@ -815,17 +786,15 @@ int soundcard_setup_write(const char *cfgfile)
 		for (rawmidi = first->rawmidis; rawmidi; rawmidi = rawmidi->next) {
 			if (!rawmidi->oswitches && !rawmidi->iswitches)
 				continue;
-			fprintf(out, "  rawmidi( \"%s\" ) {\n", rawmidi->info.name);
+			fprintf(out, "  rawmidi(\"%s\") {\n", rawmidi->info.name);
 			if (rawmidi->oswitches) {
 				fprintf(out, "    output {");
-				for (rawmidisw = rawmidi->oswitches; rawmidisw; rawmidisw = rawmidisw->next)
-					soundcard_setup_write_switch(out, SND_INTERFACE_RAWMIDI, rawmidisw->s.name, rawmidisw->s.type, rawmidisw->s.low, rawmidisw->s.high, (void *) &rawmidisw->s.value);
+				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_RAWMIDI, &rawmidi->oswitches);
 				fprintf(out, "    }\n");
 			}
 			if (rawmidi->iswitches) {
 				fprintf(out, "    input {");
-				for (rawmidisw = rawmidi->iswitches; rawmidisw; rawmidisw = rawmidisw->next)
-					soundcard_setup_write_switch(out, SND_INTERFACE_RAWMIDI, rawmidisw->s.name, rawmidisw->s.type, rawmidisw->s.low, rawmidisw->s.high, (void *) &rawmidisw->s.value);
+				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_RAWMIDI, &rawmidi->iswitches);
 				fprintf(out, "    }\n");
 			}
 			fprintf(out, "  }\n");
@@ -875,11 +844,8 @@ int soundcard_setup_process(int cardno)
 	struct ctl_switch *ctlsw;
 	struct mixer *mixer;
 	struct mixer_channel *channel;
-	struct mixer_switch *mixersw;
 	struct pcm *pcm;
-	struct pcm_switch *pcmsw;
 	struct rawmidi *rawmidi;
-	struct rawmidi_switch *rawmidisw;
 
 	for (soundcard = soundcards; soundcard; soundcard = soundcard->next) {
 		if (cardno >= 0 && soundcard->no != cardno)
@@ -887,7 +853,7 @@ int soundcard_setup_process(int cardno)
 		for (ctlsw = soundcard->control.switches; ctlsw; ctlsw = ctlsw->next) {
 			if (ctlsw->change)
 				if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-					if ((err = snd_ctl_switch_write(ctlhandle, ctlsw->no, &ctlsw->s)) < 0)
+					if ((err = snd_ctl_switch_write(ctlhandle, &ctlsw->s)) < 0)
 						error("Control switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
 				}
 		}
@@ -905,42 +871,42 @@ int soundcard_setup_process(int cardno)
 				snd_mixer_close(mixhandle);
 				mixhandle = NULL;
 			}
-			for (mixersw = mixer->switches; mixersw; mixersw = mixersw->next)
-				if (mixersw->change)
+			for (ctlsw = mixer->switches; ctlsw; ctlsw = ctlsw->next)
+				if (ctlsw->change)
 					if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-						if ((err = snd_ctl_mixer_switch_write(ctlhandle, mixer->no, mixersw->no, &mixersw->s)) < 0)
-							error("Mixer switch '%s' write error: %s", mixersw->s.name, snd_strerror(err));
+						if ((err = snd_ctl_mixer_switch_write(ctlhandle, mixer->no, &ctlsw->s)) < 0)
+							error("Mixer switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
 					}
 		}
 		for (pcm = soundcard->pcms; pcm; pcm = pcm->next) {
-			for (pcmsw = pcm->pswitches; pcmsw; pcmsw = pcmsw->next) {
-				if (pcmsw->change)
+			for (ctlsw = pcm->pswitches; ctlsw; ctlsw = ctlsw->next) {
+				if (ctlsw->change)
 					if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-						if ((err = snd_ctl_pcm_playback_switch_write(ctlhandle, pcm->no, pcmsw->no, &pcmsw->s)) < 0)
-							error("PCM playback switch '%s' write error: %s", pcmsw->s.name, snd_strerror(err));
+						if ((err = snd_ctl_pcm_playback_switch_write(ctlhandle, pcm->no, &ctlsw->s)) < 0)
+							error("PCM playback switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
 					}
 			}
-			for (pcmsw = pcm->rswitches; pcmsw; pcmsw = pcmsw->next) {
-				if (pcmsw->change)
+			for (ctlsw = pcm->rswitches; ctlsw; ctlsw = ctlsw->next) {
+				if (ctlsw->change)
 					if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-						if ((err = snd_ctl_pcm_record_switch_write(ctlhandle, pcm->no, pcmsw->no, &pcmsw->s)) < 0)
-							error("PCM record switch '%s' write error: %s", pcmsw->s.name, snd_strerror(err));
+						if ((err = snd_ctl_pcm_record_switch_write(ctlhandle, pcm->no, &ctlsw->s)) < 0)
+							error("PCM record switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
 					}
 			}
 		}
 		for (rawmidi = soundcard->rawmidis; rawmidi; rawmidi = rawmidi->next) {
-			for (rawmidisw = rawmidi->oswitches; rawmidisw; rawmidisw = rawmidisw->next) {
-				if (rawmidisw->change)
+			for (ctlsw = rawmidi->oswitches; ctlsw; ctlsw = ctlsw->next) {
+				if (ctlsw->change)
 					if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-						if ((err = snd_ctl_rawmidi_output_switch_write(ctlhandle, rawmidi->no, rawmidisw->no, &rawmidisw->s)) < 0)
-							error("RAWMIDI output switch '%s' write error: %s", rawmidisw->s.name, snd_strerror(err));
+						if ((err = snd_ctl_rawmidi_output_switch_write(ctlhandle, rawmidi->no, &ctlsw->s)) < 0)
+							error("RAWMIDI output switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
 					}
 			}
-			for (rawmidisw = rawmidi->iswitches; rawmidisw; rawmidisw = rawmidisw->next) {
-				if (rawmidisw->change)
+			for (ctlsw = rawmidi->iswitches; ctlsw; ctlsw = ctlsw->next) {
+				if (ctlsw->change)
 					if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-						if ((err = snd_ctl_rawmidi_output_switch_write(ctlhandle, rawmidi->no, rawmidisw->no, &rawmidisw->s)) < 0)
-							error("RAWMIDI input switch '%s' write error: %s", rawmidisw->s.name, snd_strerror(err));
+						if ((err = snd_ctl_rawmidi_output_switch_write(ctlhandle, rawmidi->no, &ctlsw->s)) < 0)
+							error("RAWMIDI input switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
 					}
 			}
 		}

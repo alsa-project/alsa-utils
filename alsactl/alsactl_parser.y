@@ -48,7 +48,6 @@ static void set_mixer_volume(int volume);
 static void set_mixer_flags(int flags);
 static void select_mixer_channel_end(void);
 
-
 #define SWITCH_CONTROL		0
 #define SWITCH_MIXER		1
 #define SWITCH_PCM		2
@@ -75,7 +74,7 @@ static struct rawmidi *Xrawmidi = NULL;
 static struct mixer_channel *Xchannel = NULL;
 static int Xswitchtype = SWITCH_CONTROL;
 static int *Xswitchchange = NULL;
-static void *Xswitch = NULL;
+static snd_switch_t *Xswitch = NULL;
 static unsigned int Xswitchiec958ocs = 0;
 static unsigned short Xswitchiec958ocs1[16];
 
@@ -433,63 +432,64 @@ static void select_mixer_channel_end(void)
 {
 }
 
-#define FIND_SWITCH( xtype, first, name, err ) \
-  if ( !name ) { Xswitch = Xswitchchange = NULL; return; } \
-  for ( sw = first; sw; sw = sw -> next ) { \
-    if ( !strcmp( sw -> s.name, name ) ) { \
-      Xswitchtype = xtype; \
-      Xswitchchange = &sw -> change; \
-      Xswitch = (void *)&sw -> s; \
-      free( name ); \
-      return; \
-    } \
-  } \
-  yyerror( "Cannot find " err " switch '%s'...", name ); \
-  free( name );
+static void find_switch(int xtype, struct ctl_switch *first, char *name, char *err)
+{
+	struct ctl_switch *sw;
+
+	if (!name) {
+		Xswitch = NULL;
+		Xswitchchange = NULL;
+		return;
+	}
+	for (sw = first; sw; sw = sw->next) {
+		if (!strcmp(sw -> s.name, name)) {
+			Xswitchtype = xtype;
+			Xswitchchange = &sw->change;
+			Xswitch = &sw->s;
+			free(name);
+			return;
+		}
+	}
+	yyerror("Cannot find %s switch '%s'...", err, name);
+	free(name);
+}
 
 static void select_control_switch(char *name)
 {
-	struct ctl_switch *sw;
-	FIND_SWITCH(SWITCH_CONTROL, Xsoundcard->control.switches, name, "control");
+	find_switch(SWITCH_CONTROL, Xsoundcard->control.switches, name, "control");
 }
 
 static void select_mixer_switch(char *name)
 {
-	struct mixer_switch *sw;
-	FIND_SWITCH(SWITCH_MIXER, Xmixer->switches, name, "mixer");
+	find_switch(SWITCH_MIXER, Xmixer->switches, name, "mixer");
 }
 
 static void select_pcm_playback_switch(char *name)
 {
-	struct pcm_switch *sw;
-	FIND_SWITCH(SWITCH_PCM, Xpcm->pswitches, name, "pcm playback");
+	find_switch(SWITCH_PCM, Xpcm->pswitches, name, "pcm playback");
 }
 
 static void select_pcm_record_switch(char *name)
 {
-	struct pcm_switch *sw;
-	FIND_SWITCH(SWITCH_PCM, Xpcm->rswitches, name, "pcm record");
+	find_switch(SWITCH_PCM, Xpcm->rswitches, name, "pcm record");
 }
 
 static void select_rawmidi_output_switch(char *name)
 {
-	struct rawmidi_switch *sw;
-	FIND_SWITCH(SWITCH_RAWMIDI, Xrawmidi->oswitches, name, "rawmidi output");
+	find_switch(SWITCH_RAWMIDI, Xrawmidi->oswitches, name, "rawmidi output");
 }
 
 static void select_rawmidi_input_switch(char *name)
 {
-	struct rawmidi_switch *sw;
-	FIND_SWITCH(SWITCH_RAWMIDI, Xrawmidi->iswitches, name, "rawmidi input");
+	find_switch(SWITCH_RAWMIDI, Xrawmidi->iswitches, name, "rawmidi input");
 }
 
 static void set_switch_boolean(int val)
 {
-	/* ok.. this is a little bit wrong, but at these times are all switches same */
-	snd_ctl_switch_t *sw = (snd_ctl_switch_t *) Xswitch;
+	snd_switch_t *sw = Xswitch;
 	unsigned int xx;
 
-	if (sw->type != SND_CTL_SW_TYPE_BOOLEAN)
+	if (sw->type != SND_SW_TYPE_BOOLEAN)
 		yyerror("Switch '%s' isn't boolean type...", sw->name);
 	xx = val ? 1 : 0;
 	if (sw->value.enable != xx)
@@ -502,13 +502,12 @@ static void set_switch_boolean(int val)
 
 static void set_switch_integer(int val)
 {
-	/* ok.. this is a little bit wrong, but at these times are all switches same */
-	snd_ctl_switch_t *sw = (snd_ctl_switch_t *) Xswitch;
+	snd_switch_t *sw = Xswitch;
 	unsigned int xx;
 
-	if (sw->type != SND_CTL_SW_TYPE_BYTE &&
-	    sw->type != SND_CTL_SW_TYPE_WORD &&
-	    sw->type != SND_CTL_SW_TYPE_DWORD)
+	if (sw->type != SND_SW_TYPE_BYTE &&
+	    sw->type != SND_SW_TYPE_WORD &&
+	    sw->type != SND_SW_TYPE_DWORD)
 		yyerror("Switch '%s' isn't integer type...", sw->name);
 	if (val < sw->low || val > sw->high)
 		yyerror("Value for switch '%s' out of range (%i-%i)...\n", sw->name, sw->low, sw->high);
@@ -520,8 +519,7 @@ static void set_switch_integer(int val)
 
 static void set_switch_iec958ocs_begin(int end)
 {
-	/* ok.. this is a little bit wrong, but at these times are all switches same */
-	snd_ctl_switch_t *sw = (snd_ctl_switch_t *) Xswitch;
+	snd_switch_t *sw = Xswitch;
 
 	if (end) {
 		if (Xswitchiec958ocs != sw->value.enable) {
@@ -544,7 +542,7 @@ static void set_switch_iec958ocs_begin(int end)
 #endif
 		return;
 	}
-	if (Xswitchtype != SWITCH_MIXER || sw->type != SND_MIXER_SW_TYPE_BOOLEAN ||
+	if (Xswitchtype != SWITCH_MIXER || sw->type != SND_SW_TYPE_BOOLEAN ||
 	    strcmp(sw->name, SND_MIXER_SW_IEC958OUT))
 		yyerror("Switch '%s' cannot store IEC958 information for Cirrus Logic chips...", sw->name);
 	if (sw->value.data32[1] != (('C' << 8) | 'S'))

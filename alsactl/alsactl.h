@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <sys/asoundlib.h>
 
 #define ALSACTL_FILE	"/etc/asound.conf"
@@ -37,9 +38,8 @@ extern int debugflag;
 extern void error(const char *fmt,...);
 
 struct ctl_switch {
-	int no;
 	int change;
-	snd_ctl_switch_t s;
+	snd_switch_t s;
 	struct ctl_switch *next;
 };
 
@@ -59,48 +59,27 @@ struct mixer_channel {
 	struct mixer_channel *next;
 };
 
-struct mixer_switch {
-	int no;
-	int change;
-	snd_mixer_switch_t s;
-	struct mixer_switch *next;
-};
-
 struct mixer {
 	int no;
 	snd_mixer_info_t info;
 	struct mixer_channel *channels;
-	struct mixer_switch *switches;
+	struct ctl_switch *switches;
 	struct mixer *next;
-};
-
-struct pcm_switch {
-	int no;
-	int change;
-	snd_pcm_switch_t s;
-	struct pcm_switch *next;
 };
 
 struct pcm {
 	int no;
 	snd_pcm_info_t info;
-	struct pcm_switch *pswitches;
-	struct pcm_switch *rswitches;
+	struct ctl_switch *pswitches;
+	struct ctl_switch *rswitches;
 	struct pcm *next;
-};
-
-struct rawmidi_switch {
-	int no;
-	int change;
-	snd_rawmidi_switch_t s;
-	struct rawmidi_switch *next;
 };
 
 struct rawmidi {
 	int no;
 	snd_rawmidi_info_t info;
-	struct rawmidi_switch *iswitches;
-	struct rawmidi_switch *oswitches;
+	struct ctl_switch *iswitches;
+	struct ctl_switch *oswitches;
 	struct rawmidi *next;
 };
 
