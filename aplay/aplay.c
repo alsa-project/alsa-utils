@@ -35,7 +35,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <errno.h>
-#include <sys/asoundlib.h>
+#include <alsa/asoundlib.h>
 #include <assert.h>
 #include <sys/poll.h>
 #include <sys/uio.h>

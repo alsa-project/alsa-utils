@@ -120,7 +120,7 @@
 #endif
 #include <time.h>
 
-#include <sys/asoundlib.h>
+#include <alsa/asoundlib.h>
 
 /* example compilation commandline:
  * clear; gcc -Wall -pipe -O2 alsamixer.c -o alsamixer -lasound -lncurses

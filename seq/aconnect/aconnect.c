@@ -24,7 +24,7 @@
 #include <getopt.h>
 #include <stdarg.h>
 #include <sys/ioctl.h>
-#include <sys/asoundlib.h>
+#include <alsa/asoundlib.h>
 
 static void error_handler(const char *file, int line, const char *function, int err, const char *fmt, ...)
 {

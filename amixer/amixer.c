@@ -27,7 +27,7 @@
 #include <math.h>
 #include <errno.h>
 #include <assert.h>
-#include <sys/asoundlib.h>
+#include <alsa/asoundlib.h>
 #include <sys/poll.h>
 #include "amixer.h"
 

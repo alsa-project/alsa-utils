@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
-#include <sys/asoundlib.h>
+#include <alsa/asoundlib.h>
 
 #define SYS_ASOUNDRC "/etc/asound.state"
 

@@ -22,7 +22,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <sys/asoundlib.h>
+#include <alsa/asoundlib.h>
 #include <getopt.h>
 #include <signal.h>
 
