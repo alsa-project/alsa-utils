@@ -1461,7 +1461,7 @@ static int
 mixer_iteration (void)
 {
   struct timeval delay = { 0, 0 };
-  unsigned int count;
+  int count;
   struct pollfd *fds;
   int err;
   int finished = 0;
@@ -1469,8 +1469,8 @@ mixer_iteration (void)
   int old_view;
   
   /* setup for select on stdin and the mixer fd */
-  if ((err = snd_mixer_poll_descriptors_count(mixer_handle, &count)) < 0)
-    mixer_abort (ERR_FCN, "snd_mixer_poll_descriptors_count", err);
+  if ((count = snd_mixer_poll_descriptors_count(mixer_handle)) < 0)
+    mixer_abort (ERR_FCN, "snd_mixer_poll_descriptors_count", count);
   fds = calloc(count + 1, sizeof(struct pollfd));
   if (fds == NULL)
     mixer_abort (ERR_FCN, "malloc", 0);
