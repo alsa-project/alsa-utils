@@ -1787,6 +1787,11 @@ main (int    argc,
   mixer_init ();
   mixer_reinit ();
   
+  if (mixer_n_elems == 0) {
+    fprintf(stderr, "No mixer elems found\n");
+    mixer_abort (ERR_NONE, "", 0);
+  }
+
   /* setup signal handlers
    */
   signal (SIGINT, mixer_signal_handler);
