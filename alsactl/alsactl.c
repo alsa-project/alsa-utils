@@ -29,7 +29,7 @@
 #include <errno.h>
 #include <sys/asoundlib.h>
 
-#define SYS_ASOUNDRC "/etc/asound.conf"
+#define SYS_ASOUNDRC "/etc/asound.state"
 
 int debugflag = 0;
 char *command;
