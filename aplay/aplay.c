@@ -137,6 +137,8 @@ static char *get_format(int format)
 		"MPEG",
 		"GSM"
 	};
+	if (format == SND_PCM_SFMT_SPECIAL)
+		return "Special";
 	if (format < 0 || format > SND_PCM_SFMT_GSM)
 		return "Unknown";
 	return formats[format];
@@ -379,9 +381,13 @@ int main(int argc, char *argv[])
 				rformat.format = SND_PCM_SFMT_MU_LAW;
 				active_format = FORMAT_RAW;
 				break;
-			}
-			if (!strcmp(optarg, "adpcm")) {
+			} else if (!strcmp(optarg, "adpcm")) {
 				rformat.format = SND_PCM_SFMT_IMA_ADPCM;
+				active_format = FORMAT_RAW;
+				break;
+			}
+			if (!strcmp(optarg, "special")) {
+				rformat.format = SND_PCM_SFMT_SPECIAL;
 				active_format = FORMAT_RAW;
 				break;
 			}
