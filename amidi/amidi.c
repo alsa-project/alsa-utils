@@ -85,6 +85,16 @@ static void version(void)
 	fputs("amidi version " SND_UTIL_VERSION_STR "\n", stderr);
 }
 
+static void *my_malloc(size_t size)
+{
+	void *p = malloc(size);
+	if (!p) {
+		error("out of memory");
+		exit(EXIT_FAILURE);
+	}
+	return p;
+}
+
 static void list_device(snd_ctl_t *ctl, int card, int device)
 {
 	snd_rawmidi_info_t *info;
@@ -225,11 +235,7 @@ static void load_file(void)
 		error("cannot determine length of %s: %s", send_file_name, strerror(errno));
 		goto _error;
 	}
-	send_data = malloc(length);
-	if (!send_data) {
-		error("cannot allocate %d bytes: %s", (int)length, strerror(errno));
-		goto _error;
-	}
+	send_data = my_malloc(length);
 	lseek(fd, 0, SEEK_SET);
 	if (read(fd, send_data, length) != length) {
 		error("cannot read from %s: %s", send_file_name, strerror(errno));
@@ -260,7 +266,7 @@ static void parse_data(void)
 	const char *p;
 	int i, value;
 
-	send_data = malloc(strlen(send_hex)); /* guesstimate */
+	send_data = my_malloc(strlen(send_hex)); /* guesstimate */
 	i = 0;
 	value = -1; /* value is >= 0 when the first hex digit of a byte has been read */
 	for (p = send_hex; *p; ++p) {
@@ -370,9 +376,27 @@ static void sig_handler(int dummy)
 	stop = 1;
 }
 
+void add_send_hex_data(const char *str)
+{
+	int length;
+	char *s;
+
+	length = (send_hex ? strlen(send_hex) : 0) + strlen(str) + 1;
+	s = my_malloc(length);
+	if (send_hex) {
+		strcpy(s, send_hex);
+		strcat(s, " ");
+	} else {
+		s[0] = '\0';
+	}
+	strcat(s, str);
+	free(send_hex);
+	send_hex = s;
+}
+
 int main(int argc, char *argv[])
 {
-	static char short_options[] = "hVlLp:s:r:S:dt:a";
+	static char short_options[] = "hVlLp:s:r:S::dt:a";
 	static struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
@@ -381,7 +405,7 @@ int main(int argc, char *argv[])
 		{"port", 1, NULL, 'p'},
 		{"send", 1, NULL, 's'},
 		{"receive", 1, NULL, 'r'},
-		{"send-hex", 1, NULL, 'S'},
+		{"send-hex", 2, NULL, 'S'},
 		{"dump", 0, NULL, 'd'},
 		{"timeout", 1, NULL, 't'},
 		{"active-sensing", 0, NULL, 'a'},
@@ -389,6 +413,7 @@ int main(int argc, char *argv[])
 	};
 	int c, err, ok = 0;
 	int ignore_active_sensing = 1;
+	int do_send_hex = 0;
 
 	while ((c = getopt_long(argc, argv, short_options,
 		     		long_options, NULL)) != -1) {
@@ -415,7 +440,9 @@ int main(int argc, char *argv[])
 			receive_file_name = optarg;
 			break;
 		case 'S':
-			send_hex = optarg;
+			do_send_hex = 1;
+			if (optarg)
+				add_send_hex_data(optarg);
 			break;
 		case 'd':
 			dump = 1;
@@ -428,6 +455,20 @@ int main(int argc, char *argv[])
 			break;
 		default:
 			error("Try `amidi --help' for more information.");
+			return 1;
+		}
+	}
+	if (do_send_hex) {
+		/* data for -S can be specified as multiple arguments */
+		if (!send_hex && !argv[optind]) {
+			error("Please specify some data for --send-hex.");
+			return 1;
+		}
+		for (; argv[optind]; ++optind)
+			add_send_hex_data(argv[optind]);
+	} else {
+		if (argv[optind]) {
+			error("%s is not an option.", argv[optind]);
 			return 1;
 		}
 	}
@@ -548,7 +589,8 @@ int main(int argc, char *argv[])
 				fflush(stdout);
 			}
 		}
-		printf("\n%d bytes read\n", read);
+		if (isatty(fileno(stdout)))
+			printf("\n%d bytes read\n", read);
 	}
 
 	ok = 1;
