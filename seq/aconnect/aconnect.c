@@ -237,6 +237,8 @@ static void remove_connection(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
 		snd_seq_port_subscribe_t subs;
 		if (snd_seq_get_any_port_info(seq, query.addr.client, query.addr.port, &port) < 0)
 			continue;
+		if (!(port.capability & SND_SEQ_PORT_CAP_SUBS_READ))
+			continue;
 		if (port.capability & SND_SEQ_PORT_CAP_NO_EXPORT)
 			continue;
 		memset(&subs, 0, sizeof(subs));
@@ -255,6 +257,8 @@ static void remove_connection(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
 		snd_seq_port_info_t port;
 		snd_seq_port_subscribe_t subs;
 		if (snd_seq_get_any_port_info(seq, query.addr.client, query.addr.port, &port) < 0)
+			continue;
+		if (!(port.capability & SND_SEQ_PORT_CAP_SUBS_WRITE))
 			continue;
 		if (port.capability & SND_SEQ_PORT_CAP_NO_EXPORT)
 			continue;
