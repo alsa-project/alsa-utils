@@ -146,7 +146,8 @@
 
 #define MIXER_MIN_X	(18)			/* abs minimum: 18 */
 #define	MIXER_TEXT_Y	(10)
-#define	MIXER_MIN_Y	(MIXER_TEXT_Y + 3)	/* abs minimum: 11 */
+#define MIXER_CBAR_STD_HGT (10)
+#define	MIXER_MIN_Y	(MIXER_TEXT_Y + 6)	/* abs minimum: 16 */
 
 #define MIXER_BLACK	(COLOR_BLACK)
 #define MIXER_DARK_RED  (COLOR_RED)
@@ -186,6 +187,7 @@ static int	 mixer_max_y = 0;
 static int	 mixer_ofs_x = 0;
 static float	 mixer_extra_space = 0;
 static int	 mixer_cbar_height = 0;
+static int       mixer_text_y = MIXER_TEXT_Y;
 
 static char	 card_id[64] = "default";
 static snd_mixer_t *mixer_handle;
@@ -263,8 +265,8 @@ static char     *mixer_help_text =
  " Return  return to main screen\n"
  " Space   toggle Capture facility\n"
  " Tab     toggle ExactMode\n"
- " m M     mute both channels\n"
- " < >     mute left/right channel\n"
+ " m M     toggle mute on both channels\n"
+ " < >     toggle mute on left/right channel\n"
  " Up      increase left and right volume\n"
  " Down    decrease left and right volume\n"
  " Right   move (scroll) to the right next channel\n"
@@ -281,6 +283,7 @@ enum {
   DC_BACK,
   DC_TEXT,
   DC_PROMPT,
+  DC_CBAR_FRAME,
   DC_CBAR_MUTE,
   DC_CBAR_NOMUTE,
   DC_CBAR_CAPTURE,
@@ -334,8 +337,9 @@ mixer_init_draw_contexts (void)
   mixer_init_dc ('.', DC_BACK, MIXER_WHITE, MIXER_BLACK, A_NORMAL);
   mixer_init_dc ('.', DC_TEXT, MIXER_YELLOW, MIXER_BLACK, A_BOLD);
   mixer_init_dc ('.', DC_PROMPT, MIXER_DARK_CYAN, MIXER_BLACK, A_NORMAL);
-  mixer_init_dc ('M', DC_CBAR_MUTE, MIXER_CYAN, MIXER_BLACK, A_BOLD);
-  mixer_init_dc (ACS_HLINE, DC_CBAR_NOMUTE, MIXER_CYAN, MIXER_BLACK, A_BOLD);
+  mixer_init_dc ('.', DC_CBAR_FRAME, MIXER_CYAN, MIXER_BLACK, A_BOLD);
+  mixer_init_dc ('M', DC_CBAR_MUTE, MIXER_DARK_CYAN, MIXER_BLACK, A_NORMAL);
+  mixer_init_dc ('O', DC_CBAR_NOMUTE, MIXER_WHITE, MIXER_GREEN, A_BOLD);
   mixer_init_dc ('x', DC_CBAR_CAPTURE, MIXER_DARK_RED, MIXER_BLACK, A_BOLD);
   mixer_init_dc ('-', DC_CBAR_NOCAPTURE, MIXER_GRAY, MIXER_BLACK, A_NORMAL);
   mixer_init_dc (' ', DC_CBAR_EMPTY, MIXER_GRAY, MIXER_BLACK, A_DIM);
@@ -348,7 +352,6 @@ mixer_init_draw_contexts (void)
   mixer_init_dc ('.', DC_ANY_4, MIXER_WHITE, MIXER_BLUE, A_BOLD);
 }
 
-#define	DC_CBAR_FRAME	(DC_CBAR_MUTE)
 #define	DC_FRAME	(DC_PROMPT)
 
 
@@ -458,12 +461,12 @@ mixer_cbar_get_pos (int  elem_index,
   x = mixer_ofs_x;
   x += (3 + 2 + 3 + 1) * elem_index + mixer_extra_space * (elem_index + 1);
 
-  if (MIXER_TEXT_Y + 10 < mixer_max_y)
-    y = mixer_max_y / 2 + 3;
+  if (mixer_text_y + MIXER_CBAR_STD_HGT < mixer_max_y)
+    y = (mixer_text_y + mixer_cbar_height) / 2 - 1 + mixer_max_y / 2;
   else
-    y = (mixer_max_y + 1) / 2 + 3;
-  y += mixer_cbar_height / 2;
-  
+    y = mixer_text_y - 1 + mixer_cbar_height;
+  if (y >= mixer_max_y - 1)
+    y = mixer_max_y - 2;
   if (x_p)
     *x_p = x;
   if (y_p)
@@ -633,7 +636,7 @@ mixer_write_cbar (int elem_index)
   /* mute
    */
   if (mixer_type[elem_index] & MIXER_ELEM_MUTE_SWITCH) {
-    if (mixer_toggle_mute && snd_mixer_selem_has_playback_switch(elem)) {
+    if (mixer_toggle_mute) {
       if (snd_mixer_selem_has_playback_switch_joined(elem)) {
 	snd_mixer_selem_get_playback_switch(elem, chn_left, &sw);
 	snd_mixer_selem_set_playback_switch_all(elem, !sw);
@@ -690,14 +693,83 @@ mixer_write_cbar (int elem_index)
 }
 
 
+static void draw_blank(int x, int y, int lines)
+{
+  int i;
+
+  mixer_dc (DC_TEXT);
+  for (i = 0; i < lines; i++)
+    mvaddstr (y - i, x, "         ");
+}
+
+/* show the information of the focused item */
+static void display_item_info(int elem_index, snd_mixer_selem_id_t *sid, int is_off)
+{
+  char string[64], idxstr[10];
+  int idx;
+  int i, xlen = mixer_max_x - 8;
+  if (xlen > sizeof(string) - 1)
+    xlen = sizeof(string) - 1;
+  mixer_dc (DC_PROMPT);
+  mvaddstr (3, 2, "View: ");
+  mixer_dc (DC_TEXT);
+  switch (mixer_view) {
+  case VIEW_PLAYBACK:
+    mvaddstr (3, 8, "Playback");
+    break;
+  case VIEW_CAPTURE:
+    mvaddstr (3, 8, "Capture");
+    break;
+  default:
+    mvaddstr (3, 8, "All");
+    break;
+  }
+  mixer_dc (DC_PROMPT);
+  mvaddstr (4, 2, "Item: ");
+  mixer_dc (DC_TEXT);
+  idx = snd_mixer_selem_id_get_index(sid);
+  if (idx > 0)
+    snprintf(idxstr, sizeof(idxstr), " %i", snd_mixer_selem_id_get_index(sid));
+  snprintf(string, sizeof(string), "%s%s%s%s",
+	   snd_mixer_selem_id_get_name(sid),
+	   (mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SUFFIX) ? " Capture" : "",
+	   idx > 0 ? idxstr : "",
+	   is_off ? " [Off]" : "");
+  for (i = strlen(string); i < sizeof(string) - 1; i++)
+    string[i] = ' ';
+  string[xlen] = '\0';
+  addstr(string);
+}
+
+/* show the bar item name */
+static void display_item_name(int x, int y, int elem_index, snd_mixer_selem_id_t *sid)
+{
+  const char *suffix;
+  char string1[9], string[9];
+  int i;
+
+  mixer_dc (elem_index == mixer_focus_elem ? DC_CBAR_FOCUS_LABEL : DC_CBAR_LABEL);
+  if (mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SUFFIX)
+    suffix = " Capture";
+  else
+    suffix = "";
+  if (snd_mixer_selem_id_get_index(sid) > 0)
+    snprintf(string1, sizeof(string1), "%s%s %d", snd_mixer_selem_id_get_name(sid),
+	     suffix, snd_mixer_selem_id_get_index(sid));
+  else
+    snprintf(string1, sizeof(string1), "%s%s", snd_mixer_selem_id_get_name(sid), suffix);
+  string[8] = 0;
+  for (i = 0; i < 8; i++)
+    string[i] = ' ';
+  memcpy(string + (8 - strlen (string1)) / 2, string1, strlen(string1));
+  mvaddstr (y, x, string);
+}
+
 static void display_enum_list(snd_mixer_elem_t *elem, int y, int x)
 {
-  int i, cury, ch, err;
+  int cury, ch, err;
 
-  /* clear */
-  mixer_dc(DC_TEXT);
-  for (i = mixer_cbar_height + 3, cury = y; i > 0; i--, cury--)
-    mvaddstr(cury, x, "       ");
+  draw_blank(x, y, mixer_cbar_height + 6);
   
   cury = y - 4;
   for (ch = 0; ch < 2; ch++) {
@@ -715,17 +787,96 @@ static void display_enum_list(snd_mixer_elem_t *elem, int y, int x)
   }
 }
 
+static void draw_volume_bar(int x, int y, int elem_index, long vleft, long vright)
+{
+  int i, dc;
+
+  mixer_dc (DC_CBAR_FRAME);
+  if (mixer_type[elem_index] & MIXER_ELEM_MUTE_SWITCH) {
+    mvaddch (y, x + 2, ACS_LTEE);
+    mvaddch (y, x + 5, ACS_RTEE);
+  } else {
+    mvaddch (y, x + 2, ACS_LLCORNER);
+    mvaddch (y, x + 3, ACS_HLINE);
+    mvaddch (y, x + 4, ACS_HLINE);
+    mvaddch (y, x + 5, ACS_LRCORNER);
+  }
+  y--;
+  for (i = 0; i < mixer_cbar_height; i++)
+    {
+      mvaddstr (y - i, x, "         ");
+      mvaddch (y - i, x + 2, ACS_VLINE);
+      mvaddch (y - i, x + 5, ACS_VLINE);
+    }
+  for (i = 0; i < mixer_cbar_height; i++)
+    {
+      if (i + 1 >= 0.8 * mixer_cbar_height)
+	dc = DC_ANY_3;
+      else if (i + 1 >= 0.4 * mixer_cbar_height)
+	dc = DC_ANY_2;
+      else
+	dc = DC_ANY_1;
+      mvaddch (y, x + 3, mixer_dc (vleft > i * 100 / mixer_cbar_height ? dc : DC_CBAR_EMPTY));
+	mvaddch (y, x + 4, mixer_dc (vright > i * 100 / mixer_cbar_height ? dc : DC_CBAR_EMPTY));
+	y--;
+      }
+  
+  mixer_dc (DC_CBAR_FRAME);
+  mvaddstr (y, x, "         ");
+  mvaddch (y, x + 2, ACS_ULCORNER);
+  mvaddch (y, x + 3, ACS_HLINE);
+  mvaddch (y, x + 4, ACS_HLINE);
+  mvaddch (y, x + 5, ACS_URCORNER);
+}
+
+static void draw_playback_switch(int x, int y, int elem_index, int swl, int swr)
+{
+  int dc;
+
+  mixer_dc (DC_CBAR_FRAME);
+  mvaddch (y, x + 2, ACS_LLCORNER);
+  mvaddch (y, x + 3, ACS_HLINE);
+  mvaddch (y, x + 4, ACS_HLINE);
+  mvaddch (y, x + 5, ACS_LRCORNER);
+  mvaddstr (y - 1, x, "         ");
+  mvaddch (y - 1, x + 2, ACS_VLINE);
+  mvaddch (y - 1, x + 5, ACS_VLINE);
+  mvaddstr (y - 2, x, "         ");
+  mvaddch (y - 2, x + 2, ACS_ULCORNER);
+  mvaddch (y - 2, x + 3, ACS_HLINE);
+  mvaddch (y - 2, x + 4, ACS_HLINE);
+  mvaddch (y - 2, x + 5, ACS_URCORNER);
+  dc = swl ? DC_CBAR_NOMUTE : DC_CBAR_MUTE;
+  mvaddch (y - 1, x + 3, mixer_dc (dc));
+  dc = swr ? DC_CBAR_NOMUTE : DC_CBAR_MUTE;
+  mvaddch (y - 1, x + 4, mixer_dc (dc));
+}
+
+static void draw_capture_switch(int x, int y, int elem_index, int swl, int swr)
+{
+  int i;
+
+  if (swl || swr) {
+    mixer_dc (DC_CBAR_CAPTURE);
+    mvaddstr (y, x + 1, "CAPTUR");
+  } else {
+    for (i = 0; i < 6; i++)
+      mvaddch(y, x + i + 1, mixer_dc(DC_CBAR_NOCAPTURE));
+  }
+  mixer_dc (DC_CBAR_CAPTURE);
+  mvaddch (y - 1, x + 1, swl ? 'L' : ' ');
+  mvaddch (y - 1, x + 6, swr ? 'R' : ' ');
+}
+
 static void
 mixer_update_cbar (int elem_index)
 {
-  char string[128], string1[64], *suffix;
-  int dc;
   snd_mixer_elem_t *elem;
   long vleft, vright;
   int type;
   snd_mixer_selem_id_t *sid;
   snd_mixer_selem_channel_id_t chn_left, chn_right;
-  int x, y, i;
+  int x, y;
   int swl, swr;
 
   /* set new scontrol indices and read info
@@ -781,47 +932,16 @@ mixer_update_cbar (int elem_index)
   /* update the focused full bar name
    */
   if (elem_index == mixer_focus_elem) {
-    int xlen = mixer_max_x - 8;
-    if (xlen > 63)
-      xlen = 63;
-    mixer_dc (DC_PROMPT);
-    mvaddstr (3, 2, "View: ");
-    mixer_dc (DC_TEXT);
-    switch (mixer_view) {
-    case VIEW_PLAYBACK:
-      mvaddstr (3, 8, "Playback");
-      break;
-    case VIEW_CAPTURE:
-      mvaddstr (3, 8, "Capture");
-      break;
-    default:
-      mvaddstr (3, 8, "All");
-      break;
-    }
-    mixer_dc (DC_PROMPT);
-    mvaddstr (4, 2, "Item: ");
-    mixer_dc (DC_TEXT);
-    string1[8] = 0;
-    for (i = 0; i < 63; i++)
-      string1[i] = ' ';
-    string1[xlen] = '\0';
-    strcpy(string, snd_mixer_selem_id_get_name(sid));
-    if (mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SUFFIX)
-      strcat(string, " Capture");
-    if (snd_mixer_selem_id_get_index(sid) > 0)
-      sprintf(string + strlen(string), " %i", snd_mixer_selem_id_get_index(sid));
-    if ((mixer_type[elem_index] & MIXER_ELEM_MUTE_SWITCH)
-	&& snd_mixer_selem_has_playback_switch(elem)) {
+    /* control muted? */
+    swl = swr = 1;
+    if (mixer_type[elem_index] & MIXER_ELEM_MUTE_SWITCH) {
       snd_mixer_selem_get_playback_switch(elem, chn_left, &swl);
-      swr = 0;
+      swr = swl;
       if (chn_right != SND_MIXER_SCHN_UNKNOWN)
 	snd_mixer_selem_get_playback_switch(elem, chn_right, &swr);
-      if (! swl && ! swr)
-	sprintf(string + strlen(string), " [Off]");
     }
-    string[xlen] = '\0';
-    strncpy(string1, string, strlen(string));
-    addstr(string1);
+
+    display_item_info(elem_index, sid, !swl && !swr);
   }
 
   /* get channel bar position
@@ -831,138 +951,84 @@ mixer_update_cbar (int elem_index)
 
   /* channel bar name
    */
-  mixer_dc (elem_index == mixer_focus_elem ? DC_CBAR_FOCUS_LABEL : DC_CBAR_LABEL);
-  if (mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SUFFIX)
-    suffix = " Capture";
-  else
-    suffix = "";
-  if (snd_mixer_selem_id_get_index(sid) > 0)
-    sprintf(string1, "%s%s %d", snd_mixer_selem_id_get_name(sid), suffix, snd_mixer_selem_id_get_index(sid));
-  else
-    sprintf(string1, "%s%s", snd_mixer_selem_id_get_name(sid), suffix);
-  string1[8] = 0;
-  for (i = 0; i < 8; i++)
-    {
-      string[i] = ' ';
-    }
-  sprintf (string + (8 - strlen (string1)) / 2, "%s          ", string1);
-  string[8] = 0;
-  mvaddstr (y, x, string);
+  display_item_name(x, y, elem_index, sid);
   y--;
   
+  /* enum list? */
+  if (type == MIXER_ELEM_ENUM) {
+    display_enum_list(elem, y, x);
+    return; /* no more to display */
+  } 
+
   /* current channel values
    */
   mixer_dc (DC_BACK);
   mvaddstr (y, x, "         ");
   if (mixer_type[elem_index] & MIXER_ELEM_HAS_VOLUME) {
+    char string[4];
     mixer_dc (DC_TEXT);
     if (chn_right == SND_MIXER_SCHN_UNKNOWN) {
       /* mono */
-      sprintf (string, "%ld", vleft);
+      snprintf (string, sizeof(string), "%ld", vleft);
       mvaddstr (y, x + 4 - strlen (string) / 2, string);
     } else {
       /* stereo */
-      sprintf (string, "%ld", vleft);
+      snprintf (string, sizeof(string), "%ld", vleft);
       mvaddstr (y, x + 3 - strlen (string), string);
       mixer_dc (DC_CBAR_FRAME);
       mvaddch (y, x + 3, '<');
       mvaddch (y, x + 4, '>');
       mixer_dc (DC_TEXT);
-      sprintf (string, "%ld", vright);
+      snprintf (string, sizeof(string), "%ld", vright);
       mvaddstr (y, x + 5, string);
     }
   }
   y--;
   
-  if (type == MIXER_ELEM_ENUM) {
-    display_enum_list(elem, y, x);
-    return;
-  } 
-
-  /* left/right bar
-   */
-  mixer_dc (DC_CBAR_FRAME);
-  mvaddstr (y, x, "         ");
-  mvaddch (y, x + 2, ACS_LLCORNER);
-  mvaddch (y, x + 3, ACS_HLINE);
-  mvaddch (y, x + 4, ACS_HLINE);
-  mvaddch (y, x + 5, ACS_LRCORNER);
-  y--;
-  for (i = 0; i < mixer_cbar_height; i++)
-    {
-      mvaddstr (y - i, x, "         ");
-      mvaddch (y - i, x + 2, ACS_VLINE);
-      mvaddch (y - i, x + 5, ACS_VLINE);
-    }
-  string[2] = 0;
-  for (i = 0; i < mixer_cbar_height; i++)
-    {
-      if (i + 1 >= 0.8 * mixer_cbar_height)
-	dc = DC_ANY_3;
-      else if (i + 1 >= 0.4 * mixer_cbar_height)
-	dc = DC_ANY_2;
-      else
-	dc = DC_ANY_1;
-      mvaddch (y, x + 3, mixer_dc (vleft > i * 100 / mixer_cbar_height ? dc : DC_CBAR_EMPTY));
-      mvaddch (y, x + 4, mixer_dc (vright > i * 100 / mixer_cbar_height ? dc : DC_CBAR_EMPTY));
-      y--;
-    }
-  
-  /* muted?
-   */
-  mixer_dc (DC_BACK);
-  mvaddstr (y, x, "         ");
-  if ((mixer_type[elem_index] & MIXER_ELEM_MUTE_SWITCH)
-      && snd_mixer_selem_has_playback_switch(elem)) {
-    mixer_dc (DC_CBAR_FRAME);
-    mvaddch (y, x + 2, ACS_ULCORNER);
-    snd_mixer_selem_get_playback_switch(elem, chn_left, &swl);
-    dc = swl ? DC_CBAR_NOMUTE : DC_CBAR_MUTE;
-    mvaddch (y, x + 3, mixer_dc (dc));
-    if (chn_right != SND_MIXER_SCHN_UNKNOWN) {
-      snd_mixer_selem_get_playback_switch(elem, chn_right, &swr);
-      dc = swr ? DC_CBAR_NOMUTE : DC_CBAR_MUTE;
-    }
-    mvaddch (y, x + 4, mixer_dc (dc));
-    mixer_dc (DC_CBAR_FRAME);
-    mvaddch (y, x + 5, ACS_URCORNER);
-  } else {
-    mixer_dc (DC_CBAR_FRAME);
-    mvaddch (y, x + 2, ACS_ULCORNER);
-    mvaddch (y, x + 3, ACS_HLINE);
-    mvaddch (y, x + 4, ACS_HLINE);
-    mvaddch (y, x + 5, ACS_URCORNER);
-  }    
-  y--;
-  
   /* capture input?
    */
-  if ((mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SWITCH) &&
-      snd_mixer_selem_has_capture_switch(elem)) {
-    int has_r_sw = chn_right != SND_MIXER_SCHN_UNKNOWN &&
-      snd_mixer_selem_has_capture_channel(elem, chn_right);
-    snd_mixer_selem_get_capture_switch(elem, chn_left, &swl);
-    if (has_r_sw)
-      snd_mixer_selem_get_capture_switch(elem, chn_right, &swr);
-    if (swl || (has_r_sw && swr)) {
-      mixer_dc (DC_CBAR_CAPTURE);
-      mvaddstr (y, x + 1, "CAPTUR");
-      if (swl) {
-	mvaddstr (y + 1, x + 1, "L");
-	if (! has_r_sw)
-	  mvaddstr (y + 1, x + 6, "R");
-      }
-      if (has_r_sw && swr)
-	mvaddstr (y + 1, x + 6, "R");
-    } else {
-      for (i = 0; i < 6; i++)
-	mvaddch (y, x + 1 + i, mixer_dc (DC_CBAR_NOCAPTURE));
-    }
-  } else {
-    mixer_dc (DC_BACK);
-    mvaddstr (y, x, "         ");
+  if (mixer_view == VIEW_CAPTURE || mixer_view == VIEW_CHANNELS) {
+    if ((mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SWITCH) &&
+	snd_mixer_selem_has_capture_switch(elem)) {
+      int has_r_sw = chn_right != SND_MIXER_SCHN_UNKNOWN &&
+	snd_mixer_selem_has_capture_channel(elem, chn_right);
+      snd_mixer_selem_get_capture_switch(elem, chn_left, &swl);
+      if (has_r_sw)
+	snd_mixer_selem_get_capture_switch(elem, chn_right, &swr);
+      else
+	swr = swl;
+      draw_capture_switch(x, y, elem_index, swl, swr);
+    } else
+      draw_blank(x, y, 2);
+    y--;
   }
-  y--;
+
+  /* mute switch */
+  if (mixer_view == VIEW_PLAYBACK || mixer_view == VIEW_CHANNELS) {
+    if (mixer_type[elem_index] & MIXER_ELEM_MUTE_SWITCH) {
+      snd_mixer_selem_get_playback_switch(elem, chn_left, &swl);
+      if (chn_right != SND_MIXER_SCHN_UNKNOWN)
+	snd_mixer_selem_get_playback_switch(elem, chn_right, &swr);
+      else
+	swr = swl;
+      draw_playback_switch(x, y, elem_index, swl, swr);
+    } else {
+      mixer_dc (DC_CBAR_FRAME);
+      mvaddstr (y, x + 2, "    ");
+      draw_blank(x, y - 1, 2);
+    }
+    y -= 2;
+  }
+
+  /* left/right volume bar
+   */
+  if (mixer_type[elem_index] & MIXER_ELEM_HAS_VOLUME)
+    draw_volume_bar(x, y, elem_index, vleft, vright);
+  else {
+    if (mixer_view == VIEW_CAPTURE)
+      mvaddstr (y, x + 2, "    ");
+    draw_blank(x, y - 1, mixer_cbar_height + 1);
+  }
 }
 
 static void
@@ -1016,8 +1082,6 @@ mixer_draw_frame (void)
   int i;
   int max_len;
   
-  mixer_dc (DC_FRAME);
-  
   /* card name
    */
   mixer_dc (DC_PROMPT);
@@ -1042,7 +1106,7 @@ mixer_draw_frame (void)
 
   /* lines
    */
-  mixer_dc (DC_PROMPT);
+  mixer_dc (DC_FRAME);
   for (i = 1; i < mixer_max_y - 1; i++)
     {
       mvaddch (i, 0, ACS_VLINE);
@@ -1056,7 +1120,6 @@ mixer_draw_frame (void)
   
   /* corners
    */
-  mixer_dc (DC_PROMPT);
   mvaddch (0, 0, ACS_ULCORNER);
   mvaddch (0, mixer_max_x - 1, ACS_URCORNER);
   mvaddch (mixer_max_y - 1, 0, ACS_LLCORNER);
@@ -1068,6 +1131,30 @@ mixer_draw_frame (void)
       mvaddch (mixer_max_y - 2, mixer_max_x - 2, ACS_ULCORNER);
       mvaddch (mixer_max_y - 1, mixer_max_x - 2, ACS_LRCORNER);
     }
+
+  /* left/right scroll indicators */
+  switch (mixer_view) {
+  case VIEW_PLAYBACK:
+  case VIEW_CAPTURE:
+  case VIEW_CHANNELS:
+    if (mixer_cbar_height > 0) {
+      int ind_hgt = (mixer_cbar_height + 1) / 2;
+      int ind_ofs = mixer_max_y / 2 - ind_hgt/2;
+      /* left scroll possible? */
+      if (mixer_first_vis_elem > 0) {
+	for (i = 0; i < ind_hgt; i++)
+	  mvaddch (i + ind_ofs, 0, '<');
+      }
+      /* right scroll possible? */
+      if (mixer_first_vis_elem + mixer_n_vis_elems < mixer_n_view_elems) {
+	for (i = 0; i < ind_hgt; i++)
+	  mvaddch (i + ind_ofs, mixer_max_x - 1, '>');
+      }
+    }
+    break;
+  default:
+    break;
+  }
 
   /* program title
    */
@@ -1476,10 +1563,15 @@ recalc_screen_size (void)
   mixer_n_vis_elems = CLAMP (mixer_n_vis_elems, 1, mixer_n_view_elems);
   mixer_extra_space = mixer_max_x - mixer_ofs_x * 2 + 1 - mixer_n_vis_elems * 9;
   mixer_extra_space = MAX (0, mixer_extra_space / (mixer_n_vis_elems + 1));
-  if (MIXER_TEXT_Y + 10 < mixer_max_y)
-    mixer_cbar_height = 10 + MAX (0, mixer_max_y - MIXER_TEXT_Y - 10 ) / 2;
+  mixer_text_y = MIXER_TEXT_Y;
+  if (mixer_view == VIEW_PLAYBACK || mixer_view == VIEW_CHANNELS)
+    mixer_text_y += 2; /* row for mute switch */
+  if (mixer_view == VIEW_CAPTURE || mixer_view == VIEW_CHANNELS)
+    mixer_text_y++; /* row for capture switch */
+  if (mixer_text_y + MIXER_CBAR_STD_HGT < mixer_max_y)
+    mixer_cbar_height = MIXER_CBAR_STD_HGT + MAX (1, mixer_max_y - mixer_text_y - MIXER_CBAR_STD_HGT + 1) / 2;
   else
-    mixer_cbar_height = MAX (1, mixer_max_y - MIXER_TEXT_Y);
+    mixer_cbar_height = MAX (1, mixer_max_y - mixer_text_y);
 }
 
 static void
@@ -1584,6 +1676,12 @@ __again:
 	      mixer_type[elem_index] |= MIXER_ELEM_MUTE_SWITCH;
 	    if (snd_mixer_selem_has_playback_volume(elem))
 	      mixer_type[elem_index] |= MIXER_ELEM_HAS_VOLUME;
+	  }
+	  if (mixer_view == VIEW_CHANNELS) {
+	    if (nelems_added == 0 &&
+		! snd_mixer_selem_has_capture_volume(elem) &&
+		snd_mixer_selem_has_capture_switch(elem))
+	      mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SWITCH;
 	  }
 	  elem_index++;
 	  nelems_added++;
@@ -2067,7 +2165,7 @@ main (int    argc,
 	case '?':
 	case 'h':
 	  fprintf (stderr, "%s v%s\n", PRGNAME_UPPER, VERSION);
-	  fprintf (stderr, "Usage: %s [-h] [-c <card: 0...7 or id>] [-D <mixer device>] [-g] [-s]\n", PRGNAME);
+	  fprintf (stderr, "Usage: %s [-h] [-c <card: 0...7>] [-D <mixer device>] [-g] [-s] [-V <view>]\n", PRGNAME);
 	  mixer_abort (ERR_NONE, "", 0);
 	case 'c':
 	  {
