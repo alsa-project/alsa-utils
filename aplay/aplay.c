@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
 		{"sleep-min", 0, 0, 's'},
 		{"mmap", 0, 0, 'M'},
 		{"nonblock", 0, 0, 'N'},
-		{"period_time", 1, 0, 'F'},
+		{"period-time", 1, 0, 'F'},
 		{"avail-min", 1, 0, 'A'},
 		{"start-delay", 1, 0, 'R'},
 		{"stop-delay", 1, 0, 'T'},
