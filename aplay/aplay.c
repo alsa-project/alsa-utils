@@ -34,6 +34,7 @@
 #include <getopt.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <sys/asoundlib.h>
 #include "aconfig.h"
@@ -1224,6 +1225,10 @@ void playback_go(int fd, int loaded, u_long count, int rtype, char *name)
 				char *buf = audiobuf;
 				while (l > 0) {
 					while ((r = fcn_write(pcm_handle, buf, l)) < 0) {
+						if (r == -EAGAIN) {
+							r = 0;
+							break;
+						}
 						playback_write_error();
 					}
 #if 0
@@ -1311,6 +1316,8 @@ void capture_go(int fd, int loaded, u_long count, int rtype, char *name)
 				}
 				count -= c;
 			}
+			if (l == -EAGAIN)
+				l = 0;
 			if (l < 0) {
 				fprintf(stderr, "read error: %s\n", snd_strerror(l));
 				exit(-1);
