@@ -972,7 +972,7 @@ static int set_controls(int card, snd_config_t *top)
 	snd_config_t *control;
 	snd_config_iterator_t i, next;
 	int err;
-	char name[32];
+	char name[32], tmpid[16];
 	const char *id;
 	snd_ctl_card_info_alloca(&info);
 
@@ -990,9 +990,18 @@ static int set_controls(int card, snd_config_t *top)
 	id = snd_ctl_card_info_get_id(info);
 	err = snd_config_searchv(top, &control, "state", id, "control", 0);
 	if (err < 0) {
-		err = 0;
-		fprintf(stderr, "No state is present for card %s\n", id);
-		goto _close;
+		if (force_restore) {
+			sprintf(tmpid, "card%d", card);
+			err = snd_config_searchv(top, &control, "state", tmpid, "control", 0);
+			if (! err)
+				id = tmpid;
+		}
+		if (err < 0) {
+			err = 0;
+			fprintf(stderr, "No state is present for card %s\n", id);
+			goto _close;
+		}
+		id = tmpid;
 	}
 	if (snd_config_get_type(control) != SND_CONFIG_TYPE_COMPOUND) {
 		error("state.%s.control is not a compound\n", id);
