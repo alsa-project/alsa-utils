@@ -343,7 +343,8 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		char buf[size * 2 + 1];
 		char *p = buf;
 		char *hex = "0123456789abcdef";
-		const unsigned char *bytes = snd_ctl_elem_value_get_bytes(ctl);
+		const unsigned char *bytes = 
+		  (const unsigned char *)snd_ctl_elem_value_get_bytes(ctl);
 		for (idx = 0; idx < size; idx++) {
 			int v = bytes[idx];
 			*p++ = hex[v >> 4];
@@ -481,7 +482,7 @@ static int get_controls(int cardno, snd_config_t *top)
 	snd_ctl_elem_list_alloca(&list);
 
 	sprintf(name, "hw:%d", cardno);
-	err = snd_ctl_open(&handle, name, 0);
+	err = snd_ctl_open(&handle, name, SND_CTL_READONLY);
 	if (err < 0) {
 		error("snd_ctl_open error: %s", snd_strerror(err));
 		return err;
@@ -569,12 +570,11 @@ static int get_controls(int cardno, snd_config_t *top)
 	return err;
 }
 
-
-static int config_iface(snd_config_t *n)
+static long config_iface(snd_config_t *n)
 {
-	unsigned long i;
-	unsigned long long li;
-	snd_ctl_elem_iface_t idx;
+	long i;
+	long long li;
+	snd_ctl_elem_iface_t idx; 
 	const char *str;
 	switch (snd_config_get_type(n)) {
 	case SND_CONFIG_TYPE_INTEGER:
@@ -582,7 +582,7 @@ static int config_iface(snd_config_t *n)
 		return i;
 	case SND_CONFIG_TYPE_INTEGER64:
 		snd_config_get_integer64(n, &li);
-		return i;
+		return li;
 	case SND_CONFIG_TYPE_STRING:
 		snd_config_get_string(n, &str);
 		break;
@@ -665,15 +665,19 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	snd_ctl_elem_value_t *ctl;
 	snd_ctl_elem_info_t *info;
 	snd_config_iterator_t i, next;
-	unsigned int numid1, iface1, device1, subdevice1, index1;
+	unsigned int numid1;
+	snd_ctl_elem_iface_t iface = -1;
+	int iface1;
 	const char *name1;
 	unsigned int numid;
 	snd_ctl_elem_type_t type;
 	unsigned int count;
-	long iface = -1;
 	long device = -1;
+	long device1;
 	long subdevice = -1;
+	long subdevice1;
 	const char *name = NULL;
+	long index1;
 	long index = -1;
 	snd_config_t *value = NULL;
 	long val;
@@ -702,7 +706,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		if (strcmp(fld, "comment") == 0)
 			continue;
 		if (strcmp(fld, "iface") == 0) {
-			iface = config_iface(n);
+			iface = (snd_ctl_elem_iface_t)config_iface(n);
 			if (iface < 0) {
 				error("control.%d.%s is invalid", numid, fld);
 				return -EINVAL;
@@ -790,15 +794,15 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		error("warning: numid mismatch (%d/%d) for control #%d", 
 		      numid, numid1, numid);
 	if (iface != iface1)
-		error("warning: iface mismatch (%ld/%d) for control #%d", iface, iface1, numid);
+		error("warning: iface mismatch (%d/%d) for control #%d", iface, iface1, numid);
 	if (device != device1)
-		error("warning: device mismatch (%ld/%d) for control #%d", device, device1, numid);
+		error("warning: device mismatch (%ld/%ld) for control #%d", device, device1, numid);
 	if (subdevice != subdevice1)
-		error("warning: subdevice mismatch (%ld/%d) for control #%d", subdevice, subdevice1, numid);
+		error("warning: subdevice mismatch (%ld/%ld) for control #%d", subdevice, subdevice1, numid);
 	if (strcmp(name, name1))
 		error("warning: name mismatch (%s/%s) for control #%d", name, name1, numid);
 	if (index != index1)
-		error("warning: index mismatch (%ld/%d) for control #%d", index, index1, numid);
+		error("warning: index mismatch (%ld/%ld) for control #%d", index, index1, numid);
 
 	if (!snd_ctl_elem_info_is_writable(info))
 		return 0;
@@ -887,7 +891,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		return -EINVAL;
 	}
 
-	set = alloca(count);
+	set = (char*) alloca(count);
 	memset(set, 0, count);
 	snd_config_for_each(i, next, value) {
 		snd_config_t *n = snd_config_iterator_entry(i);
@@ -957,7 +961,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
  _ok:
 	err = snd_ctl_elem_write(handle, ctl);
 	if (err < 0) {
-		error("Cannot write control '%ld:%ld:%ld:%s:%ld' : %s", iface, device, subdevice, name, index, snd_strerror(err));
+		error("Cannot write control '%d:%ld:%ld:%s:%ld' : %s", (int)iface, device, subdevice, name, index, snd_strerror(err));
 		return err;
 	}
 	return 0;
@@ -1008,7 +1012,6 @@ static int set_controls(int card, snd_config_t *top)
 	return err;
 }
 
-
 static int save_state(char *file, const char *cardname)
 {
 	int err;
@@ -1045,7 +1048,7 @@ static int save_state(char *file, const char *cardname)
 			if (card < 0) {
 				if (first) {
 					error("No soundcards found...");
-					return EXIT_FAILURE;
+					return -ENODEV;
 				}
 				break;
 			}
@@ -1059,7 +1062,7 @@ static int save_state(char *file, const char *cardname)
 		cardno = snd_card_get_index(cardname);
 		if (cardno < 0) {
 			error("Cannot find soundcard '%s'...", cardname);
-			return EXIT_FAILURE;
+			return cardno;
 		}
 		if ((err = get_controls(cardno, config))) {
 			return err;
@@ -1081,8 +1084,7 @@ static int save_state(char *file, const char *cardname)
 	return 0;
 }
 
-
-static int load_state(char *file, const char *cardname)
+int load_state(const char *file, const char *cardname)
 {
 	int err;
 	snd_config_t *config;
@@ -1119,7 +1121,7 @@ static int load_state(char *file, const char *cardname)
 			if (card < 0) {
 				if (first) {
 					error("No soundcards found...");
-					return EXIT_FAILURE;
+					return -ENODEV;
 				}
 				break;
 			}
@@ -1133,7 +1135,7 @@ static int load_state(char *file, const char *cardname)
 		cardno = snd_card_get_index(cardname);
 		if (cardno < 0) {
 			error("Cannot find soundcard '%s'...", cardname);
-			return EXIT_FAILURE;
+			return -ENODEV;
 		}
 		if ((err = set_controls(cardno, config)) && ! force_restore) {
 			return err;
@@ -1192,7 +1194,8 @@ static int show_power(int cardno)
 {
 	snd_ctl_t *handle;
 	char name[16];
-	int power_state, err;
+	unsigned int power_state;
+	int err;
 
 	sprintf(name, "hw:%d", cardno);
 	err = snd_ctl_open(&handle, name, 0);
@@ -1211,7 +1214,7 @@ static int show_power(int cardno)
 	return 0;
 }
 
-static int set_power(int cardno, int power_state)
+static int set_power(int cardno, unsigned int power_state)
 {
 	snd_ctl_t *handle;
 	char name[16];
@@ -1255,7 +1258,7 @@ static int power(const char *argv[], int argc)
 			if (card < 0) {
 				if (first) {
 					error("No soundcards found...");
-					return EXIT_FAILURE;
+					return -ENODEV;
 				}
 				break;
 			}
@@ -1277,7 +1280,7 @@ static int power(const char *argv[], int argc)
 			if (card < 0) {
 				if (first) {
 					error("No soundcards found...");
-					return EXIT_FAILURE;
+					return -ENODEV;
 				}
 				break;
 			}
@@ -1291,13 +1294,13 @@ static int power(const char *argv[], int argc)
 		cardno = snd_card_get_index(argv[0]);
 		if (cardno < 0) {
 			error("Cannot find soundcard '%s'...", argv[0]);
-			return EXIT_FAILURE;
+			return -ENODEV;
 		}
 		if (argc > 1) {
 			power_state = get_int_state(argv[1]);
 			if (power_state < 0) {
 				error("Invalid power state '%s'...", argv[1]);
-				return EXIT_FAILURE;
+				return -EINVAL;
 			}
 			if ((err = set_power(cardno, power_state)) < 0)
 				return err;
@@ -1306,7 +1309,7 @@ static int power(const char *argv[], int argc)
 				return err;
 		}
 	}
-	return EXIT_SUCCESS;
+	return 0;
 }
 
 int main(int argc, char *argv[])
@@ -1322,13 +1325,14 @@ int main(int argc, char *argv[])
 		{NULL, 0, NULL, 0},
 	};
 	char *cfgfile = SYS_ASOUNDRC;
+	int res;
 
 	command = argv[0];
 	morehelp = 0;
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hf:dv", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hf:dlev", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
@@ -1346,9 +1350,12 @@ int main(int argc, char *argv[])
 		case 'v':
 			printf("alsactl version " SND_UTIL_VERSION_STR "\n");
 			return EXIT_SUCCESS;
-		default:
-			fprintf(stderr, "\07Invalid switch or option needs an argument.\n");
+		case '?':		// error msg already printed
 			morehelp++;
+			break;
+		default:		// should never happen
+			fprintf(stderr, 
+			"Invalid option '%c' (%d) not handled??\n", c, c);
 		}
 	}
 	if (morehelp) {
@@ -1359,17 +1366,20 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "alsactl: Specify command...\n");
 		return 0;
 	}
+
 	if (!strcmp(argv[optind], "store")) {
-		return save_state(cfgfile, argc - optind > 1 ? argv[optind + 1] : NULL) ?
-		    1 : 0;
+		res =  save_state(cfgfile,
+		   argc - optind > 1 ? argv[optind + 1] : NULL);
 	} else if (!strcmp(argv[optind], "restore")) {
-		return load_state(cfgfile, argc - optind > 1 ? argv[optind + 1] : NULL) ?
-		    1 : 0;
+		res = load_state(cfgfile, 
+		   argc - optind > 1 ? argv[optind + 1] : NULL);
 	} else if (!strcmp(argv[optind], "power")) {
-		return power((const char **)argv + optind + 1, argc - optind - 1);
+		res = power((const char **)argv + optind + 1, argc - optind - 1);
 	} else {
-		fprintf(stderr, "alsactl: Unknown command '%s'...\n", argv[optind]);
+		fprintf(stderr, "alsactl: Unknown command '%s'...\n", 
+			argv[optind]);
+		res = -ENODEV;
 	}
 
-	return 0;
+	return res < 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
