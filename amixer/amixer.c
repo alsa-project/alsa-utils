@@ -928,11 +928,11 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 	for (idx = 1; idx < argc; idx++) {
 		if (!strncmp(argv[idx], "mute", 4) ||
 		    !strncmp(argv[idx], "off", 3)) {
-			snd_mixer_selem_set_playback_switch_all(elem, 1);
+			snd_mixer_selem_set_playback_switch_all(elem, 0);
 			continue;
 		} else if (!strncmp(argv[idx], "unmute", 6) ||
 		           !strncmp(argv[idx], "on", 2)) {
-			snd_mixer_selem_set_playback_switch_all(elem, 0);
+			snd_mixer_selem_set_playback_switch_all(elem, 1);
 			continue;
 		} else if (!strncmp(argv[idx], "cap", 3) ||
 		           !strncmp(argv[idx], "rec", 3)) {
