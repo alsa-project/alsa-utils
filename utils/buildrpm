@@ -4,6 +4,8 @@ source=.
 version=`cat $source/../version`
 package=$source/../alsa-utils-$version.tar.bz2
 packagedir=/usr/src/redhat
+xrpmbuild=rpm
+rpmbuild --usage 2> /dev/null > /dev/null && xrpmbuild=rpmbuild
 
 # SuSE path
 if [ -d /usr/src/packages ]; then
@@ -38,5 +40,5 @@ fi
 
 cp -fv $source/alsa-utils.spec ${packagedir}/SPECS
 cd ${packagedir}/SPECS
-rpm -ba alsa-utils.spec
+$xrpmbuild -ba alsa-utils.spec
 cd ${packagedir}
