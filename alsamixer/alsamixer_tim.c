@@ -1,5 +1,5 @@
 /* AlsaMixer - Commandline mixer for the ALSA project
- * Copyright (C) 1998, 1999 Tim Janik <timj@gtk.org> and Jaroslav Kysela <perex@jcu.cz>
+ * Copyright (C) 1998, 1999 Tim Janik <timj@gtk.org> and Jaroslav Kysela <perex@suse.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -214,7 +214,7 @@ static char     *mixer_help_text =
  " Left    move (scroll) to the left next channel\n"
  "\n"
  "Alsamixer has been written and is Copyrighted in 1998, 1999 by\n"
- "Tim Janik <timj@gtk.org> and Jaroslav Kysela <perex@jcu.cz>.\n"
+ "Tim Janik <timj@gtk.org> and Jaroslav Kysela <perex@suse.cz>.\n"
  );
 
 

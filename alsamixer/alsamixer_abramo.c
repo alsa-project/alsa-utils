@@ -1,5 +1,5 @@
 /* AlsaMixer - Commandline mixer for the ALSA project
- * Copyright (C) 1998 Jaroslav Kysela <perex@jcu.cz>,
+ * Copyright (C) 1998 Jaroslav Kysela <perex@suse.cz>,
  *                    Tim Janik <timj@gtk.org>,
  *                    Carl van Schaik <carl@dreamcoat.che.uct.ac.za>
  *

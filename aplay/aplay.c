@@ -6,7 +6,7 @@
  *      SPARC AUDIO .AU-files
  *      Raw Data
  *
- *  Copyright (c) by Jaroslav Kysela <perex@jcu.cz>
+ *  Copyright (c) by Jaroslav Kysela <perex@suse.cz>
  *  Based on vplay program by Michael Beck
  *
  *
@@ -237,7 +237,7 @@ static void device_list(void)
 
 static void version(void)
 {
-	printf("%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@jcu.cz>\n", command);
+	printf("%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@suse.cz>\n", command);
 }
 
 int main(int argc, char *argv[])
@@ -919,6 +919,7 @@ static void begin_wave(int fd, u_long cnt)
 	WaveHeader wh;
 	int bits;
 
+	bits = 8;
 	switch (format.format) {
 	case SND_PCM_SFMT_U8:
 		bits = 8;
