@@ -301,6 +301,36 @@ static int get_volume_simple(char **ptr, int min, int max, int orig)
 	return tmp1;
 }
 
+static int get_bool_simple(char **ptr, char *str, int invert, int orig)
+{
+	if (**ptr == ':')
+		(*ptr)++;
+	if (!strncasecmp(*ptr, str, strlen(str))) {
+		orig = 1 ^ (invert ? 1 : 0);
+		while (**ptr != '\0' && **ptr != ',' && **ptr != ':')
+			(*ptr)++;
+	}
+	if (**ptr == ',' || **ptr == ':')
+		(*ptr)++;
+	return orig;
+}
+		
+static int simple_skip_word(char **ptr, char *str)
+{
+	char *xptr = *ptr;
+	if (*xptr == ':')
+		xptr++;
+	if (!strncasecmp(xptr, str, strlen(str))) {
+		while (*xptr != '\0' && *xptr != ',' && *xptr != ':')
+			xptr++;
+		if (*xptr == ',' || *xptr == ':')
+			xptr++;
+		*ptr = xptr;
+		return 1;
+	}
+	return 0;
+}
+		
 static void show_control_id(snd_ctl_elem_id_t *id)
 {
 	unsigned int index, device, subdevice;
@@ -991,15 +1021,37 @@ static channel_mask_t chanmask[] = {
 	{NULL, 0}
 };
 
-static unsigned int channels_mask(char *arg)
+static unsigned int channels_mask(char **arg, unsigned int def)
 {
 	channel_mask_t *c;
 
 	for (c = chanmask; c->name; c++) {
-		if (strncmp(arg, c->name, strlen(c->name)) == 0)
+		if (strncasecmp(*arg, c->name, strlen(c->name)) == 0) {
+			while (**arg != '\0' && **arg != ',' && **arg != ' ' && **arg != '\t')
+				(*arg)++;
+			if (**arg == ',' || **arg == ' ' || **arg == '\t')
+				(*arg)++;
 			return c->mask;
+		}
 	}
-	return ~0U;
+	return def;
+}
+
+static unsigned int dir_mask(char **arg, unsigned int def)
+{
+	int findend = 0;
+
+	if (strncasecmp(*arg, "playback", 8) == 0)
+		def = findend = 1;
+	else if (strncasecmp(*arg, "capture", 8) == 0)
+		def = findend = 2;
+	if (findend) {
+		while (**arg != '\0' && **arg != ',' && **arg != ' ' && **arg != '\t')
+			(*arg)++;
+		if (**arg == ',' || **arg == ' ' || **arg == '\t')
+			(*arg)++;
+	}
+	return def;
 }
 
 static int sset(unsigned int argc, char *argv[], int roflag)
@@ -1007,8 +1059,9 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 	int err;
 	unsigned int idx;
 	snd_mixer_selem_channel_id_t chn;
-	unsigned int channels;
-	long min, max;
+	unsigned int channels = ~0UL;
+	unsigned int dir = 3;
+	long pmin, pmax, cmin, cmax;
 	snd_mixer_t *handle;
 	snd_mixer_elem_t *elem;
 	snd_mixer_selem_id_t *sid;
@@ -1052,51 +1105,84 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 		snd_mixer_close(handle);
 		return -ENOENT;
 	}
-	snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
 	if (roflag)
 		goto __skip_write;
+	snd_mixer_selem_get_playback_volume_range(elem, &pmin, &pmax);
+	snd_mixer_selem_get_capture_volume_range(elem, &cmin, &cmax);
 	for (idx = 1; idx < argc; idx++) {
-		if (!strncmp(argv[idx], "mute", 4) ||
-		    !strncmp(argv[idx], "off", 3)) {
-			snd_mixer_selem_set_playback_switch_all(elem, 0);
+		char *ptr = argv[idx], *optr;
+		int multi;
+		channels = channels_mask(&ptr, channels);
+		if (*ptr == '\0')
 			continue;
-		} else if (!strncmp(argv[idx], "unmute", 6) ||
-		           !strncmp(argv[idx], "on", 2)) {
-			snd_mixer_selem_set_playback_switch_all(elem, 1);
+		dir = dir_mask(&ptr, dir);
+		if (*ptr == '\0')
 			continue;
-		} else if (!strncmp(argv[idx], "cap", 3) ||
-		           !strncmp(argv[idx], "rec", 3)) {
-			snd_mixer_selem_set_capture_switch_all(elem, 1);
-			continue;
-		} else if (!strncmp(argv[idx], "nocap", 5) ||
-		           !strncmp(argv[idx], "norec", 5)) {
-			snd_mixer_selem_set_capture_switch_all(elem, 0);
-			continue;
-		}
-		channels = channels_mask(argv[idx]);
-		if (isdigit(argv[idx][0]) ||
-		    argv[idx][0] == '+' ||
-		    argv[idx][0] == '-') {
-			char *ptr;
-			int multi;
-		
-			multi = (strchr(argv[idx], ',') != NULL);
-			ptr = argv[idx];
-			for (chn = 0; chn <= SND_MIXER_SCHN_LAST; chn++) {
-				long vol;
-				if (!(channels & (1 << chn)) ||
-				    !snd_mixer_selem_has_playback_channel(elem, chn))
-					continue;
+		multi = (strchr(ptr, ',') != NULL);
+		optr = ptr;
+		for (chn = 0; chn <= SND_MIXER_SCHN_LAST; chn++) {
+			char *sptr = NULL;
+			int ival;
+			long lval;
 
-				if (! multi)
-					ptr = argv[idx];
-				snd_mixer_selem_get_playback_volume(elem, chn, &vol);
-				snd_mixer_selem_set_playback_volume(elem, chn, get_volume_simple(&ptr, min, max, vol));
+			if (!(channels & (1 << chn)))
+				continue;
+			if ((dir & 1) && snd_mixer_selem_has_playback_channel(elem, chn)) {
+				sptr = ptr;
+				if (!strncmp(ptr, "mute", 4) && snd_mixer_selem_has_playback_switch(elem)) {
+					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
+					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "mute", 0, ival));
+				} else if (!strncmp(ptr, "off", 3) && snd_mixer_selem_has_playback_switch(elem)) {
+					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
+					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "off", 0, ival));
+				} else if (!strncmp(ptr, "unmute", 6) && snd_mixer_selem_has_playback_switch(elem)) {
+					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
+					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "unmute", 1, ival));
+				} else if (!strncmp(ptr, "on", 2) && snd_mixer_selem_has_playback_switch(elem)) {
+					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
+					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "on", 1, ival));
+				} else if ((isdigit(*ptr) || *ptr == '-' || *ptr == '+') && snd_mixer_selem_has_playback_volume(elem)) {
+					snd_mixer_selem_get_playback_volume(elem, chn, &lval);
+					snd_mixer_selem_set_playback_volume(elem, chn, get_volume_simple(&ptr, pmin, pmax, lval));
+				} else if (simple_skip_word(&ptr, "cap") || simple_skip_word(&ptr, "rec") ||
+					   simple_skip_word(&ptr, "nocap") || simple_skip_word(&ptr, "norec")) {
+					/* nothing */
+				} else {
+					error("Unknown setup '%s'..\n", ptr);
+					snd_mixer_close(handle);
+					return err;
+				}
 			}
-		} else {
-			error("Unknown setup '%s'..\n", argv[idx]);
-			snd_mixer_close(handle);
-			return err;
+			if ((dir & 2) && snd_mixer_selem_has_capture_channel(elem, chn)) {
+				if (sptr != NULL)
+					ptr = sptr;
+				sptr = ptr;
+				if (!strncmp(ptr, "cap", 3) && snd_mixer_selem_has_capture_switch(elem)) {
+					snd_mixer_selem_get_capture_switch(elem, chn, &ival);
+					snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "cap", 0, ival));
+				} else if (!strncmp(ptr, "rec", 3) && snd_mixer_selem_has_capture_switch(elem)) {
+					snd_mixer_selem_get_capture_switch(elem, chn, &ival);
+					snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "rec", 0, ival));
+				} else if (!strncmp(ptr, "nocap", 5) && snd_mixer_selem_has_capture_switch(elem)) {
+					snd_mixer_selem_get_capture_switch(elem, chn, &ival);
+					snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "nocap", 1, ival));
+				} else if (!strncmp(ptr, "norec", 5) && snd_mixer_selem_has_capture_switch(elem)) {
+					snd_mixer_selem_get_capture_switch(elem, chn, &ival);
+					snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "norec", 1, ival));
+				} else if ((isdigit(*ptr) || *ptr == '-' || *ptr == '+') && snd_mixer_selem_has_capture_volume(elem)) {
+					snd_mixer_selem_get_capture_volume(elem, chn, &lval);
+					snd_mixer_selem_set_capture_volume(elem, chn, get_volume_simple(&ptr, cmin, cmax, lval));
+				} else if (simple_skip_word(&ptr, "mute") || simple_skip_word(&ptr, "off") ||
+					   simple_skip_word(&ptr, "unmute") || simple_skip_word(&ptr, "on")) {
+					/* nothing */
+				} else {
+					error("Unknown setup '%s'..\n", ptr);
+					snd_mixer_close(handle);
+					return err;
+				}
+			}
+			if (!multi)
+				ptr = optr;
 		}
 	} 
       __skip_write:
