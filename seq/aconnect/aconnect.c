@@ -72,8 +72,7 @@ static int check_permission(snd_seq_port_info_t *pinfo, char *group, int perm)
 	if ((pinfo->capability & perm) == perm &&
 	    ! (pinfo->capability & SND_SEQ_PORT_CAP_NO_EXPORT))
 		return 1;
-	if (*group && strcmp(pinfo->group, group) == 0 &&
-	    (pinfo->cap_group & perm) == perm &&
+	if (*group && (pinfo->cap_group & perm) == perm &&
 	    ! (pinfo->cap_group & SND_SEQ_PORT_CAP_NO_EXPORT))
 		return 1;
 	return 0;
@@ -129,27 +128,19 @@ static void do_search_port(snd_seq_t *seq, char *group, int perm, action_func_t 
 	int count;
 
 	cinfo.client = -1;
-	cinfo.name[0] = 0;
-	cinfo.group[0] = 0;
 	while (snd_seq_query_next_client(seq, &cinfo) >= 0) {
 		/* reset query info */
 		pinfo.client = cinfo.client;
 		pinfo.port = -1;
-		pinfo.name[0] = 0;
-		strncpy(pinfo.group, group, sizeof(pinfo.group));
 		count = 0;
 		while (snd_seq_query_next_port(seq, &pinfo) >= 0) {
+			if (*group && strcmp(pinfo.group, group))
+				continue;
 			if (check_permission(&pinfo, group, perm)) {
 				do_action(seq, &cinfo, &pinfo, count);
 				count++;
 			}
-			/* reset query names */
-			pinfo.name[0] = 0;
-			strncpy(pinfo.group, group, sizeof(pinfo.group));
 		}
-		/* reset query names */
-		cinfo.name[0] = 0;
-		cinfo.group[0] = 0;
 	}
 }
 
