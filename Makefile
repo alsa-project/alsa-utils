@@ -40,7 +40,3 @@ pack: clean
 	rm -f config.cache config.log config.status Makefile.conf
 	chown -R root.root ../alsa-utils
 	tar cvz -C .. -f ../alsa-utils-$(SND_UTIL_VERSION).tar.gz alsa-utils
-
-publish: pack
-	cat ../alsa-utils-$(SND_UTIL_VERSION).tar.gz | \
-          ssh -l root zarquon.jcu.cz /home/alsa/publishutils alsa-utils-$(SND_UTIL_VERSION).tar.gz
