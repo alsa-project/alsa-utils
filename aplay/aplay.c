@@ -634,7 +634,6 @@ static void set_format(void)
 		snd_pcm_munmap(pcm_handle, channel);
 	fcn_flush(pcm_handle, channel);		/* to be in right state */
 	memset(&params, 0, sizeof(params));
-	params.mode = mode;
 	params.channel = channel;
 	memcpy(&params.format, &format, sizeof(format));
 	if (channel == SND_PCM_CHANNEL_PLAYBACK) {
