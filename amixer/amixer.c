@@ -416,7 +416,8 @@ static int show_control(const char *space, snd_ctl_t *handle, snd_control_id_t *
 
 static int controls(int level)
 {
-	int err, idx;
+	int err;
+	unsigned int idx;
 	snd_ctl_t *handle;
 	snd_hcontrol_list_t list;
 	
@@ -456,7 +457,8 @@ static int controls(int level)
 
 static int show_simple_control(void *handle, snd_mixer_sid_t *sid, const char *space, int level)
 {
-	int err, chn;
+	int err;
+	snd_mixer_channel_id_t chn;
 	snd_mixer_simple_control_t scontrol;
 	
 	bzero(&scontrol, sizeof(scontrol));
@@ -490,8 +492,8 @@ static int show_simple_control(void *handle, snd_mixer_sid_t *sid, const char *s
 		if (scontrol.channels == SND_MIXER_CHN_MASK_MONO) {
 			printf("Mono");
 		} else {
-			for (chn = 0; chn <= SND_MIXER_CHN_LAST; chn++) {
-				if (!(scontrol.channels & (1<<chn)))
+			for (chn = 0; chn <= SND_MIXER_CHN_LAST; snd_enum_incr(chn)){
+				if (!(scontrol.channels & (1<<snd_enum_to_int(chn))))
 					continue;
 				printf("%s ", snd_mixer_simple_channel_name(chn));
 			}
@@ -501,15 +503,16 @@ static int show_simple_control(void *handle, snd_mixer_sid_t *sid, const char *s
 		if (scontrol.channels == SND_MIXER_CHN_MASK_MONO) {
 			printf("%sMono: %s [%s]\n", space, get_percent(scontrol.volume.names.front_left, scontrol.min, scontrol.max), scontrol.mute & SND_MIXER_CHN_MASK_MONO ? "mute" : "on");
 		} else {
-			for (chn = 0; chn <= SND_MIXER_CHN_LAST; chn++) {
-				if (!(scontrol.channels & (1<<chn)))
+			for (chn = 0; chn <= SND_MIXER_CHN_LAST; snd_enum_incr(chn)) {
+				int c = snd_enum_to_int(chn);
+				if (!(scontrol.channels & (1<<c)))
 					continue;
 				printf("%s%s: %s [%s] [%s]\n",
 						space,
 						snd_mixer_simple_channel_name(chn),
-						get_percent(scontrol.volume.values[chn], scontrol.min, scontrol.max),
-						scontrol.mute & (1<<chn) ? "mute" : "on",
-						scontrol.capture & (1<<chn) ? "capture" : "---");
+						get_percent(scontrol.volume.values[c], scontrol.min, scontrol.max),
+						scontrol.mute & (1<<c) ? "mute" : "on",
+						scontrol.capture & (1<<c) ? "capture" : "---");
 			}
 		}
 	}
@@ -518,7 +521,8 @@ static int show_simple_control(void *handle, snd_mixer_sid_t *sid, const char *s
 
 static int simple_controls(int level)
 {
-	int err, idx;
+	int err;
+	unsigned int idx;
 	snd_mixer_t *handle;
 	snd_mixer_simple_control_list_t list;
 	snd_mixer_sid_t *sid;
@@ -691,7 +695,7 @@ static int cset(int argc, char *argv[], int roflag)
 	snd_control_id_t id;
 	snd_control_t control;
 	char *ptr;
-	int idx;
+	unsigned int idx;
 	long tmp;
 
 	if (argc < 1) {
@@ -785,7 +789,7 @@ static channel_mask_t chanmask[] = {
 	{"rearright", SND_MIXER_CHN_MASK_REAR_RIGHT},
 	{"rear", SND_MIXER_CHN_MASK_REAR_LEFT|SND_MIXER_CHN_MASK_REAR_RIGHT},
 	{"woofer", SND_MIXER_CHN_MASK_WOOFER},
-	{NULL}
+	{NULL, 0}
 };
 
 static int check_channels(char *arg, unsigned int mask, unsigned int *mask_return)
@@ -801,9 +805,11 @@ static int check_channels(char *arg, unsigned int mask, unsigned int *mask_retur
 	return 0;
 }
 
-static int sset(int argc, char *argv[], int roflag)
+static int sset(unsigned int argc, char *argv[], int roflag)
 {
-	int err, idx, chn;
+	int err;
+	unsigned int idx;
+	snd_mixer_channel_id_t chn;
 	unsigned int channels;
 	snd_mixer_t *handle;
 	snd_mixer_sid_t sid;
@@ -864,14 +870,15 @@ static int sset(int argc, char *argv[], int roflag)
 		
 			multi = (strchr(argv[idx], ',') != NULL);
 			ptr = argv[idx];
-			for (chn = 0; chn <= SND_MIXER_CHN_LAST; chn++) {
-				if (!(control.channels & (1<<chn)) ||
-				    !(channels & (1<<chn)))
+			for (chn = 0; chn <= SND_MIXER_CHN_LAST; snd_enum_incr(chn)) {
+				int c = snd_enum_to_int(chn);
+				if (!(control.channels & (1<<c)) ||
+				    !(channels & (1<<c)))
 					continue;
 
 				if (! multi)
 					ptr = argv[idx];
-				control.volume.values[chn] = get_volume_simple(&ptr, control.min, control.max, control.volume.values[chn]);
+				control.volume.values[c] = get_volume_simple(&ptr, control.min, control.max, control.volume.values[c]);
 			}
 		} else {
 			error("Unknown setup '%s'..\n", argv[idx]);
@@ -893,34 +900,34 @@ static int sset(int argc, char *argv[], int roflag)
 	return 0;
 }
 
-static void events_change(snd_ctl_t *handle, snd_hcontrol_t *hcontrol)
+static void events_change(snd_ctl_t *handle ATTRIBUTE_UNUSED, snd_hcontrol_t *hcontrol)
 {
 	printf("event change: ");
 	show_control_id(&hcontrol->id);
 	printf("\n");
 }
 
-static void events_value(snd_ctl_t *handle, snd_hcontrol_t *hcontrol)
+static void events_value(snd_ctl_t *handle ATTRIBUTE_UNUSED, snd_hcontrol_t *hcontrol)
 {
 	printf("event value: ");
 	show_control_id(&hcontrol->id);
 	printf("\n");
 }
 
-static void events_remove(snd_ctl_t *handle, snd_hcontrol_t *hcontrol)
+static void events_remove(snd_ctl_t *handle ATTRIBUTE_UNUSED, snd_hcontrol_t *hcontrol)
 {
 	printf("event remove: ");
 	show_control_id(&hcontrol->id);
 	printf("\n");
 }
 
-static void events_rebuild(snd_ctl_t *handle, void *private_data)
+static void events_rebuild(snd_ctl_t *handle ATTRIBUTE_UNUSED, void *private_data)
 {
 	assert(private_data != (void *)1);
 	printf("event rebuild\n");
 }
 
-static void events_add(snd_ctl_t *handle, void *private_data, snd_hcontrol_t *hcontrol)
+static void events_add(snd_ctl_t *handle ATTRIBUTE_UNUSED, void *private_data, snd_hcontrol_t *hcontrol)
 {
 	assert(private_data != (void *)1);
 	printf("event add: ");
@@ -931,7 +938,7 @@ static void events_add(snd_ctl_t *handle, void *private_data, snd_hcontrol_t *hc
 	hcontrol->event_remove = events_remove;	
 }
 
-static int events(int argc, char *argv[])
+static int events(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 {
 	snd_ctl_t *handle;
 	snd_hcontrol_t *hcontrol;
@@ -975,40 +982,40 @@ static int events(int argc, char *argv[])
 	snd_ctl_close(handle);
 }
 
-static void sevents_rebuild(snd_mixer_t *handle, void *private_data)
+static void sevents_rebuild(snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED)
 {
 	printf("event rebuild\n");
 }
 
-static void sevents_value(snd_mixer_t *handle, void *private_data, snd_mixer_sid_t *sid)
+static void sevents_value(snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED, snd_mixer_sid_t *sid)
 {
 	char name[simple_name_size];
 
 	printf("event value: '%s',%i\n", simple_name(sid->name, name), sid->index);
 }
 
-static void sevents_change(snd_mixer_t *handle, void *private_data, snd_mixer_sid_t *sid)
+static void sevents_change(snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED, snd_mixer_sid_t *sid)
 {
 	char name[simple_name_size];
 
 	printf("event change: '%s',%i\n", simple_name(sid->name, name), sid->index);
 }
 
-static void sevents_add(snd_mixer_t *handle, void *private_data, snd_mixer_sid_t *sid)
+static void sevents_add(snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED, snd_mixer_sid_t *sid)
 {
 	char name[simple_name_size];
 
 	printf("event add: '%s',%i\n", simple_name(sid->name, name), sid->index);
 }
 
-static void sevents_remove(snd_mixer_t *handle, void *private_data, snd_mixer_sid_t *sid)
+static void sevents_remove(snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED, snd_mixer_sid_t *sid)
 {
 	char name[simple_name_size];
 
 	printf("event remove: '%s',%i\n", simple_name(sid->name, name), sid->index);
 }
 
-static int sevents(int argc, char *argv[])
+static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 {
 	snd_mixer_t *handle;
 	static snd_mixer_simple_callbacks_t callbacks = {

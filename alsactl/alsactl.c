@@ -142,7 +142,8 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 	snd_config_t *control, *comment, *item, *value;
 	char *s;
 	char buf[256];
-	int idx, err;
+	unsigned int idx;
+	int err;
 
 	memset(&info, 0, sizeof(info));
 	info.id = *id;
@@ -316,7 +317,7 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 	case SND_CONTROL_TYPE_BYTES:
 	case SND_CONTROL_TYPE_IEC958:
 		{
-			int count = info.type == SND_CONTROL_TYPE_BYTES ?
+			size_t count = info.type == SND_CONTROL_TYPE_BYTES ?
 					info.values_count : sizeof(snd_aes_iec958_t);
 			char buf[count * 2 + 1];
 			char *p = buf;
@@ -433,7 +434,8 @@ static int get_controls(int cardno, snd_config_t *top)
 	snd_ctl_hw_info_t info;
 	snd_config_t *state, *card, *control;
 	snd_control_list_t list;
-	int idx, err;
+	unsigned int idx;
+	int err;
 	char name[32];
 
 	sprintf(name, "hw:%d", cardno);
@@ -538,12 +540,13 @@ static int config_iface(snd_config_t *n)
 		{ SND_CONTROL_IFACE_TIMER, "timer" },
 		{ SND_CONTROL_IFACE_SEQUENCER, "sequencer" }
 	};
-	long idx;
+	unsigned long i;
+	unsigned int idx;
 	char *str;
-	switch (snd_config_type(n)) {
+	switch (snd_enum_to_int(snd_config_type(n))) {
 	case SND_CONFIG_TYPE_INTEGER:
-		snd_config_integer_get(n, &idx);
-		return idx;
+		snd_config_integer_get(n, &i);
+		return i;
 	case SND_CONFIG_TYPE_STRING:
 		snd_config_string_get(n, &str);
 		break;
@@ -561,7 +564,7 @@ static int config_bool(snd_config_t *n)
 {
 	char *str;
 	long val;
-	switch (snd_config_type(n)) {
+	switch (snd_enum_to_int(snd_config_type(n))) {
 	case SND_CONFIG_TYPE_INTEGER:
 		snd_config_integer_get(n, &val);
 		if (val < 0 || val > 1)
@@ -585,8 +588,8 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 {
 	char *str;
 	long val;
-	int idx;
-	switch (snd_config_type(n)) {
+	unsigned int idx;
+	switch (snd_enum_to_int(snd_config_type(n))) {
 	case SND_CONFIG_TYPE_INTEGER:
 		snd_config_integer_get(n, &val);
 		return val;
@@ -615,7 +618,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	snd_control_t ctl;
 	snd_control_info_t info;
 	snd_config_iterator_t i;
-	int numid;
+	unsigned int numid;
 	long iface = -1;
 	long device = -1;
 	long subdevice = -1;
@@ -623,7 +626,8 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	long index = -1;
 	snd_config_t *value = NULL;
 	long val;
-	int idx, err;
+	unsigned int idx;
+	int err;
 	char *set;
 	if (snd_config_type(control) != SND_CONFIG_TYPE_COMPOUND) {
 		error("control is not a compound");
@@ -768,7 +772,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 			if (err >= 0) {
 				int c1 = 0;
 				int len = strlen(buf);
-				int idx = 0;
+				unsigned int idx = 0;
 				int count = info.type == SND_CONTROL_TYPE_BYTES ?
 						info.values_count : sizeof(snd_aes_iec958_t);
 				if (count * 2 != len) {

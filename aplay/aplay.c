@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
 				rhwparams.channels = 2;
 			} else {
 				rhwparams.format = snd_pcm_format_value(optarg);
-				if (rhwparams.format < 0) {
+				if (rhwparams.format == SND_PCM_FORMAT_UNKNOWN) {
 					error("wrong extended format '%s'", optarg);
 					exit(EXIT_FAILURE);
 				}

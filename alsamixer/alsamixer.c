@@ -207,11 +207,11 @@ static int mixer_elem_mask[] = {
 };
 
 /* left and right channels for each type */
-static int mixer_elem_chn[][2] = {
+static snd_mixer_channel_id_t mixer_elem_chn[][2] = {
   { SND_MIXER_CHN_FRONT_LEFT, SND_MIXER_CHN_FRONT_RIGHT },
   { SND_MIXER_CHN_REAR_LEFT, SND_MIXER_CHN_REAR_RIGHT },
-  { SND_MIXER_CHN_FRONT_CENTER, -1 },
-  { SND_MIXER_CHN_WOOFER, -1 },
+  { SND_MIXER_CHN_FRONT_CENTER, SND_MIXER_CHN_UNKNOWN },
+  { SND_MIXER_CHN_WOOFER, SND_MIXER_CHN_UNKNOWN },
 };
 
 static snd_mixer_sid_t *mixer_sid = NULL;
@@ -469,10 +469,9 @@ mixer_conv(int val, int omin, int omax, int nmin, int nmax)
 }
 
 static int
-mixer_calc_volume(snd_mixer_simple_control_t *scontrol, int vol, int chn)
+mixer_calc_volume(snd_mixer_simple_control_t *scontrol, int vol, snd_mixer_channel_id_t chn)
 {
   int vol1;
-
   vol1 = (vol < 0) ? -vol : vol;
   if (vol1 > 0) {
     if (vol1 > 100)
@@ -484,7 +483,7 @@ mixer_calc_volume(snd_mixer_simple_control_t *scontrol, int vol, int chn)
     if (vol < 0)
       vol1 = -vol1;
   }
-  vol1 += scontrol->volume.values[chn];
+  vol1 += scontrol->volume.values[snd_enum_to_int(chn)];
   return CLAMP(vol1, scontrol->min, scontrol->max);
 }
 
@@ -495,8 +494,9 @@ mixer_write_cbar (int elem_index)
 {
   snd_mixer_simple_control_t scontrol;
   int vleft, vright, vbalance;
-  int type, chn_left, chn_right;
-  int i, err, changed;
+  int type;
+  snd_mixer_channel_id_t chn_left, chn_right, chn;
+  int err, changed;
 
   bzero(&scontrol, sizeof(scontrol));
   if (mixer_sid == NULL)
@@ -507,11 +507,11 @@ mixer_write_cbar (int elem_index)
   
   type = mixer_type[elem_index];
   chn_left = mixer_elem_chn[type][MIXER_CHN_LEFT];
-  if (! (scontrol.channels & (1 << chn_left)))
+  if (! (scontrol.channels & (1 << snd_enum_to_int(chn_left))))
     return; /* ..??.. */
   chn_right = mixer_elem_chn[type][MIXER_CHN_RIGHT];
-  if (chn_right >= 0 && ! (scontrol.channels & (1 << chn_right)))
-    chn_right = -1;
+  if (chn_right != SND_MIXER_CHN_UNKNOWN && ! (scontrol.channels & (1 << snd_enum_to_int(chn_right))))
+    chn_right = SND_MIXER_CHN_UNKNOWN;
 
   changed = 0;
 
@@ -522,7 +522,7 @@ mixer_write_cbar (int elem_index)
        mixer_balance_volumes) &&
       (scontrol.caps & SND_MIXER_SCTCAP_VOLUME)) {
     int mono = 
-      (chn_right < 0 || (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_VOLUME));
+      (chn_right == SND_MIXER_CHN_UNKNOWN || (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_VOLUME));
     if (mono && !mixer_volume_delta[MIXER_CHN_LEFT])
       mixer_volume_delta[MIXER_CHN_LEFT] = mixer_volume_delta[MIXER_CHN_RIGHT];
     vleft = mixer_calc_volume(&scontrol, mixer_volume_delta[MIXER_CHN_LEFT], chn_left);
@@ -535,16 +535,17 @@ mixer_write_cbar (int elem_index)
       vright = vleft;
     if (vleft >= 0 && vright >= 0) {
       if (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_VOLUME) {
-	for (i = 0; i < SND_MIXER_CHN_LAST; i++) {
-	  if (scontrol.channels & (1 << i))
-	    scontrol.volume.values[i] = vleft;
+	for (chn = 0; chn < SND_MIXER_CHN_LAST; snd_enum_incr(chn)) {
+	  int c = snd_enum_to_int(chn);
+	  if (scontrol.channels & (1 << c))
+	    scontrol.volume.values[c] = vleft;
 	}
       } else {
 	if (mixer_balance_volumes)
 	  vleft = vright = vbalance;
-	scontrol.volume.values[chn_left] = vleft;
+	scontrol.volume.values[snd_enum_to_int(chn_left)] = vleft;
 	if (! mono)
-	  scontrol.volume.values[chn_right] = vright;
+	  scontrol.volume.values[snd_enum_to_int(chn_right)] = vright;
       }
       changed = 1;
     }
@@ -560,9 +561,10 @@ mixer_write_cbar (int elem_index)
       scontrol.mute = scontrol.mute ? 0 : scontrol.channels;
     else {
       if (mixer_toggle_mute & MIXER_MASK_LEFT)
-	scontrol.mute ^= (1 << chn_left);
-      if (chn_right >= 0 && (mixer_toggle_mute & MIXER_MASK_RIGHT))
-	scontrol.mute ^= (1 << chn_right);
+	scontrol.mute ^= (1 << snd_enum_to_int(chn_left));
+      if (chn_right != SND_MIXER_CHN_UNKNOWN && 
+	  (mixer_toggle_mute & MIXER_MASK_RIGHT))
+	scontrol.mute ^= (1 << snd_enum_to_int(chn_right));
     }
     changed = 1;
   }
@@ -576,9 +578,9 @@ mixer_write_cbar (int elem_index)
       scontrol.capture = scontrol.capture ? 0 : scontrol.channels;
     else {
       if (mixer_toggle_capture & MIXER_MASK_LEFT)
-	scontrol.capture ^= (1 << chn_left);
-      if (chn_right >= 0 && (mixer_toggle_capture & MIXER_MASK_RIGHT))
-	scontrol.capture ^= (1 << chn_right);
+	scontrol.capture ^= (1 << snd_enum_to_int(chn_left));
+      if (chn_right != SND_MIXER_CHN_UNKNOWN && (mixer_toggle_capture & MIXER_MASK_RIGHT))
+	scontrol.capture ^= (1 << snd_enum_to_int(chn_right));
     }
     changed = 1;
   }
@@ -598,8 +600,10 @@ mixer_update_cbar (int elem_index)
   int err, dc;
   snd_mixer_simple_control_t scontrol;
   int vleft, vright;
-  int type, chn_left, chn_right;
+  int type;
+  snd_mixer_channel_id_t chn_left, chn_right;
   int x, y, i;
+  int c_left, c_right;
 
   /* set new scontrol indices and read info
    */
@@ -612,21 +616,24 @@ mixer_update_cbar (int elem_index)
   
   type = mixer_type[elem_index];
   chn_left = mixer_elem_chn[type][MIXER_CHN_LEFT];
-  if (! (scontrol.channels & (1 << chn_left)))
+  if (! (scontrol.channels & (1 << snd_enum_to_int(chn_left))))
     return; /* ..??.. */
   chn_right = mixer_elem_chn[type][MIXER_CHN_RIGHT];
-  if (chn_right >= 0 && ! (scontrol.channels & (1 << chn_right)))
-    chn_right = -1;
+  if (chn_right != SND_MIXER_CHN_UNKNOWN && 
+      ! (scontrol.channels & (1 << snd_enum_to_int(chn_right))))
+    chn_right = SND_MIXER_CHN_UNKNOWN;
+  c_left = snd_enum_to_int(chn_left);
+  c_right = snd_enum_to_int(chn_right);
   
   /* first, read values for the numbers to be displayed
    */
   if ((err = snd_mixer_simple_control_read (mixer_handle, &scontrol)) < 0)
     CHECK_ABORT (ERR_FCN, "snd_mixer_simple_control_read()", err);
   
-  vleft = scontrol.volume.values[chn_left];
+  vleft = scontrol.volume.values[c_left];
   vleft = mixer_conv(vleft, scontrol.min, scontrol.max, 0, 100);
-  if (chn_right >= 0) {
-    vright = scontrol.volume.values[chn_right];
+  if (chn_right != SND_MIXER_CHN_UNKNOWN) {
+    vright = scontrol.volume.values[c_right];
     vright = mixer_conv(vright, scontrol.min, scontrol.max, 0, 100);
   } else {
     vright = vleft;
@@ -722,10 +729,10 @@ mixer_update_cbar (int elem_index)
   mvaddstr (y, x, "         ");
   mixer_dc (DC_CBAR_FRAME);
   mvaddch (y, x + 2, ACS_ULCORNER);
-  dc = scontrol.mute & (1 << chn_left) ? DC_CBAR_MUTE : DC_CBAR_NOMUTE;
+  dc = scontrol.mute & (1 << c_left) ? DC_CBAR_MUTE : DC_CBAR_NOMUTE;
   mvaddch (y, x + 3, mixer_dc (dc));
-  if (chn_right >= 0)
-    dc = scontrol.mute & (1 << chn_right) ? DC_CBAR_MUTE : DC_CBAR_NOMUTE;
+  if (chn_right != SND_MIXER_CHN_UNKNOWN)
+    dc = scontrol.mute & (1 << c_right) ? DC_CBAR_MUTE : DC_CBAR_NOMUTE;
   mvaddch (y, x + 4, mixer_dc (dc));
   mixer_dc (DC_CBAR_FRAME);
   mvaddch (y, x + 5, ACS_URCORNER);
@@ -733,17 +740,18 @@ mixer_update_cbar (int elem_index)
   
   /* capture input?
    */
-  if ((scontrol.capture & (1 << chn_left)) ||
-      (chn_right >= 0 && (scontrol.capture & (1 << chn_right))))
+  if ((scontrol.capture & (1 << c_left)) ||
+      (chn_right != SND_MIXER_CHN_UNKNOWN && (scontrol.capture & (1 << c_right))))
     {
       mixer_dc (DC_CBAR_CAPTURE);
       mvaddstr (y, x + 1, "CAPTUR");
-      if (scontrol.capture & (1 << chn_left)) {
+      if (scontrol.capture & (1 << c_left)) {
 	mvaddstr (y + 1, x + 1, "L");
-	if (chn_right < 0)
+	if (chn_right == SND_MIXER_CHN_UNKNOWN)
 	  mvaddstr (y + 1, x + 6, "R");
       }
-      if (chn_right >= 0 && (scontrol.capture & (1 << chn_right)))
+      if (chn_right != SND_MIXER_CHN_UNKNOWN &&
+	  (scontrol.capture & (1 << c_right)))
 	mvaddstr (y + 1, x + 6, "R");
     }
   else if (scontrol.caps & SND_MIXER_SCTCAP_CAPTURE)
@@ -1398,7 +1406,7 @@ mixer_resize (void)
 }
 
 static void
-mixer_callback_rebuild (snd_mixer_t *handle, void *private_data)
+mixer_callback_rebuild (snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED)
 {
   /* we don't actually need to update the individual channels because
    * we redraw the whole screen upon every main iteration anyways.
@@ -1407,7 +1415,7 @@ mixer_callback_rebuild (snd_mixer_t *handle, void *private_data)
 }
 
 static void
-mixer_callback_scontrol (snd_mixer_t *handle, void *private_data, snd_mixer_sid_t *gid)
+mixer_callback_scontrol (snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED, snd_mixer_sid_t *gid ATTRIBUTE_UNUSED)
 {
   mixer_reinit ();
 }
@@ -1433,7 +1441,7 @@ mixer_add_delta(int delta)
 static int
 mixer_iteration (void)
 {
-  struct timeval delay = { 0, };
+  struct timeval delay = { 0, 0 };
   snd_mixer_simple_callbacks_t callbacks = { 0, };
   int mixer_fd;
   fd_set rfds;
