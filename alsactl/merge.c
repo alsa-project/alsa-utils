@@ -143,7 +143,7 @@ int soundcard_setup_merge_switches(int cardno)
 			continue;
 		soundcard_setup_merge_sw(soundcard->control.switches, rsoundcard->control.switches, soundcard->no, -1, "control");
 		for (rmixer = rsoundcard->mixers; rmixer; rmixer = rmixer->next) {
-			for (mixer = soundcard->mixers; mixer; mixer = rmixer->next) {
+			for (mixer = soundcard->mixers; mixer; mixer = mixer->next) {
 				if (!strncmp(mixer->info.name, rmixer->info.name, sizeof(mixer->info.name)))
 					break;
 			}
@@ -350,7 +350,7 @@ int soundcard_setup_merge_data(int cardno)
 		if (cardno >= 0 && soundcard->no != cardno)
 			continue;
 		for (rmixer = rsoundcard->mixers; rmixer; rmixer = rmixer->next) {
-			for (mixer = soundcard->mixers; mixer; mixer = rmixer->next) {
+			for (mixer = soundcard->mixers; mixer; mixer = mixer->next) {
 				if (!strncmp(mixer->info.name, rmixer->info.name, sizeof(mixer->info.name)))
 					break;
 			}

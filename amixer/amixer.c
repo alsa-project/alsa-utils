@@ -1463,7 +1463,11 @@ int main(int argc, char *argv[])
 			break;
 		case 'd':
 		case HELPID_DEVICE:
-			device = device;
+			device = atoi(optarg);
+			if (device < 0 || device > 32) {
+			  fprintf(stderr, "Error: device %i is invalid\n", device);
+			  return 1;
+			}
 			break;
 		case 'q':
 		case HELPID_QUIET:
