@@ -51,7 +51,7 @@ int main(int argc, char **argv)
         GtkWidget *tablebox;
         GtkWidget *separator;
         int i,j,k,xpm,found,fd;
-        char title[32];
+        char title[64];
         char name[128];
         ChannelLabel *tmp;
         char labelname[256];
