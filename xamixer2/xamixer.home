@@ -1,0 +1,47 @@
+# XAmixer home file
+# Comments are preceded anywhere on the line by a '#'
+# All channel arguments (string & pixmap) must be enclosed in [ ] [ ]
+UseXpms
+#IgnoreXpms
+ScaleSize 115
+ChannelPadding 5
+Position -1 -1 # Both arguments must be set (and >= 0) to get positioning.
+ShowCardName
+#ShowMixerNumber
+#ShowMixerName
+#MuteLabel Mute
+#RecLabel Record
+RecLabel R
+#SimulLabel Lock
+#BackgroundXpm /usr/local/share/xamixer/pixmaps/test.xpm
+#BackgroundXpm /home/raistlin/xamixer/pixmaps/background5.xpm
+#BackgroundXpm /home/raistlin/xamixer/pixmaps/background.xpm
+#BackgroundXpm /tmp/background.xpm
+IconXpm /usr/local/share/xamixer/pixmaps/icon3.xpm
+#MuteXpm /usr/local/share/xamixer/pixmaps/mute3.xpm
+#unMuteXpm /usr/local/share/xamixer/pixmaps/unmute3.xpm
+MuteXpm /usr/local/share/xamixer/pixmaps/mute3.xpm
+unMuteXpm /usr/local/share/xamixer/pixmaps/unmute3.xpm
+#RecXpm /usr/local/share/xamixer/pixmaps/record.xpm
+#unRecXpm /usr/local/share/xamixer/pixmaps/unrecord.xpm
+RecXpm /usr/local/share/xamixer/pixmaps/rec.xpm
+unRecXpm /usr/local/share/xamixer/pixmaps/unrec.xpm
+#RecXpm /home/raistlin/xamixer/pixmaps/record.xpm
+#unRecXpm /home/raistlin/xamixer/pixmaps/unrecord.xpm
+SimulXpm /usr/local/share/xamixer/pixmaps/simul.xpm
+unSimulXpm /usr/local/share/xamixer/pixmaps/unsimul.xpm
+Label [Master] [Mstr]
+Label [Master M] [MstrM]
+Label [Line-In] [LineIn]
+Label [Record-Gain] [RGain]
+Label [PC Speaker] [Spkr]
+Label [Aux A] [AuxA]
+Label [In-Gain] [IGain]
+Label [Out-Gain] [OGain]
+Xpm [Master] [/usr/local/share/xamixer/pixmaps/master.xpm]
+Xpm [CD] [/usr/local/share/xamixer/pixmaps/cd.xpm]
+Xpm [MIC] [/usr/local/share/xamixer/pixmaps/mic.xpm]
+Xpm [PCM] [/usr/local/share/xamixer/pixmaps/pcm.xpm]
+Xpm [Synth] [/usr/local/share/xamixer/pixmaps/synth.xpm]
+Xpm [Line-In] [/usr/local/share/xamixer/pixmaps/line-in.xpm]
+Xpm [PC Speaker] [/usr/local/share/xamixer/pixmaps/speaker.xpm]
