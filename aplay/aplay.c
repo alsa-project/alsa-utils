@@ -36,6 +36,7 @@
 #include <ctype.h>
 #include <errno.h>
 #define ALSA_PCM_NEW_HW_PARAMS_API
+#define ALSA_PCM_NEW_SW_PARAMS_API
 #include <alsa/asoundlib.h>
 #include <assert.h>
 #include <sys/poll.h>
@@ -753,7 +754,7 @@ static void set_params(void)
 	snd_pcm_uframes_t buffer_size;
 	int err;
 	size_t n;
-	size_t xfer_align;
+	snd_pcm_uframes_t xfer_align;
 	unsigned int rate;
 	snd_pcm_uframes_t start_threshold, stop_threshold;
 	snd_pcm_hw_params_alloca(&params);
@@ -821,7 +822,11 @@ static void set_params(void)
 		exit(EXIT_FAILURE);
 	}
 	snd_pcm_sw_params_current(handle, swparams);
-	xfer_align = snd_pcm_sw_params_get_xfer_align(swparams);
+	err = snd_pcm_sw_params_get_xfer_align(swparams, &xfer_align);
+	if (err < 0) {
+		error("Unable to obtain xfer align\n");
+		exit(EXIT_FAILURE);
+	}
 	if (sleep_min)
 		xfer_align = 1;
 	err = snd_pcm_sw_params_set_sleep_min(handle, swparams,
