@@ -203,7 +203,7 @@ static void device_list( void )
       }
       if ( pcminfo.flags & SND_PCM_INFO_PLAYBACK ) {
         printf( "  Playback:\n" );
-        printf( "    Speed range: %iHz-%iHz\n", playinfo.min_rate, playinfo.max_rate );
+        printf( "    Rate range: %iHz-%iHz\n", playinfo.min_rate, playinfo.max_rate );
         printf( "    Voices range: %i-%i\n", playinfo.min_channels, playinfo.max_channels );
         printf( "    Formats:\n" );
         for ( idx = 0; idx < SND_PCM_SFMT_GSM; idx++ ) {
@@ -218,7 +218,7 @@ static void device_list( void )
       }
       if ( pcminfo.flags & SND_PCM_INFO_RECORD ) {
         printf( "  Record:\n" );
-        printf( "    Speed range: %iHz-%iHz\n", recinfo.min_rate, recinfo.max_rate );
+        printf( "    Rate range: %iHz-%iHz\n", recinfo.min_rate, recinfo.max_rate );
         printf( "    Voices range: %i-%i\n", recinfo.min_channels, recinfo.max_channels );
         printf( "    Formats:\n" );
         for ( idx = 0; idx < SND_PCM_SFMT_GSM; idx++ ) {
@@ -996,7 +996,7 @@ static void header( int rtype, char *name )
              fmt_rec_table[rtype].what, 
              name );
     fprintf (stderr, "%s, ", get_format( format.format ) );
-    fprintf (stderr, "Speed %d Hz, ", format.rate);
+    fprintf (stderr, "Rate %d Hz, ", format.rate);
     if ( format.channels == 1 )
       fprintf (stderr, "Mono" ); 
     else if ( format.channels == 2 ) 
