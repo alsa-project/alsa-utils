@@ -63,7 +63,7 @@ static int help(void)
 	printf("Usage: amixer <options> command\n");
 	printf("\nAvailable options:\n");
 	printf("  -h,--help       this help\n");
-	printf("  -c,--card N     select the card\n", card);
+	printf("  -c,--card N     select the card\n");
 	printf("  -D,--device N   select the device, default '%s'\n", card);
 	printf("  -d,--debug      debug mode\n");
 	printf("  -v,--version    print version of this program\n");
