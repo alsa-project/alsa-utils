@@ -109,7 +109,7 @@ static int info(void)
 		snd_mixer_close(mhandle);
 		return err;
 	}
-	if ((err = snd_mixer_selem_register(mhandle, 0)) < 0) {
+	if ((err = snd_mixer_selem_register(mhandle, NULL, NULL)) < 0) {
 		error("Mixer register error: %s", snd_strerror(err));
 		snd_mixer_close(mhandle);
 		return err;
@@ -423,14 +423,13 @@ static int controls(int level)
 
 static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char *space, int level)
 {
-	int err;
 	snd_mixer_selem_channel_id_t chn;
-	long min, max;
+	long pmin = 0, pmax = 0;
+	long cmin = 0, cmax = 0;
+	long pvol, cvol;
+	int psw, csw;
+	int mono;
 	snd_mixer_elem_t *elem;
-	snd_mixer_selem_info_t *sinfo;
-	snd_mixer_selem_value_t *scontrol;
-	snd_mixer_selem_info_alloca(&sinfo);
-	snd_mixer_selem_value_alloca(&scontrol);
 	
 	elem = snd_mixer_find_selem(handle, id);
 	if (!elem) {
@@ -438,65 +437,122 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 		return -ENOENT;
 	}
 
-	if ((err = snd_mixer_selem_info(elem, sinfo)) < 0) {
-		error("Mixer %s selem info error: %s", card, snd_strerror(err));
-		return err;
-	}
-	if ((err = snd_mixer_selem_read(elem, scontrol)) < 0) {
-		error("Mixer %s selem read error: %s", card, snd_strerror(err));
-		return err;
-	}
 	if ((level & 1) != 0) {
 		printf("%sCapabilities:", space);
-		if (snd_mixer_selem_info_has_volume(sinfo))
+		if (snd_mixer_selem_has_common_volume(elem)) {
 			printf(" volume");
-		if (snd_mixer_selem_info_has_joined_volume(sinfo))
-			printf(" joined-volume");
-		if (snd_mixer_selem_info_has_mute(sinfo))
-			printf(" mute");
-		if (snd_mixer_selem_info_has_joined_mute(sinfo))
-			printf(" joined-mute");
-		if (snd_mixer_selem_info_has_capture(sinfo)) {
-			printf(" capture");
+			if (snd_mixer_selem_has_playback_volume_joined(elem))
+				printf(" volume-joined");
+		} else if (snd_mixer_selem_has_playback_volume(elem)) {
+			printf(" pvolume");
+			if (snd_mixer_selem_has_playback_volume_joined(elem))
+				printf(" pvolume-joined");
 		}
-		if (snd_mixer_selem_info_has_joined_capture(sinfo))
-			printf(" joined-capture");
-		if (snd_mixer_selem_info_has_exclusive_capture(sinfo))
-			printf(" exclusive-capture");
+		if (snd_mixer_selem_has_common_switch(elem)) {
+			printf(" switch");
+			if (snd_mixer_selem_has_playback_switch_joined(elem))
+				printf(" switch-joined");
+		} else if (snd_mixer_selem_has_playback_switch(elem)) {
+			printf(" pswitch");
+			if (snd_mixer_selem_has_playback_switch_joined(elem))
+				printf(" pswitch-joined");
+		}
+		if (snd_mixer_selem_has_capture_volume(elem))
+			printf(" cvolume");
+		if (snd_mixer_selem_has_capture_volume_joined(elem))
+			printf(" cvolume-joined");
+		if (snd_mixer_selem_has_capture_switch(elem))
+			printf(" cswitch");
+		if (snd_mixer_selem_has_capture_switch_joined(elem))
+			printf(" cswitch-joined");
+		if (snd_mixer_selem_has_capture_switch_exclusive(elem))
+			printf(" cswitch_exclusive");
 		printf("\n");
-		if (snd_mixer_selem_info_has_capture(sinfo) &&
-		    snd_mixer_selem_info_has_exclusive_capture(sinfo))
+		if (snd_mixer_selem_has_capture_switch_exclusive(elem))
 			printf("%sCapture exclusive group: %i\n", space,
-			       snd_mixer_selem_info_get_capture_group(sinfo));
-		printf("%sChannels: ", space);
-		if (snd_mixer_selem_info_is_mono(sinfo)) {
-			printf("Mono");
-		} else {
-			for (chn = 0; chn <= SND_MIXER_SCHN_LAST; snd_enum_incr(chn)){
-				if (!snd_mixer_selem_info_has_channel(sinfo, chn))
-					continue;
-				printf("%s ", snd_mixer_selem_channel_name(chn));
+			       snd_mixer_selem_get_capture_group(elem));
+		if (snd_mixer_selem_has_playback_volume(elem) ||
+		    snd_mixer_selem_has_playback_switch(elem)) {
+			printf("%sPlayback channels: ", space);
+			if (snd_mixer_selem_is_playback_mono(elem)) {
+				printf("Mono");
+			} else {
+				for (chn = 0; chn <= SND_MIXER_SCHN_LAST; snd_enum_incr(chn)){
+					if (!snd_mixer_selem_has_playback_channel(elem, chn))
+						continue;
+					printf("%s ", snd_mixer_selem_channel_name(chn));
+				}
 			}
+			printf("\n");
 		}
-		printf("\n");
-		min = snd_mixer_selem_info_get_min(sinfo);
-		max = snd_mixer_selem_info_get_max(sinfo);
-		printf("%sLimits: min = %li, max = %li\n", space, min, max);
-		if (snd_mixer_selem_info_is_mono(sinfo)) {
-			printf("%sMono: %s [%s]\n", space, 
-			       get_percent(snd_mixer_selem_value_get_volume(scontrol, SND_MIXER_SCHN_MONO), min, max), 
-			       snd_mixer_selem_value_get_mute(scontrol, SND_MIXER_SCHN_MONO) ? "mute" : "on");
-		} else {
-			for (chn = 0; chn <= SND_MIXER_SCHN_LAST; snd_enum_incr(chn)) {
-				if (!snd_mixer_selem_info_has_channel(sinfo, chn))
-					continue;
-				printf("%s%s: %s [%s] [%s]\n",
-				       space,
-				       snd_mixer_selem_channel_name(chn),
-				       get_percent(snd_mixer_selem_value_get_volume(scontrol, chn), min, max),
-				       snd_mixer_selem_value_get_mute(scontrol, chn) ? "mute" : "on",
-				       snd_mixer_selem_value_get_capture(scontrol, chn) ? "capture" : "---");
+		if (snd_mixer_selem_has_capture_volume(elem) ||
+		    snd_mixer_selem_has_capture_switch(elem)) {
+			printf("%sCapture channels: ", space);
+			if (snd_mixer_selem_is_capture_mono(elem)) {
+				printf("Mono");
+			} else {
+				for (chn = 0; chn <= SND_MIXER_SCHN_LAST; snd_enum_incr(chn)){
+					if (!snd_mixer_selem_has_capture_channel(elem, chn))
+						continue;
+					printf("%s ", snd_mixer_selem_channel_name(chn));
+				}
 			}
+			printf("\n");
+		}
+		if (snd_mixer_selem_has_playback_volume(elem) ||
+		    snd_mixer_selem_has_capture_volume(elem)) {
+			cmin = snd_mixer_selem_get_capture_min(elem);
+			cmax = snd_mixer_selem_get_capture_max(elem);
+			printf("%sLimits: ", space);
+			if (snd_mixer_selem_has_playback_volume(elem)) {
+				pmin = snd_mixer_selem_get_playback_min(elem);
+				pmax = snd_mixer_selem_get_playback_max(elem);
+				if (!snd_mixer_selem_has_common_volume(elem))
+					printf("Playback ");
+				printf("%li - %li ", pmin, pmax);
+			}
+			if (snd_mixer_selem_has_capture_volume(elem)) {
+				cmin = snd_mixer_selem_get_capture_min(elem);
+				cmax = snd_mixer_selem_get_capture_max(elem);
+				printf("Capture %li - %li", cmin, cmax);
+			}
+			printf("\n");
+		}
+		mono = ((snd_mixer_selem_is_playback_mono(elem) || 
+			 (!snd_mixer_selem_has_playback_volume(elem) &&
+			  !snd_mixer_selem_has_playback_switch(elem))) &&
+			(snd_mixer_selem_is_capture_mono(elem) || 
+			 (!snd_mixer_selem_has_capture_volume(elem) &&
+			  !snd_mixer_selem_has_capture_switch(elem))));
+		for (chn = 0; chn <= SND_MIXER_SCHN_LAST; snd_enum_incr(chn)) {
+			if (!snd_mixer_selem_has_playback_channel(elem, chn) &&
+			    !snd_mixer_selem_has_capture_channel(elem, chn))
+				continue;
+			printf("%s%s: ", space, mono ? "Mono" : snd_mixer_selem_channel_name(chn));
+			if (snd_mixer_selem_has_playback_channel(elem, chn)) {
+				if (!snd_mixer_selem_has_common_volume(elem))
+					printf("Playback ");
+				if (snd_mixer_selem_has_playback_volume(elem)) {
+					snd_mixer_selem_get_playback_volume(elem, chn, &pvol);
+					printf("%s ", get_percent(pvol, pmin, pmax));
+				}
+				if (snd_mixer_selem_has_playback_switch(elem)) {
+					snd_mixer_selem_get_playback_switch(elem, chn, &psw);
+					printf("[%s] ", psw ? "on" : "off");
+				}
+			}
+			if (snd_mixer_selem_has_capture_channel(elem, chn)) {
+				printf("Capture ");
+				if (snd_mixer_selem_has_capture_volume(elem)) {
+					snd_mixer_selem_get_capture_volume(elem, chn, &cvol);
+					printf("%s ", get_percent(cvol, cmin, cmax));
+				}
+				if (snd_mixer_selem_has_capture_switch(elem)) {
+					snd_mixer_selem_get_capture_switch(elem, chn, &csw);
+					printf("[%s] ", csw ? "on" : "off");
+				}
+			}
+			printf("\n");
 		}
 	}
 	return 0;
@@ -519,7 +575,7 @@ static int selems(int level)
 		snd_mixer_close(handle);
 		return err;
 	}
-	if ((err = snd_mixer_selem_register(handle, 0)) < 0) {
+	if ((err = snd_mixer_selem_register(handle, NULL, NULL)) < 0) {
 		error("Mixer register error: %s", snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
@@ -825,11 +881,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 	snd_mixer_t *handle;
 	snd_mixer_elem_t *elem;
 	snd_mixer_selem_id_t *sid;
-	snd_mixer_selem_value_t *control;
-	snd_mixer_selem_info_t *info;
 	snd_mixer_selem_id_alloca(&sid);
-	snd_mixer_selem_value_alloca(&control);
-	snd_mixer_selem_info_alloca(&info);
 
 	if (argc < 1) {
 		fprintf(stderr, "Specify a scontrol identifier: 'name',index\n");
@@ -852,7 +904,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 		snd_mixer_close(handle);
 		return err;
 	}
-	if ((err = snd_mixer_selem_register(handle, 0)) < 0) {
+	if ((err = snd_mixer_selem_register(handle, NULL, NULL)) < 0) {
 		error("Mixer register error: %s", snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
@@ -869,36 +921,26 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 		snd_mixer_close(handle);
 		return -ENOENT;
 	}
-	if ((err = snd_mixer_selem_info(elem, info))<0) {
-		error("Unable to get simple info '%s',%i: %s\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid), snd_strerror(err));
-		snd_mixer_close(handle);
-		return err;
-	}
-	if ((err = snd_mixer_selem_read(elem, control))<0) {
-		error("Unable to read simple control '%s',%i: %s\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid), snd_strerror(err));
-		snd_mixer_close(handle);
-		return err;
-	}
-	min = snd_mixer_selem_info_get_min(info);
-	max = snd_mixer_selem_info_get_max(info);
+	min = snd_mixer_selem_get_playback_min(elem);
+	max = snd_mixer_selem_get_playback_max(elem);
 	if (roflag)
 		goto __skip_write;
 	for (idx = 1; idx < argc; idx++) {
 		if (!strncmp(argv[idx], "mute", 4) ||
 		    !strncmp(argv[idx], "off", 3)) {
-			snd_mixer_selem_value_set_mute_all(control, 1);
+			snd_mixer_selem_set_playback_switch_all(elem, 1);
 			continue;
 		} else if (!strncmp(argv[idx], "unmute", 6) ||
 		           !strncmp(argv[idx], "on", 2)) {
-			snd_mixer_selem_value_set_mute_all(control, 0);
+			snd_mixer_selem_set_playback_switch_all(elem, 0);
 			continue;
 		} else if (!strncmp(argv[idx], "cap", 3) ||
 		           !strncmp(argv[idx], "rec", 3)) {
-			snd_mixer_selem_value_set_capture_all(control, 1);
+			snd_mixer_selem_set_capture_switch_all(elem, 1);
 			continue;
 		} else if (!strncmp(argv[idx], "nocap", 5) ||
 		           !strncmp(argv[idx], "norec", 5)) {
-			snd_mixer_selem_value_set_capture_all(control, 0);
+			snd_mixer_selem_set_capture_switch_all(elem, 0);
 			continue;
 		}
 		channels = channels_mask(argv[idx]);
@@ -911,13 +953,15 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 			multi = (strchr(argv[idx], ',') != NULL);
 			ptr = argv[idx];
 			for (chn = 0; chn <= SND_MIXER_SCHN_LAST; snd_enum_incr(chn)) {
+				long vol;
 				if (!(channels & (1 << chn)) ||
-				    !snd_mixer_selem_info_has_channel(info, chn))
+				    !snd_mixer_selem_has_playback_channel(elem, chn))
 					continue;
 
 				if (! multi)
 					ptr = argv[idx];
-				snd_mixer_selem_value_set_volume(control, chn, get_volume_simple(&ptr, min, max, snd_mixer_selem_value_get_volume(control, chn)));
+				snd_mixer_selem_get_playback_volume(elem, chn, &vol);
+				snd_mixer_selem_set_playback_volume(elem, chn, get_volume_simple(&ptr, min, max, vol));
 			}
 		} else {
 			error("Unknown setup '%s'..\n", argv[idx]);
@@ -925,11 +969,6 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 			return err;
 		}
 	} 
-	if ((err = snd_mixer_selem_write(elem, control))<0) {
-		error("Unable to write control '%s',%i: %s\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid), snd_strerror(err));
-		snd_mixer_close(handle);
-		return err;
-	}
       __skip_write:
 	if (!quiet) {
 		printf("Simple mixer control '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
@@ -1093,7 +1132,7 @@ static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 		snd_mixer_close(handle);
 		return err;
 	}
-	if ((err = snd_mixer_selem_register(handle, 0)) < 0) {
+	if ((err = snd_mixer_selem_register(handle, NULL, NULL)) < 0) {
 		error("Mixer register error: %s", snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
