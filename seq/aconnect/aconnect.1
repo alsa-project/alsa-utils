@@ -5,10 +5,10 @@ aconnect \- ALSA sequencer connection manager
 
 .SH SYNOPSIS
 .B aconnect
-[\-d] [-options] sender receiver
+[\-d] [\-options] sender receiver
 .br
 .B aconnect
-\-i|-o [-options]
+\-i|\-o [\-options]
 .br
 .B aconnect
 \-x
@@ -34,7 +34,7 @@ For disconnection, use
 .B \-d
 option.
 .IP "" 4
-% aconnect -d 64:0 65:0
+% aconnect \-d 64:0 65:0
 .PP
 The address can be given using the client's name.
 .IP "" 4
@@ -53,7 +53,7 @@ ports, can be listed with
 .B \-i
 option.
 .IP "" 4
-% aconnect -i
+% aconnect \-i
 .br
 client 0: 'System' [type=kernel]
 .in +4
@@ -61,9 +61,9 @@ client 0: 'System' [type=kernel]
 .br
 1 'Announce        '
 .in -4
-client 64: 'External MIDI-0' [type=kernel]
+client 64: 'External MIDI\-0' [type=kernel]
 .in +4
-0 'MIDI 0-0        '
+0 'MIDI 0\-0        '
 .in -4
 .PP
 Similary, to see the output ports, use
@@ -79,23 +79,23 @@ unless their connections are removed.
 .SH OPTIONS
 .SS CONNNECTION MANAGEMENT
 .TP
-.B \-d, --disconnect
+.B \-d, \-\-disconnect
 Disconnect the given subscription.
 .TP
-.B \-e, --exclusive
+.B \-e, \-\-exclusive
 Connect ports with exclusive mode.
 Both sender and receiver ports can be no longer connected by any other ports.
 .TP
-.B \-r, --real queue
+.B \-r, \-\-real queue
 Convert time-stamps of event packets to the current value of the given
 .I real-time
 queue.
 This is option is, however, not so useful, since
 the receiver port must use (not necessarily own) the specified queue.
 .TP
-.B \-t, --tick queue
+.B \-t, \-\-tick queue
 Like
-.B -r
+.B \-r
 option, but 
 time-stamps are converted to the current value of the given
 .I tick
@@ -103,17 +103,17 @@ queue.
 
 .SS LIST PORTS
 .TP
-.B \-i, --input
+.B \-i, \-\-input
 List existing input (readable) ports.
 This option is exclusive to
 .B \-o.
 .TP
-.B \-o, --output
+.B \-o, \-\-output
 List existing output (writable) ports.
 This option is exclusive to
 .B \-i.
 .TP
-.B \-l, --list
+.B \-l, \-\-list
 List the current connection status.  The connected and connecting ports
 from/to each port are listed together.
 The suffix flag
@@ -128,7 +128,7 @@ queue, respectively.
 
 .SS REMOVE ALL CONNECTIONS
 .TP
-.B \-x, --removeall
+.B \-x, \-\-removeall
 Remove all exported connections.
 
 .SH "SEE ALSO"

@@ -5,7 +5,7 @@ aplaymidi \- play Standard MIDI Files
 
 .SH SYNOPSIS
 .B aplaymidi
--p client:port[,...] [-d delay] midifile ...
+\-p client:port[,...] [\-d delay] midifile ...
 
 .SH DESCRIPTION
 .B aplaymidi
@@ -15,19 +15,19 @@ or more ALSA sequencer ports.
 .SH OPTIONS
 
 .TP
-.I -h, --help
+.I \-h, \-\-help
 Prints a list of options.
 
 .TP
-.I -V, --version
+.I \-V, \-\-version
 Prints the current version.
 
 .TP
-.I -l, --list
+.I \-l, \-\-list
 Prints a list of possible output ports.
 
 .TP
-.I -p, --port=client:port,...
+.I \-p, \-\-port=client:port,...
 Sets the sequencer port(s) to which the events in the MIDI file(s) are
 sent.
 
@@ -42,7 +42,7 @@ the port specification is taken from the
 environment variable if none is given on the command line.
 
 .TP
-.I -d, --delay=seconds
+.I \-d, \-\-delay=seconds
 Specifies how long to wait after the end of each MIDI file,
 to allow the last notes to die away.
 

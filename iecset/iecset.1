@@ -16,14 +16,14 @@ and the IEC958 status bits are updated.  The resultant status is
 shown as well.
 
 The commands consist of the command directive and the argument.
-As the boolean argument, \fIyes\fP, \fIno\fP, \fItrue\fP, \fIfalse\fI,
+As the boolean argument, \fIyes\fP, \fIno\fP, \fItrue\fP, \fIfalse\fP,
 or a digit number is allowed.
 
 .SH EXAMPLES
 .TP
 .BI iecset\ \-Dhw:1
 Displays the current IEC958 status bits on the second card.
-This is equivalent with \fI-c 1\fP.
+This is equivalent with \fI\-c 1\fP.
 .TP
 .BI iecset\ \-x
 Displays the current IEC958 status bits in a style of the arguments
@@ -36,16 +36,16 @@ non-audio bit.  The modified status will be shown, too.
 
 .SH OPTIONS
 .TP
-\fI-D\fP device
+\fI\-D\fP device
 Specifies the device name of the control to open
 .TP
-\fI-c\fP card
-Specifies the card index to open.  Equivalent with \fI-Dhw:x\fP.
+\fI\-c\fP card
+Specifies the card index to open.  Equivalent with \fI\-Dhw:x\fP.
 .TP
-\fI-x\fP
+\fI\-x\fP
 Dumps the status in the form of AESx bytes.
 .TP
-\fI-i\fP
+\fI\-i\fP
 Reads the command sequences from stdin.
 Each line has single command.
 

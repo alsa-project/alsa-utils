@@ -25,31 +25,31 @@ If filename is not specified, the standard output or input is used. The \fBaplay
 
 .SS Options
 .TP
-\fI-h, --help\fP
+\fI\-h, \-\-help\fP
 Help: show syntax.
 .TP
-\fI--version\fP
+\fI\-\-version\fP
 Print current version.
 .TP
-\fI-l, --list-devices\fP
+\fI\-l, \-\-list\-devices\fP
 List all soundcards and digital audio devices
 .TP
-\fI-L, --list-pcms\fP
+\fI\-L, \-\-list\-pcms\fP
 List all PCMs defined
 .TP
-\fI-D, --device=NAME\fP
+\fI\-D, \-\-device=NAME\fP
 Select PCM by name
 .TP
-\fI-q --quiet\fP
+\fI\-q \-\-quiet\fP
 Quiet mode. Suppress messages (not sound :))
 .TP
-\fI-t, --file-type TYPE\fP
+\fI\-t, \-\-file\-type TYPE\fP
 File type (voc, wav, raw or au)
 .TP
-\fI-c, --channels=#\fP
+\fI\-c, \-\-channels=#\fP
 The number of channels
 .TP
-\fI-f --format=FORMAT\fP
+\fI\-f \-\-format=FORMAT\fP
 Sample format
 .br
 Recognized sample formats are: S8 U8 S16_LE S16_BE U16_LE U16_BE S24_LE
@@ -61,67 +61,67 @@ Some of these may not be available on selected hardware
 .br
 There are also two format shortcuts available:
 .nf
--f cd (16 bit little endian, 44100, stereo [-f S16_LE -c2 -r44100]
--f dat (16 bit little endian, 48000, stereo) [-f S16_LE -c2 -r48000]
+\-f cd (16 bit little endian, 44100, stereo [\-f S16_LE \-c2 \-r44100]
+\-f dat (16 bit little endian, 48000, stereo) [\-f S16_LE \-c2 \-r48000]
 .fi
 .TP
-\fI-r, --rate=#<Hz>\fP
+\fI\-r, \-\-rate=#<Hz>\fP
 Sampling rate in Hertz.
 .TP
-\fI-d, --duration=#\fP
+\fI\-d, \-\-duration=#\fP
 Interrupt after # seconds.
 A value of zero means infinity.
 The default is zero, so if this option is omitted then the arecord process will run until it is killed.
 .TP
-\fI-s, --sleep-min=#\fP
+\fI\-s, \-\-sleep\-min=#\fP
 Min ticks to sleep
 .TP
-\fI-M, --mmap\fP            
+\fI\-M, \-\-mmap\fP            
 Mmap stream
 .TP
-\fI-N, --nonblock\fP          
+\fI\-N, \-\-nonblock\fP          
 Nonblocking mode
 .TP
-\fI-F, --period-time=#\fP     
+\fI\-F, \-\-period\-time=#\fP     
 Distance between interrupts is # microseconds
 .TP
-\fI-B, --buffer-time=#\fP     
+\fI\-B, \-\-buffer\-time=#\fP     
 Buffer duration is # microseconds
 .TP
-\fI--period-size=#\fP     
+\fI\-\-period\-size=#\fP     
 Distance between interrupts is # frames
 .TP
-\fI--buffer-size=#\fP     
+\fI\-\-buffer\-size=#\fP     
 Buffer duration is # frames
 .TP
-\fI-A, --avail-min=#\fP       
+\fI\-A, \-\-avail\-min=#\fP       
 Min available space for wakeup is # microseconds
 .TP
-\fI-R, --start-delay=#\fP     
+\fI\-R, \-\-start\-delay=#\fP     
 Delay for automatic PCM start is # microseconds 
 (relative to buffer size if <= 0)
 .TP
-\fI-T, --stop-delay=#\fP      
+\fI\-T, \-\-stop\-delay=#\fP      
 Delay for automatic PCM stop is # microseconds from xrun
 .TP
-\fI-v, --verbose\fP           
+\fI\-v, \-\-verbose\fP           
 Show PCM structure and setup.
 This option is accumulative.  The VU meter is displayed when this
 is given twice.
 .TP
-\fI-I, --separate-channels\fP 
+\fI\-I, \-\-separate\-channels\fP 
 One file for each channel
 
 .SS
 Example:
 
 .TP
-\fBaplay -c 1 -t raw -r 22050 -f mu_law foobar\fR
+\fBaplay \-c 1 \-t raw \-r 22050 \-f mu_law foobar\fR
 will play the raw file "foobar" as a
 22050-Hz, mono, 8-bit, Mu-Law .au file. 
 
 .TP
-\fBarecord -d 10 -f cd -t wav -D copy foobar.wav\fP
+\fBarecord \-d 10 \-f cd \-t wav \-D copy foobar.wav\fP
 will record foobar.wav as a 10-second, CD-quality wave file, using the
 PCM "copy" (which might be defined in the user's .asoundrc file as:
 .nf
