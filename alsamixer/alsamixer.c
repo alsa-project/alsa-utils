@@ -2061,7 +2061,7 @@ main (int    argc,
    */
   do
     {
-      opt = getopt (argc, argv, "c:D:shg");
+      opt = getopt (argc, argv, "c:D:shgV:");
       switch (opt)
 	{
 	case '?':
@@ -2088,6 +2088,14 @@ main (int    argc,
 	  break;
 	case 's':
 	  mixer_minimize = 1;
+	  break;
+	case 'V':
+	  if (*optarg == 'p' || *optarg == 'P')
+	    mixer_view = VIEW_PLAYBACK;
+	  else if (*optarg == 'c' || *optarg == 'C')
+	    mixer_view = VIEW_CAPTURE;
+	  else
+	    mixer_view = VIEW_CHANNELS;
 	  break;
 	}
     }
