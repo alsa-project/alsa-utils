@@ -21,14 +21,14 @@ Advanced Linux Sound Architecture (ALSA) - Utils
 * Thu Mar  6 2003 Ronny V. Vindenes <sublett@dc-s.com>
 
 - removed wrongly included doc file
-- changed BuildRoot from /var/tmp to %{_tmppath}
-- use standard rpm macros for %build & %install
+- changed BuildRoot from /var/tmp to _tmppath
+- use standard rpm macros for build & install section
 - updated dependencies
 
 * Tue Nov 20 2001 Jaroslav Kysela <perex@suse.cz>
 
 - changed BuildRoot from /tmp to /var/tmp
-- %_prefix and %_mandir macros are used for configure and mkdir
+- _prefix and _mandir macros are used for configure and mkdir
 - DESTDIR is used for make install
 
 * Sun Nov 11 2001 Miroslav Benes <mbenes@tenez.cz>
