@@ -728,7 +728,7 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 			if (eid->name[0] == '\0') {
 				printf("NONE\n");
 			} else {
-				printf("'%s',%i,%i\n", space, idx,
+				printf("'%s',%i,%i\n", idx,
 					element_name(eid->name),
 					eid->index, eid->type);
 			}
