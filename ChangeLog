@@ -1,7 +1,8 @@
-0.0.7 -> 0.0.8
+0.0.7 -> 0.2.0
 
 * removed error message from alsamixer
 * fixes in alsactl program
+* version is now compatible with driver
 
 0.0.6 -> 0.0.7
 
