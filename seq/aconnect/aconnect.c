@@ -203,7 +203,7 @@ static void remove_connection(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
 		snd_seq_port_info_alloca(&port);
 		if (snd_seq_get_any_port_info(seq, dest->client, dest->port, port) < 0)
 			continue;
-		if (!(snd_seq_port_info_get_capability(port) & SND_SEQ_PORT_CAP_SUBS_READ))
+		if (!(snd_seq_port_info_get_capability(port) & SND_SEQ_PORT_CAP_SUBS_WRITE))
 			continue;
 		if (snd_seq_port_info_get_capability(port) & SND_SEQ_PORT_CAP_NO_EXPORT)
 			continue;
@@ -225,7 +225,7 @@ static void remove_connection(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
 		snd_seq_port_info_alloca(&port);
 		if (snd_seq_get_any_port_info(seq, sender->client, sender->port, port) < 0)
 			continue;
-		if (!(snd_seq_port_info_get_capability(port) & SND_SEQ_PORT_CAP_SUBS_WRITE))
+		if (!(snd_seq_port_info_get_capability(port) & SND_SEQ_PORT_CAP_SUBS_READ))
 			continue;
 		if (snd_seq_port_info_get_capability(port) & SND_SEQ_PORT_CAP_NO_EXPORT)
 			continue;
