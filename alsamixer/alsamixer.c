@@ -516,9 +516,19 @@ mixer_update_cbar (int channel_index)
     mixer_dc (DC_CBAR_RECORD);
     mvaddstr (y, x + 1, "RECORD");
     if (cdata.flags & SND_MIXER_FLG_RECORD_LEFT)
-	mvaddstr (y+1, x + 1, "L");
+      {
+	if (cdata.flags & SND_MIXER_FLG_LTOR_IN)
+	  mvaddstr (y+2, x + 6, "L");
+	else
+	  mvaddstr (y+1, x + 1, "L");
+      }
     if (cdata.flags & SND_MIXER_FLG_RECORD_RIGHT)
-	mvaddstr (y+1, x + 6, "R");
+      {
+        if (cdata.flags & SND_MIXER_FLG_RTOL_IN)
+          mvaddstr (y+2, x + 1, "R");
+	else
+	  mvaddstr (y+1, x + 6, "R");
+      }
   }
   else if (cinfo.caps & SND_MIXER_CINFO_CAP_RECORD)
     for (i = 0; i < 6; i++)
@@ -651,7 +661,9 @@ mixer_init (void)
 static void
 mixer_iteration_update(void *dummy, int channel)
 {
+#if 0
   fprintf( stderr, "*** channel = %i\n", channel );
+#endif
   mixer_update_cbar(channel);
   refresh ();
 }
