@@ -733,7 +733,8 @@ static int test_wavefile(void *buffer, size_t size)
 		}
 	}
 
-	count = LE_INT(c->length);
+	if (LE_INT(c->length) < count)
+		count = LE_INT(c->length);
 	check_new_format(&format);
 	return (char *)c + sizeof(*c) - (char *) buffer;
 }
@@ -1614,6 +1615,7 @@ static void playback(char *name)
 {
 	int fd, ofs;
 
+	count = calc_count();
 	snd_pcm_flush(handle);
 	if (!name || !strcmp(name, "-")) {
 		fd = 0;
@@ -1658,7 +1660,6 @@ static void playback(char *name)
 		/* should be raw data */
 		check_new_format(&rformat);
 		init_raw_data();
-		count = calc_count();
 		playback_go(fd, 64, count, FORMAT_RAW, name);
 	}
       __end:
@@ -1681,7 +1682,8 @@ static void capture(char *name)
 			exit(EXIT_FAILURE);
 		}
 	}
-	count = calc_count() & 0xFFFFFFFE;
+	count = calc_count();
+	count += count % 2;
 	/* WAVE-file should be even (I'm not sure), but wasting one byte
 	   isn't a problem (this can only be in 8 bit mono) */
 	if (fmt_rec_table[file_type].start)
