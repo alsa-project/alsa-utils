@@ -183,13 +183,16 @@ Usage: %s [OPTION]... [FILE]...
 
 --help                   help
 --version                print current version
---list-devices           list all soundcards and digital audio devices
--C, --card=#             select card # or card id (0-%i), defaults to 0
+-l,--list-devices        list all soundcards and digital audio devices
+-L,--list-pcms           list all PCMs defined
+
+-P, --pcm=NAME           select PCM by name
+ or
+-C, --card=#             select card # (0-%i) or id, defaults to 0
 -D, --device=#           select device #, defaults to 0
--S, --subdevice=#        select subdevice #, defaults to first available
--P, --direct             don't use plugins for this PCM
--H, --pcm-channels=#     channels for last specified PCM 
--h, --bind-channel=C,S   bind stream channel C to PCM channel S
+-S, --subdevice=#        select subdevice #, defaults to first free
+-i, --direct             don't use plugins for this PCM
+
 -q, --quiet              quiet mode
 -t, --file-type TYPE     file type (voc, wav or raw)
 -c, --channels=#         channels
@@ -198,7 +201,6 @@ Usage: %s [OPTION]... [FILE]...
 -d, --duration=#         interrupt after # seconds
 -e, --frame-mode         use frame mode instead of default fragment mode
 -M, --mmap               mmap stream
--Q, --multi-direct       don't use plugins on top of multi
 -N, --nonblock           nonblocking mode
 -F, --fragment-length=#  fragment length is # milliseconds
 -B, --buffer-length=#    buffer length is # milliseconds
@@ -273,6 +275,19 @@ static void device_list(void)
 	}
 }
 
+static void pcm_list(void)
+{
+	snd_config_t *conf;
+	int err = snd_config_update();
+	if (err < 0)
+		error("snd_pcm_update: %s\n", snd_strerror(err));
+	err = snd_config_search(snd_config, "pcm", &conf);
+	if (err < 0)
+		return;
+	fprintf(stderr, "PCM list:\n");
+	snd_config_save(conf, stderr);
+}
+
 static void version(void)
 {
 	fprintf(stderr, "%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@suse.cz>\n", command);
@@ -284,16 +299,17 @@ static void version(void)
 int main(int argc, char *argv[])
 {
 	int option_index;
-	char *short_options = "lC:D:S:H:h:qt:c:f:r:d:eMPQA:B:F:NvI";
+	char *short_options = "lLP:C:D:S:iqt:c:f:r:d:eMNF:A:B:vI";
 	static struct option long_options[] = {
 		{"help", 0, 0, OPT_HELP},
 		{"version", 0, 0, OPT_VERSION},
 		{"list-devices", 0, 0, 'l'},
+		{"list-pcms", 0, 0, 'L'},
+		{"pcm", 1, 0, 'P'},
 		{"card", 1, 0, 'C'},
 		{"device", 1, 0, 'D'},
 		{"subdevice", 1, 0, 'S'},
-		{"pcm-channels", 1, 0, 'H'},
-		{"bind-channel", 1, 0, 'h'},
+		{"direct", 0, 0, 'i'},
 		{"quiet", 0, 0, 'q'},
 		{"file-type", 1, 0, 't'},
 		{"channels", 1, 0, 'c'},
@@ -302,58 +318,18 @@ int main(int argc, char *argv[])
 		{"duration", 1, 0 ,'d'},
 		{"frame-mode", 0, 0, 'e'},
 		{"mmap", 0, 0, 'M'},
-		{"direct", 0, 0, 'P'},
-		{"multi-direct", 0, 0, 'Q'},
 		{"nonblock", 0, 0, 'N'},
 		{"fragment-length", 1, 0, 'F'},
-		{"buffer-length", 1, 0, 'B'},
 		{"min-avail", 1, 0, 'A'},
+		{"buffer-length", 1, 0, 'B'},
 		{"verbose", 0, 0, 'v'},
 		{"separate-channels", 0, 0, 'I'},
 		{0, 0, 0, 0}
 	};
-	int binds_pcm[32];
-	int binds_client_channel[32];
-	int binds_slave_channel[32];
-	int pcms_card[32];
-	int pcms_dev[32];
-	int pcms_subdev[32];
-	size_t pcms_channels[32];
-	int pcms_direct[32];
 	int direct = 0;
-	int multi_direct = 0;
-		
-	int pcm_card = 0, pcm_dev = 0, pcm_subdev = -1, pcm_channels = -1;
-	int tmp, err, c, client_channel, slave_channel;
-	int pcm;
-	int pcms_count = 0, binds_count = 0;
-	int multi;
-	char *ptr, *beg;
-
-	int get_pcm() {
-		int pcm;
-		if (pcm_channels < 0)
-			pcm_channels = rformat.channels;
-		for (pcm = 0; pcm < pcms_count; ++pcm) {
-			if (pcms_card[pcm] == pcm_card &&
-			    pcms_dev[pcm] == pcm_dev &&
-			    pcms_subdev[pcm] == pcm_subdev)
-				break;
-		}
-		if (pcm == pcms_count) {
-			pcms_card[pcm] = pcm_card;
-			pcms_dev[pcm] = pcm_dev;
-			pcms_subdev[pcm] = pcm_subdev;
-			pcms_channels[pcm] = pcm_channels;
-			pcms_direct[pcm] = direct;
-			direct = 0;
-			pcms_count++;
-		} else if (pcm_channels != pcms_channels[pcm]) {
-			error("different channels count specified for the same pcm\n");
-			exit(1);
-		}
-		return pcm;
-	}
+	char *pcm_name = NULL;
+	int pcm_card = -1, pcm_dev = -1, pcm_subdev = -1;
+	int tmp, err, c;
 
 	command = argv[0];
 	file_type = FORMAT_DEFAULT;
@@ -387,7 +363,22 @@ int main(int argc, char *argv[])
 		case 'l':
 			device_list();
 			return 0;
+		case 'L':
+			pcm_list();
+			return 0;
+		case 'P':
+			if (pcm_card >= 0 || pcm_dev >=0 || pcm_dev >=0 || 
+			    direct) {
+				error("-P cannot be used together with -C, -D, -S or -i\n");
+				return -1;
+			}
+			pcm_name = optarg;
+			break;
 		case 'C':
+			if (pcm_name) {
+				error("-P cannot be used together with -C, -D, -S or -i\n");
+				return -1;
+			}
 			pcm_card = snd_card_name(optarg);
 			if (pcm_card < 0) {
 				error("soundcard '%s' not found\n", optarg);
@@ -395,6 +386,10 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'D':
+			if (pcm_name) {
+				error("-P cannot be used together with -C, -D, -S or -i\n");
+				return -1;
+			}
 			pcm_dev = atoi(optarg);
 			if (pcm_dev < 0 || pcm_dev > 32) {
 				error("device %i is invalid\n", pcm_dev);
@@ -402,44 +397,22 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'S':
+			if (pcm_name) {
+				error("-P cannot be used together with -C, -D, -S or -i\n");
+				return -1;
+			}
 			pcm_subdev = atoi(optarg);
 			if (pcm_subdev < 0 || pcm_subdev > 32) {
 				error("subdevice %i is invalid\n", pcm_subdev);
 				return 1;
 			}
 			break;
-		case 'H':
-			pcm_channels = atoi(optarg);
-			if (pcm_channels < 1 || pcm_channels > 32) {
-				error("value %i for channels is invalid\n", pcm_channels);
-				return 1;
+		case 'i':
+			if (pcm_name) {
+				error("-P cannot be used together with -C, -D, -S or -i\n");
+				return -1;
 			}
-			break;
-		case 'h':
-			client_channel = strtol(optarg, &ptr, 10);
-			if (*ptr != ',' || ptr == optarg) {
-				error("invalid channel binding syntax\n");
-				return 1;
-			}
-			beg = ptr + 1;
-			slave_channel = strtol(beg, &ptr, 10);
-			if (*ptr || ptr == optarg) {
-				error("invalid channel binding syntax\n");
-				return 1;
-			}
-			if (client_channel >= rformat.channels) {
-				error("attempt to bind unavailable channel %d\n", client_channel);
-				return 1;
-			}
-			if (slave_channel >= pcm_channels) {
-				error("attempt to bind to an unavailable PCM channel %d\n", slave_channel);
-				return 1;
-			}
-			pcm = get_pcm();
-			binds_pcm[binds_count] = pcm;
-			binds_client_channel[binds_count] = client_channel;
-			binds_slave_channel[binds_count] = slave_channel;
-			++binds_count;
+			direct = 1;
 			break;
 		case 'q':
 			quiet_mode = 1;
@@ -499,12 +472,6 @@ int main(int argc, char *argv[])
 		case 'M':
 			mmap_flag = 1;
 			break;
-		case 'P':
-			direct = 1;
-			break;
-		case 'Q':
-			multi_direct = 1;
-			break;
 		case 'N':
 			nonblock = 1;
 			open_mode |= SND_PCM_NONBLOCK;
@@ -530,86 +497,23 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (binds_count == 0) {
-		pcm = get_pcm();
-		for (c = 0; c < rformat.channels; ++c) {
-			if (c > pcm_channels) {
-				error("attempt to bind to an unavailable PCM channel %d\n", c);
-				return 1;
-			}
-			binds_pcm[binds_count] = pcm;
-			binds_client_channel[binds_count] = c;
-			binds_slave_channel[binds_count] = c;
-			binds_count++;
-		}
-	}
-
-	if (!quiet_mode)
-		version();
-
-	assert(pcms_count > 0);
-
-	multi = 0;
-	if (pcms_count != 1 || rformat.channels != binds_count || 
-	    pcm_channels != binds_count)
-		multi = 1;
+	if (pcm_name)
+		err = snd_pcm_open(&handle, pcm_name, stream, open_mode);
 	else {
-		char mask[binds_count];
-		memset(mask, 0, sizeof(mask));
-		for (c = 0; c < binds_count; ++c) {
-			if (binds_client_channel[c] != binds_slave_channel[c]) {
-				multi = 1;
-				break;
-			}
-			if (mask[c]) {
-				multi = 1;
-				break;
-			}
-			mask[c] = 1;
-		}
+		if (pcm_card < 0)
+			pcm_card = 0;
+		if (pcm_dev < 0)
+			pcm_dev = 0;
+		if (direct)
+			err = snd_pcm_hw_open_subdevice(&handle, pcm_card, pcm_dev, pcm_subdev, stream, open_mode);
+		else
+			err = snd_pcm_plug_open_subdevice(&handle, pcm_card, pcm_dev, pcm_subdev, stream, open_mode);
 	}
-	if (!quiet_mode) {
-		for (pcm = 0; pcm < pcms_count; ++pcm) {
-			char *cardname;
-			if ((err = snd_card_get_longname(pcms_card[pcm], &cardname)) < 0) {
-				error("unable to obtain longname: %s\n", snd_strerror(err));
-				return 1;
-			}
-			fprintf(stderr, "Using soundcard '%s'\n", cardname);
-			free(cardname);
-		}
+	if (err < 0) {
+		error("audio open error: %s\n", snd_strerror(err));
+		return 1;
 	}
 
-	{
-		snd_pcm_t *handles[pcms_count];
-		for (pcm = 0; pcm < pcms_count; ++pcm) {
-			if (pcms_direct[pcm])
-				err = snd_pcm_hw_open_subdevice(&handles[pcm], pcms_card[pcm], pcms_dev[pcm], pcms_subdev[pcm], stream, open_mode);
-			else
-				err = snd_pcm_plug_open_subdevice(&handles[pcm], pcms_card[pcm], pcms_dev[pcm], pcms_subdev[pcm], stream, open_mode);
-			if (err < 0) {
-				error("audio open error: %s\n", snd_strerror(err));
-				return 1;
-			}
-		}
-		if (multi) {
-			err = snd_pcm_multi_create(&handle, pcms_count, handles, pcms_channels, binds_count, binds_client_channel, binds_pcm, binds_slave_channel, 1);
-			if (err < 0) {
-				error("audio open error: %s\n", snd_strerror(err));
-				return 1;
-			}
-			if (!multi_direct) {
-				snd_pcm_t *h = handle;
-				err = snd_pcm_plug_create(&handle, h, 1);
-				if (err < 0) {
-					error("audio open error: %s\n", snd_strerror(err));
-					return 1;
-				}
-			}
-		} else {
-			handle = handles[0];
-		}
-	}
 	if (nonblock) {
 		err = snd_pcm_nonblock(handle, 1);
 		if (err < 0) {
