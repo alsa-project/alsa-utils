@@ -1493,7 +1493,7 @@ static void begin_wave(int fd, size_t cnt)
 	cf.type = WAV_FMT;
 	cf.length = LE_INT(16);
 
-	f.format = LE_INT(WAV_PCM_CODE);
+	f.format = LE_SHORT(WAV_PCM_CODE);
 	f.modus = LE_SHORT(hwparams.channels);
 	f.sample_fq = LE_INT(hwparams.rate);
 #if 0
