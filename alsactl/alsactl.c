@@ -529,7 +529,7 @@ static int config_iface(snd_config_t *n)
 	default:
 		return -1;
 	}
-	for (idx = 0; idx <= SND_CTL_ELEM_IFACE_LAST; snd_enum_incr(idx)) {
+	for (idx = 0; idx <= SND_CTL_ELEM_IFACE_LAST; idx++) {
 		if (strcasecmp(snd_ctl_elem_iface_name(idx), str) == 0)
 			return idx;
 	}
@@ -684,7 +684,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	if (err < 0) {
 		if (iface >= 0 && name) {
 			snd_ctl_elem_info_set_numid(info, 0);
-			snd_ctl_elem_info_set_interface(info, snd_int_to_enum(iface));
+			snd_ctl_elem_info_set_interface(info, iface);
 			snd_ctl_elem_info_set_device(info, device);
 			snd_ctl_elem_info_set_subdevice(info, subdevice);
 			snd_ctl_elem_info_set_name(info, name);

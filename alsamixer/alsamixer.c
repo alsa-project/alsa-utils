@@ -539,7 +539,7 @@ mixer_write_cbar (int elem_index)
       vright = vleft;
     if (vleft >= 0 && vright >= 0) {
       if (snd_mixer_selem_has_playback_volume_joined(elem)) {
-	for (chn = 0; chn < SND_MIXER_SCHN_LAST; snd_enum_incr(chn))
+	for (chn = 0; chn < SND_MIXER_SCHN_LAST; chn++)
 	  if (snd_mixer_selem_has_playback_channel(elem, chn))
 	    snd_mixer_selem_set_playback_volume(elem, chn, vleft);
 	  if (snd_mixer_selem_has_capture_channel(elem, chn))
