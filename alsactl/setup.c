@@ -666,6 +666,8 @@ static void soundcard_setup_write_switch(FILE * out, const char *space, int inte
 		s = "list";
 		sprintf(v, "%u", sw->value.item_number);
 		break;
+	case SND_SW_TYPE_USER_READ_ONLY:
+		return;
 	default:
 		s = "unknown";
 	}
@@ -726,11 +728,11 @@ static void soundcard_setup_write_switch(FILE * out, const char *space, int inte
 		fprintf(out, v);
 		if (sw->type < 0 || sw->type > SND_SW_TYPE_LIST_ITEM) {
 			/* TODO: some well known types should be verbose */
-			fprintf(out, "rawdata(");
+			fprintf(out, "rawdata(@");
 			for (idx = 0; idx < 31; idx++) {
-				fprintf(out, "@%02x:", sw->value.data8[idx]);
+				fprintf(out, "%02x:", sw->value.data8[idx]);
 			}
-			fprintf(out, "%02x@)\n", sw->value.data8[31]);
+			fprintf(out, "%02x@)", sw->value.data8[31]);
 		}
 	}
       __end:

@@ -810,7 +810,7 @@ static void set_switch_integer(int val)
 
 static void set_switch_bytearray(struct bytearray val)
 {
-	Xswitch->s.type = SND_SW_TYPE_LAST + 1;
+	Xswitch->s.type = SND_SW_TYPE_USER;
 
 	if (val.datalen > 32)
 		yyerror("Byte array too large for switch.");

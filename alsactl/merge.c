@@ -99,6 +99,18 @@ static int merge_one_sw(struct ctl_switch *csw, struct ctl_switch *usw, int card
 			csw->s.value.data32[0] = usw->s.value.data32[0];
 		}
 		break;
+	case SND_SW_TYPE_USER_READ_ONLY:
+		break;
+	case SND_SW_TYPE_USER:
+		if (usw->s.type != SND_SW_TYPE_USER) {
+			error("A wrong type %i for the switch %s. The type user is expected. Skipping...", usw->s.type, sw_id(usw->s.name, cardno, devno, id));
+			return 1;
+		}
+		if (memcmp(csw->s.value.data8, usw->s.value.data8, 32)) {
+			csw->change = 1;
+			memcpy(csw->s.value.data8, usw->s.value.data8, 32);
+		}
+		break;
 	default:
 		error("The switch type %i is not known.", csw->s.type);
 	}

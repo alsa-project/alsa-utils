@@ -121,11 +121,15 @@ true|on|yes		return L_TRUE;
 			  int val;
 			  yylval.a_value.data = d = (unsigned char *)malloc( 32 );
 			  yylval.a_value.datalen = 0;
-			  while (p) {
-                            strncpy(x, p, 2); x[2] = '\0';
-			    sscanf(x, "%02x", &val);
-			    *d++ = val; 
-			    ++yylval.a_value.datalen;
+			  while (*p) {
+				strncpy(x, p, 2); x[2] = '\0';
+				sscanf(x, "%02x", &val);
+				*d++ = val; 
+				++yylval.a_value.datalen;
+				p += 2;
+				if (*p == '@')
+					break;
+				p++;
 			  }
 		          return L_BYTEARRAY; }
 
