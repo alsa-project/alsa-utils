@@ -682,17 +682,17 @@ static void mixer_mux1_value(char *name, int index, int type)
 	snd_mixer_eid_t *ptr;
 	snd_mixer_eid_t *eid;
 
-	if (Xelement->element.data.mux1.output_size <= Xelement->element.data.mux1.output) {
-		Xelement->element.data.mux1.output_size += 4;
-		ptr = (snd_mixer_eid_t *)realloc(Xelement->element.data.mux1.poutput, Xelement->element.data.mux1.output_size * sizeof(snd_mixer_eid_t));
+	if (Xelement->element.data.mux1.sel_size <= Xelement->element.data.mux1.sel) {
+		Xelement->element.data.mux1.sel_size += 4;
+		ptr = (snd_mixer_eid_t *)realloc(Xelement->element.data.mux1.psel, Xelement->element.data.mux1.sel_size * sizeof(snd_mixer_eid_t));
 		if (ptr == NULL) {
 			error_nomem();
 			free(name);
 			return;
 		}
-		Xelement->element.data.mux1.poutput = ptr;
+		Xelement->element.data.mux1.psel = ptr;
 	}
-	eid = &Xelement->element.data.mux1.poutput[Xelement->element.data.mux1.output++];
+	eid = &Xelement->element.data.mux1.psel[Xelement->element.data.mux1.sel++];
 	strncpy(eid->name, name, sizeof(eid->name));
 	eid->index = index;
 	eid->type = type;
@@ -708,7 +708,7 @@ static void mixer_mux2_value(char *name, int index, int type)
 {
 	snd_mixer_eid_t *eid;
 
-	eid = &Xelement->element.data.mux2.output;
+	eid = &Xelement->element.data.mux2.sel;
 	strncpy(eid->name, name, sizeof(eid->name));
 	eid->index = index;
 	eid->type = type;

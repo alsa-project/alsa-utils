@@ -743,8 +743,8 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 		}
 		break;
 	case SND_MIXER_ETYPE_MUX1:
-		for (idx = 0; idx < element.data.mux1.output; idx++) {
-			snd_mixer_eid_t *eid = &element.data.mux1.poutput[idx];
+		for (idx = 0; idx < element.data.mux1.sel; idx++) {
+			snd_mixer_eid_t *eid = &element.data.mux1.psel[idx];
 			printf("%sVoice %i: Element ", space, idx);
 			if (eid->name[0] == '\0') {
 				printf("NONE\n");
@@ -758,13 +758,13 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 	case SND_MIXER_ETYPE_MUX2:
 		{
 			printf("%sAll voices: Element ", space);
-			if (element.data.mux2.output.name[0] == '\0') {
+			if (element.data.mux2.sel.name[0] == '\0') {
 				printf("NONE\n");
 			} else {
 				printf("'%s',%i,%i\n",
-					element_name(element.data.mux2.output.name),
-					element.data.mux2.output.index,
-					element.data.mux2.output.type);
+					element_name(element.data.mux2.sel.name),
+					element.data.mux2.sel.index,
+					element.data.mux2.sel.type);
 			}
 		}
 		break;
@@ -1335,8 +1335,8 @@ int eset_mux1(int argc, char *argv[], void *handle, snd_mixer_eid_t *eid)
 			snd_mixer_element_info_free(&info);
 			return 1;
 		}
-		for (idx = 0; idx < element.data.mux1.output; idx++)
-			element.data.mux1.poutput[idx] = xeid;
+		for (idx = 0; idx < element.data.mux1.sel; idx++)
+			element.data.mux1.psel[idx] = xeid;
 	} else {
 		for (idx = 0; idx < element.data.volume1.voices; idx++) {
 			if (parse_eid(argv[idx >= argc ? argc - 1 : idx], &xeid)) {
@@ -1345,7 +1345,7 @@ int eset_mux1(int argc, char *argv[], void *handle, snd_mixer_eid_t *eid)
 				snd_mixer_element_info_free(&info);
 				return 1;
 			}
-			element.data.mux1.poutput[idx] = xeid;
+			element.data.mux1.psel[idx] = xeid;
 		}
 	}
 	if ((err = snd_mixer_element_write(handle, &element)) < 0) {
@@ -1390,7 +1390,7 @@ int eset_mux2(int argc, char *argv[], void *handle, snd_mixer_eid_t *eid)
 		snd_mixer_element_info_free(&info);
 		return 1;
 	}
-	element.data.mux2.output = xeid;
+	element.data.mux2.sel = xeid;
 	if ((err = snd_mixer_element_write(handle, &element)) < 0) {
 		error("Mixer element write error: %s\n", snd_strerror(err));
 		snd_mixer_element_free(&element);

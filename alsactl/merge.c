@@ -254,25 +254,25 @@ static int merge_one_element(struct mixer_element *celement, struct mixer_elemen
 		memcpy(celement->element.data.accu3.pvoices, uelement->element.data.accu3.pvoices, tmp);
 		break;
 	case SND_MIXER_ETYPE_MUX1:
-		if (celement->element.data.mux1.poutput)
-			free(celement->element.data.mux1.poutput);
-		celement->element.data.mux1.output_size = 0;
-		celement->element.data.mux1.output = 0;
-		celement->element.data.mux1.output_over = 0;
-		tmp = uelement->element.data.mux1.output * sizeof(snd_mixer_eid_t);
+		if (celement->element.data.mux1.psel)
+			free(celement->element.data.mux1.psel);
+		celement->element.data.mux1.sel_size = 0;
+		celement->element.data.mux1.sel = 0;
+		celement->element.data.mux1.sel_over = 0;
+		tmp = uelement->element.data.mux1.sel * sizeof(snd_mixer_eid_t);
 		if (tmp > 0) {
-			celement->element.data.mux1.poutput = (snd_mixer_eid_t *)malloc(uelement->element.data.mux1.output_size * sizeof(snd_mixer_eid_t));
-			if (!celement->element.data.mux1.poutput) {
+			celement->element.data.mux1.psel = (snd_mixer_eid_t *)malloc(uelement->element.data.mux1.sel_size * sizeof(snd_mixer_eid_t));
+			if (!celement->element.data.mux1.psel) {
 				error("No enough memory...");
 				return 1;
 			}
-			celement->element.data.mux1.output_size = uelement->element.data.mux1.output_size;
-			celement->element.data.mux1.output = uelement->element.data.mux1.output;
-			memcpy(celement->element.data.mux1.poutput, uelement->element.data.mux1.poutput, tmp);
+			celement->element.data.mux1.sel_size = uelement->element.data.mux1.sel_size;
+			celement->element.data.mux1.sel = uelement->element.data.mux1.sel;
+			memcpy(celement->element.data.mux1.psel, uelement->element.data.mux1.psel, tmp);
 		}
 		break;
 	case SND_MIXER_ETYPE_MUX2:
-		celement->element.data.mux2.output = uelement->element.data.mux2.output;
+		celement->element.data.mux2.sel = uelement->element.data.mux2.sel;
 		break;
 	case SND_MIXER_ETYPE_TONE_CONTROL1:
 		if ((uelement->element.data.tc1.tc & ~celement->info.data.tc1.tc) != 0) {

@@ -744,14 +744,14 @@ static void soundcard_setup_write_mixer_element(FILE * out, struct mixer_element
 		break;
 	case SND_MIXER_ETYPE_MUX1:
 		fprintf(out, "    element(\"%s\",%i,%i,Mux1(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
-		for (idx = 0; idx < element->data.mux1.output; idx++) {
-			fprintf(out, "%selement(\"%s\",%i,%i)", idx > 0 ? "," : "", mixer_element_name(&element->data.mux1.poutput[idx]), element->data.mux1.poutput[idx].index, element->data.mux1.poutput[idx].type);
+		for (idx = 0; idx < element->data.mux1.sel; idx++) {
+			fprintf(out, "%selement(\"%s\",%i,%i)", idx > 0 ? "," : "", mixer_element_name(&element->data.mux1.psel[idx]), element->data.mux1.psel[idx].index, element->data.mux1.psel[idx].type);
 		}
 		fprintf(out, "))\n");
 		break;
 	case SND_MIXER_ETYPE_MUX2:
 		fprintf(out, "    element(\"%s\",%i,%i,Mux2(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
-		fprintf(out, "element(\"%s\",%i,%i)", mixer_element_name(&element->data.mux2.output), element->data.mux2.output.index, element->data.mux2.output.type);
+		fprintf(out, "element(\"%s\",%i,%i)", mixer_element_name(&element->data.mux2.sel), element->data.mux2.sel.index, element->data.mux2.sel.type);
 		fprintf(out, "))\n");
 		break;
 	case SND_MIXER_ETYPE_TONE_CONTROL1:
