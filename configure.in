@@ -36,12 +36,14 @@ AM_CONDITIONAL(ALSAMIXER, test x$alsamixer = xtrue)
 
 dnl Checks for header files.
 AC_HEADER_STDC
-#AC_CHECK_LIB(ncurses, initscr, 
-#             [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncurses'; ], [ 
-#	AC_CHECK_LIB(curses, initscr, 
-#        	     [ CURSESINC='<curses.h>'; CURSESLIB='-lcurses'; ],
-#                     AC_MSG_ERROR(this packages requires a curses library))
-#])
+if test x$alsamixer = xtrue; then
+  AC_CHECK_LIB(ncurses, initscr, 
+             [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncurses'; ], [ 
+	AC_CHECK_LIB(curses, initscr, 
+        	     [ CURSESINC='<curses.h>'; CURSESLIB='-lcurses'; ],
+                     AC_MSG_ERROR(this packages requires a curses library))
+  ])
+fi
 
 AC_SUBST(CURSESINC)
 AC_SUBST(CURSESLIB)
