@@ -808,7 +808,7 @@ static void set_params(void)
 	params.frames_fill_max = 1024;
 	params.frames_xrun_max = 0;
 	if (snd_pcm_params(handle, &params) < 0) {
-		fprintf(stderr, "%s: unable to set params\n", command);
+		fprintf(stderr, "%s: unable to set params (where=%x, why=%x)\n", command, params.fail_mask, params.fail_reason);
 		exit(EXIT_FAILURE);
 	}
 	if (mmap_flag) {
