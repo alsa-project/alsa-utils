@@ -21,9 +21,9 @@ arecord.1: aplay.1
 	$(LN_S) $< $@
 
 install-exec-hook:
-	rm -f $(bindir)/arecord
+	rm -f $(DESTDIR)$(bindir)/arecord
 	(cd $(DESTDIR)$(bindir) && $(LN_S) aplay arecord)
 
 install-data-hook:
-	rm -f $(mandir)/man1/arecord.1
+	rm -f $(DESTDIR)$(mandir)/man1/arecord.1
 	(cd $(DESTDIR)$(mandir)/man1 && $(LN_S) aplay.1 arecord.1)
