@@ -40,7 +40,7 @@ mrproper: clean
 	rm -f config.cache config.log config.status Makefile.conf \
               include/aconfig.h utils/alsa-utils.spec
 
-cvsclean: clean
+cvsclean: mrproper
 	rm -f configure
 
 pack: mrproper
