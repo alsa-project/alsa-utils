@@ -601,8 +601,6 @@ mixer_update_cbar (int elem_index)
   int type, chn_left, chn_right;
   int x, y, i;
 
-  fprintf(stderr, "update cbar\n");
-
   /* set new scontrol indices and read info
    */
   bzero(&scontrol, sizeof(scontrol));
@@ -612,7 +610,6 @@ mixer_update_cbar (int elem_index)
   if ((err = snd_mixer_simple_control_read (mixer_handle, &scontrol)) < 0)
     CHECK_ABORT (ERR_FCN, "snd_mixer_simple_control_read()", err);
   
-  fprintf(stderr, "scontrol.channels = 0x%x\n", scontrol.channels);
   type = mixer_type[elem_index];
   chn_left = mixer_elem_chn[type][MIXER_CHN_LEFT];
   if (! (scontrol.channels & (1 << chn_left)))
@@ -758,7 +755,6 @@ mixer_update_cbars (void)
       mixer_cbar_get_pos (mixer_focus_elem, &x, &y);
     }
   mixer_write_cbar(mixer_focus_elem);
-  fprintf(stderr, "mixer_n_vis_elems = %i\n", mixer_n_vis_elems);
   for (i = 0; i < mixer_n_vis_elems; i++)
     mixer_update_cbar (i + mixer_first_vis_elem);
   
@@ -1228,7 +1224,6 @@ mixer_reinit (void)
     if ((err = snd_mixer_simple_control_list(mixer_handle, &scontrols)) < 0)
       mixer_abort (ERR_FCN, "snd_mixer_simple_control_list", err);
     mixer_n_scontrols = scontrols.controls;
-    fprintf(stderr, "controls = %i\n", scontrols.controls);
     if (mixer_n_scontrols > 0) {
       scontrols.controls_request = mixer_n_scontrols;
       scontrols.pids = (snd_mixer_sid_t *)malloc(sizeof(snd_mixer_sid_t) * mixer_n_scontrols);
@@ -1246,7 +1241,6 @@ mixer_reinit (void)
     if (mixer_sid)
       free(mixer_sid);
     mixer_sid = scontrols.pids;
-    fprintf(stderr, "mixer_sid = 0x%x\n", (int)mixer_sid);
     break;
   }
 #if 0
@@ -1260,7 +1254,6 @@ mixer_reinit (void)
     scontrol.sid = mixer_sid[idx];
     if ((err = snd_mixer_simple_control_read(mixer_handle, &scontrol)) < 0)
       CHECK_ABORT (ERR_FCN, "snd_mixer_simple_control_read()", 0);
-    fprintf(stderr, "scontrol.channels = 0x%x\n", scontrol.channels);
     for (i = 0; i < MIXER_ELEM_END; i++) {
       if (scontrol.channels & mixer_elem_mask[i])
 	mixer_n_elems++;
