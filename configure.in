@@ -15,7 +15,8 @@ AC_HEADER_STDC
 AC_CHECK_LIB(ncurses, initscr, 
              [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncurses'; ], [ 
 	AC_CHECK_LIB(curses, initscr, 
-        	     [ CURSESINC='<curses.h>'; CURSESLIB='-lcurses'; ])
+        	     [ CURSESINC='<curses.h>'; CURSESLIB='-lcurses'; ],
+                     AC_MSG_ERROR(this packages requires a curses library))
 ])
 
 AC_SUBST(CURSESINC)
