@@ -409,22 +409,22 @@ int main(int argc, char *argv[])
 			break;
 		case 'C':
 			digtype = SND_CONTROL_TYPE_IEC958;
-			diga.aes.status[0] = SND_PCM_AES0_NONAUDIO |
-					     SND_PCM_AES0_CON_EMPHASIS_NONE;
-			diga.aes.status[1] = SND_PCM_AES1_CON_ORIGINAL |
-					     SND_PCM_AES1_CON_PCM_CODER;
+			diga.aes.status[0] = IEC958_AES0_NONAUDIO |
+					     IEC958_AES0_CON_EMPHASIS_NONE;
+			diga.aes.status[1] = IEC958_AES1_CON_ORIGINAL |
+					     IEC958_AES1_CON_PCM_CODER;
 			diga.aes.status[2] = 0;
-			diga.aes.status[3] = SND_PCM_AES3_CON_FS_48000;
+			diga.aes.status[3] = IEC958_AES3_CON_FS_48000;
 			break;
 		case 'P':
 			digtype = SND_CONTROL_TYPE_IEC958;
-			diga.aes.status[0] = SND_PCM_AES0_PROFESSIONAL |
-					     SND_PCM_AES0_NONAUDIO |
-					     SND_PCM_AES0_PRO_EMPHASIS_NONE |
-					     SND_PCM_AES0_PRO_FS_48000;
-			diga.aes.status[1] = SND_PCM_AES1_PRO_MODE_NOTID |
-					     SND_PCM_AES1_PRO_USERBITS_NOTID;
-			diga.aes.status[2] = SND_PCM_AES2_PRO_WORDLEN_NOTID;
+			diga.aes.status[0] = IEC958_AES0_PROFESSIONAL |
+					     IEC958_AES0_NONAUDIO |
+					     IEC958_AES0_PRO_EMPHASIS_NONE |
+					     IEC958_AES0_PRO_FS_48000;
+			diga.aes.status[1] = IEC958_AES1_PRO_MODE_NOTID |
+					     IEC958_AES1_PRO_USERBITS_NOTID;
+			diga.aes.status[2] = IEC958_AES2_PRO_WORDLEN_NOTID;
 			diga.aes.status[3] = 0;
 			break;
 		default:
