@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
 		{"separate-channels", 0, 0, 'I'},
 		{0, 0, 0, 0}
 	};
-	char *pcm_name = "hw:0,0";
+	char *pcm_name = "plug:0,0";
 	int tmp, err, c;
 
 	command = argv[0];
