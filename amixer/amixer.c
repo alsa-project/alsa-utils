@@ -1469,8 +1469,8 @@ int main(int argc, char *argv[])
 		switch (c) {
 		case 'h':
 		case HELPID_HELP:
-			morehelp++;
-			break;
+			help();
+			return 0;
 		case 'c':
 		case HELPID_CARD:
 			{
@@ -1512,7 +1512,7 @@ int main(int argc, char *argv[])
 	}
 	if (morehelp) {
 		help();
-		return 0;
+		return 1;
 	}
 	if (argc - optind <= 0) {
 		return selems(LEVEL_BASIC | level) ? 1 : 0;
