@@ -51,7 +51,7 @@ Features
 - Made SPEC file
 
 %prep
-%setup -n alsa-utils
+%setup
 %build
 
 ./configure --prefix=/usr
