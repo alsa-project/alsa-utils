@@ -781,11 +781,11 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 					error("bad control.%d.value contents\n", numid);
 					return -EINVAL;
 				}
-				idx++;
-				if (idx % 2 == 0)
+				if (idx % 2 == 1)
 					snd_ctl_elem_value_set_byte(ctl, idx / 2, c1 << 4 | c);
 				else
 					c1 = c;
+				idx++;
 			}
 			goto _ok;
 		}
