@@ -200,34 +200,34 @@ static void device_list(void)
 			       pcminfo.flags & SND_PCM_INFO_PLAYBACK ? "playback " : "",
 			       pcminfo.flags & SND_PCM_INFO_CAPTURE ? "capture " : "",
 			       pcminfo.flags & SND_PCM_INFO_DUPLEX ? "duplex " : "");
-			if ((err = snd_ctl_pcm_playback_info(handle, dev, &playinfo)) < 0) {
-				printf("Error: control digital audio playback info (%i): %s\n", card, snd_strerror(err));
-				continue;
-			}
 			if (pcminfo.flags & SND_PCM_INFO_PLAYBACK) {
-				printf("  Playback:\n");
-				printf("    Rate range: %iHz-%iHz\n", playinfo.min_rate, playinfo.max_rate);
-				printf("    Voices range: %i-%i\n", playinfo.min_channels, playinfo.max_channels);
-				printf("    Formats:\n");
-				for (idx = 0; idx < SND_PCM_SFMT_GSM; idx++) {
-					if (playinfo.formats & (1 << idx))
-						printf("      %s%s\n", get_format(idx),
-						       playinfo.hw_formats & (1 << idx) ? " [hardware]" : "");
-				}
-				if ((err = snd_ctl_pcm_capture_info(handle, dev, &recinfo)) < 0) {
-					printf("Error: control digital audio capture info (%i): %s\n", card, snd_strerror(err));
-					continue;
+				if ((err = snd_ctl_pcm_playback_info(handle, dev, &playinfo)) < 0) {
+					printf("Error: control digital audio playback info (%i): %s\n", card, snd_strerror(err));
+				} else {
+					printf("  Playback:\n");
+					printf("    Rate range: %iHz-%iHz\n", playinfo.min_rate, playinfo.max_rate);
+					printf("    Voices range: %i-%i\n", playinfo.min_channels, playinfo.max_channels);
+					printf("    Formats:\n");
+					for (idx = 0; idx < SND_PCM_SFMT_GSM; idx++) {
+						if (playinfo.formats & (1 << idx))
+							printf("      %s%s\n", get_format(idx),
+							       playinfo.hw_formats & (1 << idx) ? " [hardware]" : "");
+					}
 				}
 			}
 			if (pcminfo.flags & SND_PCM_INFO_CAPTURE) {
-				printf("  Record:\n");
-				printf("    Rate range: %iHz-%iHz\n", recinfo.min_rate, recinfo.max_rate);
-				printf("    Voices range: %i-%i\n", recinfo.min_channels, recinfo.max_channels);
-				printf("    Formats:\n");
-				for (idx = 0; idx < SND_PCM_SFMT_GSM; idx++) {
-					if (recinfo.formats & (1 << idx))
-						printf("      %s%s\n", get_format(idx),
-						       recinfo.hw_formats & (1 << idx) ? " [hardware]" : "");
+				if ((err = snd_ctl_pcm_capture_info(handle, dev, &recinfo)) < 0) {
+					printf("Error: control digital audio capture info (%i): %s\n", card, snd_strerror(err));
+				} else {
+					printf("  Record:\n");
+					printf("    Rate range: %iHz-%iHz\n", recinfo.min_rate, recinfo.max_rate);
+					printf("    Voices range: %i-%i\n", recinfo.min_channels, recinfo.max_channels);
+					printf("    Formats:\n");
+					for (idx = 0; idx < SND_PCM_SFMT_GSM; idx++) {
+						if (recinfo.formats & (1 << idx))
+							printf("      %s%s\n", get_format(idx),
+							       recinfo.hw_formats & (1 << idx) ? " [hardware]" : "");
+					}
 				}
 			}
 		}
