@@ -790,11 +790,10 @@ static void set_params(void)
 	params.xrun_mode = SND_PCM_XRUN_FLUSH;
 	params.frag_size = format.rate * frag_length / 1000;
 	params.buffer_size = format.rate * buffer_length / 1000;
-	params.frames_min = format.rate * min_avail / 1000;
-	params.frames_xrun_max = 0;
+	params.avail_min = format.rate * min_avail / 1000;
 	params.fill_mode = SND_PCM_FILL_SILENCE;
-	params.frames_fill_max = 1024;
-	params.frames_xrun_max = 0;
+	params.fill_max = 1024;
+	params.xrun_max = 0;
 	if (snd_pcm_params(handle, &params) < 0) {
 		error("unable to set params (where=%x, why=%x)", params.fail_mask, params.fail_reason);
 		exit(EXIT_FAILURE);
@@ -843,7 +842,7 @@ void playback_underrun(void)
 		exit(EXIT_FAILURE);
 	}
 	if (status.state == SND_PCM_STATE_XRUN) {
-		fprintf(stderr, "underrun at position %lu!!!\n", (unsigned long)status.frame_io);
+		fprintf(stderr, "underrun at position %lu!!!\n", (unsigned long)status.hw_ptr);
 		if ((res = snd_pcm_prepare(handle))<0) {
 			error("underrun: playback prepare error: %s", snd_strerror(res));
 			exit(EXIT_FAILURE);
@@ -869,7 +868,7 @@ void capture_overrun(void)
 	if (status.state == SND_PCM_STATE_RUNNING)
 		return;		/* everything is ok, but the driver is waiting for data */
 	if (status.state == SND_PCM_STATE_XRUN) {
-		fprintf(stderr, "overrun at position %lu!!!\n", (unsigned long)status.frame_io);
+		fprintf(stderr, "overrun at position %lu!!!\n", (unsigned long)status.hw_ptr);
 		if ((res = snd_pcm_prepare(handle))<0) {
 			error("overrun: capture prepare error: %s", snd_strerror(res));
 			exit(EXIT_FAILURE);
