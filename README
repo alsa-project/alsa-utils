@@ -2,15 +2,16 @@
 		Advanced Linux Sound Architecture - Utilities
 		=============================================
 
-This packages contains command line utilities for the ALSA project.
-Package should be compiled only with installed ALSA driver and
-ALSA C library.
+This package contains the command line utilities for the ALSA project.
+The package can be compiled only with the installed ALSA driver and
+the ALSA C library.
 
-alsactl		- utility for store / restore of soundcard settings
-aplay/arecord	- utility for playback / record of .wav,.voc,.au files
+alsactl		- an utility for soundcard settings management
+aplay/arecord	- an utility for the playback / capture of .wav,.voc,.au files
 amixer		- a command line mixer
-alsamixer	- ncurses mixer
+alsamixer	- a ncurses mixer
 
-You may look for more info about ALSA project to http://www.alsa-project.org.
+You may give a look for more information about the ALSA project to URL
+http://www.alsa-project.org.
 
 					Jaroslav Kysela <perex@suse.cz>
