@@ -1448,7 +1448,7 @@ mixer_iteration (void)
   callbacks.remove = mixer_callback_scontrol;
 
   /* setup for select on stdin and the mixer fd */
-  mixer_fd = snd_mixer_file_descriptor (mixer_handle);
+  mixer_fd = snd_mixer_poll_descriptor (mixer_handle);
   FD_ZERO (&rfds);
   FD_SET (fileno (stdin), &rfds);
   FD_SET (mixer_fd, &rfds);

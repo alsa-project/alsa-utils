@@ -962,7 +962,7 @@ static int events(int argc, char *argv[])
 	while (1) {
 		struct pollfd ctl_poll;
 		int res;
-		ctl_poll.fd = snd_ctl_file_descriptor(handle);
+		ctl_poll.fd = snd_ctl_poll_descriptor(handle);
 		ctl_poll.events = POLLIN;
 		ctl_poll.revents = 0;
 		if ((res = poll(&ctl_poll, 1, -1)) > 0) {
@@ -1030,7 +1030,7 @@ static int sevents(int argc, char *argv[])
 	while (1) {
 		struct pollfd mixer_poll;
 		int res;
-		mixer_poll.fd = snd_mixer_file_descriptor(handle);
+		mixer_poll.fd = snd_mixer_poll_descriptor(handle);
 		mixer_poll.events = POLLIN;
 		mixer_poll.revents = 0;
 		if ((res = poll(&mixer_poll, 1, -1)) > 0) {

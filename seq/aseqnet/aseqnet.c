@@ -237,7 +237,7 @@ static void init_seq(char *source, char *dest)
 		perror("snd_seq_open");
 		exit(1);
 	}
-	seqfd = snd_seq_file_descriptor(handle);
+	seqfd = snd_seq_poll_descriptor(handle);
 	snd_seq_block_mode(handle, 0);
 
 	/* set client info */

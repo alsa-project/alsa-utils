@@ -53,10 +53,10 @@
 
 /* global data */
 
-static ssize_t (*read_func)(snd_pcm_t *handle, void *buffer, size_t size);
-static ssize_t (*write_func)(snd_pcm_t *handle, const void *buffer, size_t size);
-static ssize_t (*readv_func)(snd_pcm_t *handle, const struct iovec *vector, unsigned long count);
-static ssize_t (*writev_func)(snd_pcm_t *handle, const struct iovec *vector, unsigned long count);
+static ssize_t (*readi_func)(snd_pcm_t *handle, void *buffer, size_t size);
+static ssize_t (*writei_func)(snd_pcm_t *handle, const void *buffer, size_t size);
+static ssize_t (*readn_func)(snd_pcm_t *handle, void **bufs, size_t size);
+static ssize_t (*writen_func)(snd_pcm_t *handle, void **bufs, size_t size);
 
 static char *command;
 static snd_pcm_t *handle;
@@ -67,21 +67,21 @@ static snd_pcm_setup_t setup;
 static int timelimit = 0;
 static int quiet_mode = 0;
 static int file_type = FORMAT_DEFAULT;
-static int mode = SND_PCM_MODE_FRAGMENT;
+static int xrun_mode = SND_PCM_XRUN_FRAGMENT;
+static int ready_mode = SND_PCM_READY_FRAGMENT;
 static int open_mode = 0;
 static int stream = SND_PCM_STREAM_PLAYBACK;
 static int mmap_flag = 0;
-static snd_pcm_mmap_control_t *mmap_control = NULL;
-static snd_pcm_mmap_status_t *mmap_status = NULL;
 static char *mmap_data = NULL;
 static int nonblock = 0;
 static char *audiobuf = NULL;
-static int align = 1;
 static int buffer_size = -1;
 static int frag_length = 125;
 static int buffer_length = 500;
-static int min_avail = 50;
-static int dump_pcm = 0;
+static int avail_min = 50;
+static int xfer_mode = SND_PCM_XFER_INTERLEAVED;
+static int xfer_min = 50;
+static int verbose = 0;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t buffer_bytes;
@@ -160,17 +160,17 @@ static void check_new_format(snd_pcm_format_t * format)
 		error("unsupported number of channels %i (valid range is %i-%i)", format->channels, cpinfo.min_channels, cpinfo.max_channels);
 		exit(EXIT_FAILURE);
 	}
-	if (!(cpinfo.formats & (1 << format->format))) {
-		error("unsupported format %s", snd_pcm_format_name(format->format));
+	if (!(cpinfo.formats & (1 << format->sfmt))) {
+		error("unsupported format %s", snd_pcm_format_name(format->sfmt));
 		exit(EXIT_FAILURE);
 	}
 	if (format->channels > 1) {
-		if (format->interleave) {
-			if (!(cinfo.flags & SND_PCM_INFO_INTERLEAVE)) {
+		if (xfer_mode == SND_PCM_XFER_INTERLEAVED) {
+			if (!(cpinfo.flags & SND_PCM_INFO_INTERLEAVED)) {
 				error("unsupported interleaved format");
 				exit(EXIT_FAILURE);
 			}
-		} else if (!(cinfo.flags & SND_PCM_INFO_NONINTERLEAVE)) {
+		} else if (!(cpinfo.flags & SND_PCM_INFO_NONINTERLEAVED)) {
 			error("unsupported non interleaved format");
 			exit(EXIT_FAILURE);
 		}
@@ -206,7 +206,8 @@ Usage: %s [OPTION]... [FILE]...
 -N, --nonblock           nonblocking mode
 -F, --fragment-length=#  fragment length is # milliseconds
 -B, --buffer-length=#    buffer length is # milliseconds
--A, --min-avail=#        min available space for wakeup is # milliseconds
+-A, --avail-min=#        min available space for wakeup is # milliseconds
+-X, --xfer-min=#	 min xfer size is # milliseconds
 -v, --verbose            show PCM structure and setup
 -I, --separate-channels  one file for each channel
 ", command, snd_cards()-1);
@@ -301,7 +302,7 @@ static void version(void)
 int main(int argc, char *argv[])
 {
 	int option_index;
-	char *short_options = "lLP:C:D:S:iqt:c:f:r:d:eMNF:A:B:vI";
+	char *short_options = "lLP:C:D:S:iqt:c:f:r:d:eMNF:A:X:B:vI";
 	static struct option long_options[] = {
 		{"help", 0, 0, OPT_HELP},
 		{"version", 0, 0, OPT_VERSION},
@@ -318,11 +319,12 @@ int main(int argc, char *argv[])
 		{"format", 1, 0, 'f'},
 		{"rate", 1, 0, 'r'},
 		{"duration", 1, 0 ,'d'},
-		{"frame-mode", 0, 0, 'e'},
+		{"asap-mode", 0, 0, 'e'},
 		{"mmap", 0, 0, 'M'},
 		{"nonblock", 0, 0, 'N'},
 		{"fragment-length", 1, 0, 'F'},
-		{"min-avail", 1, 0, 'A'},
+		{"avail-min", 1, 0, 'A'},
+		{"xfer-min", 1, 0, 'X'},
 		{"buffer-length", 1, 0, 'B'},
 		{"verbose", 0, 0, 'v'},
 		{"separate-channels", 0, 0, 'I'},
@@ -349,8 +351,7 @@ int main(int argc, char *argv[])
 
 	buffer_size = -1;
 	memset(&rformat, 0, sizeof(rformat));
-	rformat.interleave = 1;
-	rformat.format = SND_PCM_SFMT_U8;
+	rformat.sfmt = SND_PCM_SFMT_U8;
 	rformat.rate = DEFAULT_SPEED;
 	rformat.channels = 1;
 
@@ -440,16 +441,16 @@ int main(int argc, char *argv[])
 			break;
 		case 'f':
 			if (strcasecmp(optarg, "cd") == 0) {
-				rformat.format = SND_PCM_SFMT_S16_LE;
+				rformat.sfmt = SND_PCM_SFMT_S16_LE;
 				rformat.rate = 44100;
 				rformat.channels = 2;
 			} else if (strcasecmp(optarg, "dat") == 0) {
-				rformat.format = SND_PCM_SFMT_S16_LE;
+				rformat.sfmt = SND_PCM_SFMT_S16_LE;
 				rformat.rate = 48000;
 				rformat.channels = 2;
 			} else {
-				rformat.format = snd_pcm_format_value(optarg);
-				if (rformat.format < 0) {
+				rformat.sfmt = snd_pcm_format_value(optarg);
+				if (rformat.sfmt < 0) {
 					error("wrong extended format '%s'", optarg);
 					exit(EXIT_FAILURE);
 				}
@@ -469,7 +470,8 @@ int main(int argc, char *argv[])
 			timelimit = atoi(optarg);
 			break;
 		case 'e':
-			mode = SND_PCM_MODE_FRAME;
+			xrun_mode = SND_PCM_XRUN_ASAP;
+			ready_mode = SND_PCM_READY_ASAP;
 			break;
 		case 'M':
 			mmap_flag = 1;
@@ -485,16 +487,19 @@ int main(int argc, char *argv[])
 			buffer_length = atoi(optarg);
 			break;
 		case 'A':
-			min_avail = atoi(optarg);
+			avail_min = atoi(optarg);
+			break;
+		case 'X':
+			xfer_min = atoi(optarg);
 			break;
 		case 'v':
-			dump_pcm = 1;
+			verbose = 1;
 			break;
 		case 'I':
-			rformat.interleave = 0;
+			xfer_mode = SND_PCM_XFER_NONINTERLEAVED;
 			break;
 		default:
-			fprintf(stderr, "Try `%s --help' for more information.", command);
+			fprintf(stderr, "Try `%s --help' for more information.\n", command);
 			return 1;
 		}
 	}
@@ -508,8 +513,9 @@ int main(int argc, char *argv[])
 			pcm_dev = 0;
 		if (direct)
 			err = snd_pcm_hw_open_subdevice(&handle, pcm_card, pcm_dev, pcm_subdev, stream, open_mode);
-		else
+		else {
 			err = snd_pcm_plug_open_subdevice(&handle, pcm_card, pcm_dev, pcm_subdev, stream, open_mode);
+		}
 	}
 	if (err < 0) {
 		error("audio open error: %s", snd_strerror(err));
@@ -545,18 +551,18 @@ int main(int argc, char *argv[])
 	}
 
 	if (mmap_flag) {
-		write_func = snd_pcm_mmap_write;
-		read_func = snd_pcm_mmap_read;
-		writev_func = snd_pcm_mmap_writev;
-		readv_func = snd_pcm_mmap_readv;
+		writei_func = snd_pcm_mmap_writei;
+		readi_func = snd_pcm_mmap_readi;
+		writen_func = snd_pcm_mmap_writen;
+		readn_func = snd_pcm_mmap_readn;
 	} else {
-		write_func = snd_pcm_write;
-		read_func = snd_pcm_read;
-		writev_func = snd_pcm_writev;
-		readv_func = snd_pcm_readv;
+		writei_func = snd_pcm_writei;
+		readi_func = snd_pcm_readi;
+		writen_func = snd_pcm_writen;
+		readn_func = snd_pcm_readn;
 	}
 
-	if (rformat.interleave) {
+	if (xfer_mode == SND_PCM_XFER_INTERLEAVED) {
 		if (optind > argc - 1) {
 			if (stream == SND_PCM_STREAM_PLAYBACK)
 				playback(NULL);
@@ -686,10 +692,10 @@ static ssize_t test_wavefile(int fd, char *buffer, size_t size)
 	format.channels = LE_SHORT(f->modus);
 	switch (LE_SHORT(f->bit_p_spl)) {
 	case 8:
-		format.format = SND_PCM_SFMT_U8;
+		format.sfmt = SND_PCM_SFMT_U8;
 		break;
 	case 16:
-		format.format = SND_PCM_SFMT_S16_LE;
+		format.sfmt = SND_PCM_SFMT_S16_LE;
 		break;
 	default:
 		error(" can't play WAVE-files with sample %d bits wide", LE_SHORT(f->bit_p_spl));
@@ -742,13 +748,13 @@ static int test_au(int fd, void *buffer)
 	count = BE_INT(ap->data_size);
 	switch (BE_INT(ap->encoding)) {
 	case AU_FMT_ULAW:
-		format.format = SND_PCM_SFMT_MU_LAW;
+		format.sfmt = SND_PCM_SFMT_MU_LAW;
 		break;
 	case AU_FMT_LIN8:
-		format.format = SND_PCM_SFMT_U8;
+		format.sfmt = SND_PCM_SFMT_U8;
 		break;
 	case AU_FMT_LIN16:
-		format.format = SND_PCM_SFMT_U16_LE;
+		format.sfmt = SND_PCM_SFMT_U16_LE;
 		break;
 	default:
 		return -1;
@@ -771,8 +777,6 @@ static void set_params(void)
 {
 	snd_pcm_params_t params;
 
-	align = (snd_pcm_format_physical_width(format.format) + 7) / 8;
-
 #if 0
 	if (mmap_flag)
 		snd_pcm_munmap(handle, stream);
@@ -780,26 +784,24 @@ static void set_params(void)
 	snd_pcm_flush(handle);		/* to be in right state */
 
 	memset(&params, 0, sizeof(params));
-	params.mode = mode;
 	params.format = format;
-	if (stream == SND_PCM_STREAM_PLAYBACK) {
-		params.start_mode = SND_PCM_START_FULL;
-	} else {
-		params.start_mode = SND_PCM_START_DATA;
-	}
-	params.xrun_mode = SND_PCM_XRUN_FLUSH;
+	params.start_mode = SND_PCM_START_DATA;
+	params.xfer_mode = xfer_mode;
+	params.xrun_mode = xrun_mode;
+	params.xrun_act = SND_PCM_XRUN_ACT_FLUSH;
 	params.frag_size = format.rate * frag_length / 1000;
 	params.buffer_size = format.rate * buffer_length / 1000;
-	params.avail_min = format.rate * min_avail / 1000;
-	params.fill_mode = SND_PCM_FILL_SILENCE;
-	params.fill_max = 1024;
+	params.avail_min = format.rate * avail_min / 1000;
+	if (xrun_mode == SND_PCM_XRUN_FRAGMENT)
+		params.xfer_align = params.frag_size;
+	params.xfer_min = format.rate * xfer_min / 1000;
 	params.xrun_max = 0;
 	if (snd_pcm_params(handle, &params) < 0) {
-		error("unable to set params (where=%x, why=%x)", params.fail_mask, params.fail_reason);
+		error("unable to set params (where=0x%x, why=0x%x)", params.fail_mask, params.fail_reason);
 		exit(EXIT_FAILURE);
 	}
 	if (mmap_flag) {
-		if (snd_pcm_mmap(handle, &mmap_status, &mmap_control, (void **)&mmap_data)<0) {
+		if (snd_pcm_mmap(handle, (void **)&mmap_data)<0) {
 			error("unable to mmap memory");
 			exit(EXIT_FAILURE);
 		}
@@ -814,11 +816,11 @@ static void set_params(void)
 		exit(EXIT_FAILURE);
 	}
 
-	if (dump_pcm)
+	if (verbose)
 		snd_pcm_dump(handle, stderr);
 
 	buffer_size = setup.frag_size;
-	bits_per_sample = snd_pcm_format_physical_width(setup.format.format);
+	bits_per_sample = snd_pcm_format_physical_width(setup.format.sfmt);
 	bits_per_frame = bits_per_sample * setup.format.channels;
 	buffer_bytes = buffer_size * bits_per_frame / 8;
 	audiobuf = malloc(buffer_bytes);
@@ -831,51 +833,32 @@ static void set_params(void)
 
 /* playback write error hander */
 
-void playback_underrun(void)
+void xrun(void)
 {
 	snd_pcm_status_t status;
 	int res;
 	
 	memset(&status, 0, sizeof(status));
 	if ((res = snd_pcm_status(handle, &status))<0) {
-		error("playback status error: %s", snd_strerror(res));
+		error("status error: %s", snd_strerror(res));
 		exit(EXIT_FAILURE);
 	}
 	if (status.state == SND_PCM_STATE_XRUN) {
-		fprintf(stderr, "underrun at position %lu!!!\n", (unsigned long)status.hw_ptr);
+		struct timeval now, diff;
+		gettimeofday(&now, 0);
+		timersub(&now, &status.trigger_time, &diff);
+		fprintf(stderr, "xrun at position %lu (at least %.3f ms long)!!!\n", (unsigned long)status.hw_ptr, diff.tv_sec * 1000 + diff.tv_usec / 1000.0);
+		if (verbose) {
+			fprintf(stderr, "Status:\n");
+			snd_pcm_dump_status(&status, stderr);
+		}
 		if ((res = snd_pcm_prepare(handle))<0) {
-			error("underrun: playback prepare error: %s", snd_strerror(res));
+			error("xrun: prepare error: %s", snd_strerror(res));
 			exit(EXIT_FAILURE);
 		}
 		return;		/* ok, data should be accepted again */
 	}
-	error("write error");
-	exit(EXIT_FAILURE);
-}
-
-/* capture read error hander */
-
-void capture_overrun(void)
-{
-	snd_pcm_status_t status;
-	int res;
-	
-	memset(&status, 0, sizeof(status));
-	if ((res = snd_pcm_status(handle, &status))<0) {
-		error("capture status error: %s", snd_strerror(res));
-		exit(EXIT_FAILURE);
-	}
-	if (status.state == SND_PCM_STATE_RUNNING)
-		return;		/* everything is ok, but the driver is waiting for data */
-	if (status.state == SND_PCM_STATE_XRUN) {
-		fprintf(stderr, "overrun at position %lu!!!\n", (unsigned long)status.hw_ptr);
-		if ((res = snd_pcm_prepare(handle))<0) {
-			error("overrun: capture prepare error: %s", snd_strerror(res));
-			exit(EXIT_FAILURE);
-		}
-		return;		/* ok, data should be accepted again */
-	}
-	error("read error");
+	error("read/write error");
 	exit(EXIT_FAILURE);
 }
 
@@ -888,20 +871,17 @@ static ssize_t pcm_write(u_char *data, size_t count)
 	ssize_t r;
 	ssize_t result = 0;
 
-	if (mode == SND_PCM_MODE_FRAGMENT &&
+	if (xrun_mode == SND_PCM_XRUN_FRAGMENT &&
 	    count < buffer_size) {
-		snd_pcm_format_set_silence(format.format, data + count * bits_per_frame / 8, (buffer_size - count) * format.channels);
+		snd_pcm_format_set_silence(format.sfmt, data + count * bits_per_frame / 8, (buffer_size - count) * format.channels);
 		count = buffer_size;
 	}
 	while (count > 0) {
-		r = write_func(handle, data, count);
+		r = writei_func(handle, data, count);
 		if (r == -EAGAIN || (r >= 0 && r < count)) {
-			struct pollfd pfd;
-			pfd.fd = snd_pcm_file_descriptor(handle);
-			pfd.events = POLLOUT | POLLERR;
-			poll(&pfd, 1, 1000);
+			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
-			playback_underrun();
+			xrun();
 		} else if (r < 0) {
 			error("write error: %s", snd_strerror(r));
 			exit(EXIT_FAILURE);
@@ -920,32 +900,26 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
 	ssize_t r;
 	size_t result = 0;
 
-	if (mode == SND_PCM_MODE_FRAGMENT &&
+	if (xrun_mode == SND_PCM_XRUN_FRAGMENT &&
 	    count != buffer_size) {
 		unsigned int channel;
 		size_t offset = count;
 		size_t remaining = buffer_size - count;
 		for (channel = 0; channel < channels; channel++)
-			snd_pcm_format_set_silence(format.format, data[channel] + offset * bits_per_sample / 8, remaining);
+			snd_pcm_format_set_silence(format.sfmt, data[channel] + offset * bits_per_sample / 8, remaining);
 		count = buffer_size;
 	}
 	while (count > 0) {
 		unsigned int channel;
-		struct iovec vec[channels];
+		void *bufs[channels];
 		size_t offset = result;
-		size_t remaining = count;
-		for (channel = 0; channel < channels; channel++) {
-			vec[channel].iov_base = data[channel] + offset * bits_per_sample / 8;
-			vec[channel].iov_len = remaining;
-		}
-		r = writev_func(handle, vec, channels);
+		for (channel = 0; channel < channels; channel++)
+			bufs[channel] = data[channel] + offset * bits_per_sample / 8;
+		r = writen_func(handle, bufs, count);
 		if (r == -EAGAIN || (r >= 0 && r < count)) {
-			struct pollfd pfd;
-			pfd.fd = snd_pcm_file_descriptor(handle);
-			pfd.events = POLLOUT | POLLERR;
-			poll(&pfd, 1, 1000);
+			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
-			playback_underrun();
+			xrun();
 		} else if (r < 0) {
 			error("writev error: %s", snd_strerror(r));
 			exit(EXIT_FAILURE);
@@ -968,20 +942,17 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 	size_t result = 0;
 	size_t count = rcount;
 
-	if (mode == SND_PCM_MODE_FRAGMENT &&
+	if (xrun_mode == SND_PCM_XRUN_FRAGMENT &&
 	    count != buffer_size) {
 		count = buffer_size;
 	}
 
 	while (count > 0) {
-		r = read_func(handle, data, count);
+		r = readi_func(handle, data, count);
 		if (r == -EAGAIN || (r >= 0 && r < count)) {
-			struct pollfd pfd;
-			pfd.fd = snd_pcm_file_descriptor(handle);
-			pfd.events = POLLIN | POLLERR;
-			poll(&pfd, 1, 1000);
+			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
-			capture_overrun();
+			xrun();
 		} else if (r < 0) {
 			error("read error: %s", snd_strerror(r));
 			exit(EXIT_FAILURE);
@@ -1001,28 +972,22 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 	size_t result = 0;
 	size_t count = rcount;
 
-	if (mode == SND_PCM_MODE_FRAGMENT &&
+	if (xrun_mode == SND_PCM_XRUN_FRAGMENT &&
 	    count != buffer_size) {
 		count = buffer_size;
 	}
 
 	while (count > 0) {
 		unsigned int channel;
-		struct iovec vec[channels];
+		void *bufs[channels];
 		size_t offset = result;
-		size_t remaining = count;
-		for (channel = 0; channel < channels; channel++) {
-			vec[channel].iov_base = data[channel] + offset * bits_per_sample / 8;
-			vec[channel].iov_len = remaining;
-		}
-		r = readv_func(handle, vec, channels);
+		for (channel = 0; channel < channels; channel++)
+			bufs[channel] = data[channel] + offset * bits_per_sample / 8;
+		r = readn_func(handle, bufs, count);
 		if (r == -EAGAIN || (r >= 0 && r < count)) {
-			struct pollfd pfd;
-			pfd.fd = snd_pcm_file_descriptor(handle);
-			pfd.events = POLLIN | POLLERR;
-			poll(&pfd, 1, 1000);
+			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
-			capture_overrun();
+			xrun();
 		} else if (r < 0) {
 			error("readv error: %s", snd_strerror(r));
 			exit(EXIT_FAILURE);
@@ -1071,7 +1036,7 @@ static void voc_write_silence(unsigned x)
 		error("can't allocate buffer for silence");
 		return;		/* not fatal error */
 	}
-	snd_pcm_format_set_silence(format.format, buf, buffer_size * format.channels);
+	snd_pcm_format_set_silence(format.sfmt, buf, buffer_size * format.channels);
 	while (x > 0) {
 		l = x;
 		if (l > buffer_size)
@@ -1088,8 +1053,8 @@ static void voc_pcm_flush(void)
 {
 	if (buffer_pos > 0) {
 		size_t b;
-		if (mode == SND_PCM_MODE_FRAGMENT) {
-			if (snd_pcm_format_set_silence(format.format, audiobuf + buffer_pos, buffer_bytes - buffer_pos * 8 / bits_per_sample) < 0)
+		if (xrun_mode == SND_PCM_XRUN_FRAGMENT) {
+			if (snd_pcm_format_set_silence(format.sfmt, audiobuf + buffer_pos, buffer_bytes - buffer_pos * 8 / bits_per_sample) < 0)
 				fprintf(stderr, "voc_pcm_flush - silence error");
 			b = buffer_size;
 		} else {
@@ -1140,7 +1105,7 @@ static void voc_play(int fd, int ofs, char *name)
 			exit(EXIT_FAILURE);
 		}
 	}
-	format.format = SND_PCM_SFMT_U8;
+	format.sfmt = SND_PCM_SFMT_U8;
 	format.channels = 1;
 	format.rate = DEFAULT_SPEED;
 	set_params();
@@ -1336,7 +1301,7 @@ static size_t calc_count(void)
 	if (!timelimit) {
 		count = 0x7fffffff;
 	} else {
-		count = snd_pcm_format_size(format.format,
+		count = snd_pcm_format_size(format.sfmt,
 					    timelimit * format.rate *
 					    format.channels);
 	}
@@ -1406,7 +1371,7 @@ static void begin_wave(int fd, size_t cnt)
 	u_short tmp2;
 
 	bits = 8;
-	switch (format.format) {
+	switch (format.sfmt) {
 	case SND_PCM_SFMT_U8:
 		bits = 8;
 		break;
@@ -1414,7 +1379,7 @@ static void begin_wave(int fd, size_t cnt)
 		bits = 16;
 		break;
 	default:
-		error("Wave doesn't support %s format...", snd_pcm_format_name(format.format));
+		error("Wave doesn't support %s format...", snd_pcm_format_name(format.sfmt));
 		exit(EXIT_FAILURE);
 	}
 	h.magic = WAV_RIFF;
@@ -1461,7 +1426,7 @@ static void begin_au(int fd, size_t cnt)
 	ah.magic = AU_MAGIC;
 	ah.hdr_size = BE_INT(24);
 	ah.data_size = BE_INT(cnt);
-	switch (format.format) {
+	switch (format.sfmt) {
 	case SND_PCM_SFMT_MU_LAW:
 		ah.encoding = BE_INT(AU_FMT_ULAW);
 		break;
@@ -1472,7 +1437,7 @@ static void begin_au(int fd, size_t cnt)
 		ah.encoding = BE_INT(AU_FMT_LIN16);
 		break;
 	default:
-		error("Sparc Audio doesn't support %s format...", snd_pcm_format_name(format.format));
+		error("Sparc Audio doesn't support %s format...", snd_pcm_format_name(format.sfmt));
 		exit(EXIT_FAILURE);
 	}
 	ah.sample_rate = BE_INT(format.rate);
@@ -1508,7 +1473,7 @@ static void header(int rtype, char *name)
 			(stream == SND_PCM_STREAM_PLAYBACK) ? "Playing" : "Recording",
 			fmt_rec_table[rtype].what,
 			name);
-		fprintf(stderr, "%s, ", snd_pcm_format_description(format.format));
+		fprintf(stderr, "%s, ", snd_pcm_format_description(format.sfmt));
 		fprintf(stderr, "Rate %d Hz, ", format.rate);
 		if (format.channels == 1)
 			fprintf(stderr, "Mono");
@@ -1558,7 +1523,7 @@ void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
 			if (r == 0)
 				break;
 			l += r;
-		} while (mode != SND_PCM_MODE_FRAME && l < buffer_bytes);
+		} while (xrun_mode != SND_PCM_XRUN_ASAP && l < buffer_bytes);
 		l = l * 8 / bits_per_frame;
 		r = pcm_write(audiobuf, l);
 		if (r != l)
@@ -1624,7 +1589,7 @@ static void playback(char *name)
 		exit(EXIT_FAILURE);
 	}
 	if (test_au(fd, audiobuf) >= 0) {
-		rformat.format = SND_PCM_SFMT_MU_LAW;
+		rformat.sfmt = SND_PCM_SFMT_MU_LAW;
 		playback_go(fd, 0, count, FORMAT_AU, name);
 		goto __end;
 	}
@@ -1716,7 +1681,7 @@ void playbackv_go(int* fds, unsigned int channels, size_t loaded, size_t count, 
 			if (r == 0)
 				break;
 			c += r;
-		} while (mode != SND_PCM_MODE_FRAME && c < expected);
+		} while (xrun_mode != SND_PCM_XRUN_ASAP && c < expected);
 		c = c * 8 / bits_per_sample;
 		r = pcm_writev(bufs, channels, c);
 		if (r != c)
