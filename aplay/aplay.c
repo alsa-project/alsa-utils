@@ -86,6 +86,7 @@ static size_t bits_per_sample, bits_per_frame;
 static size_t chunk_bytes;
 static int digtype = SND_CONTROL_TYPE_NONE;
 static snd_digital_audio_t diga;
+static snd_output_t *log;
 
 static int count;
 static int vocmajor, vocminor;
@@ -235,14 +236,18 @@ static void device_list(void)
 static void pcm_list(void)
 {
 	snd_config_t *conf;
+	snd_output_t *out;
 	int err = snd_config_update();
 	if (err < 0)
 		error("snd_pcm_update: %s", snd_strerror(err));
+	err = snd_output_stdio_attach(&out, stderr, 0);
+	assert(err >= 0);
 	err = snd_config_search(snd_config, "pcm", &conf);
 	if (err < 0)
 		return;
 	fprintf(stderr, "PCM list:");
-	snd_config_save(conf, stderr);
+	snd_config_save(conf, out);
+	snd_output_close(out);
 }
 
 static void version(void)
@@ -284,6 +289,9 @@ int main(int argc, char *argv[])
 	};
 	char *pcm_name = "plug:0,0";
 	int tmp, err, c;
+
+	err = snd_output_stdio_attach(&log, stderr, 0);
+	assert(err >= 0);
 
 	command = argv[0];
 	file_type = FORMAT_DEFAULT;
@@ -517,6 +525,7 @@ int main(int argc, char *argv[])
 	}
 	snd_pcm_close(handle);
 	free(audiobuf);
+	snd_output_close(log);
 	return EXIT_SUCCESS;
 }
 
@@ -774,7 +783,7 @@ static void set_params(void)
 	err = snd_pcm_hw_params(handle, &params);
 	if (err < 0) {
 		fprintf(stderr, "Unable to install hw params:\n");
-		snd_pcm_hw_params_dump(&params, stderr);
+		snd_pcm_hw_params_dump(&params, log);
 		exit(EXIT_FAILURE);
 	}
 	chunk_size = snd_pcm_hw_param_value(&params, SND_PCM_HW_PARAM_PERIOD_SIZE, 0);
@@ -798,7 +807,7 @@ static void set_params(void)
 	assert(err >= 0);
 	if (snd_pcm_sw_params(handle, &swparams) < 0) {
 		error("unable to install sw params:");
-		snd_pcm_sw_params_dump(&swparams, stderr);
+		snd_pcm_sw_params_dump(&swparams, log);
 		exit(EXIT_FAILURE);
 	}
 	if (snd_pcm_prepare(handle) < 0) {
@@ -807,7 +816,7 @@ static void set_params(void)
 	}
 
 	if (verbose)
-		snd_pcm_dump(handle, stderr);
+		snd_pcm_dump(handle, log);
 
 	bits_per_sample = snd_pcm_format_physical_width(hwparams.format);
 	bits_per_frame = bits_per_sample * hwparams.channels;
@@ -839,7 +848,7 @@ void xrun(void)
 		fprintf(stderr, "xrun!!! (at least %.3f ms long)\n", diff.tv_sec * 1000 + diff.tv_usec / 1000.0);
 		if (verbose) {
 			fprintf(stderr, "Status:\n");
-			snd_pcm_status_dump(&status, stderr);
+			snd_pcm_status_dump(&status, log);
 		}
 		if ((res = snd_pcm_prepare(handle))<0) {
 			error("xrun: prepare error: %s", snd_strerror(res));
