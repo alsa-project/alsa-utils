@@ -377,7 +377,6 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "Error: wrong extended format '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 			}
-			active_format = FORMAT_RAW;
 			break;
 		case 'm':
 		case 'M':
@@ -514,42 +513,61 @@ static int test_vocfile(void *buffer)
 }
 
 /*
- * test, if it's a .WAV file, 0 if ok (and set the speed, stereo etc.)
- *                            < 0 if not
+ * test, if it's a .WAV file, > 0 if ok (and set the speed, stereo etc.)
+ *                            == 0 if not
+ * Value returned is bytes to be discarded.
  */
-static int test_wavefile(void *buffer)
+static int test_wavefile(void *buffer, size_t size)
 {
-	WaveHeader *wp = buffer;
+	WaveHeader *h = buffer;
+	WaveFmtHeader *f;
+	WaveChunkHeader *c;
 
-	if (wp->main_chunk == WAV_RIFF && wp->chunk_type == WAV_WAVE &&
-	    wp->sub_chunk == WAV_FMT && wp->data_chunk == WAV_DATA) {
-		if (LE_SHORT(wp->format) != WAV_PCM_CODE) {
-			fprintf(stderr, "%s: can't play not PCM-coded WAVE-files\n", command);
-			exit(EXIT_FAILURE);
-		}
-		if (LE_SHORT(wp->modus) < 1 || LE_SHORT(wp->modus) > 32) {
-			fprintf(stderr, "%s: can't play WAVE-files with %d tracks\n",
-				command, LE_SHORT(wp->modus));
-			exit(EXIT_FAILURE);
-		}
-		format.channels = LE_SHORT(wp->modus);
-		switch (LE_SHORT(wp->bit_p_spl)) {
-		case 8:
-			format.format = SND_PCM_SFMT_U8;
-			break;
-		case 16:
-			format.format = SND_PCM_SFMT_S16_LE;
-			break;
-		default:
-			fprintf(stderr, "%s: can't play WAVE-files with sample %d bits wide\n",
-				command, LE_SHORT(wp->bit_p_spl));
-		}
-		format.rate = LE_INT(wp->sample_fq);
-		count = LE_INT(wp->data_length);
-		check_new_format(&format);
+	if (h->magic != WAV_RIFF || h->type != WAV_WAVE)
 		return 0;
+	c = (WaveChunkHeader*)((char *)buffer + sizeof(WaveHeader));
+	while (c->type != WAV_FMT) {
+		c = (WaveChunkHeader*)((char*)c + sizeof(*c) + c->length);
+		if ((char *)c + sizeof(*c) > (char*) buffer + size) {
+			fprintf(stderr, "%s: cannot found WAVE fmt chunk\n", command);
+			exit(EXIT_FAILURE);
+		}
 	}
-	return -1;
+	f = (WaveFmtHeader*) c;
+	if (LE_SHORT(f->format) != WAV_PCM_CODE) {
+		fprintf(stderr, "%s: can't play not PCM-coded WAVE-files\n", command);
+		exit(EXIT_FAILURE);
+	}
+	if (LE_SHORT(f->modus) < 1) {
+		fprintf(stderr, "%s: can't play WAVE-files with %d tracks\n",
+			command, LE_SHORT(f->modus));
+		exit(EXIT_FAILURE);
+	}
+	format.channels = LE_SHORT(f->modus);
+	switch (LE_SHORT(f->bit_p_spl)) {
+	case 8:
+		format.format = SND_PCM_SFMT_U8;
+		break;
+	case 16:
+		format.format = SND_PCM_SFMT_S16_LE;
+		break;
+	default:
+		fprintf(stderr, "%s: can't play WAVE-files with sample %d bits wide\n",
+			command, LE_SHORT(f->bit_p_spl));
+		exit(EXIT_FAILURE);
+	}
+	format.rate = LE_INT(f->sample_fq);
+	while (c->type != WAV_DATA) {
+		c = (WaveChunkHeader*)((char*)c + sizeof(*c) + c->length);
+		if ((char *)c + sizeof(*c) > (char*) buffer + size) {
+			fprintf(stderr, "%s: cannot found WAVE data chunk\n", command);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	count = LE_INT(c->length);
+	check_new_format(&format);
+	return (char *)c + sizeof(*c) - (char *) buffer;
 }
 
 /*
@@ -1209,7 +1227,9 @@ static void begin_voc(int fd, size_t cnt)
 /* write a WAVE-header */
 static void begin_wave(int fd, size_t cnt)
 {
-	WaveHeader wh;
+	WaveHeader h;
+	WaveFmtHeader f;
+	WaveChunkHeader c;
 	int bits;
 
 	bits = 8;
@@ -1224,25 +1244,30 @@ static void begin_wave(int fd, size_t cnt)
 		fprintf(stderr, "%s: Wave doesn't support %s format...\n", command, snd_pcm_get_format_name(format.format));
 		exit(EXIT_FAILURE);
 	}
-	wh.main_chunk = WAV_RIFF;
-	wh.length = cnt + sizeof(WaveHeader) - 8;
-	wh.chunk_type = WAV_WAVE;
-	wh.sub_chunk = WAV_FMT;
-	wh.sc_len = 16;
-	wh.format = WAV_PCM_CODE;
-	wh.modus = format.channels;
-	wh.sample_fq = format.rate;
+	h.magic = WAV_RIFF;
+	h.length = cnt + sizeof(WaveHeader) + sizeof(WaveFmtHeader) + sizeof(WaveChunkHeader) - 8;
+	h.type = WAV_WAVE;
+
+	f.type = WAV_FMT;
+	f.length = 16;
+	f.format = WAV_PCM_CODE;
+	f.modus = format.channels;
+	f.sample_fq = format.rate;
 #if 0
-	wh.byte_p_spl = (samplesize == 8) ? 1 : 2;
-	wh.byte_p_sec = dsp_speed * wh.modus * wh.byte_p_spl;
+	f.byte_p_spl = (samplesize == 8) ? 1 : 2;
+	f.byte_p_sec = dsp_speed * f.modus * f.byte_p_spl;
 #else
-	wh.byte_p_spl = wh.modus * ((bits + 7) / 8);
-	wh.byte_p_sec = wh.byte_p_spl * format.rate;
+	f.byte_p_spl = f.modus * ((bits + 7) / 8);
+	f.byte_p_sec = f.byte_p_spl * format.rate;
 #endif
-	wh.bit_p_spl = bits;
-	wh.data_chunk = WAV_DATA;
-	wh.data_length = cnt;
-	if (write(fd, &wh, sizeof(WaveHeader)) != sizeof(WaveHeader)) {
+	f.bit_p_spl = bits;
+
+	c.type = WAV_DATA;
+	c.length = cnt;
+
+	if (write(fd, &h, sizeof(WaveHeader)) != sizeof(WaveHeader) ||
+	    write(fd, &f, sizeof(WaveFmtHeader)) != sizeof(WaveFmtHeader) ||
+	    write(fd, &c, sizeof(WaveChunkHeader)) != sizeof(WaveChunkHeader)) {
 		fprintf(stderr, "%s: write error\n", command);
 		exit(EXIT_FAILURE);
 	}
@@ -1427,19 +1452,20 @@ static void playback(char *name)
 	}
 	/* read bytes for WAVE-header */
 	if (read(fd, audiobuf + sizeof(VocHeader),
-		 sizeof(WaveHeader) - sizeof(VocHeader)) !=
-	    sizeof(WaveHeader) - sizeof(VocHeader)) {
+		 64 - sizeof(VocHeader)) !=
+	    64 - sizeof(VocHeader)) {
 		fprintf(stderr, "%s: read error", command);
 		exit(EXIT_FAILURE);
 	}
-	if (test_wavefile(audiobuf) >= 0) {
-		playback_go(fd, 0, count, FORMAT_WAVE, name);
+	if ((ofs = test_wavefile(audiobuf, 64)) > 0) {
+		memmove(audiobuf, audiobuf + ofs, 64 - ofs);
+		playback_go(fd, 64 - ofs, count, FORMAT_WAVE, name);
 	} else {
 		/* should be raw data */
 		check_new_format(&rformat);
 		init_raw_data();
 		count = calc_count();
-		playback_go(fd, sizeof(WaveHeader), count, FORMAT_RAW, name);
+		playback_go(fd, 50, count, FORMAT_RAW, name);
 	}
       __end:
 	if (fd != 0)

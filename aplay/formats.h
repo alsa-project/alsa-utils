@@ -64,23 +64,27 @@ typedef struct voc_ext_block {
    are in only in this combination, so I combined them in one header;
    it works on all WAVE-file I have
  */
-typedef struct wav_header {
-	u_int main_chunk;	/* 'RIFF' */
+typedef struct {
+	u_int magic;		/* 'RIFF' */
 	u_int length;		/* filelen */
-	u_int chunk_type;	/* 'WAVE' */
+	u_int type;		/* 'WAVE' */
+} WaveHeader;
 
-	u_int sub_chunk;	/* 'fmt ' */
-	u_int sc_len;		/* length of sub_chunk, =16 */
+typedef struct {
+	u_int type;		/* 'fmt ' */
+	u_int length;		/* length of chunk */
 	u_short format;		/* should be 1 for PCM-code */
 	u_short modus;		/* 1 Mono, 2 Stereo */
 	u_int sample_fq;	/* frequence of sample */
 	u_int byte_p_sec;
 	u_short byte_p_spl;	/* samplesize; 1 or 2 bytes */
 	u_short bit_p_spl;	/* 8, 12 or 16 bit */
+} WaveFmtHeader;
 
-	u_int data_chunk;	/* 'data' */
-	u_int data_length;	/* samplecount */
-} WaveHeader;
+typedef struct {
+	u_int type;		/* 'data' */
+	u_int length;		/* samplecount */
+} WaveChunkHeader;
 
 /* Definitions for Sparc .au header */
 
