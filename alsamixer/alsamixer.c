@@ -1490,7 +1490,6 @@ mixer_add_delta(int delta)
 static int
 mixer_iteration (void)
 {
-  struct timeval delay = { 0, 0 };
   int idx, count, err;
   struct pollfd *fds;
   int finished = 0;
@@ -1510,9 +1509,6 @@ mixer_iteration (void)
   if (err != count)
     mixer_abort (ERR_FCN, "snd_mixer_poll_descriptors (err != count)", 0);
   
-  delay.tv_sec = 0;
-  delay.tv_usec = 0 * 100 * 1000;
-
   finished = poll(fds, count + 1, -1);
 
   /* don't abort on handled signals */
