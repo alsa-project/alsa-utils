@@ -701,15 +701,15 @@ static void set_params(void)
 	info.format_mask = 1 << hwparams.format;
 	info.channels_min = info.channels_max = hwparams.channels;
 	info.fragments_min = 2;
-	err = snd_pcm_strategy_simple(&strategy, 0, 1000000);
+	err = snd_pcm_strategy_simple(&strategy, 1000000, 2000000);
 	assert(err >= 0);
 	err = snd_pcm_strategy_simple_near(strategy, 0, SND_PCM_HW_PARAM_RATE,
 					   hwparams.rate, 10);
 	assert(err >= 0);
-	err = snd_pcm_strategy_simple_near(strategy, 0, SND_PCM_HW_PARAM_FRAGMENT_SIZE,
+	err = snd_pcm_strategy_simple_near(strategy, 1, SND_PCM_HW_PARAM_FRAGMENT_SIZE,
 					   hwparams.rate * frag_length / 1000, 1);
 	assert(err >= 0);
-	err = snd_pcm_strategy_simple_near(strategy, 0, SND_PCM_HW_PARAM_BUFFER_SIZE,
+	err = snd_pcm_strategy_simple_near(strategy, 2, SND_PCM_HW_PARAM_BUFFER_SIZE,
 					   hwparams.rate * buffer_length / 1000, 1);
 	assert(err >= 0);
 	err = snd_pcm_hw_info_strategy(handle, &info, strategy);
