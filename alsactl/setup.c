@@ -363,7 +363,8 @@ static int soundcard_setup_collect_switches1(int cardno)
 		}
 		bzero(pcm, sizeof(struct pcm));
 		pcm->no = device;
-		if ((err = snd_ctl_pcm_info(handle, device, &pcm->info)) < 0) {
+		pcm->info.device = device;
+		if ((err = snd_ctl_pcm_info(handle, &pcm->info)) < 0) {
 			snd_ctl_close(handle);
 			error("PCM info error: %s", snd_strerror(err));
 			return 1;
@@ -393,7 +394,8 @@ static int soundcard_setup_collect_switches1(int cardno)
 		}
 		bzero(rawmidi, sizeof(struct rawmidi));
 		rawmidi->no = device;
-		if ((err = snd_ctl_rawmidi_info(handle, device, &rawmidi->info)) < 0) {
+		rawmidi->info.device = device;
+		if ((err = snd_ctl_rawmidi_info(handle, &rawmidi->info)) < 0) {
 			snd_ctl_close(handle);
 			error("RAWMIDI info error: %s", snd_strerror(err));
 			return 1;
