@@ -8,7 +8,7 @@ rpm: dist
 dist-hook:
 	-chmod -R a+r $(distdir)
 	@if ! test -z "$(AMTAR)"; then \
-		$(AMTAR) cvf $(distdir).tar.bz2 --bzip2 $(distdir); \
+		$(AMTAR) --create --verbose --bzip2 --file=$(distdir).tar.bz2 $(distdir); \
 	else \
-		$(TAR) cvf $(distdir).tar.bz2 --bzip2 $(distdir); \
+		$(TAR) --create --verbose --bzip2 --file=$(distdir).tar.bz2 $(distdir); \
 	fi
