@@ -673,7 +673,7 @@ If you have a big amplifier, lower your volumes or say no.
       then
           clear
 	  echo
-	  aplay $TESTSOUND
+	  aplay -N $TESTSOUND
       fi
     fi
     if [ ! -r /etc/asound.state ]; then
@@ -734,7 +734,7 @@ ac_try_load () {
     amixer set PCM 0% mute >/dev/null 2>&1
     
     # output 0.5 sec
-    head -c 4000 < /dev/zero | aplay -r8000 -fS16_LE -traw -c1 > /dev/null 2>&1 &
+    head -c 4000 < /dev/zero | aplay -N -r8000 -fS16_LE -traw -c1 > /dev/null 2>&1 &
     # remember pid
     pp=$!
     # sleep for 2 seconds (to be sure -- 1 sec would be enough)
@@ -775,11 +775,11 @@ ac_try_capture () {
     play_pid=0
     if [ $2 = yes ]; then
 	# try duplex - start dummy playing
-	aplay -r8000 -fS16_LE -traw -c1 < /dev/zero > /dev/null 2>&1 &
+	aplay -N -r8000 -fS16_LE -traw -c1 < /dev/zero > /dev/null 2>&1 &
 	play_pid=$!
     fi
     # record 1sec
-    arecord -d1 > /dev/null 2>&1 &
+    arecord -N -d1 > /dev/null 2>&1 &
     # remember pid
     pp=$!
     # sleep for 2 seconds
