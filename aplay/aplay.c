@@ -319,6 +319,7 @@ int main(int argc, char *argv[])
 		stream = SND_PCM_STREAM_CAPTURE;
 		file_type = FORMAT_WAVE;
 		command = "arecord";
+		start_delay = 1;
 	} else if (strstr(argv[0], "aplay")) {
 		stream = SND_PCM_STREAM_PLAYBACK;
 		command = "aplay";
