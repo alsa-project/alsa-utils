@@ -1,3 +1,43 @@
+1999-11-03  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* main.c: add some messages.
+
+1999-10-19  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* conf_w.c: imprement mixer reorder.
+
+1999-10-16  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* main.c: add "-h" option.
+
+1999-10-11  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* main.c: imprement config select "-c" option.
+
+1999-10-08  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* supported dynamic element.
+
+1999-10-01  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* conf_w.c: fix spacing mode.
+
+1999-09-26  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* change array to chain.
+
+1999-09-25  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* conf_w.c: fix read config file.
+
+1999-09-14  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* start support element type pc1.
+
+1999-09-06  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* probe.c : free none used mux memory.
+
 1999-08-16  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
 
 	* catch.c : add element tone control.

@@ -19,8 +19,8 @@ static void exit_gtk(GtkWidget *w,gpointer data) {
 }
 
 int main( int argc , char **argv ) {
-	int i;
-	gchar *dirname,*filename;
+	int h,i;
+	gchar *dirname,*filename,*cname=NULL;
 
 	i=probe_mixer();
 	if( i < 0 ) {
@@ -35,6 +35,39 @@ int main( int argc , char **argv ) {
 	gtk_set_locale();
 	gtk_init( &argc,&argv);
 
+	h=0;
+	while( (i=getopt(argc,argv,"c:h")) != -1 ) {
+		switch(i) {
+		case 'c':
+			cname = g_strdup(optarg);
+			break;
+		case 'h':
+			h=1;
+			break;
+		case ':':
+			fprintf(stderr,"hoe?\n");
+			break;
+		case '?':
+			//fprintf(stderr,_("unknown option: %c\n"),optopt);
+			h=1;
+			break;
+		}
+	}
+
+	if( h ) {
+		printf("gamix ");
+		if( strcmp(PACKAGE,"alsa-utils") == 0 ) {
+			printf(" alsa utils version.");
+		} else if( strcmp(PACKAGE,"gamix") == 0 ) {
+			printf("%s original version.",VERSION);
+		}
+		putchar('\n');
+		printf(_("Usage: gamix [OPTION]\n"));
+		printf(_("  -h        print this help.\n"));
+		printf(_("  -c [file] change config file.\n"));
+		exit(0);
+	}
+
 	dirname = g_strconcat(g_get_home_dir(),"/.gamix",NULL);
 	filename = g_strconcat(dirname, "/gtkrc", NULL);
 	gtk_rc_init();
@@ -45,7 +78,16 @@ int main( int argc , char **argv ) {
 	conf.wmode=1;
 	conf.F_save=FALSE;
 	conf.Esave=FALSE;
-	conf.fna = g_strconcat(dirname,"/Config",NULL);
+	if( cname ) {
+		if( cname[0] == '/' ) {
+			conf.fna = g_strdup(cname);
+		} else {
+			conf.fna = g_strconcat(dirname,"/",cname,NULL);
+		}
+	} else {
+		conf.fna = g_strconcat(dirname,"/Config",NULL);
+	}
+	conf.sv_wsize=TRUE;
 	conf.width=0;
 	conf.height=0;
 
@@ -56,16 +98,16 @@ int main( int argc , char **argv ) {
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_signal_connect(GTK_OBJECT(window),"destroy",
 					   GTK_SIGNAL_FUNC(gtk_main_quit),NULL);
-	gtk_widget_show(window);
 	main_vbox=gtk_vbox_new(FALSE,0);
 	gtk_container_add(GTK_CONTAINER(window),main_vbox);
-	gtk_widget_show(main_vbox);
 
 	disp_toolbar();
 
 	tc_init();
 	gtk_timeout_add(100,(GtkFunction)time_callback,NULL);
 
+	gtk_widget_show(main_vbox);
+	gtk_widget_show(window);
 	if( disp_mixer()<0 ) return 0;
 
 	gtk_main();
@@ -142,16 +184,15 @@ void disp_toolbar(void) {
 
 static void sel_mctype(GtkWidget *w,gpointer n) {
 	int i;
-	GtkRequisition rq;
 
 	i=(int)n;
 	if( i == conf.wmode ) return;
 	conf.wmode=i;
+	conf.width=0;
+	conf.height=0;
 	gtk_container_remove(GTK_CONTAINER(main_vbox),mixer_container);
 	if( (i=disp_mixer()) < 0 ) gtk_signal_emit_by_name(GTK_OBJECT(exit_item),
-								   "activate");
-	gtk_widget_size_request(window,&rq);
-	gdk_window_resize(window->window,rq.width,rq.height);
+													   "activate");
 }
 
 int disp_mixer( void ) {
@@ -213,15 +254,26 @@ int disp_mixer( void ) {
 		break;
 	}
 
-	gtk_box_pack_start(GTK_BOX(main_vbox),mixer_container,TRUE,TRUE,0);
 	gtk_widget_show(mixer_container);
+	gtk_widget_size_request(mixer_container,&rq);
+	//printf("MIXER X %3d Y %3d\n",rq.width,rq.height);
+	gtk_widget_size_request(window,&rq);
+	//printf("WINDOW X %3d Y %3d\n",rq.width,rq.height);
+	if( rq.width > 0 && rq.height > 0 )
+		gdk_window_resize(window->window,rq.width,rq.height);
+	gtk_box_pack_start(GTK_BOX(main_vbox),mixer_container,TRUE,TRUE,0);
+	/*
+	  gtk_widget_size_request(window,&rq);
+	  printf("WINDOW X %3d Y %3d\n",rq.width,rq.height);
+	*/
 
 	if( conf.width>0 && conf.height >0 && !conf.F_save ) {
 		gtk_widget_size_request(window,&rq);
 		gdk_window_resize(window->window,conf.width,conf.height);
-		conf.width=0;
-		conf.height=0;
+		//conf.width=0;
+		//conf.height=0;
 	}
+
 	return 0;
 }
 

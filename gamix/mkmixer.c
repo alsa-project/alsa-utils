@@ -4,28 +4,31 @@
 static gchar *label_3d[]={
 	"wide","volume","center","space","depth","delay","feedback","depth rear"};
 static gchar *label_tone[]={"B","T"};
+static gchar *pc1_ptc1[]={"L","F","B"};
+static gchar *pc1_ptc2[]={"R","R","U"};
 
-static void close_callback(GtkWidget *,s_mixer *);
-static void volume1_callback(GtkAdjustment *,s_element *);
-static void volume1_sw_callback(GtkToggleButton *,s_element *);
-static void switch1_callback(GtkToggleButton *,s_element *);
-static void switch2_callback(GtkToggleButton *,s_element *);
-static void chain_callback(GtkToggleButton *,s_group *);
-static void accu3_callback(GtkAdjustment *,s_element *);
-static void mux1_callback(GtkItem *,s_element *);
-static void mux2_callback(GtkItem *,s_element *);
-static void sw_3d_callback(GtkToggleButton *,s_element *);
-static void vol_3d_callback(GtkAdjustment *,s_element *);
-static void sw_tone_callback(GtkToggleButton *,s_element *);
-static void vol_tone_callback(GtkAdjustment *,s_element *);
-static void chain_callback2(GtkToggleButton *,s_eelements *);
-static gint mk_element(s_element *,GtkBox *);
+static void close_callback(GtkWidget *,s_mixer_t *);
+static void volume1_callback(GtkAdjustment *,s_element_t *);
+static void volume1_sw_callback(GtkToggleButton *,s_element_t *);
+static void switch1_callback(GtkToggleButton *,s_element_t *);
+static void switch2_callback(GtkToggleButton *,s_element_t *);
+static void chain_callback(GtkToggleButton *,s_obj_t *);
+static void accu3_callback(GtkAdjustment *,s_element_t *);
+static void mux1_callback(GtkItem *,s_element_t *);
+static void mux2_callback(GtkItem *,s_element_t *);
+static void sw_3d_callback(GtkToggleButton *,s_element_t *);
+static void vol_3d_callback(GtkAdjustment *,s_element_t *);
+static void sw_tone_callback(GtkToggleButton *,s_element_t *);
+static void vol_tone_callback(GtkAdjustment *,s_element_t *);
+static void pc1_callback(GtkAdjustment *,s_element_t *);
+static void pc1_ss_callback(GtkWidget *,s_element_t *);
+static gint mk_element(s_element_t *,GtkBox *);
 
-static void close_callback(GtkWidget *w,s_mixer *mixer) {
+static void close_callback(GtkWidget *w,s_mixer_t *mixer) {
 	int i;
-	s_group *g;
-	s_eelements *ee;
+	s_obj_t *obj;
 
+	/*
 	for( i=0 ; i<mixer->groups.groups ; i++ ) {
 		g=&mixer->group[i];
 		g->enabled=FALSE;
@@ -34,11 +37,16 @@ static void close_callback(GtkWidget *w,s_mixer *mixer) {
 		ee=&mixer->ee[i];
 		ee->enabled=FALSE;
 	}
+	for( g=mixer->group; g != NULL ; g=g->next ) g->enabled=FALSE;
+	for( ee=mixer->ee; ee != NULL ; ee=ee->next ) ee->enabled=FALSE;
+	*/
+	for( obj=mixer->obj ; obj != NULL ; obj=obj->next ) obj->enabled=FALSE;
+		
 	snd_mixer_close(mixer->handle);
 	mixer->handle=NULL;
 }
 
-static void volume1_sw_callback(GtkToggleButton *b,s_element *e) {
+static void volume1_sw_callback(GtkToggleButton *b,s_element_t *e) {
 	int i,j,value,err;
 
 	for( i=0 ; i<e->e.data.volume1.voices; i++ ) {
@@ -62,7 +70,7 @@ static void volume1_sw_callback(GtkToggleButton *b,s_element *e) {
 	}
 }
 
-static void volume1_callback(GtkAdjustment *adj,s_element *e) {
+static void volume1_callback(GtkAdjustment *adj,s_element_t *e) {
 	int i,j,value,err;
 
 	for( i=0 ; i<e->e.data.volume1.voices; i++ ) {
@@ -87,7 +95,7 @@ static void volume1_callback(GtkAdjustment *adj,s_element *e) {
 	}
 }
 
-static void switch1_callback(GtkToggleButton *b,s_element *e ) {
+static void switch1_callback(GtkToggleButton *b,s_element_t *e ) {
 	int i,j;
 
 	for( i=0 ; i<e->e.data.switch1.sw; i++ ) {
@@ -107,18 +115,25 @@ static void switch1_callback(GtkToggleButton *b,s_element *e ) {
 	snd_mixer_element_write(cards[e->card].mixer[e->mdev].handle,&e->e);
 }
 
-static void switch2_callback(GtkToggleButton *b,s_element *e ) {
+static void switch2_callback(GtkToggleButton *b,s_element_t *e ) {
 	int err;
 
 	e->e.data.switch2.sw=b->active;
 	err=snd_mixer_element_write(cards[e->card].mixer[e->mdev].handle,&e->e);
 }
 
-static void chain_callback(GtkToggleButton *b,s_group *g ) {
-	g->chain = b->active;
+static void chain_callback(GtkToggleButton *b,s_obj_t *obj ) {
+	obj->chain = b->active;
+	/*
+	printf("obj ");
+	if( obj->g ) printf("gid '%s',%d ",obj->g->g.gid.name,obj->g->g.gid.index);
+	if( obj->e ) printf("eid '%s',%d,%d ",obj->e->e.e.eid.name,
+						obj->e->e.e.eid.index,obj->e->e.e.eid.type);
+	printf(" %s\n",obj->chain?"TRUE":"FALSE");
+	*/
 }
 
-static void accu3_callback(GtkAdjustment *adj,s_element *e) {
+static void accu3_callback(GtkAdjustment *adj,s_element_t *e) {
 	int i,j,value,err;
 
 	for( i=0 ; i<e->e.data.accu3.voices; i++ ) {
@@ -143,7 +158,7 @@ static void accu3_callback(GtkAdjustment *adj,s_element *e) {
 	}
 }
 
-static void mux1_callback(GtkItem *item,s_element *e ) {
+static void mux1_callback(GtkItem *item,s_element_t *e ) {
 	int i,ch,no,err;
 
 	ch=(int)gtk_object_get_data(GTK_OBJECT(item),"ch");
@@ -168,7 +183,7 @@ static void mux1_callback(GtkItem *item,s_element *e ) {
 	}
 }
 
-static void mux2_callback(GtkItem *item,s_element *e ) {
+static void mux2_callback(GtkItem *item,s_element_t *e ) {
 	int no,err;
 
 	no=(int)gtk_object_get_data(GTK_OBJECT(item),"no");
@@ -184,7 +199,7 @@ static void mux2_callback(GtkItem *item,s_element *e ) {
 	}
 }
 
-static void sw_3d_callback(GtkToggleButton *b,s_element *e ) {
+static void sw_3d_callback(GtkToggleButton *b,s_element_t *e ) {
 	int err;
 
 	if( b == (GtkToggleButton *)e->w[0] ) {
@@ -195,7 +210,7 @@ static void sw_3d_callback(GtkToggleButton *b,s_element *e ) {
 	err=snd_mixer_element_write(cards[e->card].mixer[e->mdev].handle,&e->e);
 }
 
-static void vol_3d_callback(GtkAdjustment *adj,s_element *e) {
+static void vol_3d_callback(GtkAdjustment *adj,s_element_t *e) {
 	int i,err,*v,value;
 
 	for( i=0 ; i<7 ; i++ ) {
@@ -239,7 +254,7 @@ static void vol_3d_callback(GtkAdjustment *adj,s_element *e) {
 	}
 }
 
-static void sw_tone_callback(GtkToggleButton *b,s_element *e ) {
+static void sw_tone_callback(GtkToggleButton *b,s_element_t *e ) {
 	int err;
 
 	e->e.data.tc1.sw = b->active;
@@ -247,7 +262,7 @@ static void sw_tone_callback(GtkToggleButton *b,s_element *e ) {
 	err=snd_mixer_element_write(cards[e->card].mixer[e->mdev].handle,&e->e);
 }
 
-static void vol_tone_callback(GtkAdjustment *adj,s_element *e) {
+static void vol_tone_callback(GtkAdjustment *adj,s_element_t *e) {
 	int i,err,*v,value;
 
 	for( i=0 ; i<2 ; i++ ) {
@@ -275,8 +290,53 @@ static void vol_tone_callback(GtkAdjustment *adj,s_element *e) {
 	}
 }
 
-static void chain_callback2(GtkToggleButton *b,s_eelements *ee ) {
-	ee->chain = b->active;
+static void pc1_callback(GtkAdjustment *adj,s_element_t *e) {
+	int i,err,value;
+
+	value=(int)adj->value;
+	for( i=0 ; i<e->e.data.pc1.pan; i++ ) {
+		if( adj == e->adj[i] ) break;
+	}
+	if( i==e->e.data.pc1.pan ) {
+		fprintf(stderr,"Pan err.\n");
+		return;
+	}
+	if( e->e.data.pc1.ppan[i]==value ) return;
+
+	e->e.data.pc1.ppan[i]=value;
+	err=snd_mixer_element_write(cards[e->card].mixer[e->mdev].handle,&e->e);
+	if( err<0 ) {
+		fprintf(stderr,_("PAN controll write error: %s\n"),snd_strerror(err));
+	}
+}
+
+static void pc1_ss_callback(GtkWidget *w,s_element_t *e) {
+	int i,j,k,err;
+	gfloat v=0;
+
+	j=1;
+	for( i=0 ; i<e->e.data.pc1.pan; i++ ) {
+		if( w == e->w[j] ) {
+			k=e->info.data.pc1.prange[i].min;
+			break;
+		}
+		j++;
+		if( w == e->w[j] ) {
+			k=(e->info.data.pc1.prange[i].min+e->info.data.pc1.prange[i].max)/2;
+			break;
+		}
+		j++;
+		if( w == e->w[j] ) {
+			k=e->info.data.pc1.prange[i].max;
+			break;
+		}
+		j+=2;
+	}
+	if( i<e->e.data.pc1.pan ) {
+		if( e->e.data.pc1.ppan[i] == k ) return;
+		e->adj[i]->value=(gfloat)k;
+		gtk_signal_emit_by_name(GTK_OBJECT(e->adj[i]),"value_changed");
+	}
 }
 
 GtkWidget *make_mixer( gint c_n , gint m_n ) {
@@ -289,10 +349,11 @@ GtkWidget *make_mixer( gint c_n , gint m_n ) {
 	GtkWidget *ih_box;
 	GtkWidget *c_l;
 	char gname[40];
-	s_mixer *mixer;
-	s_group *group=NULL;
-	s_element *e;
-	s_eelements *ee;
+	s_mixer_t *mixer;
+	s_group_t *group=NULL;
+	s_element_t *e;
+	s_eelements_t *ee;
+	s_obj_t *obj;
 
 	if( cards[c_n].mixer[m_n].handle ) {
 		snd_mixer_close(cards[c_n].mixer[m_n].handle);
@@ -328,132 +389,138 @@ GtkWidget *make_mixer( gint c_n , gint m_n ) {
 	}
 	gtk_widget_show(mh_box);
 
-	for( i=0 ; i<mixer->groups.groups ; i++ ) {
-		group = &mixer->group[i];
-		k=0;
-		for( j=0 ; j<group->g.elements ; j++ ) {
-			if( group->e[j].e.eid.type ) k++;
-		}
-		if( k==0 ) mixer->group[i].enable=FALSE;
-		if( mixer->group[i].enable ) {
-			group->v_frame=frame=gtk_frame_new(NULL);
-			gtk_frame_set_shadow_type(GTK_FRAME(frame),GTK_SHADOW_OUT);
-			gtk_box_pack_start(GTK_BOX(mh_box),frame,
-							   mixer->p_e,mixer->p_f,0);
-			iv_box=gtk_vbox_new(FALSE,0);
-			gtk_container_add(GTK_CONTAINER(frame),iv_box);
-			group->chain_en=FALSE;
+	for( obj=mixer->obj ; obj != NULL ; obj=obj->next ) {
+		if( obj->g ) {
+			group=obj->g;
+			k=0;
 			for( j=0 ; j<group->g.elements ; j++ ) {
-				e=&group->e[j];
-				e->chain = &group->chain;
-				e->chain_en = &group->chain_en;
-				if( mk_element(e,GTK_BOX(iv_box))<0 ) return NULL;
+				if( group->e[j].e.eid.type ) k++;
 			}
-			if( mixer->group[i].g.gid.index > 0 ) {
-				sprintf(gname,"%s%d",mixer->group[i].g.gid.name,
-						mixer->group[i].g.gid.index);
-			} else {
-				sprintf(gname,"%s",mixer->group[i].g.gid.name);
-			}
-			ih_box=gtk_hbox_new(FALSE,2);
-			gtk_box_pack_start(GTK_BOX(iv_box),ih_box,FALSE,FALSE,0);
-			if( group->chain_en ) {
-				group->cwb=gtk_toggle_button_new();
-				gtk_box_pack_start(GTK_BOX(ih_box),group->cwb,
-								   FALSE,FALSE,4);
-				gtk_widget_set_usize(group->cwb,10,10);
-				gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(group->cwb)
-											,group->chain);
-				gtk_widget_show(group->cwb);
-				gtk_signal_connect(GTK_OBJECT(group->cwb),"toggled",
-								   GTK_SIGNAL_FUNC(chain_callback),
-								   (gpointer)group);
-				c_l=gtk_label_new(_("Lock"));
-				gtk_box_pack_start(GTK_BOX(ih_box),c_l,FALSE,FALSE,0);
-				gtk_widget_show(c_l);
+			if( k==0 && obj->dyn_e == 0) obj->enable=FALSE;
+			if( obj->enable && (obj->dyn_e == 0 || obj->dyn_e == 3) ) {
+				obj->v_frame=frame=gtk_frame_new(NULL);
+				gtk_frame_set_shadow_type(GTK_FRAME(frame),GTK_SHADOW_OUT);
+				gtk_box_pack_start(GTK_BOX(mh_box),frame,
+								   mixer->p_e,mixer->p_f,0);
+				iv_box=gtk_vbox_new(FALSE,0);
+				gtk_container_add(GTK_CONTAINER(frame),iv_box);
+				obj->chain_en=FALSE;
+				for( j=0 ; j<group->g.elements ; j++ ) {
+					e=&group->e[j];
+					e->chain = &obj->chain;
+					e->chain_en = &obj->chain_en;
+					if( mk_element(e,GTK_BOX(iv_box))<0 ) return NULL;
+				}
+				if( group->g.gid.index > 0 ) {
+					sprintf(gname,"%s %d",group->g.gid.name,
+							group->g.gid.index);
+				} else {
+					sprintf(gname,"%s",group->g.gid.name);
+				}
+				ih_box=gtk_hbox_new(FALSE,2);
+				gtk_box_pack_start(GTK_BOX(iv_box),ih_box,FALSE,FALSE,0);
+				if( obj->chain_en ) {
+					obj->cwb=gtk_toggle_button_new();
+					gtk_box_pack_start(GTK_BOX(ih_box),obj->cwb,
+									   FALSE,FALSE,4);
+					gtk_widget_set_usize(obj->cwb,10,10);
+					gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(obj->cwb)
+												,obj->chain);
+					gtk_widget_show(obj->cwb);
+					gtk_signal_connect(GTK_OBJECT(obj->cwb),"toggled",
+									   GTK_SIGNAL_FUNC(chain_callback),
+									   (gpointer)obj);
+					c_l=gtk_label_new(_("Lock"));
+					gtk_box_pack_start(GTK_BOX(ih_box),c_l,FALSE,FALSE,0);
+					gtk_widget_show(c_l);
+					gtk_widget_show(ih_box);
+					if( strlen(gname) > 10 ) {
+						j=0;
+						while( gname[j]!=' ' && gname[j]!=0 ) j++;
+						if( gname[j]!=0 ) {
+							gname[j+3]=0;
+						}
+						if( group->g.gid.index > 0 )
+							sprintf(gname,"%s %d",gname,group->g.gid.index);
+					}
+				} else {
+					c_l=gtk_label_new(" ");
+					gtk_box_pack_start(GTK_BOX(ih_box),c_l,FALSE,FALSE,0);
+					gtk_widget_show(c_l);
+					if( strlen(gname) > 5 ) {
+						j=0;
+						while( gname[j]!=' ' && gname[j]!=0 ) j++;
+						if( gname[j]!=0 ) {
+							gname[j+3]=0;
+						}
+						if( group->g.gid.index > 0 )
+							sprintf(gname,"%s %d",gname,group->g.gid.index);
+					}
+				}
+				gtk_frame_set_label(GTK_FRAME(frame),gname);
 				gtk_widget_show(ih_box);
-				if( strlen(gname) > 10 ) {
-					j=0;
-					while( gname[j]!=' ' && gname[j]!=0 ) j++;
-					if( gname[j]!=0 ) {
-						gname[j+3]=0;
-					}
-				}
+				gtk_widget_show(iv_box);
+				gtk_widget_show(frame);
+				obj->enabled=TRUE;
 			} else {
-				c_l=gtk_label_new(" ");
-				gtk_box_pack_start(GTK_BOX(ih_box),c_l,FALSE,FALSE,0);
-				gtk_widget_show(c_l);
-				if( strlen(gname) > 5 ) {
-					j=0;
-					while( gname[j]!=' ' && gname[j]!=0 ) j++;
-					if( gname[j]!=0 ) {
-						gname[j+3]=0;
-					}
-				}
+				obj->enabled=FALSE;
 			}
-			gtk_frame_set_label(GTK_FRAME(frame),gname);
-			gtk_widget_show(ih_box);
-			gtk_widget_show(iv_box);
-			gtk_widget_show(frame);
-			group->enabled=TRUE;
-		} else {
-			mixer->group[i].enabled=FALSE;
 		}
-	}
-	for( i=0 ; i<mixer->ee_n ; i++ ) {
-		if( mixer->ee[i].enable ) {
-			ee=&mixer->ee[i];
-			e=&ee->e;
-			ee->v_frame=frame=gtk_frame_new(NULL);
-			gtk_frame_set_shadow_type(GTK_FRAME(frame),GTK_SHADOW_OUT);
-			gtk_box_pack_start(GTK_BOX(mh_box),frame,
-							   mixer->p_e,mixer->p_f,0);
-			iv_box=gtk_vbox_new(FALSE,0);
-			gtk_container_add(GTK_CONTAINER(frame),iv_box);
-			ee->chain_en=FALSE;
-			e->chain=&ee->chain;
-			e->chain_en=&ee->chain_en;
-			if( mk_element(e,GTK_BOX(iv_box))<0 ) return NULL;
-			ih_box=gtk_hbox_new(FALSE,2);
-			gtk_box_pack_start(GTK_BOX(iv_box),ih_box,FALSE,FALSE,0);
-			if( e->e.eid.index > 0 ) {
-				sprintf(gname,"%s%d",e->e.eid.name,e->e.eid.index);
-			} else {
-				sprintf(gname,"%s",e->e.eid.name);
-			}
-			if( ee->chain_en ) {
-				ee->cwb=gtk_toggle_button_new();
-				gtk_box_pack_start(GTK_BOX(ih_box),ee->cwb,FALSE,FALSE,4);
-				gtk_widget_set_usize(ee->cwb,10,10);
-				gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(ee->cwb)
-											,group->chain);
-				gtk_widget_show(ee->cwb);
-				gtk_signal_connect(GTK_OBJECT(ee->cwb),"toggled",
-								   GTK_SIGNAL_FUNC(chain_callback2),
-								   (gpointer)ee);
-				c_l=gtk_label_new(_("Lock"));
-				gtk_box_pack_start(GTK_BOX(ih_box),c_l,FALSE,FALSE,0);
-				gtk_widget_show(c_l);
-				gtk_widget_show(ih_box);
-				if( strlen(gname) > 10 ) {
-					j=0;
-					while( gname[j]!=' ' && gname[j]!=0 ) j++;
-					if( gname[j]!=0 ) {
-						gname[j+3]=0;
-					}
+		if( obj->e ) {
+			if( obj->enable && (obj->dyn_e == 0 || obj->dyn_e == 3)) {
+				ee=obj->e;
+				e=&ee->e;
+				obj->v_frame=frame=gtk_frame_new(NULL);
+				gtk_frame_set_shadow_type(GTK_FRAME(frame),GTK_SHADOW_OUT);
+				gtk_box_pack_start(GTK_BOX(mh_box),frame,
+								   mixer->p_e,mixer->p_f,0);
+				iv_box=gtk_vbox_new(FALSE,0);
+				gtk_container_add(GTK_CONTAINER(frame),iv_box);
+				obj->chain_en=FALSE;
+				e->chain=&obj->chain;
+				e->chain_en=&obj->chain_en;
+				if( mk_element(e,GTK_BOX(iv_box))<0 ) return NULL;
+				ih_box=gtk_hbox_new(FALSE,2);
+				gtk_box_pack_start(GTK_BOX(iv_box),ih_box,FALSE,FALSE,0);
+				if( e->e.eid.index > 0 ) {
+					sprintf(gname,"%s%d",e->e.eid.name,e->e.eid.index);
+				} else {
+					sprintf(gname,"%s",e->e.eid.name);
 				}
+				if( obj->chain_en ) {
+					obj->cwb=gtk_toggle_button_new();
+					gtk_box_pack_start(GTK_BOX(ih_box),obj->cwb,FALSE,FALSE,4);
+					gtk_widget_set_usize(obj->cwb,10,10);
+					gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(obj->cwb)
+												,obj->chain);
+					gtk_widget_show(obj->cwb);
+					gtk_signal_connect(GTK_OBJECT(obj->cwb),"toggled",
+									   GTK_SIGNAL_FUNC(chain_callback),
+									   (gpointer)obj);
+					c_l=gtk_label_new(_("Lock"));
+					gtk_box_pack_start(GTK_BOX(ih_box),c_l,FALSE,FALSE,0);
+					gtk_widget_show(c_l);
+					gtk_widget_show(ih_box);
+					if( strlen(gname) > 10 ) {
+						j=0;
+						while( gname[j]!=' ' && gname[j]!=0 ) j++;
+						if( gname[j]!=0 ) {
+							gname[j+3]=0;
+						}
+					}
+				} else {
+					c_l=gtk_label_new(" ");
+					gtk_box_pack_start(GTK_BOX(ih_box),c_l,FALSE,FALSE,0);
+					gtk_widget_show(c_l);
+				}
+				gtk_frame_set_label(GTK_FRAME(frame),gname);
+				gtk_widget_show(ih_box);
+				gtk_widget_show(iv_box);
+				gtk_widget_show(frame);
+				obj->enabled=TRUE;
 			} else {
-				c_l=gtk_label_new(" ");
-				gtk_box_pack_start(GTK_BOX(ih_box),c_l,FALSE,FALSE,0);
-				gtk_widget_show(c_l);
+				obj->enabled=FALSE;
 			}
-			gtk_frame_set_label(GTK_FRAME(frame),gname);
-			gtk_widget_show(ih_box);
-			gtk_widget_show(iv_box);
-			gtk_widget_show(frame);
-			ee->enabled=TRUE;
-		} else {
-			mixer->ee[i].enabled=FALSE;
 		}
 	}
 	gtk_signal_connect(GTK_OBJECT(mv_box),"destroy",
@@ -509,7 +576,7 @@ GtkWidget *make_mixer( gint c_n , gint m_n ) {
 	e->adj[NO]=NULL; \
   }
 
-gint mk_element(s_element *e,GtkBox *iv_box) {
+gint mk_element(s_element_t *e,GtkBox *iv_box) {
 	int i,j,k;
 	GtkWidget *ih_box,*tv_box;
 	GtkWidget *menu,*c_l,*item;
@@ -539,7 +606,7 @@ gint mk_element(s_element *e,GtkBox *iv_box) {
 											  sizeof(GtkAdjustment *));
 		}
 		if( e->adj==NULL ) {
-			printf(nomem_msg);
+			fprintf(stderr,nomem_msg);
 			return -1;
 		}
 		for( i=0 ; i<e->e.data.volume1.voices ; i++ ) {
@@ -704,7 +771,7 @@ gint mk_element(s_element *e,GtkBox *iv_box) {
 				e->mux[j].index == e->e.data.mux2.output.index &&
 				e->mux[j].type == e->e.data.mux2.output.type ) k=j;
 			item=gtk_menu_item_new_with_label(e->mux[j].name);
-			gtk_object_set_data(GTK_OBJECT(item),"no",(gpointer)k);
+			gtk_object_set_data(GTK_OBJECT(item),"no",(gpointer)j);
 			gtk_signal_connect(GTK_OBJECT(item),"activate",
 							   GTK_SIGNAL_FUNC(mux2_callback),(gpointer)e);
 			gtk_menu_append(GTK_MENU(menu),item);
@@ -818,6 +885,57 @@ gint mk_element(s_element *e,GtkBox *iv_box) {
 		} else {
 			e->w[0]=NULL;
 		}
+		break;
+	case SND_MIXER_ETYPE_PAN_CONTROL1:
+		if( e->w == NULL ) {
+			e->w = (GtkWidget **)g_malloc(e->e.data.pc1.pan*4*
+										  sizeof(GtkWidget *));
+		}
+		if( e->w == NULL ) {
+			fprintf(stderr,nomem_msg);
+			return -1;
+		}
+		if( e->adj == NULL ) {
+			e->adj=(GtkAdjustment **)g_malloc(e->e.data.pc1.pan*
+											  sizeof(GtkAdjustment *));
+		}
+		if( e->adj==NULL ) {
+			fprintf(stderr,nomem_msg);
+			return -1;
+		}
+		for( i=0 ; i<e->e.data.pc1.pan ; i++ ) {
+			j=i*4;
+			e->adj[i]=(GtkAdjustment *)gtk_adjustment_new(
+								(gfloat)e->e.data.pc1.ppan[i],
+								(gfloat)e->info.data.pc1.prange[i].min-0.5,
+								(gfloat)e->info.data.pc1.prange[i].max+1.5,
+								1.0,4.0,1.0);
+			gtk_signal_connect(GTK_OBJECT(e->adj[i]),"value_changed",
+						   GTK_SIGNAL_FUNC(pc1_callback),(gpointer)e);
+			e->w[j]=gtk_hscale_new(GTK_ADJUSTMENT(e->adj[i]));
+			gtk_scale_set_draw_value(GTK_SCALE(e->w[j]),FALSE);
+			gtk_box_pack_start(iv_box,e->w[j],FALSE,FALSE,4);
+			gtk_widget_show(e->w[j]);
+
+			gtk_box_pack_start(iv_box,ih_box,FALSE,FALSE,4);
+			j++;
+			e->w[j]=gtk_button_new_with_label(pc1_ptc1[e->info.data.pc1.prange[i].pan_type]);
+			gtk_signal_connect(GTK_OBJECT(e->w[j]),"clicked",
+						   GTK_SIGNAL_FUNC(pc1_ss_callback),(gpointer)e);
+			gtk_box_pack_start(GTK_BOX(ih_box),e->w[j],FALSE,FALSE,2);
+			gtk_widget_show(e->w[j++]);
+			e->w[j]=gtk_button_new_with_label("C");
+			gtk_signal_connect(GTK_OBJECT(e->w[j]),"clicked",
+							   GTK_SIGNAL_FUNC(pc1_ss_callback),(gpointer)e);
+			gtk_box_pack_start(GTK_BOX(ih_box),e->w[j],FALSE,FALSE,2);
+			gtk_widget_show(e->w[j++]);
+			e->w[j]=gtk_button_new_with_label(pc1_ptc2[e->info.data.pc1.prange[i].pan_type]);
+			gtk_signal_connect(GTK_OBJECT(e->w[j]),"clicked",
+							   GTK_SIGNAL_FUNC(pc1_ss_callback),(gpointer)e);
+			gtk_box_pack_start(GTK_BOX(ih_box),e->w[j],FALSE,FALSE,2);
+			gtk_widget_show(e->w[j]);
+		}
+		break;
 	}
 	gtk_widget_show(ih_box);
 	return 0;
