@@ -43,7 +43,7 @@ static int copy_remote_to_local(int fd);
 /*
  * default TCP port number
  */
-#define DEFAULT_PORT	9009
+#define DEFAULT_PORT	40002
 
 /*
  * local input buffer
@@ -63,6 +63,7 @@ static int cur_connected;
 static int seq_port;
 
 static int server_mode;
+static int verbose = 0;
 
 
 /*
@@ -74,6 +75,7 @@ static struct option long_option[] = {
 	{"source", 1, NULL, 's'},
 	{"dest", 1, NULL, 'd'},
 	{"help", 0, NULL, 'h'},
+	{"verbose", 0, NULL, 'v'},
 	{NULL, 0, NULL, 0},
 };
 
@@ -83,7 +85,7 @@ int main(int argc, char **argv)
 	int port = DEFAULT_PORT;
 	char *source = NULL, *dest = NULL;
 
-	while ((c = getopt_long(argc, argv, "p:s:d:", long_option, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "p:s:d:v", long_option, NULL)) != -1) {
 		switch (c) {
 		case 'p':
 			if (isdigit(*optarg))
@@ -96,6 +98,9 @@ int main(int argc, char **argv)
 			break;
 		case 'd':
 			dest = optarg;
+			break;
+		case 'v':
+			verbose++;
 			break;
 		default:
 			usage();
@@ -141,6 +146,7 @@ static void usage(void)
 	fprintf(stderr, "  -p,--port # : sepcify TCP port (digit or service name)\n");
 	fprintf(stderr, "  -s,--source addr : read from given addr (client:port)\n");
 	fprintf(stderr, "  -d,--dest addr : write to given addr (client:port)\n");
+	fprintf(stderr, "  -v, --verbose : print verbose messages\n");
 }
 
 
@@ -185,7 +191,8 @@ static int parse_addr(snd_seq_addr_t *addr, char *arg)
 static void close_files(void)
 {
 	int i;
-fprintf(stderr, "closing files..\n");
+	if (verbose)
+		fprintf(stderr, "closing files..\n");
 	for (i = 0; i < max_connection; i++) {
 		if (netfd[i] >= 0)
 			close(netfd[i]);
@@ -226,8 +233,9 @@ static void init_seq(char *source, char *dest)
 		perror("create seq port");
 		exit(1);
 	}
-	fprintf(stderr, "sequencer opened: %d:%d\n",
-		snd_seq_client_id(handle), seq_port);
+	if (verbose)
+		fprintf(stderr, "sequencer opened: %d:%d\n",
+			snd_seq_client_id(handle), seq_port);
 
 	/* explicit subscriptions */
 	if (source) {
@@ -263,7 +271,7 @@ static int get_port(char *service)
 	struct servent *sp;
 
 	if ((sp = getservbyname(service, "tcp")) == NULL){
-		fprintf(stderr, "%s is not found in /etc/services\n", service);
+		fprintf(stderr, "service '%s' is not found in /etc/services\n", service);
 		return -1;
 	}
 	return sp->s_port;
@@ -285,6 +293,7 @@ static void sigterm_exit(int sig)
 static void init_server(int port)
 {
 	int i;
+	int curstate = 1;
 	struct sockaddr_in addr;
 
 	memset(&addr, 0, sizeof(addr));
@@ -295,17 +304,19 @@ static void init_server(int port)
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0)  {
-		fprintf(stderr, "can't create a socket\n");
+		perror("create socket");
 		exit(1);
 	}
+	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &curstate, sizeof(curstate));
+	/* the return value is ignored.. */
 
 	if (bind(sockfd, &addr, sizeof(addr)) < 0)  {
-		fprintf(stderr, "can't bind address\n");
+		perror("can't bind");
 		exit(1);
 	}
 
 	if (listen(sockfd, 5) < 0)  {
-		fprintf(stderr, "can't listen on socket\n");
+		perror("can't listen");
 		exit(1);
 	}
 
@@ -335,10 +346,11 @@ static void start_connection(void)
 	addr_len = sizeof(addr);
 	netfd[i] = accept(sockfd, (struct sockaddr *)&addr, &addr_len);
 	if (netfd[i] < 0) {
-		fprintf(stderr, "can't accept\n");
+		perror("accept");
 		exit(1);
 	}
-	fprintf(stderr, "accepted[%d]\n", netfd[i]);
+	if (verbose)
+		fprintf(stderr, "accepted[%d]\n", netfd[i]);
 	cur_connected++;
 }
 
@@ -349,10 +361,15 @@ static void init_client(char *server, int port)
 {
 	struct sockaddr_in addr;
 	struct hostent *host;
+	int curstate = 1;
 	int fd;
 
 	if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0){
-		fprintf(stderr, "can't create socket\n");
+		perror("create socket");
+		exit(1);
+	}
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &curstate, sizeof(curstate)) < 0) {
+		perror("setsockopt");
 		exit(1);
 	}
 	if ((host = gethostbyname(server)) == NULL){
@@ -363,10 +380,11 @@ static void init_client(char *server, int port)
 	addr.sin_family = AF_INET;
 	memcpy(&addr.sin_addr, host->h_addr, host->h_length);
 	if (connect(fd, &addr, sizeof(addr)) < 0) {
-		fprintf(stderr,"can't connect\n");
+		perror("connect");
 		exit(1);
 	}
-	fprintf(stderr, "ok.. connected\n");
+	if (verbose)
+		fprintf(stderr, "ok.. connected\n");
 	netfd[0] = fd;
 	cur_connected = 1;
 }
@@ -464,7 +482,8 @@ static int copy_local_to_remote(void)
 	char *buf;
 
 	while ((rc = snd_seq_event_input(handle, &ev)) >= 0 && ev) {
-		if (ev->type >= SND_SEQ_EVENT_CLIENT_START) {
+		if (ev->type >= SND_SEQ_EVENT_CLIENT_START &&
+		    ! snd_seq_ev_is_variable_type(ev)) {
 			snd_seq_free_event(ev);
 			continue;
 		}
@@ -478,6 +497,7 @@ static int copy_local_to_remote(void)
 			buf = get_writebuf(sizeof(snd_seq_event_t));
 			memcpy(buf, ev, sizeof(snd_seq_event_t));
 		}
+		snd_seq_free_event(ev);
 	}
 	flush_writebuf();
 	return 0;
@@ -496,26 +516,17 @@ static int copy_remote_to_local(int fd)
 	buf = readbuf;
 
 	if (count == 0) {
-		fprintf(stderr, "disconnected\n");
+		if (verbose)
+			fprintf(stderr, "disconnected\n");
 		return 1;
 	}
 
 	while (count > 0) {
-		ev = snd_seq_create_event();
-		if (ev == NULL) {
-			fprintf(stderr, "can't malloc\n");
-			exit(1);
-		}
-		memcpy(ev, buf, sizeof(snd_seq_event_t));
+		ev = (snd_seq_event_t*)buf;
 		buf += sizeof(snd_seq_event_t);
 		count -= sizeof(snd_seq_event_t);
 		if (snd_seq_ev_is_variable(ev) && ev->data.ext.len > 0) {
-			ev->data.ext.ptr = malloc(ev->data.ext.len);
-			if (ev->data.ext.ptr == NULL) {
-				fprintf(stderr, "can't malloc\n");
-				exit(1);
-			}
-			memcpy(ev->data.ext.ptr, buf, ev->data.ext.len);
+			ev->data.ext.ptr = buf;
 			buf += ev->data.ext.len;
 			count -= ev->data.ext.len;
 		}
@@ -523,7 +534,6 @@ static int copy_remote_to_local(int fd)
 		snd_seq_ev_set_source(ev, seq_port);
 		snd_seq_ev_set_subs(ev);
 		snd_seq_event_output(handle, ev);
-		snd_seq_free_event(ev);
 	}
 
 	snd_seq_flush_output(handle);

@@ -46,7 +46,8 @@ sending signal to them.  The server will automatically quit.
 The available options are:
 
   -p port : specify the TCP port number or TCP service name.
-            Default value is 9009 (I don't know it's allowed..)
+            Default value is 40002.
   -s addr : explicit read-subscription to the given address
             (client:addr).
   -d addr : explicit write-subscription to the given address.
+  -v      : verbose mode.
