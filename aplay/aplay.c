@@ -875,7 +875,7 @@ static void suspend(void)
 
 	if (!quiet_mode)
 		fprintf(stderr, "Suspended... Trying resume..."); fflush(stderr);
-	while ((res = snd_pcm_resume(handle)) == -EBUSY)
+	while ((res = snd_pcm_resume(handle)) == -EAGAIN)
 		sleep(1);	/* wait until suspend flag is not released */
 	if (res < 0) {
 		if (!quiet_mode)
