@@ -39,6 +39,7 @@
 #include <sys/asoundlib.h>
 #include <assert.h>
 #include <sys/poll.h>
+#include <sys/uio.h>
 #include "aconfig.h"
 #include "formats.h"
 #include "version.h"
@@ -55,6 +56,8 @@
 
 static ssize_t (*read_func)(snd_pcm_t *handle, void *buffer, size_t size);
 static ssize_t (*write_func)(snd_pcm_t *handle, const void *buffer, size_t size);
+static ssize_t (*readv_func)(snd_pcm_t *handle, const struct iovec *vector, unsigned long count);
+static ssize_t (*writev_func)(snd_pcm_t *handle, const struct iovec *vector, unsigned long count);
 
 static char *command;
 static snd_pcm_t *pcm_handle;
@@ -64,7 +67,6 @@ static snd_pcm_channel_setup_t setup;
 static int timelimit = 0;
 static int quiet_mode = 0;
 static int verbose_mode = 0;
-static int format_change = 0;
 static int active_format = FORMAT_DEFAULT;
 static int mode = SND_PCM_MODE_BLOCK;
 static int direction = SND_PCM_OPEN_PLAYBACK;
@@ -89,15 +91,17 @@ static int vocmajor, vocminor;
 
 static void playback(char *filename);
 static void capture(char *filename);
+static void playbackv(char **filenames, unsigned int count);
+static void capturev(char **filenames, unsigned int count);
 
-static void begin_voc(int fd, u_long count);
+static void begin_voc(int fd, size_t count);
 static void end_voc(int fd);
-static void begin_wave(int fd, u_long count);
+static void begin_wave(int fd, size_t count);
 static void end_wave(int fd);
-static void begin_au(int fd, u_long count);
+static void begin_au(int fd, size_t count);
 
 struct fmt_capture {
-	void (*start) (int fd, u_long count);
+	void (*start) (int fd, size_t count);
 	void (*end) (int fd);
 	char *what;
 } fmt_rec_table[] = {
@@ -222,6 +226,7 @@ static void usage(char *command)
 		"  -E            mmap mode\n"
 		"  -N            Don't use plugins\n"
 		"  -B            Nonblocking mode\n"
+		"  -I            Noninterleaved mode\n"
 		"  -S            Show setup\n"
 		,command, snd_cards()-1);
 	fprintf(stderr, "\nRecognized data formats are:");
@@ -342,7 +347,7 @@ int main(int argc, char *argv[])
 		version();
 		return 0;
 	}
-	while ((c = getopt(argc, argv, "hlc:d:qs:o:t:vrwxc:p:mMVeEf:NBF:S")) != EOF)
+	while ((c = getopt(argc, argv, "hlc:d:qs:o:t:vrwxc:p:mMVeEf:NBF:SI")) != EOF)
 		switch (c) {
 		case 'h':
 			usage(command);
@@ -443,6 +448,9 @@ int main(int argc, char *argv[])
 		case 'S':
 			show_setup = 1;
 			break;
+		case 'I':
+			rformat.interleave = 0;
+			break;
 		default:
 			usage(command);
 			return 1;
@@ -496,23 +504,34 @@ int main(int argc, char *argv[])
 	if (mmap_flag) {
 		write_func = snd_pcm_mmap_write;
 		read_func = snd_pcm_mmap_read;
+		writev_func = snd_pcm_mmap_writev;
+		readv_func = snd_pcm_mmap_readv;
 	} else {
 		write_func = snd_pcm_write;
 		read_func = snd_pcm_read;
+		writev_func = snd_pcm_writev;
+		readv_func = snd_pcm_readv;
 	}
 
-	if (optind > argc - 1) {
-		if (channel == SND_PCM_CHANNEL_PLAYBACK)
-			playback(NULL);
-		else
-			capture(NULL);
-	} else {
-		while (optind <= argc - 1) {
+	if (rformat.interleave) {
+		if (optind > argc - 1) {
 			if (channel == SND_PCM_CHANNEL_PLAYBACK)
-				playback(argv[optind++]);
+				playback(NULL);
 			else
-				capture(argv[optind++]);
+				capture(NULL);
+		} else {
+			while (optind <= argc - 1) {
+				if (channel == SND_PCM_CHANNEL_PLAYBACK)
+					playback(argv[optind++]);
+				else
+					capture(argv[optind++]);
+			}
 		}
+	} else {
+		if (channel == SND_PCM_CHANNEL_PLAYBACK)
+			playbackv(&argv[optind], argc - optind);
+		else
+			capturev(&argv[optind], argc - optind);
 	}
 	snd_pcm_close(pcm_handle);
 	return EXIT_SUCCESS;
@@ -646,12 +665,10 @@ static void setup_print(snd_pcm_channel_setup_t *setup)
 	}
 }
 
-static void set_format(void)
+static void set_params(void)
 {
 	snd_pcm_channel_params_t params;
 
-	if (!format_change)
-		return;
 	align = (snd_pcm_format_physical_width(format.format) + 7) / 8;
 
 	if (mmap_flag)
@@ -710,12 +727,11 @@ static void set_format(void)
 		exit(EXIT_FAILURE);
 	}
 	// fprintf(stderr, "real buffer_size = %i, frags = %i, total = %i\n", buffer_size, setup.buf.block.frags, setup.buf.block.frags * buffer_size);
-	format_change = 0;
 }
 
 /* playback write error hander */
 
-void playback_write_error(void)
+void playback_underrun(void)
 {
 	snd_pcm_channel_status_t status;
 	
@@ -739,7 +755,7 @@ void playback_write_error(void)
 
 /* capture read error hander */
 
-void capture_read_error(void)
+void capture_overrun(void)
 {
 	snd_pcm_channel_status_t status;
 	
@@ -769,53 +785,75 @@ void capture_read_error(void)
 
 static ssize_t pcm_write(u_char *data, size_t count)
 {
-	char *buf = data;
-	ssize_t result = count, r;
+	ssize_t r;
+	ssize_t result = 0;
 
-	count += align - 1;
-	count -= count % align;
-	if (mode == SND_PCM_MODE_BLOCK) {
-		if (count != buffer_size)
-			snd_pcm_format_set_silence(format.format, buf + count, buffer_size - count);
-		while (1) {
-			int bytes = write_func(pcm_handle, buf, buffer_size);
-			if (bytes == -EAGAIN || bytes == 0) {
-				struct pollfd pfd;
-				pfd.fd = snd_pcm_file_descriptor(pcm_handle, SND_PCM_CHANNEL_PLAYBACK);
-				pfd.events = POLLOUT | POLLERR;
-				poll(&pfd, 1, 1000);
-			} else if (bytes == -EPIPE) {
-				playback_write_error();
-			} else if (bytes != buffer_size) {
-				fprintf(stderr, "write error: %s\n", snd_strerror(bytes));
-				exit(EXIT_FAILURE);
-			} else break;
-		}
-	} else {
-		while (count > 0) {
+	if (mode == SND_PCM_MODE_BLOCK &&
+	    count != buffer_size) {
+		snd_pcm_format_set_silence(format.format, data + count, buffer_size - count);
+		count = buffer_size;
+	}
+	while (count > 0) {
+		struct pollfd pfd;
+		r = write_func(pcm_handle, data, count);
+		if (r == -EAGAIN || (r >= 0 && r < count)) {
 			struct pollfd pfd;
-			r = write_func(pcm_handle, buf, count);
-			if (r == -EPIPE) {
-				playback_write_error();
-				continue;
-			}
-			if (r < 0 && r != -EAGAIN) {
-				fprintf(stderr, "write error: %s\n", snd_strerror(r));
-				exit(EXIT_FAILURE);
-			}
-			if (r != count) {
-				pfd.fd = snd_pcm_file_descriptor(pcm_handle, SND_PCM_CHANNEL_PLAYBACK);
-				pfd.events = POLLOUT | POLLERR;
-#ifdef FIXED_STREAM_POLL
-				poll(&pfd, 1, 1000);
-#else
-				poll(&pfd, 1, 50);
-#endif
-			}
-			if (r > 0) {
-				count -= r;
-				buf += r;
-			}
+			pfd.fd = snd_pcm_file_descriptor(pcm_handle, SND_PCM_CHANNEL_PLAYBACK);
+			pfd.events = POLLOUT | POLLERR;
+			poll(&pfd, 1, 1000);
+		} else if (r == -EPIPE) {
+			playback_underrun();
+		} else if (r < 0) {
+			fprintf(stderr, "write error: %s\n", snd_strerror(r));
+			exit(EXIT_FAILURE);
+		}
+		if (r > 0) {
+			result += r;
+			count -= r;
+			data += r;
+		}
+	}
+	return result;
+}
+
+static ssize_t pcm_writev(u_char **data, unsigned int voices, size_t count)
+{
+	ssize_t r;
+	size_t result = 0;
+
+	if (mode == SND_PCM_MODE_BLOCK &&
+	    count != buffer_size) {
+		unsigned int voice;
+		size_t offset = count / voices;
+		size_t remaining = (buffer_size - count) / voices;
+		for (voice = 0; voice < voices; voice++)
+			snd_pcm_format_set_silence(format.format, data[voice] + offset, remaining);
+		count = buffer_size;
+	}
+	while (count > 0) {
+		unsigned int voice;
+		struct iovec vec[voices];
+		size_t offset = result / voices;
+		size_t remaining = count / voices;
+		for (voice = 0; voice < voices; voice++) {
+			vec[voice].iov_base = data[voice] + offset;
+			vec[voice].iov_len = remaining;
+		}
+		r = writev_func(pcm_handle, vec, voices);
+		if (r == -EAGAIN || (r >= 0 && r < count)) {
+			struct pollfd pfd;
+			pfd.fd = snd_pcm_file_descriptor(pcm_handle, SND_PCM_CHANNEL_PLAYBACK);
+			pfd.events = POLLOUT | POLLERR;
+			poll(&pfd, 1, 1000);
+		} else if (r == -EPIPE) {
+			playback_underrun();
+		} else if (r < 0) {
+			fprintf(stderr, "writev error: %s\n", snd_strerror(r));
+			exit(EXIT_FAILURE);
+		}
+		if (r > 0) {
+			result += r;
+			count -= r;
 		}
 	}
 	return result;
@@ -830,26 +868,58 @@ static ssize_t pcm_read(u_char *data, size_t count)
 	ssize_t r;
 	size_t result = 0;
 
-	while (result < count) {
-		r = read_func(pcm_handle, audiobuf + result, count - result);
-		if (r == -EAGAIN || (r >= 0 && r < count - result)) {
+	while (count > 0) {
+		r = read_func(pcm_handle, data, count);
+		if (r == -EAGAIN || (r >= 0 && r < count)) {
 			struct pollfd pfd;
 			pfd.fd = snd_pcm_file_descriptor(pcm_handle, SND_PCM_CHANNEL_CAPTURE);
 			pfd.events = POLLIN | POLLERR;
-#ifndef FIXED_STREAM_POLL
-			if (mode == SND_PCM_MODE_STREAM)
-				poll(&pfd, 1, 50);
-			else
-#endif
-				poll(&pfd, 1, 1000);
+			poll(&pfd, 1, 1000);
 		} else if (r == -EPIPE) {
-			capture_read_error();
+			capture_overrun();
 		} else if (r < 0) {
 			fprintf(stderr, "read error: %s\n", snd_strerror(r));
 			exit(EXIT_FAILURE);
 		}
-		if (r > 0)
+		if (r > 0) {
 			result += r;
+			count -= r;
+			data += r;
+		}
+	}
+	return result;
+}
+
+static ssize_t pcm_readv(u_char **data, unsigned int voices, size_t count)
+{
+	ssize_t r;
+	size_t result = 0;
+
+	while (count > 0) {
+		unsigned int voice;
+		struct iovec vec[voices];
+		size_t offset = result / voices;
+		size_t remaining = count / voices;
+		for (voice = 0; voice < voices; voice++) {
+			vec[voice].iov_base = data[voice] + offset;
+			vec[voice].iov_len = remaining;
+		}
+		r = readv_func(pcm_handle, vec, voices);
+		if (r == -EAGAIN || (r >= 0 && r < count)) {
+			struct pollfd pfd;
+			pfd.fd = snd_pcm_file_descriptor(pcm_handle, SND_PCM_CHANNEL_CAPTURE);
+			pfd.events = POLLIN | POLLERR;
+			poll(&pfd, 1, 1000);
+		} else if (r == -EPIPE) {
+			capture_overrun();
+		} else if (r < 0) {
+			fprintf(stderr, "readv error: %s\n", snd_strerror(r));
+			exit(EXIT_FAILURE);
+		}
+		if (r > 0) {
+			result += r;
+			count -= r;
+		}
 	}
 	return result;
 }
@@ -880,18 +950,14 @@ static ssize_t voc_pcm_write(u_char *data, size_t count)
 	return result;
 }
 
-/*
- *  writing zeros from the zerobuf to simulate silence,
- *  perhaps it's enough to use a long var instead of zerobuf ?
- */
-static void voc_write_zeros(unsigned x)
+static void voc_write_silence(unsigned x)
 {
 	unsigned l;
 	char *buf;
 
 	buf = (char *) malloc(buffer_size);
 	if (buf == NULL) {
-		fprintf(stderr, "%s: can allocate buffer for zeros\n", command);
+		fprintf(stderr, "%s: can allocate buffer for silence\n", command);
 		return;		/* not fatal error */
 	}
 	snd_pcm_format_set_silence(format.format, buf, buffer_size);
@@ -927,11 +993,11 @@ static void voc_play(int fd, int ofs, char *name)
 	VocBlockType *bp;
 	VocVoiceData *vd;
 	VocExtBlock *eb;
-	u_long nextblock, in_buffer;
+	size_t nextblock, in_buffer;
 	u_char *data, *buf;
 	char was_extended = 0, output = 0;
 	u_short *sp, repeat = 0;
-	u_long silence;
+	size_t silence;
 	int filepos = 0;
 
 #define COUNT(x)	nextblock -= x; in_buffer -= x; data += x
@@ -963,8 +1029,7 @@ static void voc_play(int fd, int ofs, char *name)
 	format.format = SND_PCM_SFMT_U8;
 	format.voices = 1;
 	format.rate = DEFAULT_SPEED;
-	format_change = 1;
-	set_format();
+	set_params();
 
 	in_buffer = nextblock = 0;
 	while (1) {
@@ -1022,8 +1087,7 @@ static void voc_play(int fd, int ofs, char *name)
 					format.voices = 2;
 					was_extended = 0;
 				}
-				format_change = 1;
-				set_format();
+				set_params();
 				break;
 			case 2:	/* nothing to do, pure data */
 #if 0
@@ -1036,13 +1100,12 @@ static void voc_play(int fd, int ofs, char *name)
 				format.rate = (int) (*data);
 				COUNT1(1);
 				format.rate = 1000000 / (256 - format.rate);
-				format_change = 1;
-				set_format();
-				silence = (((u_long) * sp) * 1000) / format.rate;
+				set_params();
+				silence = (((size_t) * sp) * 1000) / format.rate;
 #if 0
 				d_printf("Silence for %d ms\n", (int) silence);
 #endif
-				voc_write_zeros(*sp);
+				voc_write_silence(*sp);
 				break;
 			case 4:	/* a marker for syncronisation, no effect */
 				sp = (u_short *) data;
@@ -1154,9 +1217,9 @@ static void init_raw_data(void)
 }
 
 /* calculate the data count to read from/to dsp */
-static u_long calc_count(void)
+static size_t calc_count(void)
 {
-	u_long count;
+	size_t count;
 
 	if (!timelimit) {
 		count = 0x7fffffff;
@@ -1169,7 +1232,7 @@ static u_long calc_count(void)
 }
 
 /* write a .VOC-header */
-static void begin_voc(int fd, u_long cnt)
+static void begin_voc(int fd, size_t cnt)
 {
 	VocHeader vh;
 	VocBlockType bt;
@@ -1221,7 +1284,7 @@ static void begin_voc(int fd, u_long cnt)
 }
 
 /* write a WAVE-header */
-static void begin_wave(int fd, u_long cnt)
+static void begin_wave(int fd, size_t cnt)
 {
 	WaveHeader wh;
 	int bits;
@@ -1263,7 +1326,7 @@ static void begin_wave(int fd, u_long cnt)
 }
 
 /* write a Au-header */
-static void begin_au(int fd, u_long cnt)
+static void begin_au(int fd, size_t cnt)
 {
 	AuHeader ah;
 
@@ -1331,41 +1394,47 @@ static void header(int rtype, char *name)
 
 /* playing raw data */
 
-void playback_go(int fd, int loaded, u_long count, int rtype, char *name)
+void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
 {
 	int l, r;
-	u_long c;
+	size_t written = 0;
+	size_t c;
 
 	header(rtype, name);
-	format_change = 1;
-	set_format();
+	set_params();
 
-	l = 0;
-	while (loaded > buffer_size) {
-		if (pcm_write(audiobuf + l, buffer_size) <= 0)
+	while (loaded > buffer_size && written < count) {
+		if (pcm_write(audiobuf + written, buffer_size) <= 0)
 			return;
-		l += buffer_size;
-		loaded -= l;
+		written += buffer_size;
+		loaded -= buffer_size;
 	}
+	if (written > 0 && loaded > 0)
+		memmove(audiobuf, audiobuf + written, loaded);
 
 	l = loaded;
-	while (count > 0) {
+	while (written < count) {
 		do {
-			c = count;
-			if (c + l > buffer_size)
-				c = buffer_size - l;
-			
+			c = count - written;
+			if (c > buffer_size)
+				c = buffer_size;
+			c -= l;
+
 			if (c == 0)
 				break;
 			r = read(fd, audiobuf + l, c);
-			if (r <= 0)
+			if (r < 0) {
+				perror(name);
+				exit(EXIT_FAILURE);
+			}
+			if (r == 0)
 				break;
 			l += r;
 		} while (mode != SND_PCM_MODE_STREAM && l < buffer_size);
-		l = pcm_write(audiobuf, l);
-		if (l <= 0)
+		r = pcm_write(audiobuf, l);
+		if (r != l)
 			break;
-		count -= l;
+		written += r;
 		l = 0;
 	}
 	snd_pcm_channel_flush(pcm_handle, SND_PCM_CHANNEL_PLAYBACK);
@@ -1373,20 +1442,19 @@ void playback_go(int fd, int loaded, u_long count, int rtype, char *name)
 
 /* captureing raw data, this proc handels WAVE files and .VOCs (as one block) */
 
-void capture_go(int fd, int loaded, u_long count, int rtype, char *name)
+void capture_go(int fd, size_t count, int rtype, char *name)
 {
 	size_t c;
 	ssize_t r;
 
 	header(rtype, name);
-	format_change = 1;
-	set_format();
+	set_params();
 
 	while (count > 0) {
 		c = count;
 		if (c > buffer_size)
 			c = buffer_size;
-		if ((r = pcm_read(audiobuf, c)) <= 0)
+		if ((r = pcm_read(audiobuf, c)) != c)
 			break;
 		if (write(fd, audiobuf, r) != r) {
 			perror(name);
@@ -1459,7 +1527,7 @@ static void capture(char *name)
 {
 	int fd;
 
-	snd_pcm_capture_flush(pcm_handle);
+	snd_pcm_channel_flush(pcm_handle, SND_PCM_CHANNEL_CAPTURE);
 	if (!name || !strcmp(name, "-")) {
 		fd = 1;
 		name = "stdout";
@@ -1476,6 +1544,199 @@ static void capture(char *name)
 	if (fmt_rec_table[active_format].start)
 		fmt_rec_table[active_format].start(fd, count);
 	check_new_format(&rformat);
-	capture_go(fd, 0, count, active_format, name);
+	capture_go(fd, count, active_format, name);
 	fmt_rec_table[active_format].end(fd);
 }
+
+void playbackv_go(int* fds, unsigned int voices, size_t loaded, size_t count, int rtype, char **names)
+{
+	int r;
+	size_t c, expected;
+	size_t vsize;
+	unsigned int voice;
+	u_char *bufs[voices];
+
+	header(rtype, names[0]);
+	set_params();
+
+	vsize = buffer_size / voices;
+
+	// Not yet implemented
+	assert(loaded == 0);
+
+	for (voice = 0; voice < voices; ++voice)
+		bufs[voice] = audiobuf + vsize * voice;
+
+	while (count > 0) {
+		size_t c = 0;
+		size_t expected = count / voices;
+		if (expected > vsize)
+			expected = vsize;
+		do {
+			r = read(fds[0], bufs[0], expected);
+			if (r < 0) {
+				perror(names[voice]);
+				exit(EXIT_FAILURE);
+			}
+			for (voice = 1; voice < voices; ++voice) {
+				if (read(fds[voice], bufs[voice], r) != r) {
+					perror(names[voice]);
+					exit(EXIT_FAILURE);
+				}
+			}
+			if (r == 0)
+				break;
+			c += r;
+		} while (mode != SND_PCM_MODE_STREAM && c < expected);
+		r = pcm_writev(bufs, voices, c * voices);
+		if (r != c * voices)
+			break;
+		count -= r;
+	}
+	snd_pcm_channel_flush(pcm_handle, SND_PCM_CHANNEL_PLAYBACK);
+}
+
+void capturev_go(int* fds, unsigned int voices, size_t count, int rtype, char **names)
+{
+	size_t c;
+	ssize_t r;
+	unsigned int voice;
+	size_t vsize;
+	u_char *bufs[voices];
+
+	header(rtype, names[0]);
+	set_params();
+
+	vsize = buffer_size / voices;
+
+	for (voice = 0; voice < voices; ++voice)
+		bufs[voice] = audiobuf + vsize * voice;
+
+	while (count > 0) {
+		size_t rv;
+		c = count;
+		if (c > buffer_size)
+			c = buffer_size;
+		if ((r = pcm_readv(bufs, voices, c)) != c)
+			break;
+		rv = r / voices;
+		for (voice = 0; voice < voices; ++voice) {
+			if (write(fds[voice], bufs[voice], rv) != rv) {
+				perror(names[voice]);
+				exit(EXIT_FAILURE);
+			}
+		}
+		count -= r;
+	}
+}
+
+static void playbackv(char **names, unsigned int count)
+{
+	int ret = 0;
+	unsigned int voice;
+	unsigned int voices = rformat.voices;
+	int alloced = 0;
+	int fds[voices];
+	for (voice = 0; voice < voices; ++voice)
+		fds[voice] = -1;
+
+	snd_pcm_channel_flush(pcm_handle, SND_PCM_CHANNEL_PLAYBACK);
+	if (count == 1) {
+		size_t len = strlen(names[0]);
+		char format[1024];
+		memcpy(format, names[0], len);
+		strcpy(format + len, ".%d");
+		len += 4;
+		names = malloc(sizeof(*names) * voices);
+		for (voice = 0; voice < voices; ++voice) {
+			names[voice] = malloc(len);
+			sprintf(names[voice], format, voice);
+		}
+		alloced = 1;
+	} else if (count != voices) {
+		fprintf(stderr, "You need to specify %d files\n", voices);
+		exit(EXIT_FAILURE);
+	}
+
+	for (voice = 0; voice < voices; ++voice) {
+		fds[voice] = open(names[voice], O_RDONLY, 0);
+		if (fds[voice] < 0) {
+			perror(names[voice]);
+			ret = EXIT_FAILURE;
+			goto __end;
+		}
+	}
+	/* should be raw data */
+	check_new_format(&rformat);
+	init_raw_data();
+	count = calc_count();
+	playbackv_go(fds, voices, 0, count, FORMAT_RAW, names);
+
+      __end:
+	for (voice = 0; voice < voices; ++voice) {
+		if (fds[voice] >= 0)
+			close(fds[voice]);
+		if (alloced)
+			free(names[voice]);
+	}
+	if (alloced)
+		free(names);
+	if (ret)
+		exit(ret);
+}
+
+static void capturev(char **names, unsigned int count)
+{
+	int ret = 0;
+	unsigned int voice;
+	unsigned int voices = rformat.voices;
+	int alloced = 0;
+	int fds[voices];
+	for (voice = 0; voice < voices; ++voice)
+		fds[voice] = -1;
+
+	snd_pcm_channel_flush(pcm_handle, SND_PCM_CHANNEL_CAPTURE);
+	if (count == 1) {
+		size_t len = strlen(names[0]);
+		char format[1024];
+		memcpy(format, names[0], len);
+		strcpy(format + len, ".%d");
+		len += 4;
+		names = malloc(sizeof(*names) * voices);
+		for (voice = 0; voice < voices; ++voice) {
+			names[voice] = malloc(len);
+			sprintf(names[voice], format, voice);
+		}
+		alloced = 1;
+	} else if (count != voices) {
+		fprintf(stderr, "You need to specify %d files\n", voices);
+		exit(EXIT_FAILURE);
+	}
+
+	for (voice = 0; voice < voices; ++voice) {
+		fds[voice] = open(names[voice], O_WRONLY + O_CREAT, 0644);
+		if (fds[voice] < 0) {
+			perror(names[voice]);
+			ret = EXIT_FAILURE;
+			goto __end;
+		}
+	}
+	/* should be raw data */
+	check_new_format(&rformat);
+	init_raw_data();
+	count = calc_count();
+	capturev_go(fds, voices, count, FORMAT_RAW, names);
+
+      __end:
+	for (voice = 0; voice < voices; ++voice) {
+		if (fds[voice] >= 0)
+			close(fds[voice]);
+		if (alloced)
+			free(names[voice]);
+	}
+	if (alloced)
+		free(names);
+	if (ret)
+		exit(ret);
+}
+
