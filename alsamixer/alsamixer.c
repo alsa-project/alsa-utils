@@ -546,7 +546,7 @@ mixer_write_cbar (int elem_index)
     int mono;
     int joined;
     mono = (chn_right == SND_MIXER_SCHN_UNKNOWN);
-    if (type == MIXER_ELEM_CAPTURE)
+    if (type != MIXER_ELEM_CAPTURE)
       joined = snd_mixer_selem_has_playback_volume_joined(elem);
     else
 	joined = snd_mixer_selem_has_capture_volume_joined(elem);
