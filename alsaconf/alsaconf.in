@@ -723,7 +723,12 @@ check_irq_avail () {
 ac_try_load () {
     test $do_logging = 1 && echo "$1 ${*:2}" >> $LOGFILE
     /sbin/modprobe snd-$1 ${*:2} >/dev/null 2>&1
-    $lsmod | grep -E '(snd-|snd_)'$1 >/dev/null 2>&1 || return 1
+    if $lsmod | grep -E '^(snd-|snd_)'$1' ' >/dev/null 2>&1; then
+	: ;
+    else
+	modprobe -r snd-$1 >/dev/null 2>&1
+	return 1
+    fi
 
     # mute mixers
     amixer set Master 0% mute >/dev/null 2>&1
@@ -757,7 +762,12 @@ ac_try_load () {
 ac_try_capture () {
     test $do_logging = 1 && echo "$1 ${*:2}" >> $LOGFILE
     /sbin/modprobe snd-$1 ${*:3} >/dev/null 2>&1
-    $lsmod | grep -E '(snd-|snd_)'$1 >/dev/null 2>&1 || return 1
+    if $lsmod | grep -E '^(snd-|snd_)'$1' ' >/dev/null 2>&1; then
+	: ;
+    else
+	modprobe -r snd-$1 >/dev/null 2>&1
+	return 1
+    fi
 
     # mute mixers
     amixer set Master 0% mute >/dev/null 2>&1
