@@ -26,6 +26,8 @@ version=@VERSION@
 # Check for GNU/Linux distributions
 if [ -f /etc/SuSE-release -o -f /etc/UnitedLinux-release ]; then
   distribution="suse"
+elif [ -f /etc/gentoo-release ]; then
+  distribution="gentoo"
 elif [ -f /etc/debian_version ]; then
   distribution="debian"
 elif [ -f /etc/mandrake-release ]; then
@@ -153,7 +155,9 @@ esac
 
 # cfgfile = base config file to remove/update the sound setting
 # cfgout = new config file to write the sound setting (if different from $cfgfile)
-if [ "$kernel" = "new" ]; then
+if [ "$distribution" = "gentoo" ]; then
+  cfgfile="/etc/modules.d/alsa"
+elif [ "$kernel" = "new" ]; then
   if [ -d /etc/modprobe.d ]; then
     cfgout="/etc/modprobe.d/sound"
   fi
@@ -649,7 +653,10 @@ BEGIN { in_sound=0; }
 
     farewell "OK, driver $CARD_DRIVER is configured."
     clear
-    if [ "$distribution" = "debian" ]; then
+    if [ "$distribution" = "gentoo" ]; then
+      echo Running modules-update...
+      modules-update
+    elif [ "$distribution" = "debian" ]; then
       echo Running update-modules...
       update-modules
     fi
