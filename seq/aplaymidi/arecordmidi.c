@@ -1,7 +1,7 @@
 /*
  * arecordmidi.c - record standard MIDI files from sequencer ports
  *
- * Copyright (c) 2004 Clemens Ladisch <clemens@ladisch.de>
+ * Copyright (c) 2004-2005 Clemens Ladisch <clemens@ladisch.de>
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -75,7 +75,6 @@ static int channel_split;
 static int num_tracks;
 static struct smf_track *tracks;
 static volatile sig_atomic_t stop = 0;
-static int dump = 0;
 static int use_metronome = 0;
 static snd_seq_addr_t metronome_port;
 static int metronome_weak_note = METRONOME_WEAK_NOTE;
@@ -187,92 +186,6 @@ static void time_signature(const char *arg)
 	ts_div = x;
 	for (ts_dd = 0; x > 1; x /= 2)
 		++ts_dd;
-}
-
-/*
- * Dump incoming events
- */
-static void print_syx(unsigned int len, unsigned char *data)
-{
-	unsigned int i;
-
-	for (i = 0; i < len; ++i) {
-		printf(" %02x", data[i]);
-	}
-	printf("\n");
-}
-
-static void print_time(snd_seq_event_t *ev)
-{
-	printf("%11d ", ev->time.tick);
-}
-
-static void print_midi_event(snd_seq_event_t *ev)
-{
-	switch (ev->type) {
-	case SND_SEQ_EVENT_NOTEON:
-		print_time(ev);
-		printf("Note on                %2d %3d %3d\n",
-		       ev->data.note.channel, ev->data.note.note, ev->data.note.velocity);
-		break;
-	case SND_SEQ_EVENT_NOTEOFF:
-		print_time(ev);
-		printf("Note off               %2d %3d %3d\n",
-		       ev->data.note.channel, ev->data.note.note, ev->data.note.velocity);
-		break;
-	case SND_SEQ_EVENT_KEYPRESS:
-		print_time(ev);
-		printf("Polyphonic aftertouch  %2d %3d %3d\n",
-		       ev->data.note.channel, ev->data.note.note, ev->data.note.velocity);
-		break;
-	case SND_SEQ_EVENT_CONTROLLER:
-		print_time(ev);
-		printf("Control change         %2d %3d %3d\n",
-		       ev->data.control.channel, ev->data.control.param, ev->data.control.value);
-		break;
-	case SND_SEQ_EVENT_PGMCHANGE:
-		print_time(ev);
-		printf("Program change         %2d %3d\n",
-		       ev->data.control.channel, ev->data.control.value);
-		break;
-	case SND_SEQ_EVENT_CHANPRESS:
-		print_time(ev);
-		printf("Channel aftertouch     %2d %3d\n",
-		       ev->data.control.channel, ev->data.control.value);
-		break;
-	case SND_SEQ_EVENT_PITCHBEND:
-		print_time(ev);
-		printf("Pitch bend             %2d  %6d\n",
-		       ev->data.control.channel, ev->data.control.value);
-		break;
-	case SND_SEQ_EVENT_CONTROL14:
-		print_time(ev);
-		printf("Control change         %2d %3d %5d\n",
-		       ev->data.control.channel, ev->data.control.param, ev->data.control.value);
-		break;
-	case SND_SEQ_EVENT_NONREGPARAM:
-		print_time(ev);
-		printf("Non-reg. parameter     %2d %5d %5d\n",
-		       ev->data.control.channel, ev->data.control.param, ev->data.control.value);
-		break;
-	case SND_SEQ_EVENT_REGPARAM:
-		print_time(ev);
-		printf("Reg. parameter         %2d %5d %5d\n",
-		       ev->data.control.channel, ev->data.control.param, ev->data.control.value);
-		break;
-	case SND_SEQ_EVENT_SENSING:
-		print_time(ev);
-		printf("Active Sensing\n");
-		break;
-	case SND_SEQ_EVENT_SYSEX:
-		print_time(ev);
-		printf("System exclusive      ");
-		print_syx(ev->data.ext.len, ev->data.ext.ptr);
-		break;
-	default:
-		print_time(ev);
-		printf("Event type %d\n",  ev->type);
-	}
 }
 
 /*
@@ -772,7 +685,6 @@ static void help(const char *argv0)
 		"  -f,--fps=frames            resolution in frames per second (SMPTE)\n"
 		"  -t,--ticks=ticks           resolution in ticks per beat or frame\n"
 		"  -s,--split-channels        create a track for each channel\n"
-		"  -d,--dump                  dump events on standard output\n"
 		"  -m,--metronome=client:port play a metronome signal\n"
 		"  -i,--timesig=nn:dd         time signature\n",
 		argv0);
@@ -851,7 +763,7 @@ int main(int argc, char *argv[])
 			channel_split = 1;
 			break;
 		case 'd':
-			dump = 1;
+			fputs("The --dump option isn't supported anymore, use aseqdump instead.\n", stderr);
 			break;
 		case 'm':
 			init_metronome(optarg);
@@ -929,11 +841,6 @@ int main(int argc, char *argv[])
 	err = snd_seq_nonblock(seq, 1);
 	check_snd("set nonblock mode", err);
 	
-	if (dump) {
-		printf("Waiting for data. Press Ctrl+C to end\n");
-		printf("_______Tick Event_________________ Ch _Data__\n");
-	}
-	
 	if (use_metronome) {
 		metronome_set_program();
 		metronome_pattern(0);
@@ -955,8 +862,6 @@ int main(int argc, char *argv[])
 				break;
 			if (event)
 				record_event(event);
-			if (dump && event->dest.port < port_count)
-				print_midi_event(event);
 		} while (err > 0);
 		if (stop)
 			break;
