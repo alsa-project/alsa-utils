@@ -1,6 +1,7 @@
-.TH APLAY 1 "25 Nov 1998"
+.TH APLAY 1 "2 August 2001"
 .SH NAME
-arecord, aplay \- command-line sound recorder and player for ALSA soundcard driver
+arecord, aplay \- command-line sound recorder and player for ALSA 
+soundcard driver
 .SH SYNOPSIS
 
 [\fBarecord\fP | \fBaplay\fP ] [\fIflags\fP] filename
@@ -20,78 +21,107 @@ forth can be automatically determined from the soundfile header.
 
 .SS Options
 .TP
-\fI-h, --help\fP 
+\fI--help\fP
 Help: show syntax.
 .TP
-\fI-V, --version\fP
+\fI--version\fP
 Print current version.
 .TP
-\fI-l\fP
-List all available soundcards and devices. 
+\fI-l, --list-devices\fP
+List all soundcards and digital audio devices
 .TP
-\fI-c\fP <card number>
-Select the soundcard to use, if you have more than one. Cards are
-numbered from 0 (the default).
+\fI-L, --list-pcms\fP
+List all PCMs defined
 .TP
-\fI-d\fP <device number>
-Select the soundcard device to use, if your card has more than
-one. Devices are numbered from 0 (the default). Not to be confused
-with the soundcard mixer channels, which are sometimes also referred
-to as "devices", just to be annoying. Many soundcards will only have
-device 0. Some more complex cards may have mor. Try using \fI-l\fP
-and see what you get.
-
+\fI-D, --device=NAME\fP
+Select PCM by name
 .TP
-\fI-q\fP
+\fI-q --quiet\fP
 Quiet mode. Suppress messages (not sound :))
-
 .TP
-\fI-w\fP 
-Use Wave soundfile format (.wav)
+\fI-t, --file-type TYPE\fP
+File type (voc, wav, raw or au)
 .TP
-\fI-r\fP 
-Use raw soundfile format. Requires -s, -b, and -p flags?
+\fI-c, --channels=#\fP
+The number of channels
 .TP
-\fI-u\fP 
-Use Sparc Audio soundfile format (.au)
+\fI-f --format=FORMAT\fP
+Sample format
+.br
+Recognized sample formats are: S8 U8 S16_LE S16_BE U16_LE U16_BE S24_LE
+S24_BE U24_LE U24_BE S32_LE S32_BE U32_LE U32_BE FLOAT_LE FLOAT_BE
+FLOAT64_LE FLOAT64_BE IEC958_SUBFRAME_LE IEC958_SUBFRAME_BE MU_LAW
+A_LAW IMA_ADPCM MPEG GSM
+.br
+Some of these may not be available on selected hardware
+.br
+There are also two format shortcuts available:
+.nf
+-f cd (16 bit little endian, 44100, stereo [-f S16_LE -c2 -r44100]
+-f dat (16 bit little endian, 48000, stereo) [-f S16_LE -c2 -r48000]
+.fi
 .TP
-\fI-v\fP 
-Use Voc soundfile format
-.TP
-\fI-S\fP 
-Soundfile is stereo. Mono is the default for headerless files.
-.TP
-\fI-t \fP<secs>
-Time limit for recording, in seconds.
-.TP
-\fI-s \fP<Hz> 
+\fI-r, --rate=#<Hz>\fP
 Sampling rate in Hertz.
 .TP
-\fI-b \fP<bits> 
-Bit depth (8 or 16 bits).
+\fI-d, --duration=#\fP
+Interrupt after # seconds
 .TP
-\fI-m\fP 
-Set to CD standard quality (44100 Hz, stereo, 16-bit linear).
+\fI-s, --sleep-min=#\fP
+Min ticks to sleep
 .TP
-\fI-M \fP<bits> 
-Set to DAT quality (48000 Hz, stereo, 16-bit linear).
+\fI-M, --mmap\fP            
+Mmap stream
 .TP
-\fI-p \fP<type>
-Compression type (alaw, ulaw, adpcm).
+\fI-N, --nonblock\fP          
+Nonblocking mode
+.TP
+\fI-F, --period-time=#\fP     
+Distance between interrupts is # microseconds
+.TP
+\fI-B, --buffer-time=#\fP     
+Buffer duration is # microseconds
+.TP
+\fI-A, --avail-min=#\fP       
+Min available space for wakeup is # microseconds
+.TP
+\fI-R, --start-delay=#\fP     
+Delay for automatic PCM start is # microseconds 
+(relative to buffer size if <= 0)
+.TP
+\fI-T, --stop-delay=#\fP      
+Delay for automatic PCM stop is # microseconds from xrun
+.TP
+\fI-v, --verbose\fP           
+Show PCM structure and setup
+.TP
+\fI-I, --separate-channels\fP 
+One file for each channel
+.TP
 
 .SS
 Example: 
 
 .RS
-\fBaplay -c 1 -r -u -s 22050 -b 8 -p ulaw foobar\fR
+\fBaplay -c 1 -t raw -r 22050 -f mu_law foobar\fR
 
 .ID
 will play the raw file "foobar" as a
-22050-Hz, mono, 8-bit, Mu-Law .au file, using the second soundcard. 
+22050-Hz, mono, 8-bit, Mu-Law .au file. 
 
-\fBarecord -t 10 -m -w foobar.wav\fP
+\fBarecord -d 10 -f cd -t wav -D copy foobar.wav\fP
 
-will record foobar.wav as a 10-second, CD-quality wave file.
+will record foobar.wav as a 10-second, CD-quality wave file, using the
+PCM "copy" (which might be defined in the user's .asoundrc file as:
+.nf
+pcm.copy {
+  type plug
+  slave {
+    pcm hw
+  }
+  route_policy copy
+}
+.fi
 
 .SH SEE ALSO
 \fB
@@ -105,8 +135,5 @@ Note that .aiff files are not currently supported.
 .SH AUTHOR
 \fBarecord\fP and \fBaplay\fP are by Jaroslav Kysela <perex@suse.cz>
 This document is by Paul Winkler <zarmzarm@erols.com>.
-
-
-
-
+Updated for Alsa 0.9 by James Tappin <james@xena.uklinux.net>
 
