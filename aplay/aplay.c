@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
 	int pcms_card[32];
 	int pcms_dev[32];
 	int pcms_subdev[32];
-	int pcms_channels[32];
+	size_t pcms_channels[32];
 	int pcms_direct[32];
 	int direct = 0;
 	int multi_direct = 0;
@@ -854,7 +854,7 @@ void playback_underrun(void)
 		exit(EXIT_FAILURE);
 	}
 	if (status.state == SND_PCM_STATE_XRUN) {
-		fprintf(stderr, "underrun at position %u!!!\n", status.frame_io);
+		fprintf(stderr, "underrun at position %lu!!!\n", (unsigned long)status.frame_io);
 		if (snd_pcm_prepare(handle)<0) {
 			fprintf(stderr, "underrun: playback prepare error\n");
 			exit(EXIT_FAILURE);
@@ -879,7 +879,7 @@ void capture_overrun(void)
 	if (status.state == SND_PCM_STATE_RUNNING)
 		return;		/* everything is ok, but the driver is waiting for data */
 	if (status.state == SND_PCM_STATE_XRUN) {
-		fprintf(stderr, "overrun at position %u!!!\n", status.frame_io);
+		fprintf(stderr, "overrun at position %lu!!!\n", (unsigned long)status.frame_io);
 		if (snd_pcm_prepare(handle)<0) {
 			fprintf(stderr, "overrun: capture prepare error\n");
 			exit(EXIT_FAILURE);
