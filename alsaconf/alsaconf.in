@@ -24,6 +24,8 @@ if [ -f /etc/SuSE-release -o -f /etc/UnitedLinux-release ]; then
   distribution="suse"
 elif [ -f /etc/debian_version ]; then
   distribution="debian"
+elif [ -f /etc/mandrake-release ]; then
+  distribution="mandrake"
 elif [ -f /etc/redhat-release -a `grep -c "Red Hat" /etc/redhat-release 2>/dev/null` != 0 ]; then
   distribution="redhat"
 elif [ -f /etc/fedora-release -a `grep -c "Fedora" /etc/fedora-release 2>/dev/null` != 0 ]; then
