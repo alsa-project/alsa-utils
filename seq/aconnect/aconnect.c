@@ -44,6 +44,8 @@ static void usage(void)
 	fprintf(stderr, "     -o,--output         list output (writable) ports\n");
 	fprintf(stderr, "     -g,--group name     specify the group name\n");
 	fprintf(stderr, "     -l,--list           list current connections of each port\n");
+	fprintf(stderr, " * Remove all exported connections\n");
+	fprintf(stderr, "     -x, --removeall\n");
 }
 
 /*
@@ -116,13 +118,15 @@ static void list_subscribers(snd_seq_t *seq, int client, int port)
 }
 
 /*
- * list all ports
+ * search all ports
  */
-static void list_ports(snd_seq_t *seq, char *group, int perm, int list_subs)
+typedef void (*action_func_t)(snd_seq_t *seq, snd_seq_client_info_t *cinfo, snd_seq_port_info_t *pinfo, int count);
+
+static void do_search_port(snd_seq_t *seq, char *group, int perm, action_func_t do_action)
 {
 	snd_seq_client_info_t cinfo;
 	snd_seq_port_info_t pinfo;
-	int client_printed;
+	int count;
 
 	cinfo.client = -1;
 	cinfo.name[0] = 0;
@@ -133,18 +137,11 @@ static void list_ports(snd_seq_t *seq, char *group, int perm, int list_subs)
 		pinfo.port = -1;
 		pinfo.name[0] = 0;
 		strncpy(pinfo.group, group, sizeof(pinfo.group));
-		client_printed = 0;
+		count = 0;
 		while (snd_seq_query_next_port(seq, &pinfo) >= 0) {
 			if (check_permission(&pinfo, group, perm)) {
-				if (! client_printed) {
-					printf("client %d: '%s' [group=%s] [type=%s]\n",
-					       cinfo.client, cinfo.name, cinfo.group,
-					       (cinfo.type == USER_CLIENT ? "user" : "kernel"));
-					client_printed = 1;
-				}
-				printf("  %3d '%-16s' [group=%s]\n", pinfo.port, pinfo.name, pinfo.group);
-				if (list_subs)
-					list_subscribers(seq, pinfo.client, pinfo.port);
+				do_action(seq, &cinfo, &pinfo, count);
+				count++;
 			}
 			/* reset query names */
 			pinfo.name[0] = 0;
@@ -157,8 +154,101 @@ static void list_ports(snd_seq_t *seq, char *group, int perm, int list_subs)
 }
 
 
+static void print_port(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
+		       snd_seq_port_info_t *pinfo, int count)
+{
+	if (! count) {
+		printf("client %d: '%s' [group=%s] [type=%s]\n",
+		       cinfo->client, cinfo->name, cinfo->group,
+		       (cinfo->type == USER_CLIENT ? "user" : "kernel"));
+	}
+	printf("  %3d '%-16s' [group=%s]\n",
+	       pinfo->port, pinfo->name, pinfo->group);
+}
+
+static void print_port_and_subs(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
+				snd_seq_port_info_t *pinfo, int count)
+{
+	print_port(seq, cinfo, pinfo, count);
+	list_subscribers(seq, pinfo->client, pinfo->port);
+}
+
+
+/*
+ * list all ports
+ */
+
+static void list_ports(snd_seq_t *seq, char *group, int perm, int list_subs)
+{
+	if (list_subs)
+		do_search_port(seq, group, perm, print_port_and_subs);
+	else
+		do_search_port(seq, group, perm, print_port);
+}
+
+/*
+ * remove all (exported) connections
+ */
+static void remove_connection(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
+			      snd_seq_port_info_t *pinfo, int count)
+{
+	snd_seq_query_subs_t query;
+
+	memset(&query, 0, sizeof(query));
+	query.client = pinfo->client;
+	query.port = pinfo->port;
+
+	query.type = SND_SEQ_QUERY_SUBS_READ;
+	query.index = 0;
+	for (query.index = 0; snd_seq_query_port_subscribers(seq, &query) >= 0;
+	     query.index++) {
+		snd_seq_port_info_t port;
+		snd_seq_port_subscribe_t subs;
+		if (snd_seq_get_any_port_info(seq, query.addr.client, query.addr.port, &port) < 0)
+			continue;
+		if (port.capability & SND_SEQ_PORT_CAP_NO_EXPORT)
+			continue;
+		memset(&subs, 0, sizeof(subs));
+		subs.queue = query.queue;
+		subs.sender.client = query.client;
+		subs.sender.port = query.port;
+		subs.dest.client = query.addr.client;
+		subs.dest.port = query.addr.port;
+		snd_seq_unsubscribe_port(seq, &subs);
+	}
+
+	query.type = SND_SEQ_QUERY_SUBS_WRITE;
+	query.index = 0;
+	for (query.index = 0; snd_seq_query_port_subscribers(seq, &query) >= 0;
+	     query.index++) {
+		snd_seq_port_info_t port;
+		snd_seq_port_subscribe_t subs;
+		if (snd_seq_get_any_port_info(seq, query.addr.client, query.addr.port, &port) < 0)
+			continue;
+		if (port.capability & SND_SEQ_PORT_CAP_NO_EXPORT)
+			continue;
+		memset(&subs, 0, sizeof(subs));
+		subs.queue = query.queue;
+		subs.sender.client = query.addr.client;
+		subs.sender.port = query.addr.port;
+		subs.dest.client = query.client;
+		subs.dest.port = query.port;
+		snd_seq_unsubscribe_port(seq, &subs);
+	}
+}
+
+static void remove_all_connections(snd_seq_t *seq)
+{
+	do_search_port(seq, "", 0, remove_connection);
+}
+
+
+/*
+ * main..
+ */
+
 enum {
-	SUBSCRIBE, UNSUBSCRIBE, LIST_INPUT, LIST_OUTPUT
+	SUBSCRIBE, UNSUBSCRIBE, LIST_INPUT, LIST_OUTPUT, REMOVE_ALL
 };
 
 static struct option long_option[] = {
@@ -170,6 +260,7 @@ static struct option long_option[] = {
 	{"tick", 1, NULL, 't'},
 	{"exclusive", 0, NULL, 'e'},
 	{"list", 0, NULL, 'l'},
+	{"removeall", 0, NULL, 'x'},
 	{NULL, 0, NULL, 0},
 };
 
@@ -185,7 +276,7 @@ int main(int argc, char **argv)
 	snd_seq_client_info_t cinfo;
 	snd_seq_port_subscribe_t subs;
 
-	while ((c = getopt_long(argc, argv, "diog:r:t:el", long_option, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "diog:r:t:elx", long_option, NULL)) != -1) {
 		switch (c) {
 		case 'd':
 			command = UNSUBSCRIBE;
@@ -215,6 +306,9 @@ int main(int argc, char **argv)
 		case 'l':
 			list_subs = 1;
 			break;
+		case 'x':
+			command = REMOVE_ALL;
+			break;
 		default:
 			usage();
 			exit(1);
@@ -226,15 +320,22 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	
-	if (command == LIST_INPUT) {
+	switch (command) {
+	case LIST_INPUT:
 		list_ports(seq, group, SND_SEQ_PORT_CAP_READ|SND_SEQ_PORT_CAP_SUBS_READ, list_subs);
 		snd_seq_close(seq);
 		return 0;
-	} else if (command == LIST_OUTPUT) {
+	case LIST_OUTPUT:
 		list_ports(seq, group, SND_SEQ_PORT_CAP_WRITE|SND_SEQ_PORT_CAP_SUBS_WRITE, list_subs);
 		snd_seq_close(seq);
 		return 0;
+	case REMOVE_ALL:
+		remove_all_connections(seq);
+		snd_seq_close(seq);
+		return 0;
 	}
+
+	/* connection or disconnection */
 
 	if (optind + 2 > argc) {
 		snd_seq_close(seq);

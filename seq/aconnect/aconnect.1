@@ -1,4 +1,4 @@
-.TH aconnect 1 "January 1, 2000"
+.TH aconnect 1 "August 31, 2000"
 .LO 1
 .SH NAME
 aconnect \- ALSA sequencer connection manager
@@ -9,6 +9,9 @@ aconnect \- ALSA sequencer connection manager
 .br
 .B aconnect
 \-i|-o [-options]
+.br
+.B aconnect
+\-x
 
 .SH DESCRIPTION
 .B aconnect
@@ -59,6 +62,12 @@ client 64: '0: MIDI Synth' [group=] [type=kernel]
 Similary, to see the output ports, use
 .B \-o
 flag.
+.PP
+You can remove all existing exported connections using
+.B \-x
+option.  This function is useful for terminating the ALSA drivers,
+because the modules with sequencer connections cannot be unloaded
+unless their connections are removed.
 
 .SH OPTIONS
 .SS CONNNECTION MANAGEMENT
@@ -120,8 +129,13 @@ and
 mean the connection includes real-time and tick conversion on the listed
 queue, respectively.
 
+.SS REMOVE ALL CONNECTIONS
+.TP
+.B \-x, --removeall
+Remove all exported connections.
+
 .SH "SEE ALSO"
 aseqnet(1), aseqview(1)
 
 .SH AUTHOR
-Takashi Iwai <iwai@ww.uni-erlangen.de>.
+Takashi Iwai <tiwai@suse.de>
