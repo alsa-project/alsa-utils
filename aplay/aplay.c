@@ -1793,6 +1793,7 @@ static void playback(char *name)
 	size_t dta;
 	ssize_t dtawave;
 
+	pbrec_count = (size_t)-1;
 	fdcount = 0;
 	if (!name || !strcmp(name, "-")) {
 		fd = fileno(stdin);
@@ -1843,6 +1844,7 @@ static void playback(char *name)
 
 static void capture(char *name)
 {
+	pbrec_count = (size_t)-1;
 	if (!name || !strcmp(name, "-")) {
 		fd = fileno(stdout);
 		name = "stdout";
