@@ -468,7 +468,7 @@ mixer_cbar_get_pos (int  elem_index,
 static int
 mixer_conv(int val, int omin, int omax, int nmin, int nmax)
 {
-	int orange = omax - omin, nrange = nmax - nmin;
+	float orange = omax - omin, nrange = nmax - nmin;
 	
 	if (orange == 0)
 		return 0;
