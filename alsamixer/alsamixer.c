@@ -763,7 +763,13 @@ mixer_update_cbar (int elem_index)
     mvaddch (y, x + 4, mixer_dc (dc));
     mixer_dc (DC_CBAR_FRAME);
     mvaddch (y, x + 5, ACS_URCORNER);
-  }
+  } else {
+    mixer_dc (DC_CBAR_FRAME);
+    mvaddch (y, x + 2, ACS_ULCORNER);
+    mvaddch (y, x + 3, ACS_HLINE);
+    mvaddch (y, x + 4, ACS_HLINE);
+    mvaddch (y, x + 5, ACS_URCORNER);
+  }    
   y--;
   
   /* capture input?
