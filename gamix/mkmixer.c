@@ -348,7 +348,7 @@ GtkWidget *make_mixer( gint c_n , gint m_n ) {
 	GtkWidget *iv_box;
 	GtkWidget *ih_box;
 	GtkWidget *c_l;
-	char gname[40];
+	char gname[128];
 	s_mixer_t *mixer;
 	s_group_t *group=NULL;
 	s_element_t *e;
