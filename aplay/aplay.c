@@ -852,8 +852,13 @@ static void set_params(void)
 		}
 	}
 	rate = hwparams.rate;
-	if (buffer_time == 0 && buffer_frames == 0)
-		buffer_time = 500000;
+	if (buffer_time == 0 && buffer_frames == 0) {
+		err = snd_pcm_hw_params_get_buffer_time_max(params,
+							    &buffer_time, 0);
+		assert(err >= 0);
+		if (buffer_time > 500000)
+			buffer_time = 500000;
+	}
 	if (period_time == 0 && period_frames == 0) {
 		if (buffer_time > 0)
 			period_time = buffer_time / 4;
