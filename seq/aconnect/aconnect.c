@@ -46,7 +46,7 @@ static void usage(void)
 	fprintf(stderr, "aconnect - ALSA sequencer connection manager\n");
 	fprintf(stderr, "Copyright (C) 1999-2000 Takashi Iwai\n");
 	fprintf(stderr, "Usage:\n");
-	fprintf(stderr, " * Connection/disconnection betwen two ports\n");
+	fprintf(stderr, " * Connection/disconnection between two ports\n");
 	fprintf(stderr, "   aconnect [-options] sender receiver\n");
 	fprintf(stderr, "     sender, receiver = client:port pair\n");
 	fprintf(stderr, "     -d,--disconnect     disconnect\n");
