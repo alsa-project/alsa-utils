@@ -1764,7 +1764,6 @@ static void playback(char *name)
 	ssize_t dtawave;
 
 	fdcount = 0;
-	count = calc_count();
 	if (!name || !strcmp(name, "-")) {
 		fd = fileno(stdin);
 		name = "stdin";
@@ -1782,6 +1781,7 @@ static void playback(char *name)
 	}
 	if (test_au(fd, audiobuf) >= 0) {
 		rhwparams.format = SND_PCM_FORMAT_MU_LAW;
+		count = calc_count();
 		playback_go(fd, 0, count, FORMAT_AU, name);
 		goto __end;
 	}
@@ -1792,15 +1792,18 @@ static void playback(char *name)
 		exit(EXIT_FAILURE);
 	}
 	if ((ofs = test_vocfile(audiobuf)) >= 0) {
+		count = calc_count();
 		voc_play(fd, ofs, name);
 		goto __end;
 	}
 	/* read bytes for WAVE-header */
 	if ((dtawave = test_wavefile(fd, audiobuf, dta)) >= 0) {
+		count = calc_count();
 		playback_go(fd, dtawave, count, FORMAT_WAVE, name);
 	} else {
 		/* should be raw data */
 		init_raw_data();
+		count = calc_count();
 		playback_go(fd, dta, count, FORMAT_RAW, name);
 	}
       __end:
