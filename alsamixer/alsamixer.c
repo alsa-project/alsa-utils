@@ -197,15 +197,16 @@ static char	 mixer_device_name[128];
 
 /* mixer split types */
 enum {
-  MIXER_STREAM_PLAYBACK, MIXER_STREAM_CAPTURE,
-  MIXER_STREAM_END
-};
-
-enum {
   MIXER_ELEM_FRONT, MIXER_ELEM_REAR,
   MIXER_ELEM_CENTER, MIXER_ELEM_WOOFER,
+  MIXER_ELEM_CAPTURE,
   MIXER_ELEM_END
 };
+
+#define MIXER_ELEM_TYPE_MASK		0xff
+#define MIXER_ELEM_CAPTURE_SWITCH	0x100 /* bit */
+#define MIXER_ELEM_MUTE_SWITCH		0x200 /* bit */
+#define MIXER_ELEM_CAPTURE_SUFFIX	0x400
 
 /* left and right channels for each type */
 static snd_mixer_selem_channel_id_t mixer_elem_chn[][2] = {
@@ -213,6 +214,7 @@ static snd_mixer_selem_channel_id_t mixer_elem_chn[][2] = {
   { SND_MIXER_SCHN_REAR_LEFT, SND_MIXER_SCHN_REAR_RIGHT },
   { SND_MIXER_SCHN_FRONT_CENTER, SND_MIXER_SCHN_UNKNOWN },
   { SND_MIXER_SCHN_WOOFER, SND_MIXER_SCHN_UNKNOWN },
+  { SND_MIXER_SCHN_FRONT_LEFT, SND_MIXER_SCHN_FRONT_RIGHT },
 };
 
 static void 	*mixer_sid = NULL;
@@ -473,13 +475,13 @@ mixer_conv(int val, int omin, int omax, int nmin, int nmax)
 
 static int
 mixer_calc_volume(snd_mixer_elem_t *elem,
-		  int vol, int stream,
+		  int vol, int type,
 		  snd_mixer_selem_channel_id_t chn)
 {
   int vol1;
   long v;
   long min, max;
-  if (stream == MIXER_STREAM_PLAYBACK)
+  if (type != MIXER_ELEM_CAPTURE)
     snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
   else
       snd_mixer_selem_get_capture_volume_range(elem, &min, &max);
@@ -494,7 +496,7 @@ mixer_calc_volume(snd_mixer_elem_t *elem,
     if (vol < 0)
       vol1 = -vol1;
   }
-  if (stream == MIXER_STREAM_PLAYBACK)
+  if (type != MIXER_ELEM_CAPTURE)
     snd_mixer_selem_get_playback_volume(elem, chn, &v);
   else
     snd_mixer_selem_get_capture_volume(elem, chn, &v);
@@ -509,7 +511,7 @@ mixer_write_cbar (int elem_index)
 {
   snd_mixer_elem_t *elem;
   int vleft, vright, vbalance;
-  int type, stream;
+  int type;
   snd_mixer_selem_id_t *sid;
   snd_mixer_selem_channel_id_t chn_left, chn_right, chn;
   int sw;
@@ -521,12 +523,11 @@ mixer_write_cbar (int elem_index)
   elem = snd_mixer_find_selem(mixer_handle, sid);
   if (elem == NULL)
     CHECK_ABORT (ERR_FCN, __FUNCTION__ ": snd_mixer_find_selem()", -EINVAL);
-  type = mixer_type[elem_index] % MIXER_ELEM_END;
-  stream = mixer_type[elem_index] / MIXER_ELEM_END;
+  type = mixer_type[elem_index] & MIXER_ELEM_TYPE_MASK;
   chn_left = mixer_elem_chn[type][MIXER_CHN_LEFT];
   chn_right = mixer_elem_chn[type][MIXER_CHN_RIGHT];
   if (chn_right != SND_MIXER_SCHN_UNKNOWN) {
-    if (stream == MIXER_STREAM_PLAYBACK) {
+    if (type != MIXER_ELEM_CAPTURE) {
       if (!snd_mixer_selem_has_playback_channel(elem, chn_right))
 	chn_right = SND_MIXER_SCHN_UNKNOWN;
     } else {
@@ -540,22 +541,22 @@ mixer_write_cbar (int elem_index)
   if ((mixer_volume_delta[MIXER_CHN_LEFT] ||
        mixer_volume_delta[MIXER_CHN_RIGHT] ||
        mixer_balance_volumes) &&
-      ((stream == MIXER_STREAM_PLAYBACK && snd_mixer_selem_has_playback_volume(elem)) ||
-       (stream == MIXER_STREAM_CAPTURE && snd_mixer_selem_has_capture_volume(elem)))) {
+      ((type != MIXER_ELEM_CAPTURE && snd_mixer_selem_has_playback_volume(elem)) ||
+       (type == MIXER_ELEM_CAPTURE && snd_mixer_selem_has_capture_volume(elem)))) {
     int mono;
     int joined;
     mono = (chn_right == SND_MIXER_SCHN_UNKNOWN);
-    if (stream == MIXER_STREAM_PLAYBACK)
+    if (type == MIXER_ELEM_CAPTURE)
       joined = snd_mixer_selem_has_playback_volume_joined(elem);
     else
 	joined = snd_mixer_selem_has_capture_volume_joined(elem);
     mono |= joined;
     if (mono && !mixer_volume_delta[MIXER_CHN_LEFT])
       mixer_volume_delta[MIXER_CHN_LEFT] = mixer_volume_delta[MIXER_CHN_RIGHT];
-    vleft = mixer_calc_volume(elem, mixer_volume_delta[MIXER_CHN_LEFT], stream, chn_left);
+    vleft = mixer_calc_volume(elem, mixer_volume_delta[MIXER_CHN_LEFT], type, chn_left);
     vbalance = vleft;
     if (! mono) {
-      vright = mixer_calc_volume(elem, mixer_volume_delta[MIXER_CHN_RIGHT], stream, chn_right);
+      vright = mixer_calc_volume(elem, mixer_volume_delta[MIXER_CHN_RIGHT], type, chn_right);
       vbalance += vright;
       vbalance /= 2;
     } else
@@ -563,7 +564,7 @@ mixer_write_cbar (int elem_index)
     if (vleft >= 0 && vright >= 0) {
       if (joined) {
 	for (chn = 0; chn < SND_MIXER_SCHN_LAST; chn++)
-	  if (stream == MIXER_STREAM_PLAYBACK) {
+	  if (type != MIXER_ELEM_CAPTURE) {
 	    if (snd_mixer_selem_has_playback_channel(elem, chn))
 	      snd_mixer_selem_set_playback_volume(elem, chn, vleft);
 	  } else {
@@ -573,7 +574,7 @@ mixer_write_cbar (int elem_index)
       } else {
 	if (mixer_balance_volumes)
 	  vleft = vright = vbalance;
-	if (stream == MIXER_STREAM_PLAYBACK) {
+	if (type != MIXER_ELEM_CAPTURE) {
 	  if (snd_mixer_selem_has_playback_volume(elem) &&
 	      snd_mixer_selem_has_playback_channel(elem, chn_left))
 	    snd_mixer_selem_set_playback_volume(elem, chn_left, vleft);
@@ -583,7 +584,7 @@ mixer_write_cbar (int elem_index)
 	    snd_mixer_selem_set_capture_volume(elem, chn_left, vleft);
 	}
 	if (! mono) {
-	  if (stream == MIXER_STREAM_PLAYBACK) {
+	  if (type != MIXER_ELEM_CAPTURE) {
 	    if (snd_mixer_selem_has_playback_volume(elem) &&
 		snd_mixer_selem_has_playback_channel(elem, chn_right))
 	      snd_mixer_selem_set_playback_volume(elem, chn_right, vright);
@@ -601,7 +602,7 @@ mixer_write_cbar (int elem_index)
 
   /* mute
    */
-  if (stream == MIXER_STREAM_PLAYBACK) {
+  if (mixer_type[elem_index] & MIXER_ELEM_MUTE_SWITCH) {
     if (mixer_toggle_mute && snd_mixer_selem_has_playback_switch(elem)) {
       if (snd_mixer_selem_has_playback_switch_joined(elem)) {
 	snd_mixer_selem_get_playback_switch(elem, chn_left, &sw);
@@ -623,7 +624,7 @@ mixer_write_cbar (int elem_index)
 
   /* capture
    */
-  if (stream == MIXER_STREAM_PLAYBACK) {
+  if (mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SWITCH) {
     if (mixer_toggle_capture && snd_mixer_selem_has_capture_switch(elem)) {
       if (snd_mixer_selem_has_capture_switch_joined(elem)) {
 	snd_mixer_selem_get_capture_switch(elem, chn_left, &sw);
@@ -648,11 +649,11 @@ mixer_write_cbar (int elem_index)
 static void
 mixer_update_cbar (int elem_index)
 {
-  char string[128], string1[64];
+  char string[128], string1[64], *suffix;
   int dc;
   snd_mixer_elem_t *elem;
   long vleft, vright;
-  int type, stream;
+  int type;
   snd_mixer_selem_id_t *sid;
   snd_mixer_selem_channel_id_t chn_left, chn_right;
   int x, y, i;
@@ -668,12 +669,11 @@ mixer_update_cbar (int elem_index)
   if (elem == NULL)
     CHECK_ABORT (ERR_FCN, __FUNCTION__ ": snd_mixer_find_selem()", -EINVAL);
 
-  type = mixer_type[elem_index] % MIXER_ELEM_END;
-  stream = mixer_type[elem_index] / MIXER_ELEM_END;
+  type = mixer_type[elem_index] & MIXER_ELEM_TYPE_MASK;
   chn_left = mixer_elem_chn[type][MIXER_CHN_LEFT];
   chn_right = mixer_elem_chn[type][MIXER_CHN_RIGHT];
   if (chn_right != SND_MIXER_SCHN_UNKNOWN) {
-    if (stream == MIXER_STREAM_PLAYBACK) {
+    if (type != MIXER_ELEM_CAPTURE) {
       if (!snd_mixer_selem_has_playback_channel(elem, chn_right))
 	chn_right = SND_MIXER_SCHN_UNKNOWN;
     } else {
@@ -683,7 +683,7 @@ mixer_update_cbar (int elem_index)
   }
 
   vleft = vright = 0;
-  if (stream == MIXER_STREAM_PLAYBACK && snd_mixer_selem_has_playback_volume(elem)) {
+  if (type != MIXER_ELEM_CAPTURE && snd_mixer_selem_has_playback_volume(elem)) {
     long vmin, vmax;
     snd_mixer_selem_get_playback_volume_range(elem, &vmin, &vmax);
     snd_mixer_selem_get_playback_volume(elem, chn_left, &vleft);
@@ -696,7 +696,7 @@ mixer_update_cbar (int elem_index)
     }
   }
   
-  if (stream == MIXER_STREAM_CAPTURE && snd_mixer_selem_has_capture_volume(elem)) {
+  if (type == MIXER_ELEM_CAPTURE && snd_mixer_selem_has_capture_volume(elem)) {
     long vmin, vmax;
     snd_mixer_selem_get_capture_volume_range(elem, &vmin, &vmax);
     snd_mixer_selem_get_capture_volume(elem, chn_left, &vleft);
@@ -720,7 +720,7 @@ mixer_update_cbar (int elem_index)
       string1[i] = ' ';
     string1[63] = '\0';
     strcpy(string, snd_mixer_selem_id_get_name(sid));
-    if (stream == MIXER_STREAM_CAPTURE)
+    if (mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SUFFIX)
       strcat(string, " Capture");
     if (snd_mixer_selem_id_get_index(sid) > 0)
       sprintf(string + strlen(string), " %i", snd_mixer_selem_id_get_index(sid));
@@ -737,10 +737,14 @@ mixer_update_cbar (int elem_index)
   /* channel bar name
    */
   mixer_dc (elem_index == mixer_focus_elem ? DC_CBAR_FOCUS_LABEL : DC_CBAR_LABEL);
-  if (snd_mixer_selem_id_get_index(sid) > 0)
-    sprintf(string1, "%s %d", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
+  if (mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SUFFIX)
+    suffix = " Capture";
   else
-    strcpy(string1, snd_mixer_selem_id_get_name(sid));
+    suffix = "";
+  if (snd_mixer_selem_id_get_index(sid) > 0)
+    sprintf(string1, "%s%s %d", snd_mixer_selem_id_get_name(sid), suffix, snd_mixer_selem_id_get_index(sid));
+  else
+    sprintf(string1, "%s%s", snd_mixer_selem_id_get_name(sid), suffix);
   string1[8] = 0;
   for (i = 0; i < 8; i++)
     {
@@ -799,7 +803,8 @@ mixer_update_cbar (int elem_index)
    */
   mixer_dc (DC_BACK);
   mvaddstr (y, x, "         ");
-  if (stream == MIXER_STREAM_PLAYBACK && snd_mixer_selem_has_playback_switch(elem)) {
+  if ((mixer_type[elem_index] & MIXER_ELEM_MUTE_SWITCH)
+      && snd_mixer_selem_has_playback_switch(elem)) {
     mixer_dc (DC_CBAR_FRAME);
     mvaddch (y, x + 2, ACS_ULCORNER);
     snd_mixer_selem_get_playback_switch(elem, chn_left, &swl);
@@ -821,9 +826,10 @@ mixer_update_cbar (int elem_index)
   }    
   y--;
   
-  /* capture input?  (note: we put it on playback volume, not on capture)
+  /* capture input?
    */
-  if (stream == MIXER_STREAM_PLAYBACK && snd_mixer_selem_has_capture_switch(elem)) {
+  if ((mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SWITCH) &&
+      snd_mixer_selem_has_capture_switch(elem)) {
     snd_mixer_selem_get_capture_switch(elem, chn_left, &swl);
     if (chn_right != SND_MIXER_SCHN_UNKNOWN)
       snd_mixer_selem_get_capture_switch(elem, chn_right, &swr);
@@ -1355,7 +1361,7 @@ mixer_reinit (void)
     return;
   if (mixer_sid) {
     snd_mixer_selem_id_copy(focus_gid, (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * mixer_grpidx[mixer_focus_elem]));
-    focus_type = mixer_type[mixer_focus_elem];
+    focus_type = mixer_type[mixer_focus_elem] & MIXER_ELEM_TYPE_MASK;
   }
 __again:
   mixer_changed_state = 0;
@@ -1379,26 +1385,28 @@ __again:
 
   mixer_n_elems = 0;
   for (idx = 0; idx < mixer_n_selems; idx++) {
+    int nelems_added = 0;
     sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * idx);
     if (mixer_changed_state)
       goto __again;
     elem = snd_mixer_find_selem(mixer_handle, sid);
     if (elem == NULL)
       CHECK_ABORT (ERR_FCN, __FUNCTION__ ": snd_mixer_find_selem()", -EINVAL);
-    for (i = 0; i < MIXER_ELEM_END; i++) {
+    for (i = 0; i < MIXER_ELEM_CAPTURE; i++) {
       int ok;
       for (j = ok = 0; j < 2; j++) {
 	if (mixer_changed_state)
 	  goto __again;
 	if (snd_mixer_selem_has_playback_channel(elem, mixer_elem_chn[i][j]))
 	  ok++;
-	else if (i == 0 && snd_mixer_selem_has_capture_switch(elem))
-	  ok++;
       }
-      if (ok)
+      if (ok) {
+	nelems_added++;
 	mixer_n_elems++;
+      }
     }
-    if (snd_mixer_selem_has_capture_volume(elem))
+    if (snd_mixer_selem_has_capture_volume(elem) ||
+	(nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem)))
       mixer_n_elems++;
   }
 
@@ -1414,34 +1422,43 @@ __again:
     mixer_abort(ERR_FCN, "malloc", 0);
   elem_index = 0;
   for (idx = 0; idx < mixer_n_selems; idx++) {
+    int nelems_added = 0;
     sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * idx);
     if (mixer_changed_state)
       goto __again;
     elem = snd_mixer_find_selem(mixer_handle, sid);
     if (elem == NULL)
       CHECK_ABORT (ERR_FCN, __FUNCTION__ ": snd_mixer_find_selem()", -EINVAL);
-    for (i = 0; i < MIXER_ELEM_END; i++) {
+    for (i = 0; i < MIXER_ELEM_CAPTURE; i++) {
       int ok;
       for (j = ok = 0; j < 2; j++) {
 	if (mixer_changed_state)
 	  goto __again;
 	if (snd_mixer_selem_has_playback_channel(elem, mixer_elem_chn[i][j]))
 	  ok++;
-	else if (i == 0 && snd_mixer_selem_has_capture_switch(elem))
-	  ok++;
       }
       if (ok) {
 	sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * idx);
 	mixer_grpidx[elem_index] = idx;
 	mixer_type[elem_index] = i;
+	if (i == 0 && snd_mixer_selem_has_playback_switch(elem))
+	  mixer_type[elem_index] |= MIXER_ELEM_MUTE_SWITCH;
+	if (i == 0 && snd_mixer_selem_has_capture_switch(elem))
+	  mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SWITCH;
 	elem_index++;
+	nelems_added++;
 	if (elem_index >= mixer_n_elems)
 	  break;
       }
     }
-    if (snd_mixer_selem_has_capture_volume(elem)) {
+    if (snd_mixer_selem_has_capture_volume(elem) ||
+	(nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem))) {
       mixer_grpidx[elem_index] = idx;
-      mixer_type[elem_index] = MIXER_ELEM_END;
+      mixer_type[elem_index] = MIXER_ELEM_CAPTURE;
+      if (nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem))
+	mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SWITCH;
+      if (nelems_added)
+	mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SUFFIX;
       elem_index++;
       if (elem_index >= mixer_n_elems)
 	break;
@@ -1456,7 +1473,7 @@ __again:
                   snd_mixer_selem_id_get_name(sid)) &&
           snd_mixer_selem_id_get_index(focus_gid) ==
           snd_mixer_selem_id_get_index(sid) &&
-	  mixer_type[elem_index] == focus_type) {
+	  (mixer_type[elem_index] & MIXER_ELEM_TYPE_MASK) == focus_type) {
         mixer_focus_elem = elem_index;
         break;
       }
