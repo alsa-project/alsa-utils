@@ -1,0 +1,119 @@
+.TH ALSAMIXER 1 "25 Nov 1998"
+.SH NAME
+alsamixer \- soundcard mixer for ALSA soundcard driver, with ncurses interface
+.SH SYNOPSIS
+
+\fBalsamixer\fP [\fIoptions\fP]
+
+.SH DESCRIPTION
+\fBalsamixer\fP is an ncurses mixer program for use with the ALSA
+soundcard drivers. It supports multiple soundcards with multiple devices.
+
+.SH INVOKING
+
+\fBalsamixer\fP [\fIoptions\fP]
+
+.SS Options
+
+.TP
+\fI-h, -help\fP 
+Help: show available flags.
+
+.TP
+\fI-c\fP <card number>
+Select the soundcard to use, if you have more than one. Cards are
+numbered from 1 (the default).
+
+.TP
+\fI-m\fP <device number>
+Select the soundcard device to control, if your card has more than
+one. Devices are numbered from 0 (the default). Not to be confused
+with the soundcard mixer channels, which are sometimes also referred
+to as "devices", just to be annoying. Many soundcards will only have
+device 0. Some more complex cards may have more. This flag corresponds
+to the -d flag for \fBamixer\fP, \fBarecord\fP, and \fBaplay\fP.
+
+.TP
+\fI-e\fP
+Start in "exact mode." This will affect the numbers you see displayed
+for volumes, but does not affect operation of the level controls.
+The default behavior is to show levels in percent from 0 to 100. This
+is easy to read, but can mislead you about how much control the
+soundcard actually lets you have. Exact mode, on the other hand, shows
+you the settings as the soundcard itself understands them. In exact
+mode, each channel level is between 0 and a power of 2 minus one
+(e.g. 0-7, or 0-63). Exact mode may also be toggled while alsamixer is
+running, by using \fITAB\fP.
+
+.SH KEYBOARD COMMANDS
+\fBalsamixer\fP recognizes the following keyboard commands to control the soundcard. 
+
+.SS
+General Controls
+
+The \fILeft\fP and \fIright arrow\fP keys are used to select the
+channel (or device, depending on your preferred terminology). You can
+also use \fIn\fP ("next") and \fIp\fP ("previous").
+
+The \fIUp\fP and \fIDown Arrows\fP control the volume for the
+currently selected device. You can also use \fI+\fP or \fI-\fP for the
+same purpose. Both the left and right signals are affected. For
+independent left and right control, see below.
+ 
+\fIM\fP toggles muting for the current channel (both left and right). You can
+mute left and right independently by using \fI,\fP and \fI.\fP respectively.
+
+\fISPACE\fP toggles recording: the current channel will be added or
+removed from the sources used for recording. This only works for valid
+input channels, of course.
+
+\fIL\fP re-draws the screen.
+
+\fITAB\fP toggles the mode for volume display. See description for the
+\fI-e\fP flag above.
+
+.SS
+Quick Volume Changes
+
+\fIPageUp\fP increases volume by 10.
+
+\fIPageDown\fP decreases volume by 10.
+
+\fIHome\fP sets volume to maximum.
+
+\fIEnd\fP sets volume to 0.
+
+You can also control left & right levels for the current channel
+independently, as follows:
+
+[\fIQ\fP | \fIW\fP | \fIE\fP ]  -- turn UP [ left | both | right ]
+
+[\fIZ\fP | \fIX\fP | \fIC\fP ] -- turn DOWN [ left | both | right ]   
+
+If the currently selected mixer channel is not a stereo channel, then
+all UP keys will work like \fIW\fP, and all DOWN keys will work like \fIX\fP.
+
+.SS
+Exiting
+
+Quit the program with \fIALT Q\fP, or by hitting \fIESC\fP.
+
+.SH SEE ALSO
+\fB
+amixer(1),
+arecord(1)
+\fP
+
+.SH BUGS 
+None known. Some terminal emulators (e.g. \fBnxterm\fP) may not
+work quite right with ncurses, but that's their own damn
+fault. Plain old \fBxterm\fP seems to be fine.
+
+.SH AUTHOR
+\fBalsamixer\fP is by Jaroslav Kysela <perex@jcu.cz>
+This document is by Paul Winkler <zarmzarm@erols.com>.
+
+
+
+
+
