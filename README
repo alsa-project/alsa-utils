@@ -10,6 +10,8 @@ alsactl		- an utility for soundcard settings management
 aplay/arecord	- an utility for the playback / capture of .wav,.voc,.au files
 amixer		- a command line mixer
 alsamixer	- a ncurses mixer
+amidi		- a utility to send/receive sysex dumps or other MIDI data
+iecset		- a utility to show/set the IEC958 status bits
 
 You may give a look for more information about the ALSA project to URL
 http://www.alsa-project.org.

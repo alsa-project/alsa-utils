@@ -1,0 +1,151 @@
+.TH AMIDI 1 "27 Oct 2003"
+
+.SH NAME
+amidi \- read from and write to ALSA RawMIDI ports
+
+.SH SYNOPSIS
+.B amidi
+.I options
+
+.SH DESCRIPTION
+.B amidi
+is a command-line utility which allows to receive and send
+SysEx (system exclusive) data from/to external MIDI devices.
+It can also send any other MIDI commands.
+
+.B amidi
+handles only files containing raw MIDI commands, without timing
+information.
+Standard MIDI (.mid) files are not supported.
+
+.SH INVOKING
+.B amidi
+.I options
+
+Use the
+.I -h,
+.I -V,
+.I -l,
+or
+.I -L
+options to display information;
+or use at least one of the
+.I -s,
+.I -r,
+.I -S,
+or
+.I -d
+options to specify what data to send or receive.
+
+.SS Options
+
+.TP
+.I -h, --help
+Help: prints a list of options.
+
+.TP
+.I -V, --version
+Prints the current version.
+
+.TP
+.I -l, --list-devices
+Prints a list of all hardware MIDI ports.
+
+.TP
+.I -L, --list-rawmidis
+Prints all RawMIDI definitions.
+(used when debugging configuration files)
+
+.TP
+.I -p, --port=name
+Sets the name of the ALSA RawMIDI port to use.
+If this is not specified,
+.B amidi
+uses the default port defined in the configuration file
+(the default for this is port 0 on card 0, which may not exist).
+
+.TP
+.I -s, --send=filename
+Sends the contents of the specified file to the MIDI port.
+The file must contain raw MIDI commands (e.g. a .syx file);
+you can
+.I not
+use a Standard MIDI (.mid) file for this.
+
+.TP
+.I -r, --receive=filename
+Writes data received from the MIDI port into the specified file.
+The file will contain raw MIDI commands (such as in a .syx file);
+this will
+.I not
+create a Standard MIDI (.mid) file.
+
+.B amidi
+will filter out any Active Sensing bytes (FEh).
+
+.TP
+.I -S, --send-hex="..."
+Sends the bytes specified as hexadecimal numbers to the MIDI port.
+
+.TP
+.I -d, --dump
+Prints data received from the MIDI port as hexadecimal bytes.
+Active Sensing bytes (FEh) will not be shown.
+
+This option is useful for debugging.
+
+.TP
+.I -t, --timeout=seconds
+Stops receiving data when no data has been received for the specified
+amount of time.
+
+If this option has not been given, you must press Ctrl+C (or kill
+.B amidi\fR)
+to stop receiving data.
+
+.SH EXAMPLES
+
+.SS
+.B amidi -p hw:0 -s my_settings.syx
+.ID
+will send the MIDI commands in
+.I my_settings.syx
+to port
+.I hw:0.
+
+.SS
+.B amidi -S 'F0 43 10 4C 00 00 7E 00 F7'
+.ID
+sends an XG Reset to the default port.
+
+.SS
+.B amidi -p hw:1,2 -S F0411042110C000000000074F7 -r dump.syx -t 1
+.ID
+sends a \(lqParameter Dump Request\(rq to a GS device, saves the received
+parameter data to the file
+.I dump.syx,
+and stops after the device has finished sending data
+(when no data has been received for one second).
+
+.SS
+.B amidi -p virtual -d
+.ID
+creates a virtual RawMIDI port and prints all data sent to this port.
+
+.SH FILES
+.I /usr/share/alsa/alsa.conf
+default rawmidi definitions
+.br
+.I /etc/asound.conf
+system-wide rawmidi definitions
+.br
+.I ~/.asoundrc
+user specific rawmidi definitions
+
+.SH BUGS
+The
+.I --list-devices
+option pretends that output and input ports are the same.
+
+.SH AUTHOR
+Clemens Ladisch <clemens@ladisch.de>

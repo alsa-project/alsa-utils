@@ -64,6 +64,6 @@ AC_PROG_GCC_TRADITIONAL
 
 SAVE_UTIL_VERSION
 
-AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amixer/Makefile aplay/Makefile \
-          include/Makefile iecset/Makefile utils/Makefile utils/alsa-utils.spec \
-	  seq/Makefile seq/aconnect/Makefile seq/aseqnet/Makefile)
+AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amidi/Makefile amixer/Makefile \
+	  aplay/Makefile include/Makefile iecset/Makefile utils/Makefile \
+	  utils/alsa-utils.spec seq/Makefile seq/aconnect/Makefile seq/aseqnet/Makefile)
