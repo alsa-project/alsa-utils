@@ -17,11 +17,33 @@
 #  (at your option) any later version.
 #
 
+export TEXTDOMAIN=alsaconf
+
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@
 sbindir=@sbindir@
 version=@VERSION@
+USE_NLS=@USE_NLS@
+
+# i18n stuff
+if test "$USE_NLS" = "yes" && which gettext > /dev/null; then
+  xecho() {
+    gettext -s "$*"
+  }
+else
+  xecho() {
+    echo "$*"
+  }
+  gettext() {
+    echo -n "$*"
+  }
+fi
+xmsg() {
+  msg=$(gettext "$1")
+  shift
+  printf "$msg" $*
+}
 
 # Check for GNU/Linux distributions
 if [ -f /etc/SuSE-release -o -f /etc/UnitedLinux-release ]; then
@@ -48,24 +70,25 @@ done
 unset prog path
 
 usage() {
-    echo "ALSA configurator version $version"
-    echo "usage: alsaconf [options]"
-    echo "  -l|--legacy    check only legacy non-isapnp cards"
-    echo "  -m|--modinfo   read module descriptions instead of reading card db"
-    echo "  -s|--sound wav-file"
-    echo "                 use the specified wav file as a test sound"
-    echo "  -u|--uid uid   set the uid for the ALSA devices (default = 0) [obsoleted]"
-    echo "  -g|--gid gid   set the gid for the ALSA devices (default = 0) [obsoleted]"
-    echo "  -d|--devmode mode"
-    echo "                 set the permission for ALSA devices (default = 0666) [obs.]"
-    echo "  -r|--strict    set strict device mode (equiv. with -g 17 -d 0660) [obsoleted]"
-    echo "  -L|--log file  logging on the specified file (for debugging purpose only)"
-    echo "  -p|--probe card-name"
-    echo "                 probe a legacy non-isapnp card and print module options"
-    echo "  -P|--listprobe list the supported legacy card modules"
-    echo "  -c|--config file"
-    echo "                 specify the module config file"
-    echo "  -h|--help      what you're reading"
+    xecho "ALSA configurator"
+    echo "  version $version"
+    xecho "usage: alsaconf [options]
+  -l|--legacy    check only legacy non-isapnp cards
+  -m|--modinfo   read module descriptions instead of reading card db
+  -s|--sound wav-file
+                 use the specified wav file as a test sound
+  -u|--uid uid   set the uid for the ALSA devices (default = 0) [obsoleted]
+  -g|--gid gid   set the gid for the ALSA devices (default = 0) [obsoleted]
+  -d|--devmode mode
+                 set the permission for ALSA devices (default = 0666) [obs.]
+  -r|--strict    set strict device mode (equiv. with -g 17 -d 0660) [obsoleted]
+  -L|--log file  logging on the specified file (for debugging purpose only)
+  -p|--probe card-name
+                 probe a legacy non-isapnp card and print module options
+  -P|--listprobe list the supported legacy card modules
+  -c|--config file
+                 specify the module config file
+  -h|--help      what you're reading"
     exit 1
 }
 
@@ -118,7 +141,7 @@ done
 
 # Check for root privileges
 if [ `id -u` -ne 0 ]; then
-  echo "You must be root to use this script."
+  xecho "You must be root to use this script."
   exit 1
 fi
 
@@ -126,14 +149,14 @@ fi
 # check the snd_ prefix for ALSA module options
 # snd_ prefix is obsoleted since 0.9.0rc4.
 #
-if modinfo -p snd | grep -q snd_ ; then
+if /sbin/modinfo -p snd | grep -q snd_ ; then
   mpfx="snd_"
 else
   mpfx=""
 fi
 
 alsa_device_opts=""
-if modinfo -p snd | grep -q uid ; then
+if /sbin/modinfo -p snd | grep -q uid ; then
   if [ x"$alsa_uid" != x0 ]; then
     alsa_device_opts="$alsa_device_opts ${mpfx}device_uid=$alsa_uid"
   fi
@@ -141,7 +164,7 @@ if modinfo -p snd | grep -q uid ; then
     alsa_device_opts="$alsa_device_opts ${mpfx}device_gid=$alsa_gid"
   fi
 fi
-if modinfo -p snd | grep -q device_mode ; then
+if /sbin/modinfo -p snd | grep -q device_mode ; then
   if [ x"$alsa_mode" != x0 ]; then
     alsa_device_opts="$alsa_device_opts ${mpfx}device_mode=$alsa_mode"
   fi
@@ -160,7 +183,8 @@ esac
 # cfgout = new config file to write the sound setting (if different from $cfgfile)
 if [ -n "$cfgfile" ]; then
   if [ ! -r "$cfgfile" ]; then
-    echo "ERROR: The config file $cfgfile doesn't exist."
+    xecho "ERROR: The config file doesn't exist: "
+    echo $cfgfile
     exit 1
   fi
 else
@@ -185,7 +209,7 @@ fi
 
 # Check for dialog, whiptail, gdialog, awk, ... ?
 if which dialog > /dev/null; then
-  DIALOG=dialog
+    DIALOG=dialog
 else
   if which whiptail > /dev/null; then
     whiptail_wrapper() {
@@ -201,13 +225,13 @@ else
     }
     DIALOG=whiptail_wrapper
   else
-    echo "Error, dialog or whiptail not found."
+    xecho "Error, dialog or whiptail not found."
     exit 1
   fi
 fi
 if which awk > /dev/null; then :
 else
-  echo "Error, awk not found. Can't continue."
+  xecho "Error, awk not found. Can't continue."
   exit 1
 fi
 
@@ -302,9 +326,9 @@ set_mixers() {
 
 # INTRO
 intro() {
-$DIALOG --msgbox "
+  local msg=$(xmsg "
                    ALSA  CONFIGURATOR
-                          v$version
+                   version %s
 
             This script is a configurator for
     Advanced Linux Sound Architecture (ALSA) driver.
@@ -312,26 +336,27 @@ $DIALOG --msgbox "
 
   If ALSA is already running, you should close all sound
   apps now and stop the sound driver.
-  alsaconf will try to do this, but it's not 100% sure.
-" 20 63 || acex 0
+  alsaconf will try to do this, but it's not 100%% sure." $version)
+  $DIALOG --msgbox "$msg" 20 63 || acex 0
 }
 
 # FAREWELL
 farewell() {
-$DIALOG --msgbox "
+  local msg=$(gettext "
 
-     $*
+     OK, sound driver is configured.
 
                   ALSA  CONFIGURATOR
 
           will prepare the card for playing now.
 
-     Now I'll run '`basename $rcalsasound` start', then I'll use
+     Now I'll run alsasound init script, then I'll use
      amixer to raise the default volumes.
      You can change the volume later via a mixer
      program such as alsamixer or gamix.
-
-" 17 60 || acex 0
+  
+  ")
+  $DIALOG --msgbox "$msg" 17 60 || acex 0
 }
 
 # Exit function
@@ -379,22 +404,22 @@ trap cleanup 0
 
 TMP=`mktemp -q /tmp/alsaconf.XXXXXX`
 if [ $? -ne 0 ]; then
-	echo "$0: Can't create temp file, exiting..."
+	xecho "Can't create temp file, exiting..."
         exit 1
 fi
 addcfg=`mktemp -q /tmp/alsaconf.XXXXXX`
 if [ $? -ne 0 ]; then
-	echo "$0: Can't create temp file, exiting..."
+	xecho "Can't create temp file, exiting..."
         exit 1
 fi
 FOUND=`mktemp -q /tmp/alsaconf.XXXXXX`
 if [ $? -ne 0 ]; then
-	echo "$0: Can't create temp file, exiting..."
+	xecho "Can't create temp file, exiting..."
         exit 1
 fi
 DUMP=`mktemp -q /tmp/alsaconf.XXXXXX`
 if [ $? -ne 0 ]; then
-	echo "$0: Can't create temp file, exiting..."
+	xecho "Can't create temp file, exiting..."
         exit 1
 fi
 
@@ -488,15 +513,16 @@ probe_cards () {
 	fi
     fi
     if [ $use_modinfo_db = 1 ]; then
-	echo "Building card database.."
+	xecho "Building card database.."
 	build_card_db $CARDID_DB
     fi
     if [ ! -r $CARDID_DB ]; then
-	echo "No card database is found.."
+	xecho "No card database is found.."
 	exit 1
     fi
     ncards=`grep '^snd-.*\.o$' $CARDID_DB | wc -w`
 
+    msg=$(gettext "Searching sound cards")
     awk '
 BEGIN {
 	format="%-40s %s\n";
@@ -523,7 +549,7 @@ BEGIN {
 	if (system (x) == 0)
 		printf "%s %s\n", $2, driver >>"'"$FOUND"'"
 }' < $CARDID_DB |\
-    $DIALOG --gauge "Searching sound cards" 6 40 0
+    $DIALOG --gauge "$msg" 6 40 0
 
     #
     # PowerMac
@@ -547,7 +573,7 @@ find_device_name () {
 	$lspci -d $1 2>/dev/null| sed -e 's/^.*:..\.. Multimedia audio controller: //g'
 	return
     elif expr "$1" : '[A-Z@][A-Z@][A-Z@][0-9a-f][0-9a-f][0-9a-f][0-9a-f]' >/dev/null; then
-	cardname=`grep '^Card [0-9]\+ '\'$1':' $DUMP | head -n 1 | sed -e 's/^Card [0-9]\+ '\''.*:\(.*\)'\'' .*$/\1/'`
+	cardname=`grep '^Card [0-9]\+ .'$1':' $DUMP | head -n 1 | sed -e 's/^Card [0-9]\+ '\''.*:\(.*\)'\'' .*$/\1/'`
 	echo $cardname
     else
 	echo $1
@@ -563,13 +589,15 @@ ac_config_card () {
     CARD_OPTS="${*:2}"
 
     if [ -n "$cfgout" ]; then
-        $DIALOG --yesno "
-Configuring $CARD_DRIVER
-Do you want to modify ${cfgout} (and ${cfgfile} if present)?" 8 50 || acex 0
+	msg=$(xmsg "
+Configuring %s
+Do you want to modify %s (and %s if present)?" $CARD_DRIVER $cfgout $cfgfile)
+        $DIALOG --yesno "$msg" 8 50 || acex 0
     else
-        $DIALOG --yesno "
-Configuring $CARD_DRIVER
-Do you want to modify ${cfgfile}?" 8 50 || acex 0
+	msg=$(xmsg "
+Configuring %s
+Do you want to modify %s?" $CARD_DRIVER $cfgfile)
+        $DIALOG --yesno "$msg" 8 50 || acex 0
     fi
     clear
 
@@ -643,13 +671,13 @@ BEGIN { in_sound=0; }
 	cp -f $TMP /var/lib/YaST/unique.inf
     fi
 
-    farewell "OK, driver $CARD_DRIVER is configured."
+    farewell
     clear
     if [ "$distribution" = "gentoo" ]; then
-      echo Running modules-update...
+      xecho "Running modules-update..."
       modules-update
     elif [ "$distribution" = "debian" ]; then
-      echo Running update-modules...
+      xecho "Running update-modules..."
       update-modules
     fi
     echo Loading driver...
@@ -661,7 +689,7 @@ BEGIN { in_sound=0; }
 	set_mixers
     fi
     if [ -f $TESTSOUND ]; then
-      if $DIALOG --yesno "
+      msg=$(gettext "
        The mixer is set up now for for playing.
        Shall I try to play a sound sample now?
 
@@ -669,7 +697,8 @@ BEGIN { in_sound=0; }
 If you have a big amplifier, lower your volumes or say no.
     Otherwise check that your speaker volume is open,
           and look if you can hear test sound.
-" 13 65 
+")
+      if $DIALOG --yesno "$msg" 13 65 
       then
           clear
 	  echo
@@ -677,11 +706,11 @@ If you have a big amplifier, lower your volumes or say no.
       fi
     fi
     if [ ! -r /etc/asound.state ]; then
-	echo "Saving the mixer setup used for this in /etc/asound.state."
+	xecho "Saving the mixer setup used for this in /etc/asound.state."
 	$sbindir/alsactl store
     fi
     clear
-    cat <<END
+    xecho "
 ===============================================================================
 
  Now ALSA is ready to use.
@@ -689,9 +718,8 @@ If you have a big amplifier, lower your volumes or say no.
 
  Have a lot of fun!
 
-END
+"
 }
-
 
 #
 # probe legacy ISA cards
@@ -886,7 +914,7 @@ ac_try_dmas () {
 
 # check if the option $2 exists in card $1: set value $3
 ac_check_option () {
-    if modinfo -p snd-$1 | grep $2 > /dev/null 2>&1 ; then
+    if /sbin/modinfo -p snd-$1 | grep $2 > /dev/null 2>&1 ; then
       echo "$2=$3"
     fi
 }
@@ -1014,14 +1042,15 @@ ac_try_card_opl3sa2 () {
 }
 
 ac_config_legacy () {
-
-    $DIALOG --title "WARNING" --yesno "
+   title=$(gettext "WARNING")
+   msg=$(gettext "
    Probing legacy ISA cards might make
    your system unstable.
 
         Are you sure to proceed?
 
-" 10 50 || acex 0
+")
+    $DIALOG --title "$title" --yesno "$msg" 10 50 || acex 0
 
     if [ x"$1" = x ]; then
 	probe_list="$LEGACY_CARDS"
@@ -1037,40 +1066,45 @@ ac_config_legacy () {
 	fi
     done
     if [ x$menu_args = x ]; then
-	$DIALOG --msgbox "No legacy drivers are available
-   for your machine" 5 50
+	msg=$(gettext "No legacy drivers are available
+   for your machine")
+	$DIALOG --msgbox "$msg" 5 50
 	return 1
     fi
-    $DIALOG --title "Driver Selection" --checklist \
-"           Probing legacy ISA cards
+    title=$(gettext "Driver Selection")
+    msg=$(gettext "           Probing legacy ISA cards
 
-        Please select the drivers to probe:" \
+        Please select the drivers to probe:")
+    $DIALOG --title "$title" --checklist "$msg" \
 	17 64 8 "${menu_args[@]}" 2> $FOUND || acex 0
 
     if [ $try_all_combination != 1 ]; then
-	if $DIALOG --yesno "
+	msg=$(gettext "
  Shall I try all possible DMA and IRQ combinations?
  With this option, some unconventional configuration
- might be found, but it will take much longer time." 10 60
+ might be found, but it will take much longer time.")
+	if $DIALOG --yesno "$msg" 10 60
 	    then
 	    try_all_combination=1
 	fi
     fi
 
-    echo "Probing legacy cards..   This may take a few minutes.."
-    echo -n "Probing: "
+    xecho "Probing legacy cards..   This may take a few minutes.."
+    echo -n $(gettext "Probing: ")
     cards=`cat $FOUND | tr -d \"`
     for card in $cards; do
 	echo -n " $card"
 	ac_opts=""
 	if eval ac_try_card_$card ; then
-	    echo ' : FOUND!!'
+	    xecho " : FOUND!!"
 	    ac_config_card $card $ac_opts
 	    return 0
 	fi
     done
     echo
-    $DIALOG --title "Result" --msgbox "No legacy cards found" 5 50
+    title=$(gettext "Result")
+    msg=$(gettext "No legacy cards found")
+    $DIALOG --title "$title" --msgbox "$msg" 5 50
     return 1
 }
 
@@ -1124,26 +1158,28 @@ if [ x$devs_found != x ]; then
     #
     if [ ${devs_found[0]} = cs46xx ]; then
 	if $lspci -nv 2>/dev/null| grep -q "Subsystem: 1014:1010"; then
-	    if $DIALOG --yesno "
+	    msg=$(gettext "
  Looks like you having a Thinkpad 600E or 770 notebook.
  On this notebook, CS4236 driver should be used
  although CS46xx chip is detected.
 
  Shall I try to snd-cs4236 driver and probe
- the legacy ISA configuration?" 13 60
+ the legacy ISA configuration?")
+	    if $DIALOG --yesno "$msg" 13 60
 	    then
 		try_all_combination=1
 		ac_config_legacy cs4236
 		exit 0
 	    fi
 	elif $lspci -nv 2>/dev/null| grep -q "Subsystem: 8086:8080"; then
-	    if $DIALOG --yesno "
+	    msg=$(gettext "
  Looks like you having a Dell Dimension machine.
  On this machine, CS4232 driver should be used
  although CS46xx chip is detected.
 
  Shall I try to snd-cs4232 driver and probe
- the legacy ISA configuration?" 13 60
+ the legacy ISA configuration?")
+	    if $DIALOG --yesno "$msg" 13 60
 	    then
 		try_all_combination=1
 		ac_config_legacy cs4232
@@ -1153,10 +1189,12 @@ if [ x$devs_found != x ]; then
     fi
    
     devs_found=("${devs_found[@]}" "legacy" "Probe legacy ISA (non-PnP) chips")
-    $DIALOG --title "Soundcard Selection" --menu "
+    title=$(gettext "Soundcard Selection")
+    msg=$(gettext "
          Following card(s) are found on your system.
          Choose a soundcard to configure:
-" 17 76 8 "${devs_found[@]}" 2> $FOUND || acex 0
+")
+    $DIALOG --title "$title" --menu "$msg" 17 76 8 "${devs_found[@]}" 2> $FOUND || acex 0
     card=`head -n 1 $FOUND`
     if [ "$card" = "legacy" ]; then
 	ac_config_legacy
@@ -1165,12 +1203,13 @@ if [ x$devs_found != x ]; then
     fi
     exit 0
 else
-    if $DIALOG --yesno "
+    msg=$(gettext "
         No supported PnP or PCI card found.
 
  Would you like to probe legacy ISA sound cards/chips?
 
-" 9 60 ; then
+")
+    if $DIALOG --yesno "$msg" 9 60 ; then
 	ac_config_legacy
 	exit 0
     fi

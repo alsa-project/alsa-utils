@@ -4,6 +4,9 @@ AC_INIT(alsamixer/alsamixer.c)
 AC_PREFIX_DEFAULT(/usr)
 AM_INIT_AUTOMAKE(alsa-utils, 1.0.8rc1)
 
+AM_GNU_GETTEXT([use-libtool])
+AM_GNU_GETTEXT_VERSION(0.14.1)
+
 dnl Checks for programs.
 
 dnl try to gues cross-compiler if not set
@@ -81,7 +84,9 @@ AC_PROG_GCC_TRADITIONAL
 SAVE_UTIL_VERSION
 
 AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amidi/Makefile amixer/Makefile \
+	  m4/Makefile \
 	  alsaconf/alsaconf alsaconf/Makefile \
+	  alsaconf/po/Makefile \
 	  aplay/Makefile include/Makefile iecset/Makefile utils/Makefile \
 	  utils/alsa-utils.spec seq/Makefile seq/aconnect/Makefile \
 	  seq/aplaymidi/Makefile seq/aseqnet/Makefile \
