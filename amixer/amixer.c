@@ -26,7 +26,6 @@
 #include <ctype.h>
 #include <math.h>
 #include <errno.h>
-#include <ansidecl.h>
 #include <assert.h>
 #include <sys/asoundlib.h>
 #include <sys/poll.h>
