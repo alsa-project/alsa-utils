@@ -1,83 +1,81 @@
-.TH AMIXER 1 "27 Jul 1999"
+.TH AMIXER 1 "11 Aug 2000"
 .SH NAME
-amixer \- commandline mixer for ALSA soundcard driver
+amixer \- command-line mixer for ALSA soundcard driver
 .SH SYNOPSIS
-\fBamixer\fP [\fI-c\fP card] [\fI-d\fP dev] [\fIcmd\fP]
+\fBamixer\fP [\fI-c\fP card] [\fIcmd\fP]
 .SH DESCRIPTION
 \fBamixer\fP allows command-line control of the mixer for the ALSA
 soundcard driver.
-\fBamixer\fP supports multiple soundcards with multiple devices.
+\fBamixer\fP supports multiple soundcards.
 .SH INVOKING
 
 \fBamixer\fR with no arguments will display the current mixer settings
 for the default soundcard and device. This is a good way to see a list
-of the groups you can control.
+of the simple mixer controls you can use.
 
 .SH COMMANDS
+
+.TP
+\fIhelp\fP
+Shows syntax.
 
 .TP
 \fIinfo\fP
 Shows the information about a mixer device.
 
 .TP
-\fIgroups\fP
-Shows a complete list of mixer groups.
+\fIscontrols\fP
+Shows a complete list of simple mixer controls.
 
 .TP
-\fIgcontents\fP
-Shows a complete list of mixer groups with their contents.
+\fIscontents\fP
+Shows a complete list of simple mixer controls with their contents.
 
 .TP
-\fIset\fP
-Sets the group contents. The parameter can be the volume either as a
-percentage from 0% to 100% or a exact hardware value. The parameters
-\fIcapture, nocapture, mute, unmute\fP are used to toggle capture
-(recording) and muting for the group specified.
+\fIsset\fP
+Sets the simple mixer control contents. The parameter can be the volume
+either as a percentage from 0% to 100% or a exact hardware value.
+The parameters \fIcapture, nocapture, mute, unmute\fP are used to
+toggle capture (recording) and muting for the group specified.
 The parameters \fIfront, rear, center, woofer\fP are used to specify
-channels to be changed.
-When plus(+) or minus(-) letter is appended after volume value,
-the volume is incremented or decremented from the current value,
-respectively.
+channels to be changed. When plus(+) or minus(-) letter is appended after
+volume value, the volume is incremented or decremented from the current
+value, respectively.
 
-A mixer group must be specified. Only one device can be controlled at
-a time.
-
-.TP
-\fIget\fP
-Shows the group contents.
-
-A mixer group must be specified. Only one device can be controlled at
-a time.
+A simple mixer control must be specified. Only one device can be controlled
+at a time.
 
 .TP
-\fIelements\fP
-Shows a complete list of mixer elements.
+\fIsget\fP
+Shows the simple mixer control contents.
+
+A simple mixer control must be specified. Only one device can be controlled
+at a time.
+
+.TP
+\fIcontrols\fP
+Shows a complete list of card controls.
 
 .TP
 \fIcontents\fP
-Shows a complete list of mixer elements with their contents.
+Shows a complete list of card controls with their contents.
 
 .TP
-\fIeset\fP
-Sets the mixer element contents. This feature is not documented and is intended
+\fIcset\fP
+Sets the card control contents. This feature is not documented and is intended
 for experienced users only.
 
 .TP
 \fIeget\fP
-Shows the mixer element contents. This feature is not documented and is
+Shows the card control contents. This feature is not documented and is
 indended for experienced users only.
 
 .SS Options
 
 .TP
-[\fI-c\fP card] [\fI-d\fP device]
+[\fI-c\fP card]
 
-Select the card and device number to control. Cards are numbered from 0
-(the default). Devices are numbered from 0 (the default). Note that
-here, "device" does \fBnot\fP mean "mixer channel", but refers to the
-architecture of your soundcard. Many soundcards will only have device 0.
-Some more complex cards may have more devices. Try using \fI-d 1\fP and
-if anything useful happens, now you know more than I do. :)
+Select the card number to control. Cards are numbered from 0 (the default).
 
 .TP
 \fI-h\fP 
@@ -90,11 +88,12 @@ Quiet mode. Do not show results of changes.
 Example: 
 
 .RS
-\fBamixer -c 1 set Line 80% unmute capture\fR
+\fBamixer -c 1 set Line 80%,40% unmute capture\fR
 
 .ID
-will set the second soundcard's line input volume to 80%, unmute it,
-and select it as a source for capture (recording).
+will set the second soundcard's left line input volume to 80% and
+right line input to 40%, unmute it, and select it as a source for
+capture (recording).
 .SH BUGS 
 None known.
 .SH AUTHOR
