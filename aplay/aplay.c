@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Error: unable to obtain longname: %s\n", snd_strerror(err));
 			return 1;
 		}
-		printf("Using soundcard '%s'\n", cardname);
+		fprintf(stderr, "Using soundcard '%s'\n", cardname);
 		free(cardname);
 	}
 	if ((err = snd_pcm_open(&pcm_handle, card, dev, direction)) < 0) {
