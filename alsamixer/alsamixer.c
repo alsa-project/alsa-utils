@@ -121,6 +121,7 @@
 #include <time.h>
 
 #include <alsa/asoundlib.h>
+#include "aconfig.h"
 
 /* example compilation commandline:
  * clear; gcc -Wall -pipe -O2 alsamixer.c -o alsamixer -lasound -lncurses
@@ -129,7 +130,6 @@
 /* --- defines --- */
 #define	PRGNAME		 "alsamixer"
 #define	PRGNAME_UPPER	 "AlsaMixer"
-#define	VERSION		 "v1.00"
 #define	CHECK_ABORT(e,s,n) ({ if ((n) != -EINTR) mixer_abort ((e), (s), (n)); })
 #define GETCH_BLOCK(w)	 ({ timeout ((w) ? -1 : 0); })
 
@@ -334,10 +334,9 @@ mixer_init_draw_contexts (void)
   mixer_init_dc ('.', DC_CBAR_LABEL, MIXER_WHITE, MIXER_BLUE, A_REVERSE | A_BOLD);
   mixer_init_dc ('.', DC_CBAR_FOCUS_LABEL, MIXER_RED, MIXER_BLUE, A_REVERSE | A_BOLD);
   mixer_init_dc ('.', DC_FOCUS, MIXER_RED, MIXER_BLACK, A_BOLD);
-  mixer_init_dc (ACS_BLOCK, DC_ANY_1, MIXER_WHITE, MIXER_BLACK, A_BOLD);
-  mixer_init_dc (ACS_BLOCK, DC_ANY_2, MIXER_GREEN, MIXER_BLACK, A_BOLD);
-  mixer_init_dc (ACS_BLOCK, DC_ANY_3, MIXER_RED, MIXER_BLACK, A_BOLD);
-  mixer_init_dc ('.', DC_ANY_4, MIXER_WHITE, MIXER_GREEN, A_BOLD);
+  mixer_init_dc (ACS_CKBOARD, DC_ANY_1, MIXER_WHITE, MIXER_WHITE, A_BOLD);
+  mixer_init_dc (ACS_CKBOARD, DC_ANY_2, MIXER_GREEN, MIXER_GREEN, A_BOLD);
+  mixer_init_dc (ACS_CKBOARD, DC_ANY_3, MIXER_RED, MIXER_RED, A_BOLD);
   mixer_init_dc ('.', DC_ANY_4, MIXER_WHITE, MIXER_BLUE, A_BOLD);
 }
 
@@ -774,13 +773,16 @@ mixer_update_cbar (int elem_index)
   /* update the focused full bar name
    */
   if (elem_index == mixer_focus_elem) {
+    int xlen = mixer_max_x - 8;
+    if (xlen > 63)
+      xlen = 63;
     mixer_dc (DC_PROMPT);
     mvaddstr (3, 2, "Item: ");
     mixer_dc (DC_TEXT);
     string1[8] = 0;
     for (i = 0; i < 63; i++)
       string1[i] = ' ';
-    string1[63] = '\0';
+    string1[xlen] = '\0';
     strcpy(string, snd_mixer_selem_id_get_name(sid));
     if (mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SUFFIX)
       strcat(string, " Capture");
@@ -795,7 +797,7 @@ mixer_update_cbar (int elem_index)
       if (! swl && ! swr)
 	sprintf(string + strlen(string), " [Off]");
     }
-    string[63] = '\0';
+    string[xlen] = '\0';
     strncpy(string1, string, strlen(string));
     addstr(string1);
   }
@@ -1041,7 +1043,7 @@ mixer_draw_frame (void)
 
   /* program title
    */
-  sprintf (string, "%s %s (Press Escape to quit)", PRGNAME_UPPER, VERSION);
+  sprintf (string, "%s v%s (Press Escape to quit)", PRGNAME_UPPER, VERSION);
   max_len = strlen (string);
   if (mixer_max_x >= max_len + 4)
     {
@@ -1368,9 +1370,9 @@ mixer_show_procinfo (void)
     vbuffer_append_string (&vbuf, "No information available.\n");
 
   vbuffer_append_string (&vbuf, "\n");
-  vbuffer_append_string (&vbuf, "/proc/asound/oss-devices:\n");
+  vbuffer_append_string (&vbuf, "/proc/asound/oss/devices:\n");
   vbuffer_append_string (&vbuf, "=========================\n");
-  if (vbuffer_append_file (&vbuf, "/proc/asound/oss-devices"))
+  if (vbuffer_append_file (&vbuf, "/proc/asound/oss/devices"))
     vbuffer_append_string (&vbuf, "No information available.\n");
 
   vbuffer_append_string (&vbuf, "\n");
@@ -1983,7 +1985,7 @@ main (int    argc,
 	{
 	case '?':
 	case 'h':
-	  fprintf (stderr, "%s %s\n", PRGNAME_UPPER, VERSION);
+	  fprintf (stderr, "%s v%s\n", PRGNAME_UPPER, VERSION);
 	  fprintf (stderr, "Usage: %s [-h] [-c <card: 0...7 or id>] [-D <mixer device>] [-g] [-s]\n", PRGNAME);
 	  mixer_abort (ERR_NONE, "", 0);
 	case 'c':
