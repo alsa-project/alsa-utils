@@ -643,6 +643,9 @@ static void mixer_3d_effect1_value(unsigned int effect, int val)
 	case SND_MIXER_EFF1_FEEDBACK:
 		Xelement->element.data.teffect1.feedback = val;
 		break;
+	case SND_MIXER_EFF1_DEPTH_REAR:
+		Xelement->element.data.teffect1.depth_rear = val;
+		break;
 	default:
 		yyerror("Unknown effect 0x%x\n", effect);
 	}

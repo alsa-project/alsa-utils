@@ -859,7 +859,7 @@ static void soundcard_setup_write_mixer_element(FILE * out, struct mixer_element
 			fprintf(out, "%sdelay=%i", idx++ > 0 ? "," : "", element->data.teffect1.delay);
 		if (element->data.teffect1.effect & SND_MIXER_EFF1_FEEDBACK)
 			fprintf(out, "%sfeedback=%i", idx++ > 0 ? "," : "", element->data.teffect1.feedback);
-		if (element->data.teffect1.depth_rear & SND_MIXER_EFF1_DEPTH_REAR)
+		if (element->data.teffect1.effect & SND_MIXER_EFF1_DEPTH_REAR)
 			fprintf(out, "%sdepth_rear=%i", idx++ > 0 ? "," : "", element->data.teffect1.depth_rear);
 		fprintf(out, "))\n");
 		break; 

@@ -2,7 +2,7 @@
 #include "gamix.h"
 
 static gchar *label_3d[]={
-	"wide","volume","center","space","depth","delay","feedback"};
+	"wide","volume","center","space","depth","delay","feedback", "depth rear"};
 
 static void close_callback(GtkWidget *,s_mixer *);
 static void volume1_callback(GtkAdjustment *,s_element *);
@@ -220,6 +220,9 @@ static void vol_3d_callback(GtkAdjustment *adj,s_element *e) {
 		break;
 	case 6:
 		v=&e->e.data.teffect1.feedback;
+		break;
+	case 7:
+		v=&e->e.data.teffect1.depth_rear;
 		break;
 	}
 	value=(int)adj->value;
@@ -703,6 +706,7 @@ gint mk_element(s_element *e,GtkBox *iv_box) {
 		MIX_3D_VOL(4,depth,min_depth,max_depth,SND_MIXER_EFF1_DEPTH);
 		MIX_3D_VOL(5,delay,min_delay,max_delay,SND_MIXER_EFF1_DELAY);
 		MIX_3D_VOL(6,feedback,min_feedback,max_feedback,SND_MIXER_EFF1_FEEDBACK);
+		MIX_3D_VOL(7,depth_rear,min_depth_rear,max_depth_rear,SND_MIXER_EFF1_DEPTH_REAR);
 		break;
 	}
 	gtk_widget_show(ih_box);

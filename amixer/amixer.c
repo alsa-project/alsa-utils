@@ -639,6 +639,10 @@ int show_element_info(void *handle, snd_mixer_eid_t *eid, const char *space)
 			printf("%sFeedback: Min %i, Max %i\n", space,
 					info.data.teffect1.min_feedback,
 					info.data.teffect1.max_feedback);
+		if (info.data.teffect1.effect & SND_MIXER_EFF1_DEPTH_REAR)
+			printf("%sDepth rear: Min %i, Max %i\n", space,
+					info.data.teffect1.min_depth_rear,
+					info.data.teffect1.max_depth_rear);
 		break;
 	default:
 		printf("%sInfo handler for type %i is not available\n", space, info.eid.type);
@@ -776,6 +780,8 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 			printf("%sDelay: %s\n", space, get_percent(element.data.teffect1.delay, info.data.teffect1.min_delay, info.data.teffect1.max_delay));
 		if (element.data.teffect1.effect & SND_MIXER_EFF1_FEEDBACK)
 			printf("%sFeedback: %s\n", space, get_percent(element.data.teffect1.feedback, info.data.teffect1.min_feedback, info.data.teffect1.max_feedback));
+		if (element.data.teffect1.effect & SND_MIXER_EFF1_DEPTH_REAR)
+			printf("%sDepth rear: %s\n", space, get_percent(element.data.teffect1.depth_rear, info.data.teffect1.min_depth_rear, info.data.teffect1.max_depth_rear));
 		break;
 	default:
 		printf("%sRead handler for type %i is not available\n", space, element.eid.type);

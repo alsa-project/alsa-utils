@@ -180,6 +180,10 @@ void s_e_chk( s_element *e ) {
 			e->adj[6]->value=(gfloat)e->e.data.teffect1.feedback;
 			gtk_signal_emit_by_name(GTK_OBJECT(e->adj[6]),"value_changed");
 		}
+		if( e->info.data.teffect1.effect & SND_MIXER_EFF1_DEPTH_REAR ) {
+			e->adj[7]->value=(gfloat)e->e.data.teffect1.depth_rear;
+			gtk_signal_emit_by_name(GTK_OBJECT(e->adj[7]),"value_changed");
+		}
 		break;
 	}
 }
