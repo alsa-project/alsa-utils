@@ -116,7 +116,7 @@ static int store_setup( const char *cardname )
     }
     if ( (err = collect_all()) )
       return err;
-    if ( (err = soundcard_setup_load( cfgfile )) )
+    if ( (err = soundcard_setup_load( cfgfile, 1 )) )
       return err;
     if ( (err = soundcard_setup_collect( cardno )) ) {
       soundcard_setup_done();
@@ -141,7 +141,7 @@ static int restore_setup( const char *cardname )
   }
   if ( (err = collect_all()) )
     return err;
-  if ( (err = soundcard_setup_load( cfgfile )) )
+  if ( (err = soundcard_setup_load( cfgfile, 0 )) )
     return err;
   err = soundcard_setup_process( cardno );
   soundcard_setup_done();

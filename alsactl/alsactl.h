@@ -108,7 +108,7 @@ extern struct soundcard *soundcards;
 
 void soundcard_setup_init( void );
 void soundcard_setup_done( void );
-int soundcard_setup_load( const char *filename );
+int soundcard_setup_load( const char *filename, int skip );
 int soundcard_setup_write( const char *filename );
 int soundcard_setup_collect( int cardno );
 int soundcard_setup_process( int cardno );

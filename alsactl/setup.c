@@ -266,7 +266,6 @@ int soundcard_setup_collect( int cardno )
     ctl -> no = idx;
     if ( (err = snd_ctl_switch_read( handle, idx, &ctl -> s )) < 0 ) {
       free( ctl );
-      snd_ctl_close( handle );
       error( "CTL switch read error (%s) - skipping", snd_strerror( err ) );
       break;
     }
@@ -499,7 +498,7 @@ int soundcard_setup_collect( int cardno )
   return 0;
 }
 
-int soundcard_setup_load( const char *cfgfile )
+int soundcard_setup_load(const char *cfgfile, int skip)
 {
   extern int yyparse( void );
   extern int linecount;
@@ -512,6 +511,7 @@ int soundcard_setup_load( const char *cfgfile )
 #endif
   if ( debugflag )
     printf( "cfgfile = '%s'\n", cfgfile );
+  if (skip && access(cfgfile, R_OK)) return 0;
   if ( ( yyin = fopen( cfgfile, "r" ) ) == NULL ) {
     error( "Cannot open configuration file '%s'...", cfgfile );
     return 1;
