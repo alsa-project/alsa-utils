@@ -25,6 +25,8 @@ install: all
 	$(INSTALL) -s -m 755 -o root -g root aplay/aplay ${bindir}
 	ln -sf aplay ${bindir}/arecord
 	$(INSTALL) -s -m 755 -o root -g root amixer/amixer ${bindir}
+	$(INSTALL) -d -m 755 -o root -g root ${mandir}/man1
+	$(INSTALL) -m 644 -o root -g root amixer/amixer.1 ${mandir}/man1
 	$(INSTALL) -s -m 755 -o root -g root alsamixer/alsamixer ${bindir}
 
 clean:
