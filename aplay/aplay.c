@@ -638,6 +638,18 @@ static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
 	case 16:
 		hwparams.format = SND_PCM_FORMAT_S16_LE;
 		break;
+	case 24:
+		switch (LE_SHORT(f->byte_p_spl)) {
+		case 3:
+			hwparams.format = SND_PCM_FORMAT_S24_3LE;
+			break;
+		case 4:
+			hwparams.format = SND_PCM_FORMAT_S24_LE;
+			break;
+		default:
+			error(" can't play WAVE-files with sample %d bits in %d bytes wide", LE_SHORT(f->bit_p_spl), LE_SHORT(f->byte_p_spl));
+			break;
+		}
 	case 32:
 		hwparams.format = SND_PCM_FORMAT_S32_LE;
 		break;
@@ -1481,6 +1493,10 @@ static void begin_wave(int fd, size_t cnt)
 	case SND_PCM_FORMAT_S32_LE:
 		bits = 32;
 		break;
+	case SND_PCM_FORMAT_S24_LE:
+	case SND_PCM_FORMAT_S24_3LE:
+		bits = 24;
+		break;
 	default:
 		error("Wave doesn't support %s format...", snd_pcm_format_name(hwparams.format));
 		exit(EXIT_FAILURE);
@@ -1501,7 +1517,7 @@ static void begin_wave(int fd, size_t cnt)
 	f.byte_p_spl = LE_SHORT(tmp2);
 	tmp = dsp_speed * hwparams.channels * (u_int) tmp2;
 #else
-	tmp2 = hwparams.channels * ((bits + 7) / 8);
+	tmp2 = hwparams.channels * snd_pcm_format_physical_width(hwparams.format) / 8;
 	f.byte_p_spl = LE_SHORT(tmp2);
 	tmp = (u_int) tmp2 * hwparams.rate;
 #endif
