@@ -239,7 +239,7 @@ static void init_seq(char *source, char *dest)
 		perror("snd_seq_open");
 		exit(1);
 	}
-	err = snd_seq_poll_descriptors(handle, &pfd, 1);
+	err = snd_seq_poll_descriptors(handle, &pfd, 1, POLLIN | POLLOUT);
 	assert(err == 1);
 	seqfd = pfd.fd;
 
