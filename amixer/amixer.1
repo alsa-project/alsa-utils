@@ -1,0 +1,80 @@
+.TH AMIXER 1 "30 Sep 1998"
+.SH NAME
+amixer \- commandline mixer for ALSA soundcard driver
+.SH SYNOPSIS
+\fBamixer\fP [\fI-c\fP card] [\fI-d\fP dev] device [vol|L:R]
+[\fImute\fP|\fIunmute\fP] [\fIrec\fP|\fInorec\fP]
+.SH DESCRIPTION
+\fBamixer\fP allows command-line control of the mixer for the ALSA
+soundcard driver. The settings can be written to or read from a resource
+file, making \fBamixer\fP ideal for invoking via a boot-time script.
+\fBamixer\fP supports multiple soundcards with multiple devices.
+.SH INVOKING
+
+\fBamixer\fR with no arguments will display the current mixer settings
+for the default soundcard and device. This is a good way to see a list
+of the devices (aka mixer channels) you can control.
+
+\fImute, unmute, rec,\fP and \fInorec\fP are used to toggle muting and
+recording for the device specified.
+
+The volume can be specified either as a percentage from 0 to 100, or as
+a
+colon-separated pair of percentages if independent control of Left and
+Right 
+is
+needed. A mixer device must be specified. Only one device can be
+controlled at a time, except when using the \fI-r\fP flag.
+
+.SS Options
+
+.TP
+[\fI-c\fP card] [\fI-d\fP device]
+
+Select the card and device number to control. Cards are numbered from 1
+(the default). Devices are numbered from 0 (the default). Note that
+here,
+"device" does \fBnot\fP mean "mixer channel", but refers to the
+architecture of your soundcard. Many
+soundcards will only have device 0. Some more complex cards may have
+more
+devices. Try using \fI-d 1\fP and if anything useful happens, now you
+know
+more
+than I do. :)
+
+.TP
+\fI-h\fP 
+Help: show syntax.
+.TP
+[\fI-p\fP path] \fI-r\fP 
+Read settings from $HOME/.amixerrc or from optional <path>.
+.TP
+\fI-w\fP 
+Write the current mixer settings into $HOME/.amixerrc 
+.TP
+\fI-q\fP
+Quiet mode. Do not show results of changes.
+
+.SS
+Example: 
+
+.RS
+\fBamixer -c 2 line-in 80:50 unmute rec\fR
+
+.ID
+will set the second soundcard's line-in left volume to 80%, line-in
+right volume to 50%, unmute it, and select it as a source for recording.
+.SH FILES 
+.I
+$HOME/.amixerrc
+is automatically generated from the current mixer settings by invoking
+amixer with the 
+.I
+-w
+flag. It should probably not be modified by hand.
+.SH BUGS 
+None known.
+.SH AUTHOR
+\fBamixer\fP is by Andy Lo A Foe <arloafoe@cs.vu.nl>.
+This document is by Paul Winkler <zarmzarm@erols.com>.
