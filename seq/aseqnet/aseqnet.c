@@ -232,12 +232,17 @@ static void close_files(void)
 static void init_seq(char *source, char *dest)
 {
 	snd_seq_addr_t addr;
+	int err;
+	struct pollfd pfd;
 
 	if (snd_seq_open(&handle, "hw", SND_SEQ_OPEN_DUPLEX, 0) < 0) {
 		perror("snd_seq_open");
 		exit(1);
 	}
-	seqfd = snd_seq_poll_descriptor(handle);
+	err = snd_seq_poll_descriptors(handle, &pfd, 1);
+	assert(err == 1);
+	seqfd = pfd.fd;
+
 	snd_seq_nonblock(handle, 0);
 
 	/* set client info */

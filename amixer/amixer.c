@@ -1041,12 +1041,8 @@ static int events(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 	}
 	printf("Ready to listen...\n");
 	while (1) {
-		struct pollfd ctl_poll;
-		int res;
-		ctl_poll.fd = snd_hctl_poll_descriptor(handle);
-		ctl_poll.events = POLLIN;
-		ctl_poll.revents = 0;
-		if ((res = poll(&ctl_poll, 1, -1)) > 0) {
+		int res = snd_hctl_wait(handle, -1);
+		if (res >= 0) {
 			printf("Poll ok: %i\n", res);
 			res = snd_hctl_handle_events(handle);
 			assert(res > 0);
@@ -1152,13 +1148,9 @@ static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 
 	printf("Ready to listen...\n");
 	while (1) {
-		struct pollfd mixer_poll;
 		int res;
-		mixer_poll.fd = snd_mixer_poll_descriptor(handle, card);
-		assert(mixer_poll.fd >= 0);
-		mixer_poll.events = POLLIN;
-		mixer_poll.revents = 0;
-		if ((res = poll(&mixer_poll, 1, -1)) > 0) {
+		res = snd_mixer_wait(handle, -1);
+		if (res >= 0) {
 			printf("Poll ok: %i\n", res);
 			res = snd_mixer_handle_events(handle);
 			assert(res >= 0);
