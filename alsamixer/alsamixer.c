@@ -524,8 +524,6 @@ static int
 mixer_convert_volume(snd_mixer_elem_t *elem,
 		  int vol, int type)
 {
-  int vol1;
-  long v;
   long min, max;
   if (type != MIXER_ELEM_CAPTURE)
     snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
