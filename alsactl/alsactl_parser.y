@@ -34,34 +34,34 @@ extern FILE *yyin;
 
 	/* local functions */
 
-static void yyerror( char *, ... );
+static void yyerror(char *, ...);
 
-static void select_soundcard( char *name );
-static void select_mixer( char *name );
-static void select_pcm( char *name );
-static void select_rawmidi( char *name );
+static void select_soundcard(char *name);
+static void select_mixer(char *name);
+static void select_pcm(char *name);
+static void select_rawmidi(char *name);
 
-static void select_mixer_channel( char *name );
-static void set_mixer_channel( int left, int right );
-static void set_mixer_channel_flags( unsigned int mask, unsigned int flags );
-static void set_mixer_channel_end( void );
+static void select_mixer_channel(char *name);
+static void set_mixer_channel(int left, int right);
+static void set_mixer_channel_flags(unsigned int mask, unsigned int flags);
+static void set_mixer_channel_end(void);
 
 #define SWITCH_CONTROL		0
 #define SWITCH_MIXER		1
 #define SWITCH_PCM		2
 #define SWITCH_RAWMIDI		3
 
-static void select_control_switch( char *name );
-static void select_mixer_switch( char *name );
-static void select_pcm_playback_switch( char *name );
-static void select_pcm_record_switch( char *name );
-static void select_rawmidi_output_switch( char *name );
-static void select_rawmidi_input_switch( char *name );
+static void select_control_switch(char *name);
+static void select_mixer_switch(char *name);
+static void select_pcm_playback_switch(char *name);
+static void select_pcm_record_switch(char *name);
+static void select_rawmidi_output_switch(char *name);
+static void select_rawmidi_input_switch(char *name);
 
-static void set_switch_boolean( int val );
-static void set_switch_integer( int val );
-static void set_switch_iec958ocs_begin( int end );
-static void set_switch_iec958ocs( int idx, unsigned short val, unsigned short mask );
+static void set_switch_boolean(int val);
+static void set_switch_integer(int val);
+static void set_switch_iec958ocs_begin(int end);
+static void set_switch_iec958ocs(int idx, unsigned short val, unsigned short mask);
 
 	/* local variables */
 
@@ -289,131 +289,146 @@ bytearray : L_BYTEARRAY		{ $$ = $1; }
 
 %%
 
-static void yyerror( char *string, ... )
+static void yyerror(char *string,...)
 {
-  char errstr[ 1024 ];
+	char errstr[1024];
 
-  va_list vars;
-  va_start( vars, string );
-  vsprintf( errstr, string, vars );
-  va_end( vars );
-  error( "Error in configuration file '%s' (line %i): %s", cfgfile, linecount + 1, errstr );
+	va_list vars;
+	va_start(vars, string);
+	vsprintf(errstr, string, vars);
+	va_end(vars);
+	error("Error in configuration file '%s' (line %i): %s", cfgfile, linecount + 1, errstr);
 
-  exit( 1 );
+	exit(1);
 }
 
-static void select_soundcard( char *name )
+static void select_soundcard(char *name)
 {
-  struct soundcard *soundcard;
+	struct soundcard *soundcard;
 
-  if ( !name ) { Xsoundcard = NULL; return; }
-  for ( soundcard = soundcards; soundcard; soundcard = soundcard -> next )
-    if ( !strcmp( soundcard -> control.hwinfo.id, name ) ) {
-      Xsoundcard = soundcard;
-      free( name );
-      return;
-    }
-  yyerror( "Cannot find soundcard '%s'...", name ); 
-  free( name );
+	if (!name) {
+		Xsoundcard = NULL;
+		return;
+	}
+	for (soundcard = soundcards; soundcard; soundcard = soundcard->next)
+		if (!strcmp(soundcard->control.hwinfo.id, name)) {
+			Xsoundcard = soundcard;
+			free(name);
+			return;
+		}
+	yyerror("Cannot find soundcard '%s'...", name);
+	free(name);
 }
 
-static void select_mixer( char *name )
+static void select_mixer(char *name)
 {
-  struct mixer *mixer;
+	struct mixer *mixer;
 
-  if ( !name ) { Xmixer = NULL; return; }
-  for ( mixer = Xsoundcard -> mixers; mixer; mixer = mixer -> next )
-    if ( !strcmp( mixer -> info.name, name ) ) {
-      Xmixer = mixer;
-      free( name );
-      return;
-    }
-  yyerror( "Cannot find mixer '%s' for soundcard '%s'...", name, Xsoundcard -> control.hwinfo.id );
-  free( name );
+	if (!name) {
+		Xmixer = NULL;
+		return;
+	}
+	for (mixer = Xsoundcard->mixers; mixer; mixer = mixer->next)
+		if (!strcmp(mixer->info.name, name)) {
+			Xmixer = mixer;
+			free(name);
+			return;
+		}
+	yyerror("Cannot find mixer '%s' for soundcard '%s'...", name, Xsoundcard->control.hwinfo.id);
+	free(name);
 }
 
-static void select_pcm( char *name )
+static void select_pcm(char *name)
 {
-  struct pcm *pcm;
+	struct pcm *pcm;
 
-  if ( !name ) { Xpcm = NULL; return; }
-  for ( pcm = Xsoundcard -> pcms; pcm; pcm = pcm -> next )
-    if ( !strcmp( pcm -> info.name, name ) ) {
-      Xpcm = pcm;
-      free( name );
-      return;
-    }
-  yyerror( "Cannot find pcm device '%s' for soundcard '%s'...", name, Xsoundcard -> control.hwinfo.id );
-  free( name );
+	if (!name) {
+		Xpcm = NULL;
+		return;
+	}
+	for (pcm = Xsoundcard->pcms; pcm; pcm = pcm->next)
+		if (!strcmp(pcm->info.name, name)) {
+			Xpcm = pcm;
+			free(name);
+			return;
+		}
+	yyerror("Cannot find pcm device '%s' for soundcard '%s'...", name, Xsoundcard->control.hwinfo.id);
+	free(name);
 }
 
-static void select_rawmidi( char *name )
+static void select_rawmidi(char *name)
 {
-  struct rawmidi *rawmidi;
+	struct rawmidi *rawmidi;
 
-  if ( !name ) { Xrawmidi = NULL; return; }
-  for ( rawmidi = Xsoundcard -> rawmidis; rawmidi; rawmidi = rawmidi -> next )
-    if ( !strcmp( rawmidi -> info.name, name ) ) {
-      Xrawmidi = rawmidi;
-      free( name );
-      return;
-    }
-  yyerror( "Cannot find rawmidi device '%s' for soundcard '%s'...", name, Xsoundcard -> control.hwinfo.id );
-  free( name );
+	if (!name) {
+		Xrawmidi = NULL;
+		return;
+	}
+	for (rawmidi = Xsoundcard->rawmidis; rawmidi; rawmidi = rawmidi->next)
+		if (!strcmp(rawmidi->info.name, name)) {
+			Xrawmidi = rawmidi;
+			free(name);
+			return;
+		}
+	yyerror("Cannot find rawmidi device '%s' for soundcard '%s'...", name, Xsoundcard->control.hwinfo.id);
+	free(name);
 }
 
-static void select_mixer_channel( char *name )
+static void select_mixer_channel(char *name)
 {
-  struct mixer_channel *channel;
+	struct mixer_channel *channel;
 
-  if ( !name ) { Xmixerchannel = NULL; return; }
-  for ( channel = Xmixer -> channels; channel; channel = channel -> next )
-    if ( !strcmp( channel -> i.name, name ) ) {
-      Xmixerchannel = channel;
-      Xmixerchannelflags = Xmixerchannel -> c.flags & 
-				~(SND_MIXER_FLG_RECORD |
-			  	  SND_MIXER_FLG_MUTE |
-			  	  SND_MIXER_FLG_SWITCH_OUT |
-			  	  SND_MIXER_FLG_SWITCH_IN |
-			  	  SND_MIXER_FLG_DECIBEL |
-			  	  SND_MIXER_FLG_FORCE);
-      free( name );
-      return;
-    }
-  yyerror( "Cannot find mixer channel '%s'...", name );
-  free( name );
+	if (!name) {
+		Xmixerchannel = NULL;
+		return;
+	}
+	for (channel = Xmixer->channels; channel; channel = channel->next)
+		if (!strcmp(channel->i.name, name)) {
+			Xmixerchannel = channel;
+			Xmixerchannelflags = Xmixerchannel->c.flags &
+			    ~(SND_MIXER_FLG_RECORD |
+			      SND_MIXER_FLG_MUTE |
+			      SND_MIXER_FLG_SWITCH_OUT |
+			      SND_MIXER_FLG_SWITCH_IN |
+			      SND_MIXER_FLG_DECIBEL |
+			      SND_MIXER_FLG_FORCE);
+			free(name);
+			return;
+		}
+	yyerror("Cannot find mixer channel '%s'...", name);
+	free(name);
 }
 
-static void set_mixer_channel( int left, int right )
+static void set_mixer_channel(int left, int right)
 {
-  if ( left >= 0 ) {
-    if ( Xmixerchannel -> i.min > left || Xmixerchannel -> i.max < left )
-      yyerror( "Value out of range (%i-%i)...", Xmixerchannel -> i.min, Xmixerchannel -> i.max );
-    if ( Xmixerchannel -> c.left != left )
-      Xmixerchannel -> change = 1;
-    Xmixerchannel -> c.left = left;
-  }
-  if ( right >= 0 ) {
-    if ( Xmixerchannel -> i.min > right || Xmixerchannel -> i.max < right )
-      yyerror( "Value out of range (%i-%i)...", Xmixerchannel -> i.min, Xmixerchannel -> i.max );
-    if ( Xmixerchannel -> c.right != right )
-      Xmixerchannel -> change = 1;
-    Xmixerchannel -> c.right = right;
-  }
+	if (left >= 0) {
+		if (Xmixerchannel->i.min > left || Xmixerchannel->i.max < left)
+			yyerror("Value out of range (%i-%i)...", Xmixerchannel->i.min, Xmixerchannel->i.max);
+		if (Xmixerchannel->c.left != left)
+			Xmixerchannel->change = 1;
+		Xmixerchannel->c.left = left;
+	}
+	if (right >= 0) {
+		if (Xmixerchannel->i.min > right || Xmixerchannel->i.max < right)
+			yyerror("Value out of range (%i-%i)...", Xmixerchannel->i.min, Xmixerchannel->i.max);
+		if (Xmixerchannel->c.right != right)
+			Xmixerchannel->change = 1;
+		Xmixerchannel->c.right = right;
+	}
 }
 
-static void set_mixer_channel_flags( unsigned int mask, unsigned int flags )
+static void set_mixer_channel_flags(unsigned int mask, unsigned int flags)
 {
-  Xmixerchannelflags &= ~mask;
-  Xmixerchannelflags |= flags;
+	Xmixerchannelflags &= ~mask;
+	Xmixerchannelflags |= flags;
 }
 
-static void set_mixer_channel_end( void )
+static void set_mixer_channel_end(void)
 {
-  if ( Xmixerchannel -> c.flags != Xmixerchannelflags ) {
-    Xmixerchannel -> change = 1;
-  }
-  Xmixerchannel -> c.flags = Xmixerchannelflags;
+	if (Xmixerchannel->c.flags != Xmixerchannelflags) {
+		Xmixerchannel->change = 1;
+	}
+	Xmixerchannel->c.flags = Xmixerchannelflags;
 }
 
 #define FIND_SWITCH( xtype, first, name, err ) \
@@ -430,114 +445,116 @@ static void set_mixer_channel_end( void )
   yyerror( "Cannot find " err " switch '%s'...", name ); \
   free( name );
 
-static void select_control_switch( char *name )
+static void select_control_switch(char *name)
 {
-  struct ctl_switch *sw;
-  FIND_SWITCH( SWITCH_CONTROL, Xsoundcard -> control.switches, name, "control" );
+	struct ctl_switch *sw;
+	FIND_SWITCH(SWITCH_CONTROL, Xsoundcard->control.switches, name, "control");
 }
 
-static void select_mixer_switch( char *name )
+static void select_mixer_switch(char *name)
 {
-  struct mixer_switch *sw;
-  FIND_SWITCH( SWITCH_MIXER, Xmixer -> switches, name, "mixer" );
+	struct mixer_switch *sw;
+	FIND_SWITCH(SWITCH_MIXER, Xmixer->switches, name, "mixer");
 }
 
-static void select_pcm_playback_switch( char *name )
+static void select_pcm_playback_switch(char *name)
 {
-  struct pcm_switch *sw;
-  FIND_SWITCH( SWITCH_PCM, Xpcm -> pswitches, name, "pcm playback" );
+	struct pcm_switch *sw;
+	FIND_SWITCH(SWITCH_PCM, Xpcm->pswitches, name, "pcm playback");
 }
 
-static void select_pcm_record_switch( char *name )
+static void select_pcm_record_switch(char *name)
 {
-  struct pcm_switch *sw;
-  FIND_SWITCH( SWITCH_PCM, Xpcm -> rswitches, name, "pcm record" );
+	struct pcm_switch *sw;
+	FIND_SWITCH(SWITCH_PCM, Xpcm->rswitches, name, "pcm record");
 }
 
-static void select_rawmidi_output_switch( char *name )
+static void select_rawmidi_output_switch(char *name)
 {
-  struct rawmidi_switch *sw;
-  FIND_SWITCH( SWITCH_RAWMIDI, Xrawmidi -> oswitches, name, "rawmidi output" );
+	struct rawmidi_switch *sw;
+	FIND_SWITCH(SWITCH_RAWMIDI, Xrawmidi->oswitches, name, "rawmidi output");
 }
 
-static void select_rawmidi_input_switch( char *name )
+static void select_rawmidi_input_switch(char *name)
 {
-  struct rawmidi_switch *sw;
-  FIND_SWITCH( SWITCH_RAWMIDI, Xrawmidi -> iswitches, name, "rawmidi input" );
+	struct rawmidi_switch *sw;
+	FIND_SWITCH(SWITCH_RAWMIDI, Xrawmidi->iswitches, name, "rawmidi input");
 }
 
-static void set_switch_boolean( int val )
+static void set_switch_boolean(int val)
 {
-  /* ok.. this is a little bit wrong, but at these times are all switches same */
-  snd_ctl_switch_t *sw = (snd_ctl_switch_t *)Xswitch;
-  unsigned int xx;
+	/* ok.. this is a little bit wrong, but at these times are all switches same */
+	snd_ctl_switch_t *sw = (snd_ctl_switch_t *) Xswitch;
+	unsigned int xx;
 
-  if ( sw -> type != SND_CTL_SW_TYPE_BOOLEAN )
-    yyerror( "Switch '%s' isn't boolean type...", sw -> name );
-  xx = val & 1;
-  if ( memcmp( &sw -> value, &xx, sizeof(xx) ) ) *Xswitchchange = 1;
-  memcpy( &sw -> value, &xx, sizeof(xx) );
+	if (sw->type != SND_CTL_SW_TYPE_BOOLEAN)
+		yyerror("Switch '%s' isn't boolean type...", sw->name);
+	xx = val & 1;
+	if (memcmp(&sw->value, &xx, sizeof(xx)))
+		*Xswitchchange = 1;
+	memcpy(&sw->value, &xx, sizeof(xx));
 }
 
-static void set_switch_integer( int val )
+static void set_switch_integer(int val)
 {
-  /* ok.. this is a little bit wrong, but at these times are all switches same */
-  snd_ctl_switch_t *sw = (snd_ctl_switch_t *)Xswitch;
-  unsigned int xx;
+	/* ok.. this is a little bit wrong, but at these times are all switches same */
+	snd_ctl_switch_t *sw = (snd_ctl_switch_t *) Xswitch;
+	unsigned int xx;
 
-  if ( sw -> type != SND_CTL_SW_TYPE_BYTE &&
-       sw -> type != SND_CTL_SW_TYPE_WORD &&
-       sw -> type != SND_CTL_SW_TYPE_DWORD )
-    yyerror( "Switch '%s' isn't integer type...", sw -> name );
-  if ( val < sw -> low || val > sw -> high )
-    yyerror( "Value for switch '%s' out of range (%i-%i)...\n", sw -> name, sw -> low, sw -> high );
-  xx = val;
-  if ( memcmp( &sw -> value, &xx, sizeof(xx) ) ) *Xswitchchange = 1;
-  memcpy( &sw -> value, &xx, sizeof(xx) );
+	if (sw->type != SND_CTL_SW_TYPE_BYTE &&
+	    sw->type != SND_CTL_SW_TYPE_WORD &&
+	    sw->type != SND_CTL_SW_TYPE_DWORD)
+		yyerror("Switch '%s' isn't integer type...", sw->name);
+	if (val < sw->low || val > sw->high)
+		yyerror("Value for switch '%s' out of range (%i-%i)...\n", sw->name, sw->low, sw->high);
+	xx = val;
+	if (memcmp(&sw->value, &xx, sizeof(xx)))
+		*Xswitchchange = 1;
+	memcpy(&sw->value, &xx, sizeof(xx));
 }
 
-static void set_switch_iec958ocs_begin( int end )
+static void set_switch_iec958ocs_begin(int end)
 {
-  /* ok.. this is a little bit wrong, but at these times are all switches same */
-  snd_ctl_switch_t *sw = (snd_ctl_switch_t *)Xswitch;
+	/* ok.. this is a little bit wrong, but at these times are all switches same */
+	snd_ctl_switch_t *sw = (snd_ctl_switch_t *) Xswitch;
 
-  if ( end ) {
-    if ( Xswitchiec958ocs != sw -> value.enable ) {
-      sw -> value.enable = Xswitchiec958ocs;
-      *Xswitchchange = 1;
-    }
-    if ( Xswitchiec958ocs1[4] != sw -> value.data16[4] ) {
-      sw -> value.data16[4] = Xswitchiec958ocs1[4];
-      *Xswitchchange = 1;
-    }
-    if ( Xswitchiec958ocs1[5] != sw -> value.data16[5] ) {
-      sw -> value.data16[5] = Xswitchiec958ocs1[5];
-      *Xswitchchange = 1;
-    }
+	if (end) {
+		if (Xswitchiec958ocs != sw->value.enable) {
+			sw->value.enable = Xswitchiec958ocs;
+			*Xswitchchange = 1;
+		}
+		if (Xswitchiec958ocs1[4] != sw->value.data16[4]) {
+			sw->value.data16[4] = Xswitchiec958ocs1[4];
+			*Xswitchchange = 1;
+		}
+		if (Xswitchiec958ocs1[5] != sw->value.data16[5]) {
+			sw->value.data16[5] = Xswitchiec958ocs1[5];
+			*Xswitchchange = 1;
+		}
 #if 0
-    printf( "IEC958: enable = %i, ocs1[4] = 0x%x, ocs1[5] = 0x%x\n",
-			sw -> value.enable,
-			sw -> value.data16[4],
-			sw -> value.data16[5] );
+		printf("IEC958: enable = %i, ocs1[4] = 0x%x, ocs1[5] = 0x%x\n",
+		       sw->value.enable,
+		       sw->value.data16[4],
+		       sw->value.data16[5]);
 #endif
-    return;
-  }
-  if ( Xswitchtype != SWITCH_MIXER || sw -> type != SND_MIXER_SW_TYPE_BOOLEAN ||
-       strcmp( sw -> name, SND_MIXER_SW_IEC958OUT ) )
-    yyerror( "Switch '%s' cannot store IEC958 information for Cirrus Logic chips...", sw -> name );
-  if ( sw -> value.data32[1] != (('C'<<8)|'S') )
-    yyerror( "Switch '%s' doesn't have Cirrus Logic signature!!!", sw -> name );
-  Xswitchiec958ocs = 0;
-  Xswitchiec958ocs1[4] = 0x0000;
-  Xswitchiec958ocs1[5] = 0x0004;	/* copy permitted */
+		return;
+	}
+	if (Xswitchtype != SWITCH_MIXER || sw->type != SND_MIXER_SW_TYPE_BOOLEAN ||
+	    strcmp(sw->name, SND_MIXER_SW_IEC958OUT))
+		yyerror("Switch '%s' cannot store IEC958 information for Cirrus Logic chips...", sw->name);
+	if (sw->value.data32[1] != (('C' << 8) | 'S'))
+		yyerror("Switch '%s' doesn't have Cirrus Logic signature!!!", sw->name);
+	Xswitchiec958ocs = 0;
+	Xswitchiec958ocs1[4] = 0x0000;
+	Xswitchiec958ocs1[5] = 0x0004;	/* copy permitted */
 }
 
-static void set_switch_iec958ocs( int idx, unsigned short val, unsigned short mask )
+static void set_switch_iec958ocs(int idx, unsigned short val, unsigned short mask)
 {
-  if ( idx == 0 ) {
-    Xswitchiec958ocs = val ? 1 : 0;
-    return;
-  }
-  Xswitchiec958ocs1[ idx ] &= mask;
-  Xswitchiec958ocs1[ idx ] |= val;
+	if (idx == 0) {
+		Xswitchiec958ocs = val ? 1 : 0;
+		return;
+	}
+	Xswitchiec958ocs1[idx] &= mask;
+	Xswitchiec958ocs1[idx] |= val;
 }

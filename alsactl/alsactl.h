@@ -28,87 +28,87 @@
 
 extern int debugflag;
 
-extern void error( const char *fmt, ... );
+extern void error(const char *fmt,...);
 
 struct ctl_switch {
-  int no;
-  int change;
-  snd_ctl_switch_t s;
-  struct ctl_switch *next;
+	int no;
+	int change;
+	snd_ctl_switch_t s;
+	struct ctl_switch *next;
 };
 
 struct ctl {
-  snd_ctl_hw_info_t hwinfo;
-  struct ctl_switch *switches;
+	snd_ctl_hw_info_t hwinfo;
+	struct ctl_switch *switches;
 };
 
 struct mixer_channel {
-  int no;
-  int change;
-  snd_mixer_channel_info_t i;
-  snd_mixer_channel_t c;
-  struct mixer_channel *next;
+	int no;
+	int change;
+	snd_mixer_channel_info_t i;
+	snd_mixer_channel_t c;
+	struct mixer_channel *next;
 };
 
 struct mixer_switch {
-  int no;
-  int change;
-  snd_mixer_switch_t s;
-  struct mixer_switch *next;
+	int no;
+	int change;
+	snd_mixer_switch_t s;
+	struct mixer_switch *next;
 };
 
 struct mixer {
-  int no;
-  snd_mixer_info_t info;
-  struct mixer_channel *channels;
-  struct mixer_switch *switches;
-  struct mixer *next;
+	int no;
+	snd_mixer_info_t info;
+	struct mixer_channel *channels;
+	struct mixer_switch *switches;
+	struct mixer *next;
 };
 
 struct pcm_switch {
-  int no;
-  int change;
-  snd_pcm_switch_t s;
-  struct pcm_switch *next;
+	int no;
+	int change;
+	snd_pcm_switch_t s;
+	struct pcm_switch *next;
 };
 
 struct pcm {
-  int no;
-  snd_pcm_info_t info;
-  struct pcm_switch *pswitches;
-  struct pcm_switch *rswitches;
-  struct pcm *next;
+	int no;
+	snd_pcm_info_t info;
+	struct pcm_switch *pswitches;
+	struct pcm_switch *rswitches;
+	struct pcm *next;
 };
 
 struct rawmidi_switch {
-  int no;
-  int change;
-  snd_rawmidi_switch_t s;
-  struct rawmidi_switch *next;
+	int no;
+	int change;
+	snd_rawmidi_switch_t s;
+	struct rawmidi_switch *next;
 };
 
 struct rawmidi {
-  int no;
-  snd_rawmidi_info_t info;
-  struct rawmidi_switch *iswitches;
-  struct rawmidi_switch *oswitches;
-  struct rawmidi *next;
+	int no;
+	snd_rawmidi_info_t info;
+	struct rawmidi_switch *iswitches;
+	struct rawmidi_switch *oswitches;
+	struct rawmidi *next;
 };
 
 struct soundcard {
-  int no;			/* card number */
-  struct ctl control;
-  struct mixer *mixers;
-  struct pcm *pcms;
-  struct rawmidi *rawmidis;
-  struct soundcard *next;
+	int no;			/* card number */
+	struct ctl control;
+	struct mixer *mixers;
+	struct pcm *pcms;
+	struct rawmidi *rawmidis;
+	struct soundcard *next;
 };
 
 extern struct soundcard *soundcards;
 
-void soundcard_setup_init( void );
-void soundcard_setup_done( void );
-int soundcard_setup_load( const char *filename, int skip );
-int soundcard_setup_write( const char *filename );
-int soundcard_setup_collect( int cardno );
-int soundcard_setup_process( int cardno );
+void soundcard_setup_init(void);
+void soundcard_setup_done(void);
+int soundcard_setup_load(const char *filename, int skip);
+int soundcard_setup_write(const char *filename);
+int soundcard_setup_collect(int cardno);
+int soundcard_setup_process(int cardno);
