@@ -257,19 +257,19 @@ static void device_list(void)
 			}
 			if (pcminfo.stream != stream)
 				continue;
-			fprintf(stderr, "%s: %i [%s] / #%i: %s",
+			fprintf(stderr, "%s: %i [%s] / #%i: %s\n",
 			       info.name,
 			       card + 1,
 			       info.id,
 			       dev,
 			       pcminfo.name);
-			fprintf(stderr, "  Subdevices: %i/%i", pcminfo.subdevices_avail, pcminfo.subdevices_count);
+			fprintf(stderr, "  Subdevices: %i/%i\n", pcminfo.subdevices_avail, pcminfo.subdevices_count);
 			for (idx = 0; idx < pcminfo.subdevices_count; idx++) {
 				pcminfo.subdevice = idx;
 				if ((err = snd_ctl_pcm_info(handle, &pcminfo)) < 0) {
 					error("control digital audio playback info (%i): %s", card, snd_strerror(err));
 				} else {
-					fprintf(stderr, "  Subdevice #%i: %s", idx, pcminfo.subname);
+					fprintf(stderr, "  Subdevice #%i: %s\n", idx, pcminfo.subname);
 				}
 			}
 		}
