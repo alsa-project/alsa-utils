@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
 		{"separate-channels", 0, 0, 'I'},
 		{0, 0, 0, 0}
 	};
-	char *pcm_name = "plug:0,0";
+	char *pcm_name = "default";
 	int tmp, err, c;
 	snd_pcm_info_t *info;
 

@@ -39,7 +39,7 @@
 
 int quiet = 0;
 int debugflag = 0;
-char *card = "hw:0";
+char *card = "default";
 
 static void error(const char *fmt,...)
 {
