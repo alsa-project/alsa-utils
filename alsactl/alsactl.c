@@ -181,7 +181,7 @@ int main( int argc, char *argv[] )
       case 'v':
       case HELPID_VERSION:
         printf( "alsactl version " SND_UTIL_VERSION "\n" );
-        return 0;
+        return 1;
       default:
         fprintf( stderr, "\07Invalid switch or option needs an argument.\n" );
         morehelp++;
@@ -189,17 +189,21 @@ int main( int argc, char *argv[] )
   }
   if ( morehelp ) {
     help();
-    return 0;
+    return 1;
   }            
 
   if ( argc - optind <= 0 ) {
     fprintf( stderr, "alsactl: Specify command...\n" );
-    return 1;
+    return 0;
   }
   if ( !strcmp( argv[ optind ], "store" ) ) {
-    return store_setup( argc - optind > 1 ? argv[ optind + 1 ] : NULL );
+    return store_setup( argc - optind > 1 ? argv[ optind + 1 ] : NULL ) ?
+    									0 : 1;
   } else if ( !strcmp( argv[ optind ], "restore" ) ) {
-    return restore_setup( argc - optind > 1 ? argv[ optind + 1 ] : NULL );
+    return restore_setup( argc - optind > 1 ? argv[ optind + 1 ] : NULL ) ?
+    									0 : 1;
+  } else {
+    fprintf( stderr, "alsactl: Unknown command '%s'...\n", argv[ optind ] );
   }
 
   return 0;
