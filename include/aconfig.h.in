@@ -15,11 +15,15 @@
 /* Define if lex declares yytext as a char * by default, not a char[].  */
 #undef YYTEXT_POINTER
 
-/* Package name */
-#undef PACKAGE
-
 /* Package version */
 #undef VERSION
 
 /* Define if you have the asound library (-lasound).  */
 #undef HAVE_LIBASOUND
+
+/* Name of package */
+#undef PACKAGE
+
+/* Version number of package */
+#undef VERSION
+
