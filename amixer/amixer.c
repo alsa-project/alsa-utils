@@ -161,7 +161,7 @@ static int convert_range(int val, int omin, int omax, int nmin, int nmax)
 	
 	if (orange == 0)
 		return 0;
-	return rint((((double)nrange * ((double)val - (double)omin)) + ((double)orange / 2.0)) / (double)orange + (double)nmin);
+	return rint((((double)nrange * ((double)val - (double)omin)) + ((double)orange / 2.0)) / ((double)orange + (double)nmin));
 }
 
 static int convert_db_range(int val, int omin, int omax, int nmin, int nmax)
@@ -175,9 +175,34 @@ static int convert_db_range(int val, int omin, int omax, int nmin, int nmax)
 	return tmp;
 }
 
+/* Fuction to convert from volume to percentage. val = volume */
+
 static int convert_prange(int val, int min, int max)
 {
-	return convert_range(val, 0, 100, min, max);
+	 int range = max - min;
+	 int tmp;
+	 
+	 if (range == 0)
+		return 0;
+	 tmp = rint((double)val/(double)range * 100);
+	 return tmp;
+}
+
+/* Function to convert from percentage to volume. val = percentage */
+
+static int convert_prange1(int val, int min, int max)
+{
+	int range = max - min;
+	int tmp;
+
+	if (range == 0)
+
+		return 0;
+	tmp = rint((double)range * ((double)val*.01));
+#if 0
+	printf("%i %i %i %i", val, max, min, tmp);
+#endif
+	return tmp;
 }
 
 static const char *get_percent(int val, int min, int max)
@@ -185,7 +210,7 @@ static const char *get_percent(int val, int min, int max)
 	static char str[32];
 	int p;
 	
-	p = convert_range(val, min, max, 0, 100);
+	p = convert_prange(val, min, max);
 	sprintf(str, "%i [%i%%]", val, p);
 	return str;
 }
@@ -195,7 +220,7 @@ static const char *get_percent1(int val, int min, int max, int min_dB, int max_d
 	static char str[32];
 	int p, db;
 
-	p = convert_range(val, min, max, 0, 100);
+	p = convert_prange(val, min, max);
 	db = convert_db_range(val, min, max, min_dB, max_dB);
 	sprintf(str, "%i [%i%%] [%i.%02idB]", val, p, db / 100, abs(db % 100));
 	return str;
@@ -223,7 +248,7 @@ static int get_volume(char **ptr, int min, int max, int min_dB, int max_dB)
 			(*ptr)++;
 	}
 	if (**ptr == '%') {
-		tmp1 = convert_prange(tmp, min, max);
+		tmp1 = convert_prange1(tmp, min, max);
 		(*ptr)++;
 	} else if (**ptr == 'd') {
 		tmp1 *= 100; tmp1 += tmp2 % 100;
@@ -258,7 +283,7 @@ static int get_volume_simple(char **ptr, int min, int max)
 			(*ptr)++;
 	}
 	if (**ptr == '%') {
-		tmp1 = convert_prange(tmp, min, max);
+		tmp1 = convert_prange1(tmp, min, max);
 		(*ptr)++;
 	}
 	tmp1 = check_range(tmp1, min, max);
