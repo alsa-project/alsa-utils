@@ -34,7 +34,7 @@
 #include <getopt.h>
 #include <fcntl.h>
 #include <ctype.h>
-#include <sys/soundlib.h>
+#include <sys/asoundlib.h>
 #include "config.h"
 #include "formats.h"
 

@@ -20,7 +20,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <linux/sound.h>
 
 #include <errno.h>
 
@@ -36,7 +35,7 @@
 #endif
 #include <time.h>
 
-#include <sys/soundlib.h>
+#include <sys/asoundlib.h>
 
 /* example compilation commandline:
  * clear; gcc -Wall -pipe -O2 alsamixer.c -o alsamixer -lncurses

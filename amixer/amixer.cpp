@@ -23,7 +23,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/soundlib.h>
+#include <sys/asoundlib.h>
 #include "amixer.h"
 
 
