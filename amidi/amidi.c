@@ -381,7 +381,7 @@ void add_send_hex_data(const char *str)
 	int length;
 	char *s;
 
-	length = (send_hex ? strlen(send_hex) : 0) + strlen(str) + 1;
+	length = (send_hex ? strlen(send_hex) + 1 : 0) + strlen(str) + 1;
 	s = my_malloc(length);
 	if (send_hex) {
 		strcpy(s, send_hex);
