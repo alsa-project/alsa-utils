@@ -364,6 +364,8 @@ static int soundcard_setup_collect_switches1(int cardno)
 		bzero(pcm, sizeof(struct pcm));
 		pcm->no = device;
 		pcm->info.device = device;
+		pcm->info.stream = -1;
+		pcm->info.subdevice = -1;
 		if ((err = snd_ctl_pcm_info(handle, &pcm->info)) < 0) {
 			snd_ctl_close(handle);
 			error("PCM info error: %s", snd_strerror(err));

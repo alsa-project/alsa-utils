@@ -229,12 +229,14 @@ static void device_list(void)
 		}
 		for (dev = 0; dev < info.pcmdevs; dev++) {
 			pcminfo.device = dev;
-			pcminfo.stream = stream;
+			pcminfo.stream = -stream - 1;
 			pcminfo.subdevice = -1;
 			if ((err = snd_ctl_pcm_info(handle, &pcminfo)) < 0) {
 				fprintf(stderr, "Error: control digital audio info (%i): %s\n", card, snd_strerror(err));
 				continue;
 			}
+			if (pcminfo.stream != stream)
+				continue;
 			fprintf(stderr, "%s: %i [%s] / #%i: %s\n",
 			       info.name,
 			       card + 1,
