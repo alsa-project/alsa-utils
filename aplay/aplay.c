@@ -108,43 +108,6 @@ struct fmt_capture {
 	{	begin_au,	end_wave,	"Sparc Audio"	}
 };
 
-static char *get_format(int format)
-{
-	static char *formats[] =
-	{
-		"Signed 8-bit",
-		"Unsigned 8-bit",
-		"Signed 16-bit Little Endian",
-		"Signed 16-bit Big Endian",
-		"Unsigned 16-bit Little Endian",
-		"Unsigned 16-bit Big Endian",
-		"Signed 24-bit Little Endian",
-		"Signed 24-bit Big Endian",
-		"Unsigned 24-bit Little Endian",
-		"Unsigned 24-bit Big Endian",
-		"Signed 32-bit Little Endian",
-		"Signed 32-bit Big Endian",
-		"Unsigned 32-bit Little Endian",
-		"Unsigned 32-bit Big Endian",
-		"Float Little Endian",
-		"Float Big Endian",
-		"Float64 Little Endian",
-		"Float64 Big Endian",
-		"IEC-958 Little Endian",
-		"IEC-958 Big Endian",
-		"Mu-Law",
-		"A-Law",
-		"Ima-ADPCM",
-		"MPEG",
-		"GSM"
-	};
-	if (format == SND_PCM_SFMT_SPECIAL)
-		return "Special";
-	if (format < 0 || format > SND_PCM_SFMT_GSM)
-		return "Unknown";
-	return formats[format];
-}
-
 static void check_new_format(snd_pcm_format_t * format)
 {
 	if (cinfo.min_rate > format->rate || cinfo.max_rate < format->rate) {
@@ -152,7 +115,7 @@ static void check_new_format(snd_pcm_format_t * format)
 		exit(1);
 	}
 	if (!(cinfo.formats & (1 << format->format))) {
-		fprintf(stderr, "%s: requested format %s isn't supported with hardware\n", command, get_format(format->format));
+		fprintf(stderr, "%s: requested format %s isn't supported with hardware\n", command, snd_pcm_get_format_name(format->format));
 		exit(1);
 	}
 }
@@ -1029,7 +992,7 @@ static void begin_wave(int fd, u_long cnt)
 		bits = 16;
 		break;
 	default:
-		fprintf(stderr, "%s: Wave doesn't support %s format...\n", command, get_format(format.format));
+		fprintf(stderr, "%s: Wave doesn't support %s format...\n", command, snd_pcm_get_format_name(format.format));
 		exit(1);
 	}
 	wh.main_chunk = WAV_RIFF;
@@ -1075,7 +1038,7 @@ static void begin_au(int fd, u_long cnt)
 		ah.encoding = htonl(AU_FMT_LIN16);
 		break;
 	default:
-		fprintf(stderr, "%s: Sparc Audio doesn't support %s format...\n", command, get_format(format.format));
+		fprintf(stderr, "%s: Sparc Audio doesn't support %s format...\n", command, snd_pcm_get_format_name(format.format));
 		exit(1);
 	}
 	ah.sample_rate = htonl(format.rate);
@@ -1111,7 +1074,7 @@ static void header(int rtype, char *name)
 			(channel == SND_PCM_CHANNEL_PLAYBACK) ? "Playing" : "Recording",
 			fmt_rec_table[rtype].what,
 			name);
-		fprintf(stderr, "%s, ", get_format(format.format));
+		fprintf(stderr, "%s, ", snd_pcm_get_format_name(format.format));
 		fprintf(stderr, "Rate %d Hz, ", format.rate);
 		if (format.voices == 1)
 			fprintf(stderr, "Mono");
