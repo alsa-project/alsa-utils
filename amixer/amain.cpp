@@ -50,7 +50,7 @@ void usage()
 	printf("\n"
 	       "Usage: amixer [-c card] [-d dev] device [vol|L:R] [mute|unmute] [rec|norec]\n\n"
 	       "       amixer [-p path] -r\tRead %s or <path> settings\n"
-	       "       amixer -w\t\tWrite %s settings\n"
+	       "       amixer [-p path] -w\tWrite %s or <path> settings\n"
 	       "       amixer -q ...\t\tQuiet mode\n"
 	       "       amixer -h\t\tHelp\n\n"
 	       "Example: amixer line-out 80:50 unmute rec\n\n", rc_file(), rc_file());
@@ -68,7 +68,9 @@ void read_config(Mixer * mix, const char *path)
 	int count = 0;
 	int flags;
 
-	if ((rc = fopen(path ? path : rc_file(), "r")) == NULL) {
+	if (path && strcmp(path, "-") == 0)
+		rc = stdin;
+	else if ((rc = fopen(path ? path : rc_file(), "r")) == NULL) {
 		printf("Mixer values not read\n");
 		return;
 	}
@@ -93,16 +95,19 @@ void read_config(Mixer * mix, const char *path)
 		mix->Write(left, right, flags);
 	}
 
-	fclose(rc);
+	if (rc != stdin)
+		fclose(rc);
 	return;
 }
 
-void write_config(Mixer * mix)
+void write_config(Mixer * mix, const char *path)
 {
 	FILE *rc;
 	int32 left, right, flags;
 
-	if ((rc = fopen(rc_file(), "w+")) == NULL) {
+	if (path && strcmp(path, "-") == 0)
+		rc = stdout;
+	else if ((rc = fopen(path ? path : rc_file(), "w+")) == NULL) {
 		printf("Mixer values not written\n");
 		return;
 	}
@@ -113,7 +118,8 @@ void write_config(Mixer * mix)
 		mix->Read(&left, &right, &flags);
 		fprintf(rc, "%d %d:%d %d %d\n", i, mix->Left(), mix->Right(), flags & E_MIXER_MUTE ? 1 : 0, flags & E_MIXER_RECORD ? 1 : 0);
 	}
-	fclose(rc);
+	if (rc != stdout)
+		fclose(rc);
 	return;
 }
 
@@ -165,7 +171,7 @@ int main(int argc, char **argv)
 			} else if (argv[add][1] == 'w') {
 				the_mixer = new Mixer(card, device);
 				if (the_mixer && the_mixer->Init())
-					write_config(the_mixer);
+					write_config(the_mixer, pathind ? argv[pathind] : (const char *) NULL);
 				delete the_mixer;
 				return 0;
 			} else if (argv[add][1] == 'q') {

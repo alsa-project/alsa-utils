@@ -48,10 +48,12 @@ than I do. :)
 Help: show syntax.
 .TP
 [\fI-p\fP path] \fI-r\fP 
-Read settings from $HOME/.amixerrc or from optional <path>.
+Read settings from $HOME/.amixerrc or from optional <path>. If <path>
+is ``\-'', reads from the standard input.
 .TP
-\fI-w\fP 
-Write the current mixer settings into $HOME/.amixerrc 
+[\fI-p\fP path] \fI-w\fP 
+Write the current mixer settings into $HOME/.amixerrc or optional <path>.
+If <path> is ``\-'', writes to the standard output.
 .TP
 \fI-q\fP
 Quiet mode. Do not show results of changes.
