@@ -301,7 +301,7 @@ static void show_control_id(snd_ctl_elem_id_t *id)
 		printf(",subdevice=%i", subdevice);
 }
 
-static int show_control(const char *space, snd_ctl_t *handle, 
+static int show_control(const char *space, snd_hctl_t *handle, 
 			snd_ctl_elem_id_t *id, int level)
 {
 	int err;
@@ -309,11 +309,11 @@ static int show_control(const char *space, snd_ctl_t *handle,
 	unsigned int count;
 	snd_ctl_elem_type_t type;
 	snd_ctl_elem_info_t *info;
-	snd_ctl_elem_t *control;
+	snd_hctl_elem_t *helem;
 	snd_ctl_elem_info_alloca(&info);
-	snd_ctl_elem_alloca(&control);
-	snd_ctl_elem_info_set_id(info, id);
-	if ((err = snd_ctl_elem_info(handle, info)) < 0) {
+	if ((helem = snd_hctl_find_elem(handle, id)) == NULL)
+		return -EINVAL;
+	if ((err = snd_hctl_elem_info(helem, info)) < 0) {
 		error("Control %s cinfo error: %s\n", card, snd_strerror(err));
 		return err;
 	}
@@ -338,7 +338,7 @@ static int show_control(const char *space, snd_ctl_t *handle,
 		printf(",items=%u\n", items);
 		for (item = 0; item < items; item++) {
 			snd_ctl_elem_info_set_item(info, item);
-			if ((err = snd_ctl_elem_info(handle, info)) < 0) {
+			if ((err = snd_hctl_elem_info(helem, info)) < 0) {
 				error("Control %s element info error: %s\n", card, snd_strerror(err));
 				return err;
 			}
@@ -351,8 +351,10 @@ static int show_control(const char *space, snd_ctl_t *handle,
 		break;
 	}
 	if (level & 1) {
-		snd_ctl_elem_set_id(control, id);
-		if ((err = snd_ctl_elem_read(handle, control)) < 0) {
+		snd_ctl_elem_t *elem;
+		snd_ctl_elem_alloca(&elem);
+		snd_ctl_elem_set_id(elem, id);
+		if ((err = snd_hctl_elem_read(helem, elem)) < 0) {
 			error("Control %s element read error: %s\n", card, snd_strerror(err));
 			return err;
 		}
@@ -362,16 +364,16 @@ static int show_control(const char *space, snd_ctl_t *handle,
 				printf(",");
 			switch (snd_enum_to_int(type)) {
 			case SND_CTL_ELEM_TYPE_BOOLEAN:
-				printf("%s", snd_ctl_elem_get_boolean(control, idx) ? "on" : "off");
+				printf("%s", snd_ctl_elem_get_boolean(elem, idx) ? "on" : "off");
 				break;
 			case SND_CTL_ELEM_TYPE_INTEGER:
-				printf("%li", snd_ctl_elem_get_integer(control, idx));
+				printf("%li", snd_ctl_elem_get_integer(elem, idx));
 				break;
 			case SND_CTL_ELEM_TYPE_ENUMERATED:
-				printf("%u", snd_ctl_elem_get_enumerated(control, idx));
+				printf("%u", snd_ctl_elem_get_enumerated(elem, idx));
 				break;
 			case SND_CTL_ELEM_TYPE_BYTES:
-				printf("0x%02x", snd_ctl_elem_get_byte(control, idx));
+				printf("0x%02x", snd_ctl_elem_get_byte(elem, idx));
 				break;
 			default:
 				printf("?");
@@ -386,17 +388,13 @@ static int show_control(const char *space, snd_ctl_t *handle,
 static int controls(int level)
 {
 	int err;
-	snd_ctl_t *handle;
+	snd_hctl_t *handle;
 	snd_hctl_elem_t *elem;
 	snd_ctl_elem_id_t *id;
 	snd_ctl_elem_id_alloca(&id);
 	
-	if ((err = snd_ctl_open(&handle, card)) < 0) {
+	if ((err = snd_hctl_open(&handle, card)) < 0) {
 		error("Control %s open error: %s", card, snd_strerror(err));
-		return err;
-	}
-	if ((err = snd_hctl_build(handle)) < 0) {
-		error("Control %s hbuild error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	for (elem = snd_hctl_first_elem(handle); elem; elem = snd_hctl_elem_next(elem)) {
@@ -406,7 +404,7 @@ static int controls(int level)
 		if (level > 0)
 			show_control("  ", handle, id, 1);
 	}
-	snd_ctl_close(handle);
+	snd_hctl_close(handle);
 	return 0;
 }
 
@@ -733,9 +731,16 @@ static int cset(int argc, char *argv[], int roflag)
 			return err;
 		}
 	}
-	if (!quiet)
-		show_control("  ", handle, id, 3);
 	snd_ctl_close(handle);
+	if (!quiet) {
+		snd_hctl_t *hctl;
+		if ((err = snd_hctl_open(&hctl, card)) < 0) {
+			error("Control %s open error: %s\n", card, snd_strerror(err));
+			return err;
+		}
+		show_control("  ", hctl, id, 3);
+		snd_hctl_close(hctl);
+	}
 	return 0;
 }
 
@@ -935,7 +940,8 @@ static void events_add(snd_hctl_elem_t *helem)
 	snd_hctl_elem_set_callback(helem, element_callback);
 }
 
-int ctl_callback(snd_ctl_t *ctl, snd_ctl_event_type_t event,
+int ctl_callback(snd_hctl_t *hctl,
+		 snd_ctl_event_type_t event,
 		 snd_hctl_elem_t *elem)
 {
 	switch (event) {
@@ -954,19 +960,15 @@ int ctl_callback(snd_ctl_t *ctl, snd_ctl_event_type_t event,
 
 static int events(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 {
-	snd_ctl_t *handle;
+	snd_hctl_t *handle;
 	snd_hctl_elem_t *helem;
 	int err;
 
-	if ((err = snd_ctl_open(&handle, card)) < 0) {
+	if ((err = snd_hctl_open(&handle, card)) < 0) {
 		error("Control %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	snd_hctl_set_callback(handle, ctl_callback);
-	if ((err = snd_hctl_build(handle)) < 0) {
-		error("Control %s hbuild error: %s\n", card, snd_strerror(err));
-		return err;
-	}
 	for (helem = snd_hctl_first_elem(handle); helem; helem = snd_hctl_elem_next(helem)) {
 		snd_hctl_elem_set_callback(helem, element_callback);
 	}
@@ -974,7 +976,7 @@ static int events(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 	while (1) {
 		struct pollfd ctl_poll;
 		int res;
-		ctl_poll.fd = snd_ctl_poll_descriptor(handle);
+		ctl_poll.fd = snd_hctl_poll_descriptor(handle);
 		ctl_poll.events = POLLIN;
 		ctl_poll.revents = 0;
 		if ((res = poll(&ctl_poll, 1, -1)) > 0) {
@@ -984,7 +986,7 @@ static int events(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 				printf("%i events processed\n", res);
 		}
 	}
-	snd_ctl_close(handle);
+	snd_hctl_close(handle);
 }
 
 static void sevents_value(snd_mixer_selem_id_t *sid)
