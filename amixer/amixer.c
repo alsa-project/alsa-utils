@@ -92,12 +92,12 @@ static int info(void)
 	snd_ctl_elem_list_alloca(&clist);
 	
 	if ((err = snd_ctl_open(&handle, card, 0)) < 0) {
-		error("Control device %i open error: %s", card, snd_strerror(err));
+		error("Control device %s open error: %s", card, snd_strerror(err));
 		return err;
 	}
 	
 	if ((err = snd_ctl_card_info(handle, info)) < 0) {
-		error("Control device %i hw info error: %s", card, snd_strerror(err));
+		error("Control device %s hw info error: %s", card, snd_strerror(err));
 		return err;
 	}
 	printf("Card %s '%s'/'%s'\n", card, snd_ctl_card_info_get_id(info),

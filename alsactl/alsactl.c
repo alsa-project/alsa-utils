@@ -218,8 +218,8 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		strcat(buf, " volatile");
 	if (snd_ctl_elem_info_is_locked(info))
 		strcat(buf, " locked");
-	if (snd_ctl_elem_info_is_indirect(info))
-		strcat(buf, " indirect");
+	if (snd_ctl_elem_info_is_first(info))
+		strcat(buf, " first");
 	err = snd_config_string_add(comment, "access", buf + 1);
 	if (err < 0) {
 		error("snd_config_string_add: %s", snd_strerror(err));
