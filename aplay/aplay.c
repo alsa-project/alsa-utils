@@ -51,6 +51,7 @@
 #define LLONG_MAX    9223372036854775807LL
 #endif
 
+#define DEFAULT_FORMAT		SND_PCM_FORMAT_U8
 #define DEFAULT_SPEED 		8000
 
 #define FORMAT_DEFAULT		-1
@@ -359,7 +360,7 @@ int main(int argc, char *argv[])
 	}
 
 	chunk_size = -1;
-	rhwparams.format = SND_PCM_FORMAT_U8;
+	rhwparams.format = DEFAULT_FORMAT;
 	rhwparams.rate = DEFAULT_SPEED;
 	rhwparams.channels = 1;
 
@@ -693,17 +694,29 @@ static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
 	hwparams.channels = LE_SHORT(f->modus);
 	switch (LE_SHORT(f->bit_p_spl)) {
 	case 8:
+		if (hwparams.format != DEFAULT_FORMAT &&
+		    hwparams.format != SND_PCM_FORMAT_U8)
+			fprintf(stderr, "Warning: format is changed to U8\n");
 		hwparams.format = SND_PCM_FORMAT_U8;
 		break;
 	case 16:
+		if (hwparams.format != DEFAULT_FORMAT &&
+		    hwparams.format != SND_PCM_FORMAT_S16_LE)
+			fprintf(stderr, "Warning: format is changed to S16_LE\n");
 		hwparams.format = SND_PCM_FORMAT_S16_LE;
 		break;
 	case 24:
 		switch (LE_SHORT(f->byte_p_spl) / hwparams.channels) {
 		case 3:
+			if (hwparams.format != DEFAULT_FORMAT &&
+			    hwparams.format != SND_PCM_FORMAT_S24_3LE)
+				fprintf(stderr, "Warning: format is changed to S24_3LE\n");
 			hwparams.format = SND_PCM_FORMAT_S24_3LE;
 			break;
 		case 4:
+			if (hwparams.format != DEFAULT_FORMAT &&
+			    hwparams.format != SND_PCM_FORMAT_S24_LE)
+				fprintf(stderr, "Warning: format is changed to S24_LE\n");
 			hwparams.format = SND_PCM_FORMAT_S24_LE;
 			break;
 		default:
@@ -769,12 +782,21 @@ static int test_au(int fd, void *buffer)
 	pbrec_count = BE_INT(ap->data_size);
 	switch (BE_INT(ap->encoding)) {
 	case AU_FMT_ULAW:
+		if (hwparams.format != DEFAULT_FORMAT &&
+		    hwparams.format != SND_PCM_FORMAT_MU_LAW)
+			fprintf(stderr, "Warning: format is changed to MU_LAW\n");
 		hwparams.format = SND_PCM_FORMAT_MU_LAW;
 		break;
 	case AU_FMT_LIN8:
+		if (hwparams.format != DEFAULT_FORMAT &&
+		    hwparams.format != SND_PCM_FORMAT_U8)
+			fprintf(stderr, "Warning: format is changed to U8\n");
 		hwparams.format = SND_PCM_FORMAT_U8;
 		break;
 	case AU_FMT_LIN16:
+		if (hwparams.format != DEFAULT_FORMAT &&
+		    hwparams.format != SND_PCM_FORMAT_S16_BE)
+			fprintf(stderr, "Warning: format is changed to S16_BE\n");
 		hwparams.format = SND_PCM_FORMAT_S16_BE;
 		break;
 	default:
@@ -1330,7 +1352,7 @@ static void voc_play(int fd, int ofs, char *name)
 			exit(EXIT_FAILURE);
 		}
 	}
-	hwparams.format = SND_PCM_FORMAT_U8;
+	hwparams.format = DEFAULT_FORMAT;
 	hwparams.channels = 1;
 	hwparams.rate = DEFAULT_SPEED;
 	set_params();
@@ -1879,7 +1901,7 @@ static void playback(char *name)
 		exit(EXIT_FAILURE);
 	}
 	if (test_au(fd, audiobuf) >= 0) {
-		rhwparams.format = SND_PCM_FORMAT_MU_LAW;
+		rhwparams.format = hwparams.format;
 		pbrec_count = calc_count();
 		playback_go(fd, 0, pbrec_count, FORMAT_AU, name);
 		goto __end;
