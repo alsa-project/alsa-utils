@@ -728,7 +728,7 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 			if (eid->name[0] == '\0') {
 				printf("NONE\n");
 			} else {
-				printf("'%s',%i,%i\n", idx,
+				printf("'%s',%i,%i\n",
 					element_name(eid->name),
 					eid->index, eid->type);
 			}
@@ -1338,7 +1338,7 @@ int eset_mux1(int argc, char *argv[], void *handle, snd_mixer_eid_t *eid)
 
 int eset_mux2(int argc, char *argv[], void *handle, snd_mixer_eid_t *eid)
 {
-	int err, idx = 0;
+	int err;
 	snd_mixer_element_t element;
 	snd_mixer_element_info_t info;
 	snd_mixer_eid_t xeid;
