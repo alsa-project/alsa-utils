@@ -300,7 +300,7 @@ static int determine_switches(void *handle, struct ctl_switch **csw, int interfa
 		bzero(&sw, sizeof(sw));
 		strncpy(sw.name, item->name, sizeof(sw.name));
 		if ((err = switch_read(handle, &sw, interface, device)) < 0) {
-			error("Cannot read switch for interface %i and device %i: %s", interface, device, snd_strerror(err));
+			error("Cannot read switch '%s' for interface %i and device %i: %s", sw.name, interface, device, snd_strerror(err));
 			free(list.pswitches);
 			return 1;
 		}
