@@ -355,6 +355,8 @@ static void print_byte(unsigned char byte)
 			running_status = 1;
 			state = STATE_2PARAM_2;
 			break;
+		default:
+			break;
 		}
 		if (running_status)
 			fputs("\n  ", stdout);

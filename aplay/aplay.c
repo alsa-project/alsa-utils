@@ -36,8 +36,6 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <errno.h>
-#define ALSA_PCM_NEW_HW_PARAMS_API
-#define ALSA_PCM_NEW_SW_PARAMS_API
 #include <alsa/asoundlib.h>
 #include <assert.h>
 #include <sys/poll.h>
