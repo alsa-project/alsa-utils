@@ -342,7 +342,7 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 			return 0;
 		case SND_CONTROL_TYPE_ENUMERATED:
 		{
-			unsigned int v = ctl.value.integer.value[0];
+			unsigned int v = ctl.value.enumerated.item[0];
 			snd_config_t *c;
 			err = snd_config_search(item, num_str(v), &c);
 			if (err == 0) {
@@ -389,7 +389,7 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 		break;
 	case SND_CONTROL_TYPE_ENUMERATED:
 		for (idx = 0; idx < info.values_count; idx++) {
-			unsigned int v = ctl.value.integer.value[idx];
+			unsigned int v = ctl.value.enumerated.item[idx];
 			snd_config_t *c;
 			err = snd_config_search(item, num_str(v), &c);
 			if (err == 0) {
@@ -399,9 +399,10 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 			} else {
 				err = snd_config_integer_add(value, num_str(idx), v);
 			}
-			if (err < 0)
+			if (err < 0) {
 				error("snd_config add: %s", snd_strerror(err));
-			return err;
+				return err;
+			}
 		}
 		break;
 	default:
@@ -556,9 +557,9 @@ static int config_bool(snd_config_t *n)
 	default:
 		return -1;
 	}
-	if (strcmp(str, "on") || strcmp(str, "true"))
+	if (strcmp(str, "on") == 0 || strcmp(str, "true") == 0)
 		return 1;
-	if (strcmp(str, "off") || strcmp(str, "false"))
+	if (strcmp(str, "off") == 0 || strcmp(str, "false") == 0)
 		return 0;
 	return -1;
 }
@@ -896,10 +897,12 @@ static int save_state(char *file, const char *cardname)
 	if (fp) {
 		err = snd_config_load(config, fp);
 		fclose(fp);
+#if 0
 		if (err < 0) {
 			error("snd_config_load error: %s", snd_strerror(err));
 			return err;
 		}
+#endif
 	}
 
 	if (!cardname) {
