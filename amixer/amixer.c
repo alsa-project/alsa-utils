@@ -501,19 +501,16 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 		}
 		if (snd_mixer_selem_has_playback_volume(elem) ||
 		    snd_mixer_selem_has_capture_volume(elem)) {
-			cmin = snd_mixer_selem_get_capture_min(elem);
-			cmax = snd_mixer_selem_get_capture_max(elem);
 			printf("%sLimits: ", space);
 			if (snd_mixer_selem_has_playback_volume(elem)) {
-				pmin = snd_mixer_selem_get_playback_min(elem);
-				pmax = snd_mixer_selem_get_playback_max(elem);
+			  
+				snd_mixer_selem_get_playback_volume_range(elem, &pmin, &pmax);
 				if (!snd_mixer_selem_has_common_volume(elem))
 					printf("Playback ");
 				printf("%li - %li ", pmin, pmax);
 			}
 			if (snd_mixer_selem_has_capture_volume(elem)) {
-				cmin = snd_mixer_selem_get_capture_min(elem);
-				cmax = snd_mixer_selem_get_capture_max(elem);
+				snd_mixer_selem_get_capture_volume_range(elem, &cmin, &cmax);
 				printf("Capture %li - %li", cmin, cmax);
 			}
 			printf("\n");
@@ -921,8 +918,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 		snd_mixer_close(handle);
 		return -ENOENT;
 	}
-	min = snd_mixer_selem_get_playback_min(elem);
-	max = snd_mixer_selem_get_playback_max(elem);
+	snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
 	if (roflag)
 		goto __skip_write;
 	for (idx = 1; idx < argc; idx++) {

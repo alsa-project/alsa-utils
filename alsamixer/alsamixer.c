@@ -471,8 +471,8 @@ mixer_calc_volume(snd_mixer_elem_t *elem,
 {
   int vol1;
   long v;
-  long min = snd_mixer_selem_get_playback_min(elem);
-  long max = snd_mixer_selem_get_playback_max(elem);
+  long min, max;
+  snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
   vol1 = (vol < 0) ? -vol : vol;
   if (vol1 > 0) {
     if (vol1 > 100)
@@ -645,17 +645,13 @@ mixer_update_cbar (int elem_index)
   }
 
   if (snd_mixer_selem_has_playback_volume(elem)) {
+    long vmin, vmax;
+    snd_mixer_selem_get_playback_volume_range(elem, &vmin, &vmax);
     snd_mixer_selem_get_playback_volume(elem, chn_left, &vleft);
-    vleft = mixer_conv(vleft,
-		       snd_mixer_selem_get_playback_min(elem),
-		       snd_mixer_selem_get_playback_max(elem),
-		       0, 100);
+    vleft = mixer_conv(vleft, vmin, vmax, 0, 100);
     if (chn_right != SND_MIXER_SCHN_UNKNOWN) {
       snd_mixer_selem_get_playback_volume(elem, chn_right, &vright);
-      vright = mixer_conv(vright,
-			  snd_mixer_selem_get_playback_min(elem),
-			  snd_mixer_selem_get_playback_max(elem),
-			  0, 100);
+      vright = mixer_conv(vright, vmin, vmax, 0, 100);
     } else {
       vright = vleft;
     }
