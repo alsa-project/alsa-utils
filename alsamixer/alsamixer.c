@@ -18,6 +18,28 @@
  *
  * ChangeLog:
  *
+ * Sun Feb 21 19:55:01 1999  Tim Janik  <timj@gtk.org>
+ *
+ *	* bumped version to 0.10.
+ *
+ *	* added scrollable text views.
+ *	we now feature an F1 Help screen and an F2 /proc info screen.
+ *	the help screen does still require lots of work though.
+ *
+ *	* keys are evaluated view specific now.
+ *
+ *	* we feature meta-keys now, e.g. M-Tab as back-tab.
+ *
+ *	* if we are already in channel view and the user still hits Return,
+ *	we do a refresh nonetheless, since 'r'/'R' got removed as a redraw
+ *	key (reserved for record volumes). 'l'/'L' is still preserved though,
+ *	and actually needs to be to e.g. get around the xterm bold-artefacts.
+ *
+ *	* support terminals that can't write into lower right corner.
+ *
+ *	* undocumented '-s' option that will keep the screen to its
+ *	minimum size, usefull for debugging only.
+ *
  * Sun Feb 21 02:23:52 1999  Tim Janik  <timj@gtk.org>
  *
  *	* don't abort if snd_mixer_* functions failed due to EINTR,
@@ -87,9 +109,9 @@
 /* --- defines --- */
 #define	PRGNAME		 "alsamixer"
 #define	PRGNAME_UPPER	 "AlsaMixer"
-#define	VERSION		 "v0.9"
-#define	REFRESH()	 ({ if (!mixer_needs_resize) refresh (); })
+#define	VERSION		 "v0.10"
 #define	CHECK_ABORT(e,s) ({ if (errno != EINTR) mixer_abort ((e), (s)); })
+#define GETCH_BLOCK(w)	 ({ timeout ((w) ? -1 : 0); })
 
 #undef MAX
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
@@ -120,9 +142,20 @@
 #define MIXER_WHITE     (COLOR_WHITE | A_BOLD)
 
 
+/* --- views --- */
+enum {
+  VIEW_CHANNELS,
+  VIEW_HELP,
+  VIEW_PROCINFO
+};
+
+
 /* --- variables --- */
 static WINDOW	*mixer_window = NULL;
 static int	 mixer_needs_resize = 0;
+static int	 mixer_minimize = 0;
+static int	 mixer_no_lrcorner = 0;
+static int	 mixer_view = VIEW_CHANNELS;
 static int	 mixer_max_x = 0;
 static int	 mixer_max_y = 0;
 static int	 mixer_ofs_x = 0;
@@ -149,15 +182,40 @@ static int	 mixer_toggle_mute_left = 0;
 static int	 mixer_toggle_mute_right = 0;
 static int	 mixer_toggle_record = 0;
 
+static int	 mixer_hscroll_delta = 0;
+static int	 mixer_vscroll_delta = 0;
+
 /* By Carl */
 static int	 mixer_toggle_rec_left = 0;
 static int	 mixer_toggle_rec_right = 0;
 static int	 mixer_route_ltor_in = 0;
 static int	 mixer_route_rtol_in = 0;
-#if 0
-static int	 mixer_route_ltor_out = 0;
-static int	 mixer_route_rtol_out = 0;
-#endif
+
+
+/* --- text --- */
+static int	 mixer_procinfo_xoffs = 0;
+static int	 mixer_procinfo_yoffs = 0;
+static int	 mixer_help_xoffs = 0;
+static int	 mixer_help_yoffs = 0;
+static char     *mixer_help_text =
+(
+ "\n"
+ " Esc     exit alsamixer\n"
+ " F1      show Help screen\n"
+ " F2      show /proc info screen\n"
+ " Return  return to main screen\n"
+ " Space   toggle Record facility\n"
+ " Tab     toggle ExactMode\n"
+ " m M     mute both channels\n"
+ " < >     mute left/right channel\n"
+ " Up      increase left and right volume\n"
+ " Down    decrease left and right volume\n"
+ " Right   move (scroll) to the right next channel\n"
+ " Left    move (scroll) to the left next channel\n"
+ "\n"
+ "Alsamixer has been written and is Copyrighted in 1998, 1999 by\n"
+ "Tim Janik <timj@gtk.org> and Jaroslav Kysela <perex@jcu.cz>.\n"
+ );
 
 
 /* --- draw contexts --- */
@@ -171,12 +229,13 @@ enum {
   DC_CBAR_RECORD,
   DC_CBAR_NORECORD,
   DC_CBAR_EMPTY,
-  DC_CBAR_FULL_1,
-  DC_CBAR_FULL_2,
-  DC_CBAR_FULL_3,
   DC_CBAR_LABEL,
   DC_CBAR_FOCUS_LABEL,
   DC_FOCUS,
+  DC_ANY_1,
+  DC_ANY_2,
+  DC_ANY_3,
+  DC_ANY_4,
   DC_LAST
 };
 
@@ -223,12 +282,14 @@ mixer_init_draw_contexts (void)
   mixer_init_dc ('x', DC_CBAR_RECORD, MIXER_DARK_RED, MIXER_BLACK, A_BOLD);
   mixer_init_dc ('-', DC_CBAR_NORECORD, MIXER_GRAY, MIXER_BLACK, A_NORMAL);
   mixer_init_dc (' ', DC_CBAR_EMPTY, MIXER_GRAY, MIXER_BLACK, A_DIM);
-  mixer_init_dc ('#', DC_CBAR_FULL_1, MIXER_WHITE, MIXER_BLACK, A_BOLD);
-  mixer_init_dc ('#', DC_CBAR_FULL_2, MIXER_GREEN, MIXER_BLACK, A_BOLD);
-  mixer_init_dc ('#', DC_CBAR_FULL_3, MIXER_RED, MIXER_BLACK, A_BOLD);
   mixer_init_dc ('.', DC_CBAR_LABEL, MIXER_WHITE, MIXER_BLUE, A_REVERSE | A_BOLD);
   mixer_init_dc ('.', DC_CBAR_FOCUS_LABEL, MIXER_RED, MIXER_BLUE, A_REVERSE | A_BOLD);
   mixer_init_dc ('.', DC_FOCUS, MIXER_RED, MIXER_BLACK, A_BOLD);
+  mixer_init_dc ('#', DC_ANY_1, MIXER_WHITE, MIXER_BLACK, A_BOLD);
+  mixer_init_dc ('#', DC_ANY_2, MIXER_GREEN, MIXER_BLACK, A_BOLD);
+  mixer_init_dc ('#', DC_ANY_3, MIXER_RED, MIXER_BLACK, A_BOLD);
+  mixer_init_dc ('.', DC_ANY_4, MIXER_WHITE, MIXER_GREEN, A_BOLD);
+  mixer_init_dc ('.', DC_ANY_4, MIXER_WHITE, MIXER_BLUE, A_BOLD);
 }
 
 #define	DC_CBAR_FRAME	(DC_CBAR_MUTE)
@@ -256,19 +317,21 @@ mixer_abort (ErrType error,
 
 /* --- functions --- */
 static void
-mixer_clear (void)
+mixer_clear (int full_redraw)
 {
   int x, y;
+  int f = full_redraw ? 0 : 1;
 
   mixer_dc (DC_BACK);
-  clearok (mixer_window, TRUE);
-  clear ();
-  
+
+  if (full_redraw)
+    clearok (mixer_window, TRUE);
+
   /* buggy ncurses doesn't really write spaces with the specified
-   * color into the screen on clear ();
+   * color into the screen on clear () or erase ()
    */
-  for (x = 0; x < mixer_max_x; x++)
-    for (y = 0; y < mixer_max_y; y++)
+  for (x = f; x < mixer_max_x - f; x++)
+    for (y = f; y < mixer_max_y - f; y++)
       mvaddch (y, x, ' ');
 }
 
@@ -278,7 +341,7 @@ mixer_abort (ErrType     error,
 {
   if (mixer_window)
     {
-      mixer_clear ();
+      mixer_clear (TRUE);
       refresh ();
       keypad (mixer_window, FALSE);
       leaveok (mixer_window, FALSE);
@@ -485,6 +548,12 @@ mixer_update_cbar (int channel_index)
    */
   if (!mixer_cbar_get_pos (channel_index, &x, &y))
     return;
+
+  /* setup colors
+   */
+  mixer_init_dc ('#', DC_ANY_1, MIXER_WHITE, MIXER_BLACK, A_BOLD);
+  mixer_init_dc ('#', DC_ANY_2, MIXER_GREEN, MIXER_BLACK, A_BOLD);
+  mixer_init_dc ('#', DC_ANY_3, MIXER_RED, MIXER_BLACK, A_BOLD);
   
   /* channel bar name
    */
@@ -535,11 +604,11 @@ mixer_update_cbar (int channel_index)
       int dc;
       
       if (i + 1 >= 0.8 * mixer_cbar_height)
-	dc = DC_CBAR_FULL_3;
+	dc = DC_ANY_3;
       else if (i + 1 >= 0.4 * mixer_cbar_height)
-	dc = DC_CBAR_FULL_2;
+	dc = DC_ANY_2;
       else
-	dc = DC_CBAR_FULL_1;
+	dc = DC_ANY_1;
       mvaddch (y, x + 3, mixer_dc (cdata.left > i * 100 / mixer_cbar_height ? dc : DC_CBAR_EMPTY));
       mvaddch (y, x + 4, mixer_dc (cdata.right > i * 100 / mixer_cbar_height ? dc : DC_CBAR_EMPTY));
       y--;
@@ -688,10 +757,17 @@ mixer_draw_frame (void)
   /* corners
    */
   mixer_dc (DC_PROMPT);
-  mvaddch (mixer_max_y - 1, mixer_max_x - 1, ACS_LRCORNER);
-  mvaddch (mixer_max_y - 1, 0, ACS_LLCORNER);
   mvaddch (0, 0, ACS_ULCORNER);
   mvaddch (0, mixer_max_x - 1, ACS_URCORNER);
+  mvaddch (mixer_max_y - 1, 0, ACS_LLCORNER);
+  if (!mixer_no_lrcorner)
+    mvaddch (mixer_max_y - 1, mixer_max_x - 1, ACS_LRCORNER);
+  else
+    {
+      mvaddch (mixer_max_y - 2, mixer_max_x - 1, ACS_LRCORNER);
+      mvaddch (mixer_max_y - 2, mixer_max_x - 2, ACS_ULCORNER);
+      mvaddch (mixer_max_y - 1, mixer_max_x - 2, ACS_LRCORNER);
+    }
 
   /* program title
    */
@@ -708,6 +784,341 @@ mixer_draw_frame (void)
       mixer_dc (DC_TEXT);
       mvaddstr (0, mixer_max_x / 2 - max_len / 2, string);
     }
+}
+
+static char*
+mixer_offset_text (char **t,
+		   int	  col,
+		   int	 *length)
+{
+  char *p = *t;
+  char *r;
+
+  while (*p && *p != '\n' && col--)
+    p++;
+  if (*p == '\n' || !*p)
+    {
+      if (*p == '\n')
+	p++;
+      *length = 0;
+      *t = p;
+      return p;
+    }
+
+  r = p;
+  while (*r && *r != '\n' && (*length)--)
+    r++;
+
+  *length = r - p;
+  while (*r && *r != '\n')
+    r++;
+  if (*r == '\n')
+    r++;
+  *t = r;
+
+  return p;
+}
+
+static void
+mixer_show_text (char *title,
+		 char *text,
+		 int  *xoffs,
+		 int  *yoffs)
+{
+  int tlines = 0, tcols = 0;
+  float hscroll, vscroll;
+  float hoffs, voffs;
+  char *p, *text_offs = text;
+  int x1, x2, y1, y2;
+  int i, n, l, r, block, stipple;
+
+  /* coords
+   */
+  x1 = 2;
+  x2 = mixer_max_x - 3;
+  y1 = 4;
+  y2 = mixer_max_y - 2;
+
+  if ((y2 - y1) < 3 || (x2 - x1) < 3)
+    return;
+
+  /* text dimensions
+   */
+  l = 0;
+  for (p = text; *p; p++)
+    if (*p == '\n')
+      {
+	tlines++;
+	tcols = MAX (l, tcols);
+	l = 0;
+      }
+    else
+      l++;
+  tcols = MAX (l, tcols);
+  if (p > text && *(p - 1) != '\n')
+    tlines++;
+
+  /* scroll areas / offsets
+   */
+  l = x2 - x1 - 2;
+  if (l > tcols)
+    {
+      x1 += (l - tcols) / 2;
+      x2 = x1 + tcols + 1;
+    }
+  if (mixer_hscroll_delta)
+    {
+      *xoffs += mixer_hscroll_delta;
+      mixer_hscroll_delta = 0;
+      if (*xoffs < 0)
+	{
+	  *xoffs = 0;
+	  beep ();
+	}
+      else if (*xoffs > tcols - l - 1)
+	{
+	  *xoffs = MAX (0, tcols - l - 1);
+	  beep ();
+	}
+    }
+  if (tcols - l - 1 <= 0)
+    {
+      hscroll = 1;
+      hoffs = 0;
+    }
+  else
+    {
+      hscroll = ((float) l) / tcols;
+      hoffs = ((float) *xoffs) / (tcols - l - 1);
+    }
+
+  l = y2 - y1 - 2;
+  if (l > tlines)
+    {
+      y1 += (l - tlines) / 2;
+      y2 = y1 + tlines + 1;
+    }
+  if (mixer_vscroll_delta)
+    {
+      *yoffs += mixer_vscroll_delta;
+      mixer_vscroll_delta = 0;
+      if (*yoffs < 0)
+	{
+	  *yoffs = 0;
+	  beep ();
+	}
+      else if (*yoffs > tlines - l - 1)
+	{
+	  *yoffs = MAX (0, tlines - l - 1);
+	  beep ();
+	}
+    }
+  if (tlines - l - 1 <= 0)
+    {
+      voffs = 0;
+      vscroll = 1;
+    }
+  else
+    {
+      vscroll = ((float) l) / tlines;
+      voffs = ((float) *yoffs) / (tlines - l - 1);
+    }
+
+  /* colors
+   */
+  mixer_init_dc ('.', DC_ANY_3, MIXER_YELLOW, MIXER_BLUE, A_BOLD);
+  mixer_init_dc ('.', DC_ANY_4, MIXER_WHITE, MIXER_BLUE, A_BOLD);
+  mixer_dc (DC_ANY_4);
+
+  /* corners
+   */
+  mvaddch (y2, x2, ACS_LRCORNER);
+  mvaddch (y2, x1, ACS_LLCORNER);
+  mvaddch (y1, x1, ACS_ULCORNER);
+  mvaddch (y1, x2, ACS_URCORNER);
+
+  /* left + upper border
+   */
+  for (i = y1 + 1; i < y2; i++)
+    mvaddch (i, x1, ACS_VLINE);
+  for (i = x1 + 1; i < x2; i++)
+    mvaddch (y1, i, ACS_HLINE);
+  if (title)
+    {
+      l = strlen (title);
+      if (l <= x2 - x1 - 3)
+	{
+	  mvaddch (y1, x1 + 1 + (x2 - x1 - l) / 2 - 1, '[');
+	  mvaddch (y1, x1 + 1 + (x2 - x1 - l) / 2 + l, ']');
+	}
+      if (l <= x2 - x1 - 1)
+	{
+	  mixer_dc (DC_ANY_3);
+	  mvaddstr (y1, x1 + 1 + (x2 - x1 - l) / 2, title);
+	}
+      mixer_dc (DC_ANY_4);
+    }
+
+  stipple = ACS_CKBOARD;
+  block = ACS_BLOCK;
+  if (block == '#' && ACS_BOARD == '#')
+    {
+      block = stipple;
+      stipple = ACS_BLOCK;
+    }
+
+  /* lower scroll border
+   */
+  l = x2 - x1 - 1;
+  n = hscroll * l;
+  r = (hoffs + 1.0 / (2 * (l - n - 1))) * (l - n - 1);
+  for (i = 0; i < l; i++)
+    mvaddch (y2, i + x1 + 1, hscroll >= 1 ? ACS_HLINE :
+	     i >= r && i <= r + n ? block : stipple);
+
+  /* right scroll border
+   */
+  l = y2 - y1 - 1;
+  n = vscroll * l;
+  r = (voffs + 1.0 / (2 * (l - n - 1))) * (l - n - 1);
+  for (i = 0; i < l; i++)
+    mvaddch (i + y1 + 1, x2, vscroll >= 1 ? ACS_VLINE :
+	     i >= r && i <= r + n ? block : stipple);
+
+  /* show text
+   */
+  x1++; y1++;
+  for (i = 0; i < *yoffs; i++)
+    {
+      l = 0;
+      mixer_offset_text (&text_offs, 0, &l);
+    }
+  for (i = y1; i < y2; i++)
+    {
+      l = x2 - x1;
+      p = mixer_offset_text (&text_offs, *xoffs, &l);
+      n = x1;
+      while (l--)
+	mvaddch (i, n++, *p++);
+      while (n < x2)
+	mvaddch (i, n++, ' ');
+    }
+}
+
+struct vbuffer
+{
+  char *buffer;
+  int size;
+  int len;
+};
+
+static void
+vbuffer_kill (struct vbuffer *vbuf)
+{
+  if (vbuf->size)
+    free (vbuf->buffer);
+  vbuf->buffer = NULL;
+  vbuf->size = 0;
+  vbuf->len = 0;
+}
+
+#define vbuffer_append_string(vb,str)	vbuffer_append (vb, str, strlen (str))
+static void
+vbuffer_append (struct vbuffer *vbuf,
+		char           *text,
+		int             len)
+{
+  if (vbuf->size - vbuf->len <= len)
+    {
+      vbuf->size += len + 1;
+      vbuf->buffer = realloc (vbuf->buffer, vbuf->size);
+    }
+  memcpy (vbuf->buffer + vbuf->len, text, len);
+  vbuf->len += len;
+  vbuf->buffer[vbuf->len] = 0;
+}
+
+static int
+vbuffer_append_file (struct vbuffer *vbuf,
+		     char	    *name)
+{
+  int fd;
+
+  fd = open (name, O_RDONLY);
+  if (fd >= 0)
+    {
+      char buffer[1025];
+      int l;
+
+      do
+	{
+	  l = read (fd, buffer, 1024);
+	  
+	  vbuffer_append (vbuf, buffer, MAX (0, l));
+	}
+      while (l > 0 || (l < 0 && (errno == EAGAIN || errno == EINTR)));
+
+      close (fd);
+
+      return 0;
+    }
+  else
+    return 1;
+}
+
+static void
+mixer_show_procinfo (void)
+{
+  struct vbuffer vbuf = { NULL, 0, 0 };
+
+  vbuffer_append_string (&vbuf, "\n");
+  vbuffer_append_string (&vbuf, "/proc/asound/version:\n");
+  vbuffer_append_string (&vbuf, "====================\n");
+  if (vbuffer_append_file (&vbuf, "/proc/asound/version"))
+    {
+      vbuffer_kill (&vbuf);
+      mixer_procinfo_xoffs = mixer_procinfo_yoffs = 0;
+      mixer_show_text ("/proc",
+		       " No /proc information available. ",
+		       &mixer_procinfo_xoffs, &mixer_procinfo_yoffs);
+      return;
+    }
+  else
+    vbuffer_append_file (&vbuf, "/proc/asound/meminfo");
+
+  vbuffer_append_string (&vbuf, "\n");
+  vbuffer_append_string (&vbuf, "/proc/asound/cards:\n");
+  vbuffer_append_string (&vbuf, "===================\n");
+  if (vbuffer_append_file (&vbuf, "/proc/asound/cards"))
+    vbuffer_append_string (&vbuf, "No information available.\n");
+
+  vbuffer_append_string (&vbuf, "\n");
+  vbuffer_append_string (&vbuf, "/proc/asound/devices:\n");
+  vbuffer_append_string (&vbuf, "=====================\n");
+  if (vbuffer_append_file (&vbuf, "/proc/asound/devices"))
+    vbuffer_append_string (&vbuf, "No information available.\n");
+
+  vbuffer_append_string (&vbuf, "\n");
+  vbuffer_append_string (&vbuf, "/proc/asound/oss-devices:\n");
+  vbuffer_append_string (&vbuf, "=========================\n");
+  if (vbuffer_append_file (&vbuf, "/proc/asound/oss-devices"))
+    vbuffer_append_string (&vbuf, "No information available.\n");
+
+  vbuffer_append_string (&vbuf, "\n");
+  vbuffer_append_string (&vbuf, "/proc/asound/timers:\n");
+  vbuffer_append_string (&vbuf, "====================\n");
+  if (vbuffer_append_file (&vbuf, "/proc/asound/timers"))
+    vbuffer_append_string (&vbuf, "No information available.\n");
+
+  vbuffer_append_string (&vbuf, "\n");
+  vbuffer_append_string (&vbuf, "/proc/asound/pcm:\n");
+  vbuffer_append_string (&vbuf, "=================\n");
+  if (vbuffer_append_file (&vbuf, "/proc/asound/pcm"))
+    vbuffer_append_string (&vbuf, "No information available.\n");
+
+  mixer_show_text ("/proc", vbuf.buffer,
+		   &mixer_procinfo_xoffs, &mixer_procinfo_yoffs);
+  vbuffer_kill (&vbuf);
 }
 
 static void
@@ -743,21 +1154,28 @@ mixer_init_window (void)
    */
   mixer_window = initscr ();
 
+  mixer_no_lrcorner = tigetflag ("xenl") != 1 && tigetflag ("am") != 1;
+
   if (mixer_do_color)
     mixer_do_color = has_colors ();
   mixer_init_draw_contexts ();
 
   /* react on key presses
-   * and draw window
    */
-  keypad (mixer_window, TRUE);
-  leaveok (mixer_window, TRUE);
   cbreak ();
   noecho ();
+  leaveok (mixer_window, TRUE);
+  keypad (mixer_window, TRUE);
+  GETCH_BLOCK (1);
 
   /* init mixer screen
    */
   getmaxyx (mixer_window, mixer_max_y, mixer_max_x);
+  if (mixer_minimize)
+    {
+      mixer_max_x = MIXER_MIN_X;
+      mixer_max_y = MIXER_MIN_Y;
+    }
   mixer_ofs_x = 2 /* extra begin padding: */ + 1;
 
   /* required allocations */
@@ -770,7 +1188,7 @@ mixer_init_window (void)
   else
     mixer_cbar_height = MAX (1, mixer_max_y - MIXER_TEXT_Y);
 
-  mixer_clear ();
+  mixer_clear (TRUE);
 }
 
 static void
@@ -792,7 +1210,7 @@ mixer_resize (void)
       mixer_max_y = MAX (2, winsz.ws_row);
       
       /* humpf, i don't get it, if only the number of rows change,
-       * clear() segfaults (could trigger that with mc as well).
+       * ncurses will segfault shortly after (could trigger that with mc as well).
        */
       resizeterm (mixer_max_y + 1, mixer_max_x + 1);
       resizeterm (mixer_max_y, mixer_max_x);
@@ -808,8 +1226,8 @@ mixer_resize (void)
 }
 
 static void
-mixer_channel_changed_cb (void *private_data,
-			  int   channel)
+mixer_channel_changed (void *private_data,
+		       int   channel)
 {
   /* we don't actually need to update the individual channels because
    * we redraw the whole screen upon every main iteration anyways.
@@ -829,8 +1247,9 @@ mixer_iteration (void)
   fd_set rfds;
   int finished = 0;
   int key = 0;
+  int old_view;
   
-  callbacks.channel_was_changed = mixer_channel_changed_cb;
+  callbacks.channel_was_changed = mixer_channel_changed;
 
   /* setup for select on stdin and the mixer fd */
   mixer_fd = snd_mixer_file_descriptor (mixer_handle);
@@ -858,6 +1277,26 @@ mixer_iteration (void)
   if (FD_ISSET (fileno (stdin), &rfds))
     key = getch ();
 
+  old_view = mixer_view;
+  
+  /* feature Escape prefixing for some keys */
+  if (key == 27)
+    {
+      GETCH_BLOCK (0);
+      key = getch ();
+      GETCH_BLOCK (1);
+      switch (key)
+	{
+	case 9:	/* Tab */
+	  key = KEY_BTAB;
+	  break;
+	default:
+	  key = 27;
+	  break;
+	}
+    }
+  
+  /* general keys */
   switch (key)
     {
     case 0:
@@ -865,142 +1304,231 @@ mixer_iteration (void)
       break;
     case 27:	/* Escape */
       finished = 1;
+      key = 0;
       break;
-    case 9:		/* Tab */
-      mixer_exact = !mixer_exact;
+    case 13:	/* Return */
+    case 10:	/* NewLine */
+      if (mixer_view == VIEW_CHANNELS)
+	mixer_clear (FALSE);
+      mixer_view = VIEW_CHANNELS;
+      key = 0;
       break;
-    case KEY_RIGHT:
-    case 'n':
-      mixer_focus_channel += 1;
+    case 'h':
+    case 'H':
+    case KEY_F (1):
+      mixer_view = VIEW_HELP;
+      key = 0;
       break;
-    case KEY_LEFT:
-    case 'p':
-      mixer_focus_channel -= 1;
+    case '/':
+    case KEY_F (2):
+      mixer_view = VIEW_PROCINFO;
+      key = 0;
       break;
-    case KEY_PPAGE:
-      if (mixer_exact)
-	{
-	  mixer_lvolume_delta = 8;
-	  mixer_rvolume_delta = 8;
-	}
-      else
-	{
-	  mixer_lvolume_delta = 10;
-	  mixer_rvolume_delta = 10;
-	}
-      break;
-    case KEY_NPAGE:
-      if (mixer_exact)
-	{
-	  mixer_lvolume_delta = -8;
-	  mixer_rvolume_delta = -8;
-	}
-      else
-	{
-	  mixer_lvolume_delta = -10;
-	  mixer_rvolume_delta = -10;
-	}
-      break;
-    case KEY_BEG:
-    case KEY_HOME:
-      mixer_lvolume_delta = 512;
-      mixer_rvolume_delta = 512;
-      break;
-    case KEY_LL:
-    case KEY_END:
-      mixer_lvolume_delta = -512;
-      mixer_rvolume_delta = -512;
-      break;
-    case '+':
-      mixer_lvolume_delta = 1;
-      mixer_rvolume_delta = 1;
-      break;
-    case '-':
-      mixer_lvolume_delta = -1;
-      mixer_rvolume_delta = -1;
-      break;
-    case 'w':
-    case KEY_UP:
-      mixer_lvolume_delta = 1;
-      mixer_rvolume_delta = 1;
-    case 'W':
-      mixer_lvolume_delta += 1;
-      mixer_rvolume_delta += 1;
-      break;
-    case 'x':
-    case KEY_DOWN:
-      mixer_lvolume_delta = -1;
-      mixer_rvolume_delta = -1;
-    case 'X':
-      mixer_lvolume_delta += -1;
-      mixer_rvolume_delta += -1;
-      break;
-    case 'q':
-      mixer_lvolume_delta = 1;
-    case 'Q':
-      mixer_lvolume_delta += 1;
-      break;
-    case 'y':
-    case 'z':
-      mixer_lvolume_delta = -1;
-    case 'Y':
-    case 'Z':
-      mixer_lvolume_delta += -1;
-      break;
-    case 'e':
-      mixer_rvolume_delta = 1;
-    case 'E':
-      mixer_rvolume_delta += 1;
-      break;
-    case 'c':
-      mixer_rvolume_delta = -1;
-    case 'C':
-      mixer_rvolume_delta += -1;
-      break;
-    case 'm':
-    case 'M':
-      mixer_toggle_mute_left = 1;
-      mixer_toggle_mute_right = 1;
-      break;
-    case 'b':
-    case 'B':
-    case '=':
-      mixer_balance_volumes = 1;
-      break;
-    case '<':
-    case ',':
-      mixer_toggle_mute_left = 1;
-      break;
-    case '>':
-    case '.':
-      mixer_toggle_mute_right = 1;
-      break;
-    case 'R':
-    case 'r':
     case 'L':
     case 'l':
-      mixer_clear ();
-      break;
-    case ' ':
-      mixer_toggle_record = 1;
-      break;
-    case KEY_IC:
-    case ';':
-      mixer_toggle_rec_left = 1;
-      break;
-    case '\'':
-    case KEY_DC:
-      mixer_toggle_rec_right = 1;
-      break;
-    case '1':
-      mixer_route_rtol_in = 1;
-      break;
-    case '2':
-      mixer_route_ltor_in = 1;
+      mixer_clear (TRUE);
       break;
     }
+  
+  if (key && (mixer_view == VIEW_HELP ||
+	      mixer_view == VIEW_PROCINFO))
+    switch (key)
+      {
+      case 9:		/* Tab */
+	mixer_hscroll_delta += 8;
+	break;
+      case KEY_BTAB:
+	mixer_hscroll_delta -= 8;
+	break;
+      case KEY_A1:
+	mixer_hscroll_delta -= 1;
+	mixer_vscroll_delta -= 1;
+	break;
+      case KEY_A3:
+	mixer_hscroll_delta += 1;
+	mixer_vscroll_delta -= 1;
+	break;
+      case KEY_C1:
+	mixer_hscroll_delta -= 1;
+	mixer_vscroll_delta += 1;
+	break;
+      case KEY_C3:
+	mixer_hscroll_delta += 1;
+	mixer_vscroll_delta += 1;
+	break;
+      case KEY_RIGHT:
+      case 'n':
+	mixer_hscroll_delta += 1;
+	break;
+      case KEY_LEFT:
+      case 'p':
+	mixer_hscroll_delta -= 1;
+	break;
+      case KEY_UP:
+      case 'w':
+      case 'W':
+	mixer_vscroll_delta -= 1;
+	break;
+      case KEY_DOWN:
+      case 'x':
+      case 'X':
+	mixer_vscroll_delta += 1;
+	break;
+      case KEY_PPAGE:
+      case 'B':
+      case 'b':
+	mixer_vscroll_delta -= (mixer_max_y - 5) / 2;
+	break;
+      case KEY_NPAGE:
+      case ' ':
+	mixer_vscroll_delta += (mixer_max_y - 5) / 2;
+	break;
+      case KEY_BEG:
+      case KEY_HOME:
+	mixer_hscroll_delta -= 0xffffff;
+	break;
+      case KEY_LL:
+      case KEY_END:
+	mixer_hscroll_delta += 0xffffff;
+	break;
+      }
+  
+  if (key && mixer_view == VIEW_CHANNELS)
+    switch (key)
+      {
+      case 9:		/* Tab */
+	mixer_exact = !mixer_exact;
+	break;
+      case KEY_RIGHT:
+      case 'n':
+	mixer_focus_channel += 1;
+	break;
+      case KEY_LEFT:
+      case 'p':
+	mixer_focus_channel -= 1;
+	break;
+      case KEY_PPAGE:
+	if (mixer_exact)
+	  {
+	    mixer_lvolume_delta = 8;
+	    mixer_rvolume_delta = 8;
+	  }
+	else
+	  {
+	    mixer_lvolume_delta = 10;
+	    mixer_rvolume_delta = 10;
+	  }
+	break;
+      case KEY_NPAGE:
+	if (mixer_exact)
+	  {
+	    mixer_lvolume_delta = -8;
+	    mixer_rvolume_delta = -8;
+	  }
+	else
+	  {
+	    mixer_lvolume_delta = -10;
+	    mixer_rvolume_delta = -10;
+	  }
+	break;
+      case KEY_BEG:
+      case KEY_HOME:
+	mixer_lvolume_delta = 512;
+	mixer_rvolume_delta = 512;
+	break;
+      case KEY_LL:
+      case KEY_END:
+	mixer_lvolume_delta = -512;
+	mixer_rvolume_delta = -512;
+	break;
+      case '+':
+	mixer_lvolume_delta = 1;
+	mixer_rvolume_delta = 1;
+	break;
+      case '-':
+	mixer_lvolume_delta = -1;
+	mixer_rvolume_delta = -1;
+	break;
+      case 'w':
+      case KEY_UP:
+	mixer_lvolume_delta = 1;
+	mixer_rvolume_delta = 1;
+      case 'W':
+	mixer_lvolume_delta += 1;
+	mixer_rvolume_delta += 1;
+	break;
+      case 'x':
+      case KEY_DOWN:
+	mixer_lvolume_delta = -1;
+	mixer_rvolume_delta = -1;
+      case 'X':
+	mixer_lvolume_delta += -1;
+	mixer_rvolume_delta += -1;
+	break;
+      case 'q':
+	mixer_lvolume_delta = 1;
+      case 'Q':
+	mixer_lvolume_delta += 1;
+	break;
+      case 'y':
+      case 'z':
+	mixer_lvolume_delta = -1;
+      case 'Y':
+      case 'Z':
+	mixer_lvolume_delta += -1;
+	break;
+      case 'e':
+	mixer_rvolume_delta = 1;
+      case 'E':
+	mixer_rvolume_delta += 1;
+	break;
+      case 'c':
+	mixer_rvolume_delta = -1;
+      case 'C':
+	mixer_rvolume_delta += -1;
+	break;
+      case 'm':
+      case 'M':
+	mixer_toggle_mute_left = 1;
+	mixer_toggle_mute_right = 1;
+	break;
+      case 'b':
+      case 'B':
+      case '=':
+	mixer_balance_volumes = 1;
+	break;
+      case '<':
+      case ',':
+	mixer_toggle_mute_left = 1;
+	break;
+      case '>':
+      case '.':
+	mixer_toggle_mute_right = 1;
+	break;
+      case ' ':
+	mixer_toggle_record = 1;
+	break;
+      case KEY_IC:
+      case ';':
+	mixer_toggle_rec_left = 1;
+	break;
+      case '\'':
+      case KEY_DC:
+	mixer_toggle_rec_right = 1;
+	break;
+      case '1':
+	mixer_route_rtol_in = 1;
+	break;
+      case '2':
+	mixer_route_ltor_in = 1;
+	break;
+      }
+  
+  if (old_view != mixer_view)
+    mixer_clear (FALSE);
+  
   mixer_focus_channel = CLAMP (mixer_focus_channel, 0, mixer_n_channels - 1);
-
+  
   return finished;
 }
 
@@ -1034,13 +1562,13 @@ main (int    argc,
    */
   do
     {
-      opt = getopt (argc, argv, "c:m:ehg");
+      opt = getopt (argc, argv, "c:m:eshg");
       switch (opt)
 	{
 	case '?':
 	case 'h':
 	  fprintf (stderr, "%s %s\n", PRGNAME_UPPER, VERSION);
-	  fprintf (stderr, "Usage: %s [-e] [-c <card: 1..%i>] [-m <mixer: 0..1>]\n", PRGNAME, snd_cards ());
+	  fprintf (stderr, "Usage: %s [-e] [-c <card: 1..%i>] [-m <mixer: 0..1>] [-z]\n", PRGNAME, snd_cards ());
 	  mixer_abort (ERR_NONE, "");
 	case 'c':
 	  card_id = snd_card_name (optarg);
@@ -1053,6 +1581,9 @@ main (int    argc,
 	  break;
 	case 'm':
 	  mixer_id = CLAMP (optarg[0], '0', '1') - '0';
+	  break;
+	case 's':
+	  mixer_minimize = 1;
 	  break;
 	}
     }
@@ -1082,14 +1613,26 @@ main (int    argc,
   
   signal (SIGWINCH, (void*) mixer_winch);
 
-  /* react on key presses
-   * and draw window
-   */
   do
     {
-      mixer_update_cbars ();
-      mixer_draw_frame ();
-      REFRESH ();
+      /* draw window upon every iteration */
+      if (!mixer_needs_resize)
+	{
+	  switch (mixer_view)
+	    {
+	    case VIEW_CHANNELS:
+	      mixer_update_cbars ();
+	      break;
+	    case VIEW_HELP:
+	      mixer_show_text ("Help", mixer_help_text, &mixer_help_xoffs, &mixer_help_yoffs);
+	      break;
+	    case VIEW_PROCINFO:
+	      mixer_show_procinfo ();
+	      break;
+	    }
+	  mixer_draw_frame ();
+	  refresh ();
+	}
     }
   while (!mixer_iteration ());
   
