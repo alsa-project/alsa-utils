@@ -199,6 +199,7 @@ static void device_list(void)
 		error("no soundcards found...");
 		return;
 	}
+	fprintf(stderr, "**** List of %s Hardware Devices ****\n", snd_pcm_stream_name(stream));
 	while (card >= 0) {
 		char name[32];
 		sprintf(name, "hw:%d", card);
@@ -211,7 +212,6 @@ static void device_list(void)
 			snd_ctl_close(handle);
 			goto next_card;
 		}
-		fprintf(stderr, "**** List of %s Hardware Devices ****\n", snd_pcm_stream_name(stream));
 		dev = -1;
 		while (1) {
 			unsigned int count;
