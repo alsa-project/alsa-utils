@@ -644,12 +644,15 @@ static void soundcard_setup_write_switch(FILE * out, const char *space, int inte
 		break;
 	case SND_SW_TYPE_BYTE:
 		s = "byte";
-		sprintf(v, "%u", (unsigned int) sw->value.data8[0]);
+		if (sw->subtype == SND_SW_SUBTYPE_HEXA) {
+			sprintf(v, "0x%x", (unsigned int) sw->value.data8[0]);
+		} else {
+			sprintf(v, "%u", (unsigned int) sw->value.data8[0]);
+		}
 		break;
 	case SND_SW_TYPE_WORD:
 		s = "word";
-		if (interface == SND_INTERFACE_CONTROL &&
-		    !strcmp(sw->name, SND_CTL_SW_JOYSTICK_ADDRESS)) {
+		if (sw->subtype == SND_SW_SUBTYPE_HEXA) {
 		    	sprintf(v, "0x%x", (unsigned int) sw->value.data16[0]);
 		} else {
 			sprintf(v, "%u", (unsigned int) sw->value.data16[0]);
@@ -657,7 +660,11 @@ static void soundcard_setup_write_switch(FILE * out, const char *space, int inte
 		break;
 	case SND_SW_TYPE_DWORD:
 		s = "dword";
-		sprintf(v, "%u", sw->value.data32[0]);
+		if (sw->subtype == SND_SW_SUBTYPE_HEXA) {
+			sprintf(v, "0x%x", sw->value.data32[0]);
+		} else {
+			sprintf(v, "%u", sw->value.data32[0]);
+		}
 		break;
 	case SND_SW_TYPE_USER:
 		s = "user";
