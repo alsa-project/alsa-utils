@@ -95,7 +95,7 @@ static int store_setup(const char *cardname)
 		int cardno;
 
 		cardno = snd_card_name(cardname);
-		if (cardno) {
+		if (cardno < 0) {
 			error("Cannot find soundcard '%s'...", cardname);
 			return 1;
 		}
