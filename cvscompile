@@ -1,6 +1,9 @@
 #!/bin/bash
 
-aclocal $ACLOCAL_FLAGS
+if test -d ../alsa-lib/utils; then
+  alsa_m4_flags="-I ../alsa-lib/utils"
+fi
+aclocal $alsa_m4_flags $ACLOCAL_FLAGS
 autoheader
 automake --foreign --copy --add-missing
 touch depcomp		# for older automake
