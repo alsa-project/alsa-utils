@@ -1049,9 +1049,13 @@ static int load_state(char *file, const char *cardname)
 
 static int get_int_state(const char *str)
 {
+	if (!strcasecmp(str, "on"))
+		return SND_CTL_POWER_D0;
+	if (!strcasecmp(str, "off"))
+		return SND_CTL_POWER_D3hot;
 	if (*str == 'D' || *str == 'd') {
 		str++;
-		if (!strcmp(str, "0") || !strcmp(str, "on"))
+		if (!strcmp(str, "0"))
 			return SND_CTL_POWER_D0;
 		if (!strcmp(str, "1"))
 			return SND_CTL_POWER_D1;
@@ -1059,7 +1063,7 @@ static int get_int_state(const char *str)
 			return SND_CTL_POWER_D2;
 		if (!strcmp(str, "3"))
 			return SND_CTL_POWER_D3;
-		if (!strcmp(str, "3hot") || !strcmp(str, "off"))
+		if (!strcmp(str, "3hot"))
 			return SND_CTL_POWER_D3hot;
 		if (!strcmp(str, "3cold"))
 			return SND_CTL_POWER_D3cold;
@@ -1167,7 +1171,7 @@ static int power(const char *argv[], int argc)
 		return 0;
 	}
 	power_state = get_int_state(argv[0]);
-	if (power_state > 0) {
+	if (power_state >= 0) {
 		int card, first = 1;
 
 		card = -1;
