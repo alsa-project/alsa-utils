@@ -791,6 +791,10 @@ static void set_params(void)
 		start_threshold = buffer_size + (double) rate * start_delay / 1000000;
 	else
 		start_threshold = (double) rate * start_delay / 1000000;
+	if (start_threshold < 1)
+		start_threshold = 1;
+	if (start_threshold > buffer_size)
+		start_threshold = buffer_size;
 	err = snd_pcm_sw_params_set_start_threshold(handle, swparams, start_threshold);
 	assert(err >= 0);
 	if (stop_delay <= 0) 
