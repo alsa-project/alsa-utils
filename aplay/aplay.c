@@ -654,7 +654,7 @@ static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
 		hwparams.format = SND_PCM_FORMAT_S16_LE;
 		break;
 	case 24:
-		switch (LE_SHORT(f->byte_p_spl) / hwparams.channels) {
+		switch (LE_SHORT(f->byte_p_spl)) {
 		case 3:
 			hwparams.format = SND_PCM_FORMAT_S24_3LE;
 			break;
@@ -662,10 +662,9 @@ static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
 			hwparams.format = SND_PCM_FORMAT_S24_LE;
 			break;
 		default:
-			error(" can't play WAVE-files with sample %d bits in %d bytes wide (%d channels)", LE_SHORT(f->bit_p_spl), LE_SHORT(f->byte_p_spl), hwparams.channels);
-			exit(EXIT_FAILURE);
+			error(" can't play WAVE-files with sample %d bits in %d bytes wide", LE_SHORT(f->bit_p_spl), LE_SHORT(f->byte_p_spl));
+			break;
 		}
-		break;
 	case 32:
 		hwparams.format = SND_PCM_FORMAT_S32_LE;
 		break;
@@ -1625,12 +1624,17 @@ static void end_wave(int fd)
 {				/* only close output */
 	WaveChunkHeader cd;
 	off_t length_seek;
+	u_int rifflen;
 	
 	length_seek = sizeof(WaveHeader) +
 		      sizeof(WaveChunkHeader) +
 		      sizeof(WaveFmtBody);
 	cd.type = WAV_DATA;
-	cd.length = fdcount > 0xffffffff ? 0xffffffff : LE_INT(fdcount);
+	cd.length = fdcount > 0x7fffffff ? 0x7fffffff : LE_INT(fdcount);
+	rifflen = fdcount + 2*sizeof(WaveChunkHeader) + sizeof(WaveFmtBody) + 4;
+	rifflen = rifflen > 0x7fffffff ? 0x7fffffff : LE_INT(rifflen);
+	if (lseek(fd, 4, SEEK_SET) == 4)
+		write(fd, &rifflen, 4);
 	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
 		write(fd, &cd, sizeof(WaveChunkHeader));
 	if (fd != 1)
