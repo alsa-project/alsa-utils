@@ -983,7 +983,7 @@ mixer_draw_frame (void)
   mixer_dc (DC_TEXT);
   sprintf (string, "%s", mixer_card_name);
   max_len = mixer_max_x - 2 - 6 - 2;
-  if (strlen (string) > max_len)
+  if ((int)strlen (string) > max_len)
     string[max_len] = 0;
   addstr (string);
   
@@ -994,7 +994,7 @@ mixer_draw_frame (void)
   mixer_dc (DC_TEXT);
   sprintf (string, "%s", mixer_device_name);
   max_len = mixer_max_x - 2 - 6 - 2;
-  if (strlen (string) > max_len)
+  if ((int)strlen (string) > max_len)
     string[max_len] = 0;
   addstr (string);
 
@@ -1088,7 +1088,8 @@ mixer_show_text (char *title,
   float hoffs, voffs;
   char *p, *text_offs = text;
   int x1, x2, y1, y2;
-  int i, n, l, r, block, stipple;
+  int i, n, l, r;
+  unsigned long block, stipple;
 
   /* coords
    */

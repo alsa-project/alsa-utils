@@ -836,7 +836,7 @@ static int parse_control_id(const char *str, snd_ctl_elem_id_t *id)
 			if (*str == '\'' || *str == '\"') {
 				c = *str++;
 				while (*str && *str != c) {
-					if (size < sizeof(buf)) {
+					if (size < (int)sizeof(buf)) {
 						*ptr++ = *str;
 						size++;
 					}
@@ -846,7 +846,7 @@ static int parse_control_id(const char *str, snd_ctl_elem_id_t *id)
 					str++;
 			} else {
 				while (*str && *str != ',') {
-					if (size < sizeof(buf)) {
+					if (size < (int)sizeof(buf)) {
 						*ptr++ = *str;
 						size++;
 					}
@@ -894,7 +894,7 @@ static int parse_simple_id(const char *str, snd_mixer_selem_id_t *sid)
 	size = 1;	/* for '\0' */
 	if (*str != '"' && *str != '\'') {
 		while (*str && *str != ',') {
-			if (size < sizeof(buf)) {
+			if (size < (int)sizeof(buf)) {
 				*ptr++ = *str;
 				size++;
 			}
@@ -903,7 +903,7 @@ static int parse_simple_id(const char *str, snd_mixer_selem_id_t *sid)
 	} else {
 		c = *str++;
 		while (*str && *str != c) {
-			if (size < sizeof(buf)) {
+			if (size < (int)sizeof(buf)) {
 				*ptr++ = *str;
 				size++;
 			}
