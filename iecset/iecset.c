@@ -56,7 +56,7 @@ static struct cmdtbl cmds[] = {
 	{ "pro", IDX_PRO, CMD_BOOL,
 	  "professional (common)\n\toff = consumer mode, on = professional mode" },
 	{ "aud", IDX_NOAUDIO, CMD_BOOL_INV,
-	  "audio (common)\n\toff = audio mode, on = non-audio mode" },
+	  "audio (common)\n\ton = audio mode, off = non-audio mode" },
 	{ "rat", IDX_RATE, CMD_INT,
 	  "rate (common)\n\tsample rate in Hz" },
 	{ "emp", IDX_EMP, CMD_INT,
