@@ -30,11 +30,42 @@ to load the correct parameters for your sound card.
 .SH OPTIONS
 Alsaconf accepts the following options:
 .TP
+.B \-c, \-\-config file
+Specify the module config file.
+As default,
+.B alsaconf
+probes the available config file automatically.
+.TP
+.B \-d, \-\-devmode mode
+Set the device mode for the ALSA devices (default = 0666).
+This option is obsolete in the recent ALSA version.
+.TP
+.B \-g, \-\-gid gid
+Set the gid for the ALSA devices (default = 0).
+This option is obsolete in the recent ALSA version.
+.TP
+.B \-h, \-\-help
+Displays this help text.
+.TP
+.B \-L, \-\-log file
+Logging on the given file.  The log is appended to the file.
+This option is for debugging purpose only.
+.TP
 .B \-l, \-\-legacy
 Check only for legacy non-isapnp cards.
 .TP
 .B \-m, \-\-modinfo
 Read module descriptions instead of reading a card database.
+.TP
+.B \-P, \-\-listprobe
+List the supported legacy card modules.
+.TP
+.B \-p, \-\-probe card-name
+Probe a legacy non-isapnp card and print module options.
+.TP
+.B \-r, \-\-strict
+Set strict device mode (equiv. with \-g 17 \-d 0660).
+This option is obsolete in the recent ALSA version.
 .TP
 .B \-s, \-\-sound\-wav\-file
 Use the specified wav file as a test sound.
@@ -42,37 +73,6 @@ Use the specified wav file as a test sound.
 .B \-u, \-\-uid uid
 Set the uid for the ALSA devices (default = 0).
 This option is obsolete in the recent ALSA version.
-.TP
-.B \-g, \-\-gid gid
-Set the gid for the ALSA devices (default = 0).
-This option is obsolete in the recent ALSA version.
-.TP
-.B \-d, \-\-devmode mode
-Set the device mode for the ALSA devices (default = 0666).
-This option is obsolete in the recent ALSA version.
-.TP
-.B \-r, \-\-strict
-Set strict device mode (equiv. with \-g 17 \-d 0660).
-This option is obsolete in the recent ALSA version.
-.TP
-.B \-L, \-\-log file
-Logging on the given file.  The log is appended to the file.
-This option is for debugging purpose only.
-.TP
-.B \-p, \-\-probe card-name
-Probe a legacy non-isapnp card and print module options.
-.TP
-.B \-P, \-\-listprobe
-List the supported legacy card modules.
-.TP
-.B \-c, \-\-config file
-Specify the module config file.
-As default,
-.B alsaconf
-probes the available config file automatically.
-.TP
-.B \-h, \-\-help
-Displays this help text.
 
 .SH DEBIAN SPECIFIC
 In Debian, the default gid of the device files is 29 (corresponding to the
