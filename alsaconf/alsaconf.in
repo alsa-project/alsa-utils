@@ -513,7 +513,7 @@ BEGIN {
 /^[<literal space><literal tab>]*PCI: /{
 	gsub(/0x/, "");
 	gsub(/=/, ":");
-	x = sprintf ("'$lspci' -n 2>/dev/null| grep '"'Class 040.'"' | grep %s", $2);
+	x = sprintf ("'$lspci' -n 2>/dev/null| grep '"' 040.: '"' | grep %s", $2);
 	if (system (x) == 0)
 		printf "%s %s\n", $2, driver >>"'"$FOUND"'"
 }
