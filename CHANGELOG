@@ -1,3 +1,9 @@
+0.0.5 -> 0.0.6
+
+* updates for new alsa-lib
+* fixed compilation problems with config.h header file
+* updated output 'aplay -l'
+
 0.0.3 -> 0.0.4
 
 * added check for alsa-lib package
