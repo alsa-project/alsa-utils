@@ -10,5 +10,5 @@ dist-hook:
 	@if ! test -z "$(AMTAR)"; then \
 		$(AMTAR) --create --verbose --file=- $(distdir) | bzip2 -c -9 > $(distdir).tar.bz2 ; \
 	else \
-		$(TAR) --create --verbose --bzip2 --file=- $(distdir) | bzip2 -c -9 > $(distdir).tar.bz2 ; \
+		$(TAR) --create --verbose --file=- $(distdir) | bzip2 -c -9 > $(distdir).tar.bz2 ; \
 	fi
