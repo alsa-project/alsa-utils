@@ -1112,7 +1112,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 	snd_mixer_selem_get_capture_volume_range(elem, &cmin, &cmax);
 	for (idx = 1; idx < argc; idx++) {
 		char *ptr = argv[idx], *optr;
-		int multi;
+		int multi, firstchn = 1;
 		channels = channels_mask(&ptr, channels);
 		if (*ptr == '\0')
 			continue;
@@ -1142,14 +1142,24 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 				} else if (!strncmp(ptr, "on", 2) && snd_mixer_selem_has_playback_switch(elem)) {
 					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
 					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "on", 0, ival));
-				} else if ((isdigit(*ptr) || *ptr == '-' || *ptr == '+') && snd_mixer_selem_has_playback_volume(elem)) {
-					snd_mixer_selem_get_playback_volume(elem, chn, &lval);
-					snd_mixer_selem_set_playback_volume(elem, chn, get_volume_simple(&ptr, pmin, pmax, lval));
+				} else if (!strncmp(ptr, "toggle", 6) && snd_mixer_selem_has_playback_switch(elem)) {
+					if (firstchn || !snd_mixer_selem_has_playback_switch_joined(elem)) {
+						snd_mixer_selem_get_playback_switch(elem, chn, &ival);
+						snd_mixer_selem_set_playback_switch(elem, chn, (ival ? 1 : 0) ^ 1);
+					}
+					simple_skip_word(&ptr, "toggle");
+				} else if (isdigit(*ptr) || *ptr == '-' || *ptr == '+') {
+					if (snd_mixer_selem_has_playback_volume(elem)) {
+						snd_mixer_selem_get_playback_volume(elem, chn, &lval);
+						snd_mixer_selem_set_playback_volume(elem, chn, get_volume_simple(&ptr, pmin, pmax, lval));
+					} else {
+						get_volume_simple(&ptr, 0, 100, 0);
+					}
 				} else if (simple_skip_word(&ptr, "cap") || simple_skip_word(&ptr, "rec") ||
 					   simple_skip_word(&ptr, "nocap") || simple_skip_word(&ptr, "norec")) {
 					/* nothing */
 				} else {
-					error("Unknown setup '%s'..\n", ptr);
+					error("Unknown playback setup '%s'..\n", ptr);
 					snd_mixer_close(handle);
 					return err;
 				}
@@ -1170,20 +1180,31 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 				} else if (!strncmp(ptr, "norec", 5) && snd_mixer_selem_has_capture_switch(elem)) {
 					snd_mixer_selem_get_capture_switch(elem, chn, &ival);
 					snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "norec", 1, ival));
-				} else if ((isdigit(*ptr) || *ptr == '-' || *ptr == '+') && snd_mixer_selem_has_capture_volume(elem)) {
-					snd_mixer_selem_get_capture_volume(elem, chn, &lval);
-					snd_mixer_selem_set_capture_volume(elem, chn, get_volume_simple(&ptr, cmin, cmax, lval));
+				} else if (!strncmp(ptr, "toggle", 6) && snd_mixer_selem_has_capture_switch(elem)) {
+					if (firstchn || !snd_mixer_selem_has_capture_switch_joined(elem)) {
+						snd_mixer_selem_get_capture_switch(elem, chn, &ival);
+						snd_mixer_selem_set_capture_switch(elem, chn, (ival ? 1 : 0) ^ 1);
+					}
+					simple_skip_word(&ptr, "toggle");
+				} else if (isdigit(*ptr) || *ptr == '-' || *ptr == '+') {
+					if (snd_mixer_selem_has_capture_volume(elem)) {
+						snd_mixer_selem_get_capture_volume(elem, chn, &lval);
+						snd_mixer_selem_set_capture_volume(elem, chn, get_volume_simple(&ptr, cmin, cmax, lval));
+					} else {
+						get_volume_simple(&ptr, 0, 100, 0);
+					}
 				} else if (simple_skip_word(&ptr, "mute") || simple_skip_word(&ptr, "off") ||
 					   simple_skip_word(&ptr, "unmute") || simple_skip_word(&ptr, "on")) {
 					/* nothing */
 				} else {
-					error("Unknown setup '%s'..\n", ptr);
+					error("Unknown capture setup '%s'..\n", ptr);
 					snd_mixer_close(handle);
 					return err;
 				}
 			}
 			if (!multi)
 				ptr = optr;
+			firstchn = 0;
 		}
 	} 
       __skip_write:
