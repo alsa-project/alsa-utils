@@ -38,7 +38,7 @@ clean:
 
 cvsclean: clean
 	rm -f config.cache config.log config.status Makefile.conf \
-              include/config.h utils/alsa-utils.spec configure
+              include/aconfig.h utils/alsa-utils.spec configure
 
 pack: cvsclean
 	chown -R root.root ../alsa-utils
