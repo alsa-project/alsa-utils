@@ -20,7 +20,7 @@ soundcard drivers. It supports multiple soundcards with multiple devices.
 Help: show available flags.
 
 .TP
-\fI\-c\fP <card number or idenfication>
+\fI\-c\fP <card number or identification>
 Select the soundcard to use, if you have more than one. Cards are
 numbered from 0 (the default).
 
@@ -29,12 +29,67 @@ numbered from 0 (the default).
 Select the mixer device to control.
 
 .TP
-\fI\-g\fP <toggle color settings>
+\fI\-g\fP
 Toggle the using of colors.
 
 .TP
-\fI\-s\fP <minimize mixer window>
+\fI\-s\fP
 Minimize the mixer window.
+
+.TP
+\fI\-V\fP <view mode>
+Select the starting view mode, either \fIplayback\fP, \fIcapture\fP or \fIall\fP.
+
+.SH MIXER VIEWS
+
+The top-left corner of \fBalsamixer\fP is the are to show some basic
+information: the card name, the mixer chip name, the current view
+mode and the currently selected mixer item.
+When the mixer item is switched off, \fI[Off]\fP is displayed in its
+name.
+
+Volume bars are located below the basic information area.  You can
+scroll left/right when all controls can't be put in a single screen.
+The name of each control is shown in the bottom below the volume bars.
+The currently selected item is drawn in red and/of emphasized.
+
+Each mixer control with volume capability shows a box and the current
+volume filled in that box.  The volume percentages are displayed below
+the volume bar for left and right channels.  For a mono control, only
+one value is shown there.
+
+When a mixer control is turned off, \fIM\fP (mute) appears in the top
+of its volume bar.  Stereo controls may have two \fIM\fP's for left
+and right channels.  You can toggle the switch via \fIm\fP key.
+
+When a mixer control has capture capability, the capture flag appears
+over the volume bar.  When the capture is turned off,
+\-\-\-\-\-\- is shown.  \fICAPTUR\fP in red appears when the
+capture switch is turned on.  In addition, \fIL\fP and \fIR\fP letters
+appear in left and right side to indicate that left and the right
+channels are turned on.
+
+Some controls have the enumeration list, and don't show boxes but only
+texts which indicate the currently active item.  You can change the
+item via up/down keys.
+
+.SH VIEW MODES
+\fBalsamixer\fP has three view modes: playback, capture and all.
+In the playback view, only the controls related with playback are shown.
+Similarly, only the controls for capture (recording) are shown in the capture
+view.  The all view mode shows all controls.  The current view mode is displayed
+in the top-left position together with the mixer name, etc.
+
+The default view mode is the playback view.  You can change it via 
+\fI-V\fP option.
+
+Each view mode can be switched via keys, \fIF3\fP, \fIF4\fP and \fIF5\fP keys
+for playback, capture and all views, respectively.  Instead of function keys,
+the number keys \fI3\fP, \fI4\fP and \fI5\fP are accepted, too, for terminals
+which can't handle function keys.
+
+In addition to these view modes, you can switch to the help mode and
+the proc info mode via \fIF1\fP and \fIF2\fP keys, respectively.
 
 .SH KEYBOARD COMMANDS
 \fBalsamixer\fP recognizes the following keyboard commands to control the soundcard. 
@@ -108,6 +163,6 @@ fault. Plain old \fBxterm\fP seems to be fine.
 .SH AUTHOR
 .B alsamixer
 has been written by Tim Janik <timj@gtk.org> and
-been furtherly improved by Jaroslav Kysela <perex@suse.cz>.
+been further improved by Jaroslav Kysela <perex@suse.cz>.
 
 This manual page was provided by Paul Winkler <zarmzarm@erols.com>.
