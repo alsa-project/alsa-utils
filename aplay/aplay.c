@@ -202,7 +202,7 @@ static void device_list(void)
 				break;
 			pcminfo.device = dev;
 			pcminfo.stream = -stream - 1;
-			pcminfo.subdevice = -1;
+			pcminfo.subdevice = 0;
 			if ((err = snd_ctl_pcm_info(handle, &pcminfo)) < 0) {
 				error("control digital audio info (%i): %s", card, snd_strerror(err));
 				continue;
