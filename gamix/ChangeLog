@@ -1,3 +1,15 @@
+1999-08-04  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* probe.c: fixed multi haven element problem.
+
+1999-08-03  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* catch.c: fixed mux lock.
+
+1999-07-30  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
+
+	* conf_w.c: fixed case of cards[i].mixer[j].ee_n = 0.
+
 1999-07-19  Fumihiko Murata  <fmurata@p1.tcnet.ne.jp>
 
 	* probe.c: fixed multi mixerdevices.

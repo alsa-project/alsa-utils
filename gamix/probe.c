@@ -4,19 +4,20 @@
 int card_num,mdev_num;
 s_card *cards;
 
+static int search_es(snd_mixer_eid_t *,snd_mixer_elements_t *);
 static gint ab_chk( s_mixer *,snd_mixer_eid_t * );
 static int s_element_build(snd_mixer_t *,s_element *,snd_mixer_elements_t *,
 						   snd_mixer_eid_t ,int , int);
 static gint mk_mux_lst(snd_mixer_t *,snd_mixer_elements_t *,snd_mixer_element_info_t *,snd_mixer_eid_t **);
 
 gint probe_mixer( void ) {
-	int err,i,j,k,l;
+	int err,i,j,k,l,m;
 	snd_ctl_t *p_handle;
 	snd_mixer_t *m_handle;
 	snd_mixer_elements_t es;
-	snd_mixer_element_t ee;
 	s_mixer *mixer;
 	s_group *group;
+	int *es_nums;
 
 	card_num=snd_cards();
 	cards=(s_card *)g_malloc(sizeof(s_card)*card_num);
@@ -121,6 +122,14 @@ gint probe_mixer( void ) {
 				snd_mixer_close(m_handle);
 				return -1;
 			}
+			es_nums = (int *)g_malloc(es.elements * sizeof(int));
+			if( es_nums == NULL ) {
+				fprintf(stderr,nomem_msg);
+				snd_ctl_close(p_handle);
+				snd_mixer_close(m_handle);
+				return -1;
+			}
+			bzero(es_nums,es.elements * sizeof(int));
 			//printf("Card %d mixer %d\n",i,j);
 			for( k=0 ; k<mixer->groups.groups ; k++ ) {
 				group=&mixer->group[k];
@@ -162,12 +171,35 @@ gint probe_mixer( void ) {
 					return -1;
 				}
 				for( l=0 ; l<group->g.elements ; l++ ) {
+					m=search_es( &group->g.pelements[l],&es );
+					if( m>-1 ) {
+						if( es_nums[m] ) group->g.pelements[l].type=0;
+						es_nums[m]++;
+					}
 					err=s_element_build(m_handle,&group->e[l],&es,
 									   group->g.pelements[l],i,j);
 					if( err<0 ) {
 						snd_ctl_close(p_handle);
 						snd_mixer_close(m_handle);
 						return -1;
+					}
+				}
+			}
+			for( k=0 ; k<es.elements ; k++ ) {
+				if( es_nums[k] > 1 ) {
+					for( l=0 ; l<mixer->groups.groups ; l++ ) {
+						group=&mixer->group[l];
+						for( m=0 ; m<group->g.elements; m++ ) {
+							if( strcmp( es.pelements[k].name,group->g.pelements[m].name)==0 &&
+								es.pelements[k].index == group->g.pelements[m].index &&
+								es.pelements[k].type == group->g.pelements[m].type ) {
+								group->e[m].e.eid.type=0;
+								group->e[m].info.eid.type=0;
+								l=mixer->groups.groups;
+								break;
+							}
+
+						}
 					}
 				}
 			}
@@ -179,15 +211,16 @@ gint probe_mixer( void ) {
 				  mixer->es.pelements[k].index,
 				  mixer->es.pelements[k].type);
 				*/
-				//if( mixer->es.pelements[k].type > 99 ) {
-				if( ab_chk(mixer,&es.pelements[k]) ) {
-					l++;
-					/*
-					  printf("Element '%s',%d,%d\n",
-					  es.pelements[k].name,
-					  es.pelements[k].index,
-					  es.pelements[k].type);
-					*/
+				if( es_nums[k] == 0 || es_nums[k]>1 ) {
+					if( ab_chk(mixer,&es.pelements[k]) ) {
+						l++;
+						/*
+						  printf("Element '%s',%d,%d\n",
+						  es.pelements[k].name,
+						  es.pelements[k].index,
+						  es.pelements[k].type);
+						*/
+					} else 	es_nums[k]=1;
 				}
 			}
 			mixer->ee_n=l;
@@ -203,7 +236,7 @@ gint probe_mixer( void ) {
 				k=0;
 				while(l>0) {
 					l--;
-					while( !ab_chk(mixer,&es.pelements[k]) ) k++;
+					while( es_nums[k]==1 ) k++;
 					err=s_element_build(m_handle,&mixer->ee[l].e,&es,
 										es.pelements[k],i,j);
 
@@ -213,16 +246,25 @@ gint probe_mixer( void ) {
 				}
 			}
 			g_free(es.pelements);
+			g_free(es_nums);
 			snd_mixer_close(m_handle);
 		}
 		snd_ctl_close(p_handle);
-
 	}
 	return 0;
 }
 
+static int search_es(snd_mixer_eid_t *eid,snd_mixer_elements_t *es) {
+	int i;
+	for( i=0 ; i<es->elements ; i++ ) {
+		if( strcmp( es->pelements[i].name , eid->name ) == 0 &&
+			es->pelements[i].index == eid->index &&
+			es->pelements[i].type == eid->type ) return i;
+	}
+	return -1;
+}
+
 static gint ab_chk( s_mixer *mixer,snd_mixer_eid_t *eid ) {
-	int i,j;
 
 	switch( eid->type ) {
 	case SND_MIXER_ETYPE_SWITCH1:
@@ -238,16 +280,6 @@ static gint ab_chk( s_mixer *mixer,snd_mixer_eid_t *eid ) {
 	default:
 		return FALSE;
 	}
-
-	for( i=0 ; i<mixer->groups.groups ; i++ ) {
-		if( strncmp(mixer->groups.pgroups[i].name,eid->name,2) == 0 ) {
-			for( j=0 ; j<mixer->group[i].g.elements ; j++ ) {
-				if( strcmp(mixer->group[i].e[j].e.eid.name , eid->name) == 0 &&
-					mixer->group[i].e[j].e.eid.index == eid->index &&
-					mixer->group[i].e[j].e.eid.type == eid->type ) return FALSE;
-			}
-		}
-	}
 	return TRUE;
 }
 
@@ -260,7 +292,8 @@ static int s_element_build(snd_mixer_t *handle,s_element *e,
 	e->e.eid = eid;
 	e->info.eid = eid;
 	if( eid.type != SND_MIXER_ETYPE_SWITCH1 &&
-		eid.type != SND_MIXER_ETYPE_SWITCH2 ) {
+		eid.type != SND_MIXER_ETYPE_SWITCH2 &&
+		eid.type > 0 ) {
 		err=snd_mixer_element_info_build(handle,&e->info);
 		if( err<0 ) {
 			preid(eid);

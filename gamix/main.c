@@ -19,7 +19,7 @@ static void exit_gtk(GtkWidget *w,gpointer data) {
 }
 
 int main( int argc , char **argv ) {
-	int i,j;
+	int i;
 	gchar *dirname,*filename;
 
 	i=probe_mixer();
@@ -141,7 +141,7 @@ void disp_toolbar(void) {
 }
 
 static void sel_mctype(GtkWidget *w,gpointer n) {
-	int i,j;
+	int i;
 	GtkRequisition rq;
 
 	i=(int)n;
@@ -157,7 +157,7 @@ static void sel_mctype(GtkWidget *w,gpointer n) {
 int disp_mixer( void ) {
 	int i,j;
 	GtkWidget *n_label;
-	GtkWidget *sep,*frame;
+	GtkWidget *frame;
 	GtkRequisition rq;
 
 	switch( conf.wmode ) {

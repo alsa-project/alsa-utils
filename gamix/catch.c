@@ -13,7 +13,7 @@ static void cb_rb(void *pd ) {
 }
 
 static void element_callback(void *pd,int cmd,snd_mixer_eid_t *eid) {
-	int i,j,k;
+	int i,j;
 	gint ccc;
 	s_group *group;
 	s_element *e;
@@ -30,6 +30,20 @@ static void element_callback(void *pd,int cmd,snd_mixer_eid_t *eid) {
 	}
 	*/
 	//printf("hoe '%s',%d,%d\n",eid->name,eid->index,eid->type);
+	for( i=0 ; i < mixer->ee_n ; i++ ) {
+		ee=&mixer->ee[i];
+		if( strcmp(ee->e.e.eid.name,eid->name)==0 &&
+			ee->e.e.eid.index==eid->index ) {
+			snd_mixer_element_read(mixer->handle,&ee->e.e);
+			if( ee->enabled ) {
+				ccc=ee->chain;
+				ee->chain=FALSE;
+				s_e_chk(&ee->e);
+				ee->chain=ccc;
+			}
+			return;
+		}
+	}
 	for( i=0 ; i<mixer->groups.groups ; i++ ) {
 		group=&mixer->group[i];
 		for( j=0 ; j<group->g.elements ; j++ ) {
@@ -45,20 +59,6 @@ static void element_callback(void *pd,int cmd,snd_mixer_eid_t *eid) {
 				}
 				return;
 			}
-		}
-	}
-	for( i=0 ; i < mixer->ee_n ; i++ ) {
-		ee=&mixer->ee[i];
-		if( strcmp(ee->e.e.eid.name,eid->name)==0 &&
-			ee->e.e.eid.index==eid->index ) {
-			snd_mixer_element_read(mixer->handle,&ee->e.e);
-			if( ee->enabled ) {
-				ccc=ee->chain;
-				ee->chain=FALSE;
-				s_e_chk(&ee->e);
-				ee->chain=ccc;
-			}
-			return;
 		}
 	}
 
@@ -80,14 +80,14 @@ gint time_callback(gpointer data) {
 	for( i=0 ; i<card_num ; i++ ) {
 		for( j=0 ; j<cards[i].info.mixerdevs ; j++ ) {
 			cb_mix.private_data=(void *)&cards[i].mixer[j];
-			snd_mixer_read(cards[i].mixer[j].handle,&cb_mix);
+			err=snd_mixer_read(cards[i].mixer[j].handle,&cb_mix);
 		}
 	}
 	return 1;
 }
 
 void s_e_chk( s_element *e ) {
-	int i,j,err;
+	int i,j;
 	switch( e->e.eid.type ) {
 	case SND_MIXER_ETYPE_VOLUME1:
 		for( i=0 ; i<e->e.data.volume1.voices; i++ ) {

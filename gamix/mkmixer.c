@@ -19,7 +19,7 @@ static void chain_callback2(GtkToggleButton *,s_eelements *);
 static gint mk_element(s_element *,GtkBox *);
 
 static void close_callback(GtkWidget *w,s_mixer *mixer) {
-	int i,j,err;
+	int i;
 	s_group *g;
 	s_eelements *ee;
 
@@ -85,7 +85,7 @@ static void volume1_callback(GtkAdjustment *adj,s_element *e) {
 }
 
 static void switch1_callback(GtkToggleButton *b,s_element *e ) {
-	int i,j,k,err;
+	int i,j;
 
 	for( i=0 ; i<e->e.data.switch1.sw; i++ ) {
 		if( b == (GtkToggleButton *)e->w[i] ) break;
@@ -108,7 +108,7 @@ static void switch2_callback(GtkToggleButton *b,s_element *e ) {
 	int err;
 
 	e->e.data.switch2.sw=b->active;
-	snd_mixer_element_write(cards[e->card].mixer[e->mdev].handle,&e->e);
+	err=snd_mixer_element_write(cards[e->card].mixer[e->mdev].handle,&e->e);
 }
 
 static void chain_callback(GtkToggleButton *b,s_group *g ) {
@@ -150,7 +150,7 @@ static void mux1_callback(GtkItem *item,s_element *e ) {
 		e->mux[no].index == e->e.data.mux1.poutput[ch].index &&
 		e->mux[no].type == e->e.data.mux1.poutput[ch].type ) return;
 
-	if( e->chain ) {
+	if( *e->chain ) {
 		for( i=0 ; i<e->e.data.mux1.output ; i++ ) {
 			e->e.data.mux1.poutput[i]=e->mux[no];
 			if( ch != i ) gtk_option_menu_set_history(
@@ -166,7 +166,7 @@ static void mux1_callback(GtkItem *item,s_element *e ) {
 }
 
 static void mux2_callback(GtkItem *item,s_element *e ) {
-	int i,no,err;
+	int no,err;
 
 	no=(int)gtk_object_get_data(GTK_OBJECT(item),"no");
 
@@ -238,7 +238,7 @@ static void chain_callback2(GtkToggleButton *b,s_eelements *ee ) {
 }
 
 GtkWidget *make_mixer( gint c_n , gint m_n ) {
-	int i,j,k,l,err;
+	int i,j,err;
 	GtkWidget *mv_box,*m_name;
 	GtkWidget *s_win;
 	GtkWidget *mh_box;
@@ -246,9 +246,9 @@ GtkWidget *make_mixer( gint c_n , gint m_n ) {
 	GtkWidget *iv_box;
 	GtkWidget *ih_box;
 	GtkWidget *c_l;
-	char gname[128];
+	char gname[40];
 	s_mixer *mixer;
-	s_group *group;
+	s_group *group=NULL;
 	s_element *e;
 	s_eelements *ee;
 
@@ -440,7 +440,7 @@ GtkWidget *make_mixer( gint c_n , gint m_n ) {
   }
 
 gint mk_element(s_element *e,GtkBox *iv_box) {
-	int i,j,k,err;
+	int i,j,k;
 	GtkWidget *ih_box;
 	GtkWidget *menu,*c_l,*item;
 

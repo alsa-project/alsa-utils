@@ -1,0 +1,9 @@
+GTK ALSA audio mixer gamix by Fumihiko Murata <fmurata@p1.tcnet.ne.jp>
+                              DaiCom Software
+
+This is a mixer application for ALSA using GTK.
+
+If you wait to use internationalized version (supported only Japanese).
+Check
+ http://www1.tcnet.ne.jp/fmurata/linux/down/
+and download lastest gamix-*.tar.gz.  * is version no.

@@ -84,7 +84,7 @@ gint conf_win( void ) {
 	GtkWidget *b;
 	GtkWidget *vbox,*box,*frame,*hbox,*hhbox,*box1,*box2;
 	GtkWidget *nb,*n_label;
-	unsigned char gname[256];
+	unsigned char gname[40];
 	GSList *gp;
 
 	ok_pushed=FALSE;
@@ -199,6 +199,7 @@ gint conf_win( void ) {
 			gtk_widget_show(b);
 			if( k==0 ) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(b),
 													TRUE);
+
 			gp=gtk_radio_button_group(GTK_RADIO_BUTTON(b));
 
 			b=gtk_radio_button_new_with_label(gp,_("space"));
@@ -262,45 +263,48 @@ gint conf_win( void ) {
 				l++;
 				gtk_widget_show(hbox);
 			}
-			ccard[i].m[j].ee_en=(gint *)g_malloc(cards[i].mixer[j].ee_n *
-												 sizeof(gint));
-			if( cards[i].mixer[j].ee_n && ccard[i].m[j].ee_en == NULL) {
-				fprintf(stderr,nomem_msg);
-				g_free(ccard[i].m[j].g_en);
-				g_free(ccard[i].m);
-				g_free(ccard);
-				return -1;
-			}
-			for( k=0 ; k<cards[i].mixer[j].ee_n ; k++ ) {
-				ccard[i].m[j].ee_en[k]=cards[i].mixer[j].ee[k].enable;
-				hbox=gtk_hbox_new(FALSE,2);
-				b=gtk_toggle_button_new();
-				gtk_widget_set_usize(b,10,10);
-				gtk_box_pack_start(GTK_BOX(hbox),b,FALSE,FALSE,0);
-				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(b),
-											ccard[i].m[j].ee_en[k]);
-				gtk_signal_connect(GTK_OBJECT(b),"toggled",
-								   GTK_SIGNAL_FUNC(tb_callback),
-								   (gpointer)&ccard[i].m[j].ee_en[k]);
-				gtk_widget_show(b);
-				if( cards[i].mixer[j].ee[k].e.e.eid.index > 0 ) {
-					sprintf(gname,"%s %d",
-							cards[i].mixer[j].ee[k].e.e.eid.name,
-							cards[i].mixer[j].ee[k].e.e.eid.index);
-				} else {
-					strcpy(gname,cards[i].mixer[j].ee[k].e.e.eid.name);
+			if( cards[i].mixer[j].ee_n ) {
+				ccard[i].m[j].ee_en=(gint *)g_malloc(cards[i].mixer[j].ee_n *
+													 sizeof(gint));
+				if( ccard[i].m[j].ee_en == NULL ) {
+					fprintf(stderr,nomem_msg);
+					g_free(ccard[i].m[j].g_en);
+					g_free(ccard[i].m);
+					g_free(ccard);
+					return -1;
 				}
-				n_label=gtk_label_new(gname);
-				gtk_box_pack_start(GTK_BOX(hbox),n_label,FALSE,FALSE,0);
-				gtk_widget_show(n_label);
-				if( (l&1) ) {
-					gtk_box_pack_start(GTK_BOX(box2),hbox,FALSE,FALSE,0);
-				} else {
-					gtk_box_pack_start(GTK_BOX(box1),hbox,FALSE,FALSE,0);
+				for( k=0 ; k<cards[i].mixer[j].ee_n ; k++ ) {
+					ccard[i].m[j].ee_en[k]=cards[i].mixer[j].ee[k].enable;
+					hbox=gtk_hbox_new(FALSE,2);
+					b=gtk_toggle_button_new();
+					gtk_widget_set_usize(b,10,10);
+					gtk_box_pack_start(GTK_BOX(hbox),b,FALSE,FALSE,0);
+					gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(b),
+												 ccard[i].m[j].ee_en[k]);
+					gtk_signal_connect(GTK_OBJECT(b),"toggled",
+									   GTK_SIGNAL_FUNC(tb_callback),
+									   (gpointer)&ccard[i].m[j].ee_en[k]);
+					gtk_widget_show(b);
+					if( cards[i].mixer[j].ee[k].e.e.eid.index > 0 ) {
+						sprintf(gname,"%s %d",
+								cards[i].mixer[j].ee[k].e.e.eid.name,
+								cards[i].mixer[j].ee[k].e.e.eid.index);
+					} else {
+						strcpy(gname,cards[i].mixer[j].ee[k].e.e.eid.name);
+					}
+					n_label=gtk_label_new(gname);
+					gtk_box_pack_start(GTK_BOX(hbox),n_label,FALSE,FALSE,0);
+					gtk_widget_show(n_label);
+					if( (l&1) ) {
+						gtk_box_pack_start(GTK_BOX(box2),hbox,FALSE,FALSE,0);
+					} else {
+						gtk_box_pack_start(GTK_BOX(box1),hbox,FALSE,FALSE,0);
+					}
+					l++;
+					gtk_widget_show(hbox);
 				}
-				l++;
-				gtk_widget_show(hbox);
 			}
+
 			gtk_widget_show(box1);
 			gtk_widget_show(box2);
 			gtk_widget_show(hhbox);
@@ -596,8 +600,6 @@ void conf_write(void) {
 
 static void chk_cfile( void ) {
 	int i,j,k,err;
-	FILE *fp;
-	DIR *dp;
 	gchar *name;
 
 	k=strlen(g_get_home_dir());
