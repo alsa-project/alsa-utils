@@ -1109,7 +1109,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 	int err;
 	unsigned int idx;
 	snd_mixer_selem_channel_id_t chn;
-	unsigned int channels = ~0UL;
+	unsigned int channels = ~0U;
 	unsigned int dir = 3;
 	long pmin, pmax, cmin, cmax;
 	snd_mixer_t *handle;
