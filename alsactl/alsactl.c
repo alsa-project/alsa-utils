@@ -105,6 +105,26 @@ static int snd_config_integer_add(snd_config_t *father, char *id, long integer)
 	return 0;
 }
 
+static int snd_config_integer64_add(snd_config_t *father, char *id, long long integer)
+{
+	int err;
+	snd_config_t *leaf;
+	err = snd_config_make_integer64(&leaf, id);
+	if (err < 0)
+		return err;
+	err = snd_config_add(father, leaf);
+	if (err < 0) {
+		snd_config_delete(leaf);
+		return err;
+	}
+	err = snd_config_set_integer64(leaf, integer);
+	if (err < 0) {
+		snd_config_delete(leaf);
+		return err;
+	}
+	return 0;
+}
+
 static int snd_config_string_add(snd_config_t *father, const char *id, const char *string)
 {
 	int err;
@@ -236,6 +256,22 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		}
 		break;
 	}
+	case SND_CTL_ELEM_TYPE_INTEGER64:
+	{
+		long long min = snd_ctl_elem_info_get_min64(info);
+		long long max = snd_ctl_elem_info_get_max64(info);
+		long long step = snd_ctl_elem_info_get_step64(info);
+		if (step)
+			sprintf(buf, "%Li - %Li (step %Li)", min, max, step);
+		else
+			sprintf(buf, "%Li - %Li", min, max);
+		err = snd_config_string_add(comment, "range", buf);
+		if (err < 0) {
+			error("snd_config_string_add: %s", snd_strerror(err));
+			return err;
+		}
+		break;
+	}
 	case SND_CTL_ELEM_TYPE_ENUMERATED:
 	{
 		unsigned int items;
@@ -339,6 +375,13 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 				return err;
 			}
 			return 0;
+		case SND_CTL_ELEM_TYPE_INTEGER64:
+			err = snd_config_integer64_add(control, "value", snd_ctl_elem_value_get_integer64(ctl, 0));
+			if (err < 0) {
+				error("snd_config_integer64_add: %s", snd_strerror(err));
+				return err;
+			}
+			return 0;
 		case SND_CTL_ELEM_TYPE_ENUMERATED:
 		{
 			unsigned int v = snd_ctl_elem_value_get_enumerated(ctl, 0);
@@ -382,6 +425,15 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 			err = snd_config_integer_add(value, num_str(idx), snd_ctl_elem_value_get_integer(ctl, idx));
 			if (err < 0) {
 				error("snd_config_integer_add: %s", snd_strerror(err));
+				return err;
+			}
+		}
+		break;
+	case SND_CTL_ELEM_TYPE_INTEGER64:
+		for (idx = 0; idx < count; idx++) {
+			err = snd_config_integer64_add(value, num_str(idx), snd_ctl_elem_value_get_integer64(ctl, idx));
+			if (err < 0) {
+				error("snd_config_integer64_add: %s", snd_strerror(err));
 				return err;
 			}
 		}
@@ -519,11 +571,15 @@ static int get_controls(int cardno, snd_config_t *top)
 static int config_iface(snd_config_t *n)
 {
 	unsigned long i;
+	unsigned long long li;
 	snd_ctl_elem_iface_t idx;
 	const char *str;
 	switch (snd_config_get_type(n)) {
 	case SND_CONFIG_TYPE_INTEGER:
 		snd_config_get_integer(n, &i);
+		return i;
+	case SND_CONFIG_TYPE_INTEGER64:
+		snd_config_get_integer64(n, &li);
 		return i;
 	case SND_CONFIG_TYPE_STRING:
 		snd_config_get_string(n, &str);
@@ -542,12 +598,18 @@ static int config_bool(snd_config_t *n)
 {
 	const char *str;
 	long val;
+	long long lval;
 	switch (snd_config_get_type(n)) {
 	case SND_CONFIG_TYPE_INTEGER:
 		snd_config_get_integer(n, &val);
 		if (val < 0 || val > 1)
 			return -1;
 		return val;
+	case SND_CONFIG_TYPE_INTEGER64:
+		snd_config_get_integer64(n, &lval);
+		if (lval < 0 || lval > 1)
+			return -1;
+		return (int) lval;
 	case SND_CONFIG_TYPE_STRING:
 		snd_config_get_string(n, &str);
 		break;
@@ -566,11 +628,15 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 {
 	const char *str;
 	long val;
+	long long lval;
 	unsigned int idx, items;
 	switch (snd_config_get_type(n)) {
 	case SND_CONFIG_TYPE_INTEGER:
 		snd_config_get_integer(n, &val);
 		return val;
+	case SND_CONFIG_TYPE_INTEGER64:
+		snd_config_get_integer64(n, &lval);
+		return (int) lval;
 	case SND_CONFIG_TYPE_STRING:
 		snd_config_get_string(n, &str);
 		break;
@@ -609,6 +675,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	long index = -1;
 	snd_config_t *value = NULL;
 	long val;
+	long long lval;
 	unsigned int idx;
 	int err;
 	char *set;
@@ -748,6 +815,13 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 				goto _ok;
 			}
 			break;
+		case SND_CTL_ELEM_TYPE_INTEGER64:
+			err = snd_config_get_integer64(value, &lval);
+			if (err == 0) {
+				snd_ctl_elem_value_set_integer64(ctl, 0, lval);
+				goto _ok;
+			}
+			break;
 		case SND_CTL_ELEM_TYPE_ENUMERATED:
 			val = config_enumerated(value, handle, info);
 			if (val >= 0) {
@@ -837,6 +911,14 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 				return -EINVAL;
 			}
 			snd_ctl_elem_value_set_integer(ctl, idx, val);
+			break;
+		case SND_CTL_ELEM_TYPE_INTEGER64:
+			err = snd_config_get_integer64(n, &lval);
+			if (err < 0) {
+				error("bad control.%d.value.%d content", numid, idx);
+				return -EINVAL;
+			}
+			snd_ctl_elem_value_set_integer64(ctl, idx, lval);
 			break;
 		case SND_CTL_ELEM_TYPE_ENUMERATED:
 			val = config_enumerated(n, handle, info);

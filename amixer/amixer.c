@@ -266,6 +266,31 @@ static long get_integer(char **ptr, long min, long max)
 	return tmp1;
 }
 
+static long get_integer64(char **ptr, long long min, long long max)
+{
+	long long tmp, tmp1, tmp2;
+
+	if (**ptr == ':')
+		(*ptr)++;
+	if (**ptr == '\0' || (!isdigit(**ptr) && **ptr != '-'))
+		return min;
+	tmp = strtol(*ptr, ptr, 10);
+	tmp1 = tmp;
+	tmp2 = 0;
+	if (**ptr == '.') {
+		(*ptr)++;
+		tmp2 = strtol(*ptr, ptr, 10);
+	}
+	if (**ptr == '%') {
+		tmp1 = convert_prange1(tmp, min, max);
+		(*ptr)++;
+	}
+	tmp1 = check_range(tmp1, min, max);
+	if (**ptr == ',')
+		(*ptr)++;
+	return tmp1;
+}
+
 static int get_volume_simple(char **ptr, int min, int max, int orig)
 {
 	int tmp, tmp1, tmp2;
@@ -384,6 +409,12 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 		       snd_ctl_elem_info_get_max(info),
 		       snd_ctl_elem_info_get_step(info));
 		break;
+	case SND_CTL_ELEM_TYPE_INTEGER64:
+		printf(",min=%Li,max=%Li,step=%Li\n", 
+		       snd_ctl_elem_info_get_min64(info),
+		       snd_ctl_elem_info_get_max64(info),
+		       snd_ctl_elem_info_get_step64(info));
+		break;
 	case SND_CTL_ELEM_TYPE_ENUMERATED:
 	{
 		unsigned int items = snd_ctl_elem_info_get_items(info);
@@ -417,6 +448,9 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 				break;
 			case SND_CTL_ELEM_TYPE_INTEGER:
 				printf("%li", snd_ctl_elem_value_get_integer(control, idx));
+				break;
+			case SND_CTL_ELEM_TYPE_INTEGER64:
+				printf("%Li", snd_ctl_elem_value_get_integer64(control, idx));
 				break;
 			case SND_CTL_ELEM_TYPE_ENUMERATED:
 				printf("%u", snd_ctl_elem_value_get_enumerated(control, idx));
@@ -968,6 +1002,12 @@ static int cset(int argc, char *argv[], int roflag)
 						  snd_ctl_elem_info_get_min(info),
 						  snd_ctl_elem_info_get_max(info));
 				snd_ctl_elem_value_set_integer(control, idx, tmp);
+				break;
+			case SND_CTL_ELEM_TYPE_INTEGER64:
+				tmp = get_integer64(&ptr,
+						  snd_ctl_elem_info_get_min64(info),
+						  snd_ctl_elem_info_get_max64(info));
+				snd_ctl_elem_value_set_integer64(control, idx, tmp);
 				break;
 			case SND_CTL_ELEM_TYPE_ENUMERATED:
 				tmp = get_integer(&ptr, 0, snd_ctl_elem_info_get_items(info) - 1);
