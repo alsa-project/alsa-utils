@@ -72,8 +72,7 @@ gstatus			return L_GSTATUS;
 enable			return L_ENABLE;
 disable			return L_DISABLE;
 mute			return L_MUTE;
-swout			return L_SWOUT;
-swin			return L_SWIN;
+swap			return L_SWAP;
 
 	/* boolean */
 

@@ -26,6 +26,12 @@
 
 #define ALSACTL_FILE	"/etc/asound.conf"
 
+#define LEFT 1
+#define RIGHT 2
+
+#define OUTPUT 0
+#define INPUT 1
+
 extern int debugflag;
 
 extern void error(const char *fmt,...);
@@ -44,10 +50,12 @@ struct ctl {
 
 struct mixer_channel {
 	int no;
-	int change;
-	snd_mixer_channel_info_t i;
-	snd_mixer_channel_t c;
-	snd_mixer_channel_t cr;
+	int direction;
+	int voice;
+	snd_mixer_channel_info_t info;
+	snd_mixer_channel_t data;
+	snd_mixer_channel_direction_info_t dinfo[2];
+	snd_mixer_channel_direction_t ddata[2];
 	struct mixer_channel *next;
 };
 

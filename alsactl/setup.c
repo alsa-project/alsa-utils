@@ -350,20 +350,38 @@ int soundcard_setup_collect(int cardno)
 			}
 			bzero(mixerchannel, sizeof(struct mixer_channel));
 			mixerchannel->no = idx;
-			if ((err = snd_mixer_channel_info(mhandle, idx, &mixerchannel->i)) < 0) {
+			if ((err = snd_mixer_channel_info(mhandle, idx, &mixerchannel->info)) < 0) {
 				free(mixerchannel);
 				error("MIXER channel info error (%s) - skipping", snd_strerror(err));
 				break;
 			}
-			if ((err = snd_mixer_channel_read(mhandle, idx, &mixerchannel->c)) < 0) {
+			if ((mixerchannel->info.caps & SND_MIXER_CINFO_CAP_OUTPUT) &&
+			    (err = snd_mixer_channel_output_info(mhandle, idx, &mixerchannel->dinfo[OUTPUT])) < 0) {
+				free(mixerchannel);
+				error("MIXER channel output info error (%s) - skipping", snd_strerror(err));
+				break;
+			}
+			if ((mixerchannel->info.caps & SND_MIXER_CINFO_CAP_INPUT) &&
+			    (err = snd_mixer_channel_input_info(mhandle, idx, &mixerchannel->dinfo[INPUT])) < 0) {
+				free(mixerchannel);
+				error("MIXER channel input info error (%s) - skipping", snd_strerror(err));
+				break;
+			}
+			if ((err = snd_mixer_channel_read(mhandle, idx, &mixerchannel->data)) < 0) {
 				free(mixerchannel);
 				error("MIXER channel read error (%s) - skipping", snd_strerror(err));
 				break;
 			}
-			if ((mixerchannel->i.caps & SND_MIXER_CINFO_CAP_RECORDVOLUME) &&
-			    (err = snd_mixer_channel_record_read(mhandle, idx, &mixerchannel->cr)) < 0) {
+			if ((mixerchannel->info.caps & SND_MIXER_CINFO_CAP_OUTPUT) &&
+			    (err = snd_mixer_channel_output_read(mhandle, idx, &mixerchannel->ddata[OUTPUT])) < 0) {
 				free(mixerchannel);
-				error("MIXER channel record read error (%s) - skipping", snd_strerror(err));
+				error("MIXER channel output read error (%s) - skipping", snd_strerror(err));
+				break;
+			}
+			if ((mixerchannel->info.caps & SND_MIXER_CINFO_CAP_INPUT) &&
+			    (err = snd_mixer_channel_input_read(mhandle, idx, &mixerchannel->ddata[INPUT])) < 0) {
+				free(mixerchannel);
+				error("MIXER channel input read error (%s) - skipping", snd_strerror(err));
 				break;
 			}
 			if (!mixerchannelprev) {
@@ -651,55 +669,91 @@ static void soundcard_setup_write_switch(FILE * out, int interface, const unsign
 }
 
 
-static void soundcard_setup_write_mixer_channel(FILE * out, snd_mixer_channel_info_t * info, snd_mixer_channel_t * channel, snd_mixer_channel_t * record_channel)
+static void soundcard_setup_write_mixer_channel(FILE * out, struct mixer_channel * channel)
 {
-	fprintf(out, "    ; Capabilities:%s%s%s%s%s%s%s%s%s%s%s%s%s.\n",
-		info->caps & SND_MIXER_CINFO_CAP_RECORD ? 	" record" : "",
-		info->caps & SND_MIXER_CINFO_CAP_JOINRECORD ? 	" join-record" : "",
-		info->caps & SND_MIXER_CINFO_CAP_STEREO ? 	" stereo" : "",
-		info->caps & SND_MIXER_CINFO_CAP_HWMUTE ? 	" hardware-mute" : "",
-		info->caps & SND_MIXER_CINFO_CAP_JOINMUTE ? 	" join-mute" : "",
-		info->caps & SND_MIXER_CINFO_CAP_DIGITAL ?	" digital" : "",
-		info->caps & SND_MIXER_CINFO_CAP_INPUT ?	" external-input" : "",
-		info->caps & SND_MIXER_CINFO_CAP_LTOR_OUT ?	" ltor-out" : "",
-		info->caps & SND_MIXER_CINFO_CAP_RTOL_OUT ?	" rtol-out" : "",
-		info->caps & SND_MIXER_CINFO_CAP_SWITCH_OUT ?	" switch-out" : "",
-		info->caps & SND_MIXER_CINFO_CAP_LTOR_IN ?	" ltor-in" : "",
-		info->caps & SND_MIXER_CINFO_CAP_RTOL_IN ?	" rtol-in" : "",
-		info->caps & SND_MIXER_CINFO_CAP_RECORDVOLUME ? " record-volume" : "");
-	fprintf(out, "    ; Accepted channel range is from %i to %i.\n", info->min, info->max);
-	fprintf(out, "    channel( \"%s\", ", info->name);
-	if (info->caps & SND_MIXER_CINFO_CAP_STEREO) {
-		char bufl[16] = "";
-		char bufr[16] = "";
-		if (info->caps & SND_MIXER_CINFO_CAP_RECORDVOLUME) {
-			sprintf(bufl, " [%i]", record_channel->left);
-			sprintf(bufr, " [%i]", record_channel->right);
+	int k, d;
+	struct capdes {
+		unsigned int flag;
+		char* description;
+	};
+	static struct capdes caps[] = {
+		{ SND_MIXER_CINFO_CAP_OUTPUT, "output" },
+		{ SND_MIXER_CINFO_CAP_INPUT, "input" },
+		{ SND_MIXER_CINFO_CAP_EXTINPUT, "external-input" },
+		{ SND_MIXER_CINFO_CAP_EFFECT, "effect" }
+	};
+	static struct capdes dcaps[] = {
+		{ SND_MIXER_CINFO_DCAP_STEREO, "stereo" },
+		{ SND_MIXER_CINFO_DCAP_HWMUTE, "hardware-mute" },
+		{ SND_MIXER_CINFO_DCAP_JOINMUTE, "join-mute" },
+		{ SND_MIXER_CINFO_DCAP_ROUTE, "route" },
+		{ SND_MIXER_CINFO_DCAP_SWAPROUTE, "swap-route" },
+		{ SND_MIXER_CINFO_DCAP_DIGITAL, "digital" },
+		{ SND_MIXER_CINFO_DCAP_RECORDBYMUTE, "recordbymute" },
+	};
+
+	fprintf(out, "    ; Capabilities:");
+	for (k = 0; k < sizeof(caps)/sizeof(*caps); ++k) {
+		if (channel->info.caps & caps[k].flag)
+			fprintf(out, " %s", caps[k].description);
+	}
+	fprintf(out, "\n");
+	for (d = OUTPUT; d <= INPUT; ++d) {
+		snd_mixer_channel_direction_info_t *di;
+		if (d == OUTPUT && 
+		    !(channel->info.caps & SND_MIXER_CINFO_CAP_OUTPUT))
+			continue;
+		if (d == INPUT && 
+		    !(channel->info.caps & SND_MIXER_CINFO_CAP_INPUT))
+			continue;
+		di = &channel->dinfo[d];
+		fprintf(out, "    ; %s capabilities:",
+			d == OUTPUT ? "Output" : "Input" );
+		if (di->caps & SND_MIXER_CINFO_DCAP_VOLUME)
+			fprintf(out, " volume(%i, %i)", di->min, di->max);
+		for (k = 0; k < sizeof(caps)/sizeof(*caps); ++k) {
+			if (di->caps & dcaps[k].flag)
+				fprintf(out, " %s", dcaps[k].description);
 		}
-		fprintf(out, "stereo( %i%s%s%s%s%s, %i%s%s%s%s%s )",
-			channel->left,
-			channel->flags & SND_MIXER_FLG_MUTE_LEFT ? " mute" : "",
-			channel->flags & SND_MIXER_FLG_RECORD_LEFT ? " record" : "",
-			bufl,
-			channel->flags & SND_MIXER_FLG_LTOR_OUT ? " swout" : "",
-			channel->flags & SND_MIXER_FLG_LTOR_IN ? " swin" : "",
-			channel->right,
-			channel->flags & SND_MIXER_FLG_MUTE_RIGHT ? " mute" : "",
-			channel->flags & SND_MIXER_FLG_RECORD_RIGHT ? " record" : "",
-			bufr,
-			channel->flags & SND_MIXER_FLG_RTOL_OUT ? " swout" : "",
-			channel->flags & SND_MIXER_FLG_RTOL_IN ? " swin" : ""
-		    );
-	} else {
-		char buf[16] = "";
-		if (info->caps & SND_MIXER_CINFO_CAP_RECORDVOLUME)
-			sprintf(buf, " [%i]", (record_channel->left+record_channel->right) /2);
-		fprintf(out, "mono( %i%s%s%s )",
-			(channel->left + channel->right) / 2,
-			channel->flags & SND_MIXER_FLG_MUTE ? " mute" : "",
-			channel->flags & SND_MIXER_FLG_RECORD ? " record" : "",
-			buf
-		    );
+		fprintf(out, "\n");
+	}
+	fprintf(out, "    channel( \"%s\"", channel->info.name);
+	for (d = OUTPUT; d <= INPUT; ++d) {
+		snd_mixer_channel_direction_info_t *di;
+		snd_mixer_channel_direction_t *dd;
+		if (d == OUTPUT && 
+		    !(channel->info.caps & SND_MIXER_CINFO_CAP_OUTPUT))
+			continue;
+		if (d == INPUT && 
+		    !(channel->info.caps & SND_MIXER_CINFO_CAP_INPUT))
+			continue;
+		dd = &channel->ddata[d];
+		di = &channel->dinfo[d];
+		fprintf(out, ", %s ", d == OUTPUT ? "output" : "input" );
+		if (di->caps & SND_MIXER_CINFO_DCAP_STEREO) {
+			fprintf(out, "stereo(");
+			if (di->caps & SND_MIXER_CINFO_DCAP_VOLUME)
+				fprintf(out, " %i", dd->left);
+			fprintf(out, "%s%s,", 
+				dd->flags & SND_MIXER_DFLG_MUTE_LEFT ? " mute" : "",
+				dd->flags & SND_MIXER_DFLG_LTOR ? " swap" : ""
+				);
+			if (di->caps & SND_MIXER_CINFO_DCAP_VOLUME)
+				fprintf(out, " %i", dd->right);
+
+			fprintf(out, "%s%s )",
+				dd->flags & SND_MIXER_DFLG_MUTE_RIGHT ? " mute" : "",
+				dd->flags & SND_MIXER_DFLG_RTOL ? " swap" : ""
+				);
+		}
+		else {
+			fprintf(out, "mono(");
+			if (di->caps & SND_MIXER_CINFO_DCAP_VOLUME)
+				fprintf(out, " %i", (dd->left + dd->right)/2);
+			fprintf(out, "%s )",
+				dd->flags & SND_MIXER_DFLG_MUTE ? " mute" : ""
+				);
+		}
 	}
 	fprintf(out, " )\n");
 }
@@ -735,7 +789,7 @@ int soundcard_setup_write(const char *cfgfile)
 		for (mixer = first->mixers; mixer; mixer = mixer->next) {
 			fprintf(out, "  mixer( \"%s\" ) {\n", mixer->info.name);
 			for (mixerchannel = mixer->channels; mixerchannel; mixerchannel = mixerchannel->next)
-				soundcard_setup_write_mixer_channel(out, &mixerchannel->i, &mixerchannel->c, &mixerchannel->cr);
+				soundcard_setup_write_mixer_channel(out, mixerchannel);
 			for (mixersw = mixer->switches; mixersw; mixersw = mixersw->next)
 				soundcard_setup_write_switch(out, SND_INTERFACE_MIXER, mixersw->s.name, mixersw->s.type, mixersw->s.low, mixersw->s.high, (void *) (&mixersw->s.value));
 			fprintf(out, "  }\n");
@@ -839,14 +893,14 @@ int soundcard_setup_process(int cardno)
 		}
 		for (mixer = soundcard->mixers; mixer; mixer = mixer->next) {
 			for (channel = mixer->channels; channel; channel = channel->next)
-				if (channel->change)
-					if (!soundcard_open_mix(&mixhandle, soundcard, mixer)) {
-						if ((err = snd_mixer_channel_write(mixhandle, channel->no, &channel->c)) < 0)
-							error("Mixer channel '%s' write error: %s", channel->i.name, snd_strerror(err));
-						if ((channel->i.caps & SND_MIXER_CINFO_CAP_RECORDVOLUME) &&
-						    (err = snd_mixer_channel_record_write(mixhandle, channel->no, &channel->cr)) < 0)
-							error("Mixer channel '%s' record write error: %s", channel->i.name, snd_strerror(err));
-					}
+				if (!soundcard_open_mix(&mixhandle, soundcard, mixer)) {
+					if ((channel->info.caps & SND_MIXER_CINFO_CAP_OUTPUT) &&
+					    (err = snd_mixer_channel_output_write(mixhandle, channel->no, &channel->ddata[OUTPUT])) < 0)
+						error("Mixer channel '%s' write error: %s", channel->info.name, snd_strerror(err));
+					if ((channel->info.caps & SND_MIXER_CINFO_CAP_INPUT) &&
+					    (err = snd_mixer_channel_input_write(mixhandle, channel->no, &channel->ddata[INPUT])) < 0)
+						error("Mixer channel '%s' record write error: %s", channel->info.name, snd_strerror(err));
+				}
 			if (mixhandle) {
 				snd_mixer_close(mixhandle);
 				mixhandle = NULL;
@@ -869,7 +923,7 @@ int soundcard_setup_process(int cardno)
 			for (pcmsw = pcm->rswitches; pcmsw; pcmsw = pcmsw->next) {
 				if (pcmsw->change)
 					if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-						if ((err = snd_ctl_pcm_playback_switch_write(ctlhandle, pcm->no, pcmsw->no, &pcmsw->s)) < 0)
+						if ((err = snd_ctl_pcm_record_switch_write(ctlhandle, pcm->no, pcmsw->no, &pcmsw->s)) < 0)
 							error("PCM record switch '%s' write error: %s", pcmsw->s.name, snd_strerror(err));
 					}
 			}

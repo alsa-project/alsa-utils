@@ -21,10 +21,12 @@
 #define		E_MIXER_SUCCESS		1
 #define		E_MIXER_NEED_CLOSE	2
 
-#define 	E_MIXER_RECORD		SND_MIXER_FLG_RECORD
-#define 	E_MIXER_MUTE_LEFT	SND_MIXER_FLG_MUTE_LEFT
-#define		E_MIXER_MUTE_RIGHT	SND_MIXER_FLG_MUTE_RIGHT
-#define		E_MIXER_MUTE		SND_MIXER_FLG_MUTE
+/* FIXME */
+#define 	E_MIXER_RECORD		0
+
+#define 	E_MIXER_MUTE_LEFT	SND_MIXER_DFLG_MUTE_LEFT
+#define		E_MIXER_MUTE_RIGHT	SND_MIXER_DFLG_MUTE_RIGHT
+#define		E_MIXER_MUTE		SND_MIXER_DFLG_MUTE
 
 
 class Mixer 
@@ -63,7 +65,7 @@ public:
 			}
 private:
 	snd_mixer_info_t	 info;
-        snd_mixer_channel_t	 ch_data;
+        snd_mixer_channel_direction_t	 ch_data;
      	snd_mixer_channel_info_t ch_info;
      	
 	void *		mixer_handle;

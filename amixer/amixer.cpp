@@ -97,7 +97,7 @@ char* Mixer::Name(int32 device)
 
 void Mixer::Update()
 {
-	if(snd_mixer_channel_read(mixer_handle, current_device, &ch_data) < 0) {
+	if(snd_mixer_channel_output_read(mixer_handle, current_device, &ch_data) < 0) {
 		fprintf(stderr, "Can't read data from channel %i\n", current_device);
 		return;		/* No fail code? */
 	}
@@ -120,7 +120,7 @@ void Mixer::DeviceWrite(int32 device, int32 left, int32 right, int32 flags)
 	ch_data.left = left;
 	ch_data.right = right;
 	ch_data.flags = flags;
-	if(snd_mixer_channel_write(mixer_handle, device, &ch_data) < 0) {
+	if(snd_mixer_channel_output_write(mixer_handle, device, &ch_data) < 0) {
 		fprintf(stderr, "Can't write data to channel %i\n", device);
 		return;		/* No fail code? */
 	}

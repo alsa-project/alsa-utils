@@ -42,10 +42,12 @@ static void select_pcm(char *name);
 static void select_rawmidi(char *name);
 
 static void select_mixer_channel(char *name);
-static void set_mixer_channel(int left, int right);
-static void set_mixer_channel_record(int left, int right);
-static void set_mixer_channel_flags(unsigned int mask, unsigned int flags);
-static void set_mixer_channel_end(void);
+static void select_mixer_direction(int direction);
+static void select_mixer_voice(int voice);
+static void set_mixer_volume(int volume);
+static void set_mixer_flags(int flags);
+static void select_mixer_channel_end(void);
+
 
 #define SWITCH_CONTROL		0
 #define SWITCH_MIXER		1
@@ -70,8 +72,7 @@ static struct soundcard *Xsoundcard = NULL;
 static struct mixer *Xmixer = NULL;
 static struct pcm *Xpcm = NULL;
 static struct rawmidi *Xrawmidi = NULL;
-static struct mixer_channel *Xmixerchannel = NULL;
-static unsigned int Xmixerchannelflags = 0;
+static struct mixer_channel *Xchannel = NULL;
 static int Xswitchtype = SWITCH_CONTROL;
 static int *Xswitchchange = NULL;
 static void *Xswitch = NULL;
@@ -104,7 +105,7 @@ static unsigned short Xswitchiec958ocs1[16];
 %token L_SOUNDCARD L_MIXER L_CHANNEL L_STEREO L_MONO L_SWITCH L_RAWDATA
 %token L_CONTROL L_PCM L_RAWMIDI L_PLAYBACK L_RECORD L_OUTPUT L_INPUT
 %token L_IEC958OCS L_3D L_RESET L_USER L_VALID L_DATA L_PROTECT L_PRE2
-%token L_FSUNLOCK L_TYPE L_GSTATUS L_ENABLE L_DISABLE L_MUTE L_SWOUT L_SWIN
+%token L_FSUNLOCK L_TYPE L_GSTATUS L_ENABLE L_DISABLE L_MUTE L_SWAP
 
 %type <b_value> boolean
 %type <i_value> integer
@@ -144,55 +145,42 @@ mixers	: mixer
 	| mixers mixer
 	;
 
-mixer	: L_CHANNEL '(' string { select_mixer_channel( $3 ); } ',' mvalues ')' { set_mixer_channel_end(); select_mixer_channel( NULL ); }
-	| L_SWITCH '(' string { select_mixer_switch( $3 ); } ',' switches ')' { select_mixer_switch( NULL ); }
-	| error			{ yyerror( "unknown keyword in mixer{} level" ); }
+mixer	: L_CHANNEL '(' string	{ select_mixer_channel( $3 ); } 
+	  ',' settings ')' 	{ select_mixer_channel_end(); 
+	  			  select_mixer_channel( NULL ); }
+	| L_SWITCH '(' string	{ select_mixer_switch( $3 ); }
+	  ',' switches ')'	{ select_mixer_switch( NULL ); }
+	| error			{ yyerror( "unknown keyword in mixer level" ); }
 	;
 
-mvalues : mvalue
-	| mvalues mvalue
+
+settings: setting
+	| settings ',' setting
 	;
 
-mvalue	: L_STEREO '(' xmchls ',' xmchrs ')'
-	| L_MONO '(' xmchs ')'
-	| error			{ yyerror( "unknown keyword in mixer channel{} level" ); }
+setting	: L_OUTPUT		{ select_mixer_direction(OUTPUT); }
+	  dsetting
+	| L_INPUT		{ select_mixer_direction(INPUT); }
+	  dsetting
+	| error			{ yyerror( "unknown keyword in mixer channel level" ); }
 	;
 
-xmchls	: xmchl
-	| xmchls xmchl
+dsetting: L_STEREO '('		{ select_mixer_voice(LEFT); }
+	vsettings ','		{ select_mixer_voice(RIGHT); }
+	vsettings ')'
+	| L_MONO '('		{ select_mixer_voice(LEFT|RIGHT); }
+	  vsettings ')'
+	| error			{ yyerror( "unknown keyword in mixer direction level" ); }
 	;
 
-xmchl	: L_INTEGER		{ set_mixer_channel( $1, -1 ); }
-	| '[' L_INTEGER ']'	{ set_mixer_channel_record( $2, -1 ); }
-	| L_MUTE		{ set_mixer_channel_flags( SND_MIXER_FLG_MUTE_LEFT, SND_MIXER_FLG_MUTE_LEFT ); }
-	| L_RECORD		{ set_mixer_channel_flags( SND_MIXER_FLG_RECORD_LEFT, SND_MIXER_FLG_RECORD_LEFT ); }
-	| L_SWOUT		{ set_mixer_channel_flags( SND_MIXER_FLG_LTOR_OUT, SND_MIXER_FLG_LTOR_OUT ); }
-	| L_SWIN		{ set_mixer_channel_flags( SND_MIXER_FLG_LTOR_IN, SND_MIXER_FLG_LTOR_IN ); }
-	| error			{ yyerror( "unknown keyword in left channel section..." ); }
+vsettings: vsetting
+	| vsettings vsetting
 	;
 
-xmchrs	: xmchr
-	| xmchrs xmchr
-	;
-
-xmchr	: L_INTEGER		{ set_mixer_channel( -1, $1 ); }
-	| '[' L_INTEGER ']'	{ set_mixer_channel_record( -1, $2 ); }
-	| L_MUTE		{ set_mixer_channel_flags( SND_MIXER_FLG_MUTE_RIGHT, SND_MIXER_FLG_MUTE_RIGHT ); }
-	| L_RECORD		{ set_mixer_channel_flags( SND_MIXER_FLG_RECORD_RIGHT, SND_MIXER_FLG_RECORD_RIGHT ); }
-	| L_SWOUT		{ set_mixer_channel_flags( SND_MIXER_FLG_RTOL_OUT, SND_MIXER_FLG_RTOL_OUT ); }
-	| L_SWIN		{ set_mixer_channel_flags( SND_MIXER_FLG_RTOL_IN, SND_MIXER_FLG_RTOL_IN ); }
-	| error			{ yyerror( "unknown keyword in right channel section..." ); }
-	;
-
-xmchs	: xmch
-	| xmchs xmch
-	;
-
-xmch	: L_INTEGER		{ set_mixer_channel( $1, $1 ); }
-	| '[' L_INTEGER ']'	{ set_mixer_channel_record( $2, $2 ); }
-	| L_MUTE		{ set_mixer_channel_flags( SND_MIXER_FLG_MUTE, SND_MIXER_FLG_MUTE ); }
-	| L_RECORD		{ set_mixer_channel_flags( SND_MIXER_FLG_RECORD, SND_MIXER_FLG_RECORD ); }
-	| error			{ yyerror( "unknown keyword in mono channel section..." ); }
+vsetting: L_INTEGER		{ set_mixer_volume($1); }
+	| L_MUTE		{ set_mixer_flags(SND_MIXER_DFLG_MUTE); }
+	| L_SWAP		{ set_mixer_flags(SND_MIXER_DFLG_SWAP); }
+	| error			{ yyerror( "unknown keyword in mixer voice level" ); }
 	;
 
 pcms	: pcm
@@ -383,19 +371,14 @@ static void select_mixer_channel(char *name)
 	struct mixer_channel *channel;
 
 	if (!name) {
-		Xmixerchannel = NULL;
+		Xchannel = NULL;
 		return;
 	}
 	for (channel = Xmixer->channels; channel; channel = channel->next)
-		if (!strcmp(channel->i.name, name)) {
-			Xmixerchannel = channel;
-			Xmixerchannelflags = Xmixerchannel->c.flags &
-			    ~(SND_MIXER_FLG_RECORD |
-			      SND_MIXER_FLG_MUTE |
-			      SND_MIXER_FLG_SWITCH_OUT |
-			      SND_MIXER_FLG_SWITCH_IN |
-			      SND_MIXER_FLG_DECIBEL |
-			      SND_MIXER_FLG_FORCE);
+		if (!strcmp(channel->info.name, name)) {
+			Xchannel = channel;
+			Xchannel->ddata[OUTPUT].flags = 0;
+			Xchannel->ddata[INPUT].flags = 0;
 			free(name);
 			return;
 		}
@@ -403,54 +386,51 @@ static void select_mixer_channel(char *name)
 	free(name);
 }
 
-static void set_mixer_channel(int left, int right)
+static void select_mixer_direction(int direction)
 {
-	if (left >= 0) {
-		if (Xmixerchannel->i.min > left || Xmixerchannel->i.max < left)
-			yyerror("Value out of range (%i-%i)...", Xmixerchannel->i.min, Xmixerchannel->i.max);
-		if (Xmixerchannel->c.left != left)
-			Xmixerchannel->change = 1;
-		Xmixerchannel->c.left = left;
+	Xchannel->direction = direction;
+}
+
+static void select_mixer_voice(int voice)
+{
+	Xchannel->voice = voice;
+}
+
+static void set_mixer_volume(int volume)
+{
+	snd_mixer_channel_direction_info_t *i = &Xchannel->dinfo[Xchannel->direction];
+	snd_mixer_channel_direction_t *d = &Xchannel->ddata[Xchannel->direction];
+	if (Xchannel->voice & LEFT) {
+		if (i->min > volume || i->max < volume)
+			yyerror("Value out of range (%i-%i)...", i->min, i->max);
+		d->left = volume;
 	}
-	if (right >= 0) {
-		if (Xmixerchannel->i.min > right || Xmixerchannel->i.max < right)
-			yyerror("Value out of range (%i-%i)...", Xmixerchannel->i.min, Xmixerchannel->i.max);
-		if (Xmixerchannel->c.right != right)
-			Xmixerchannel->change = 1;
-		Xmixerchannel->c.right = right;
+	if (Xchannel->voice & RIGHT) {
+		if (i->min > volume || i->max < volume)
+			yyerror("Value out of range (%i-%i)...", i->min, i->max);
+		d->right = volume;
 	}
 }
 
-static void set_mixer_channel_record(int left, int right)
+static void set_mixer_flags(int flags)
 {
-	if (left >= 0) {
-		if (Xmixerchannel->i.min > left || Xmixerchannel->i.max < left)
-			yyerror("Value out of range (%i-%i)...", Xmixerchannel->i.min, Xmixerchannel->i.max);
-		if (Xmixerchannel->cr.left != left)
-			Xmixerchannel->change = 1;
-		Xmixerchannel->cr.left = left;
+	snd_mixer_channel_direction_t *d = &Xchannel->ddata[Xchannel->direction];
+	if (Xchannel->voice & LEFT) {
+		if (flags & SND_MIXER_DFLG_MUTE)
+			d->flags |= SND_MIXER_DFLG_MUTE_LEFT;
+		if (flags & SND_MIXER_DFLG_SWAP)
+			d->flags |= SND_MIXER_DFLG_LTOR;
 	}
-	if (right >= 0) {
-		if (Xmixerchannel->i.min > right || Xmixerchannel->i.max < right)
-			yyerror("Value out of range (%i-%i)...", Xmixerchannel->i.min, Xmixerchannel->i.max);
-		if (Xmixerchannel->cr.right != right)
-			Xmixerchannel->change = 1;
-		Xmixerchannel->cr.right = right;
+	if (Xchannel->voice & RIGHT) {
+		if (flags & SND_MIXER_DFLG_MUTE)
+			d->flags |= SND_MIXER_DFLG_MUTE_RIGHT;
+		if (flags & SND_MIXER_DFLG_SWAP)
+			d->flags |= SND_MIXER_DFLG_RTOL;
 	}
 }
 
-static void set_mixer_channel_flags(unsigned int mask, unsigned int flags)
+static void select_mixer_channel_end(void)
 {
-	Xmixerchannelflags &= ~mask;
-	Xmixerchannelflags |= flags;
-}
-
-static void set_mixer_channel_end(void)
-{
-	if (Xmixerchannel->c.flags != Xmixerchannelflags) {
-		Xmixerchannel->change = 1;
-	}
-	Xmixerchannel->c.flags = Xmixerchannelflags;
 }
 
 #define FIND_SWITCH( xtype, first, name, err ) \

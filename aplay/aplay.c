@@ -141,7 +141,7 @@ static void usage(char *command)
 		"  -h,--help     help\n"
 		"  -V,--version  print current version\n"
 		"  -l            list all soundcards and digital audio devices\n"
-		"  -c <card>     select card # or card id (1-%i), defaults to 1\n"
+		"  -c <card>     select card # or card id (0-%i), defaults to 0\n"
 		"  -d <device>   select device #, defaults to 0\n"
 		"  -q            quiet mode\n"
 		"  -v            file format Voc\n"
@@ -155,7 +155,7 @@ static void usage(char *command)
 		"  -m            set CD-ROM quality (44100Hz,stereo,16-bit linear)\n"
 		"  -M            set DAT quality (48000Hz,stereo,16-bit linear)\n"
 		"  -p <type>     compression type (alaw, ulaw, adpcm)\n"
-		,command, snd_cards());
+		,command, snd_cards()-1);
 }
 
 static void device_list(void)

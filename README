@@ -6,6 +6,7 @@ This packages contains command line utilities for the ALSA project.
 Package should be compiled only with installed ALSA driver and
 ALSA C library.
 
+alsactl		- utility for store / restore of soundcard settings
 aplay/arecord	- utility for playback / record of .wav,.voc,.au files
 amixer		- a command line mixer
 alsamixer	- ncurses mixer
