@@ -4,6 +4,6 @@ LDADD = -lm
 # CFLAGS += -g -Wall
 
 bin_PROGRAMS = iecset
-amixer_SOURCES = iecset.c iecbits.c
+iecset_SOURCES = iecset.c iecbits.c
 man_MANS = iecset.1
 EXTRA_DIST = iecset.1

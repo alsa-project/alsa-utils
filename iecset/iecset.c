@@ -21,7 +21,7 @@
 #include <ctype.h>
 #include <alsa/asoundlib.h>
 
-#include "iecbits.c"
+void dump_iec958(snd_aes_iec958_t *iec);
 
 static int get_bool(const char *str)
 {
