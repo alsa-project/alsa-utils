@@ -388,11 +388,11 @@ int main(int argc, char *argv[])
 			break;
 		case 'f':
 			if (strcasecmp(optarg, "cd") == 0) {
-				rhwparams.format = SND_PCM_FORMAT_S16_LE;
+				rhwparams.format = file_type == FORMAT_AU ? SND_PCM_FORMAT_S16_BE : SND_PCM_FORMAT_S16_LE;
 				rhwparams.rate = 44100;
 				rhwparams.channels = 2;
 			} else if (strcasecmp(optarg, "dat") == 0) {
-				rhwparams.format = SND_PCM_FORMAT_S16_LE;
+				rhwparams.format = file_type == FORMAT_AU ? SND_PCM_FORMAT_S16_BE : SND_PCM_FORMAT_S16_LE;
 				rhwparams.rate = 48000;
 				rhwparams.channels = 2;
 			} else {
@@ -1585,7 +1585,7 @@ static void begin_au(int fd, size_t cnt)
 	case SND_PCM_FORMAT_U8:
 		ah.encoding = BE_INT(AU_FMT_LIN8);
 		break;
-	case SND_PCM_FORMAT_S16_LE:
+	case SND_PCM_FORMAT_S16_BE:
 		ah.encoding = BE_INT(AU_FMT_LIN16);
 		break;
 	default:
