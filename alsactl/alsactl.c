@@ -612,16 +612,24 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	unsigned int idx;
 	int err;
 	char *set;
+	const char *id;
 	snd_ctl_elem_value_alloca(&ctl);
 	snd_ctl_elem_info_alloca(&info);
 	if (snd_config_get_type(control) != SND_CONFIG_TYPE_COMPOUND) {
 		error("control is not a compound");
 		return -EINVAL;
 	}
-	numid = atoi(snd_config_get_id(control));
+	err = snd_config_get_id(control, &id);
+	if (err < 0) {
+		error("unable to get id");
+		return -EINVAL;
+	}
+	numid = atoi(id);
 	snd_config_for_each(i, next, control) {
 		snd_config_t *n = snd_config_iterator_entry(i);
-		const char *fld = snd_config_get_id(n);
+		const char *fld;
+		if (snd_config_get_id(n, &fld) < 0)
+			continue;
 		if (strcmp(fld, "comment") == 0)
 			continue;
 		if (strcmp(fld, "iface") == 0) {
@@ -804,7 +812,10 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	memset(set, 0, count);
 	snd_config_for_each(i, next, value) {
 		snd_config_t *n = snd_config_iterator_entry(i);
-		idx = atoi(snd_config_get_id(n));
+		const char *id;
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+		idx = atoi(id);
 		if (idx < 0 || idx >= count || 
 		    set[idx]) {
 			error("bad control.%d.value index", numid);
