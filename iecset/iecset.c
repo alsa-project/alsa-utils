@@ -58,7 +58,7 @@ static struct cmdtbl cmds[] = {
 	{ "aud", IDX_NOAUDIO, CMD_BOOL_INV,
 	  "audio (common)\n\toff = audio mode, on = non-audio mode" },
 	{ "rat", IDX_RATE, CMD_INT,
-	  "sample rate (common)\n\tsample rate in Hz" },
+	  "rate (common)\n\tsample rate in Hz" },
 	{ "emp", IDX_EMP, CMD_INT,
 	  "emphasis (common)\n\t0 = none, 1 = 50/15us, 2 = CCITT" },
 	{ "loc", IDX_UNLOCK, CMD_BOOL_INV,
