@@ -77,9 +77,9 @@ static int mmap_flag = 0;
 static int interleaved = 1;
 static int nonblock = 0;
 static char *audiobuf = NULL;
-static int chunk_size = -1;
-static int period_time = -1;
-static int buffer_time = -1;
+static snd_pcm_uframes_t chunk_size = 0;
+static unsigned period_time = 0;
+static unsigned buffer_time = 0;
 static int avail_min = -1;
 static int start_delay = 0;
 static int stop_delay = 0;
@@ -749,7 +749,7 @@ static void set_params(void)
 {
 	snd_pcm_hw_params_t *params;
 	snd_pcm_sw_params_t *swparams;
-	size_t buffer_size;
+	snd_pcm_uframes_t buffer_size;
 	int err;
 	size_t n;
 	size_t xfer_align;
@@ -794,29 +794,29 @@ static void set_params(void)
 	err = snd_pcm_hw_params_set_periods_min(handle, params, 2);
 	assert(err >= 0);
 #endif
-	err = snd_pcm_hw_params_set_rate_near(handle, params, hwparams.rate, 0);
+	err = snd_pcm_hw_params_set_rate_near(handle, params, &hwparams.rate, 0);
 	assert(err >= 0);
 	rate = err;
-	if (buffer_time < 0)
+	if (buffer_time == 0)
 		buffer_time = 500000;
-	buffer_time = snd_pcm_hw_params_set_buffer_time_near(handle, params,
-							     buffer_time, 0);
-	assert(buffer_time >= 0);
-	if (period_time < 0)
+	err = snd_pcm_hw_params_set_buffer_time_near(handle, params,
+						     &buffer_time, 0);
+	assert(err >= 0);
+	if (period_time == 0)
 		period_time = buffer_time / 4;
-	period_time = snd_pcm_hw_params_set_period_time_near(handle, params,
-							     period_time, 0);
-	assert(period_time >= 0);
+	err = snd_pcm_hw_params_set_period_time_near(handle, params,
+						     &period_time, 0);
+	assert(err >= 0);
 	err = snd_pcm_hw_params(handle, params);
 	if (err < 0) {
 		error("Unable to install hw params:");
 		snd_pcm_hw_params_dump(params, log);
 		exit(EXIT_FAILURE);
 	}
-	chunk_size = snd_pcm_hw_params_get_period_size(params, 0);
-	buffer_size = snd_pcm_hw_params_get_buffer_size(params);
+	snd_pcm_hw_params_get_period_size(params, &chunk_size, 0);
+	snd_pcm_hw_params_get_buffer_size(params, &buffer_size);
 	if (chunk_size == buffer_size) {
-		error("Can't use period equal to buffer size (%u == %lu)", chunk_size, (long)buffer_size);
+		error("Can't use period equal to buffer size (%lu == %lu)", chunk_size, buffer_size);
 		exit(EXIT_FAILURE);
 	}
 	snd_pcm_sw_params_current(handle, swparams);
