@@ -200,8 +200,10 @@ static void device_list(void)
 			       pcminfo.flags & SND_PCM_INFO_PLAYBACK ? "playback " : "",
 			       pcminfo.flags & SND_PCM_INFO_CAPTURE ? "capture " : "",
 			       pcminfo.flags & SND_PCM_INFO_DUPLEX ? "duplex " : "");
+			printf("  Playback subdevices: %i\n", pcminfo.playback + 1);
+			printf("  Capture subdevices: %i\n", pcminfo.capture + 1);
 			if (pcminfo.flags & SND_PCM_INFO_PLAYBACK) {
-				if ((err = snd_ctl_pcm_playback_info(handle, dev, &playinfo)) < 0) {
+				if ((err = snd_ctl_pcm_playback_info(handle, dev, 0, &playinfo)) < 0) {
 					printf("Error: control digital audio playback info (%i): %s\n", card, snd_strerror(err));
 				} else {
 					printf("  Playback:\n");
@@ -216,7 +218,7 @@ static void device_list(void)
 				}
 			}
 			if (pcminfo.flags & SND_PCM_INFO_CAPTURE) {
-				if ((err = snd_ctl_pcm_capture_info(handle, dev, &recinfo)) < 0) {
+				if ((err = snd_ctl_pcm_capture_info(handle, dev, 0, &recinfo)) < 0) {
 					printf("Error: control digital audio capture info (%i): %s\n", card, snd_strerror(err));
 				} else {
 					printf("  Record:\n");
