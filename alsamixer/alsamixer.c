@@ -178,7 +178,7 @@ static int	 mixer_ofs_x = 0;
 static float	 mixer_extra_space = 0;
 static int	 mixer_cbar_height = 0;
 
-static char*	 card_id = "0";
+static char*	 card_id = "hw:0";
 static snd_mixer_t *mixer_handle;
 static char	 mixer_card_name[128];
 static char	 mixer_device_name[128];
