@@ -123,6 +123,7 @@ static unsigned short Xswitchiec958ocs1[16];
 %token L_IEC958OCS L_3D L_RESET L_USER L_VALID L_DATA L_PROTECT L_PRE2
 %token L_FSUNLOCK L_TYPE L_GSTATUS L_ENABLE L_DISABLE
 %token L_SW L_MONO_SW L_WIDE L_VOLUME L_CENTER L_SPACE L_DEPTH L_DELAY
+%token L_DEPTH_REAR
 %token L_FEEDBACK L_BASS L_TREBLE
 
 
@@ -249,6 +250,7 @@ m_3d_effect1_0 : L_SW '=' boolean { mixer_3d_effect1_value(SND_MIXER_EFF1_SW, $3
 	| L_DEPTH '=' integer	{ mixer_3d_effect1_value(SND_MIXER_EFF1_DEPTH, $3); }
 	| L_DELAY '=' integer	{ mixer_3d_effect1_value(SND_MIXER_EFF1_DELAY, $3); }
 	| L_FEEDBACK '=' integer { mixer_3d_effect1_value(SND_MIXER_EFF1_FEEDBACK, $3); }
+	| L_DEPTH_REAR '=' integer { mixer_3d_effect1_value(SND_MIXER_EFF1_DEPTH_REAR, $3); }
 	| error			{ yyerror("an unknown keyword in the 3D Effect1 element level"); }
 	;
 

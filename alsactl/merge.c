@@ -287,6 +287,7 @@ static int merge_one_element(struct mixer_element *celement, struct mixer_elemen
 		celement->element.data.teffect1.depth = uelement->element.data.teffect1.depth;
 		celement->element.data.teffect1.delay = uelement->element.data.teffect1.delay;
 		celement->element.data.teffect1.feedback = uelement->element.data.teffect1.feedback;
+		celement->element.data.teffect1.depth_rear = uelement->element.data.teffect1.depth_rear;
 		break;
 	case SND_MIXER_ETYPE_PRE_EFFECT1:
 		if (celement->element.data.peffect1.pparameters)

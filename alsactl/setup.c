@@ -837,6 +837,8 @@ static void soundcard_setup_write_mixer_element(FILE * out, struct mixer_element
 			fprintf(out, "    ; Delay : Min %i Max %i\n", info->data.teffect1.min_delay, info->data.teffect1.max_delay);
 		if (info->data.teffect1.effect & SND_MIXER_EFF1_FEEDBACK)
 			fprintf(out, "    ; Feedback : Min %i Max %i\n", info->data.teffect1.min_feedback, info->data.teffect1.max_feedback);
+		if (info->data.teffect1.effect & SND_MIXER_EFF1_DEPTH_REAR)
+			fprintf(out, "    ; Depth rear : Min %i Max %i\n", info->data.teffect1.min_depth_rear, info->data.teffect1.max_depth_rear);
 		fprintf(out, "    element(\"%s\",%i,%i,_3D_Effect1(", mixer_element_name(&element->eid), element->eid.index, element->eid.type);
 		idx = 0;
 		if (element->data.teffect1.effect & SND_MIXER_EFF1_SW) 
@@ -857,6 +859,8 @@ static void soundcard_setup_write_mixer_element(FILE * out, struct mixer_element
 			fprintf(out, "%sdelay=%i", idx++ > 0 ? "," : "", element->data.teffect1.delay);
 		if (element->data.teffect1.effect & SND_MIXER_EFF1_FEEDBACK)
 			fprintf(out, "%sfeedback=%i", idx++ > 0 ? "," : "", element->data.teffect1.feedback);
+		if (element->data.teffect1.depth_rear & SND_MIXER_EFF1_DEPTH_REAR)
+			fprintf(out, "%sdepth_rear=%i", idx++ > 0 ? "," : "", element->data.teffect1.depth_rear);
 		fprintf(out, "))\n");
 		break; 
 	default:

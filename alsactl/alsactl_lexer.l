@@ -85,6 +85,7 @@ space			return L_SPACE;
 depth			return L_DEPTH;
 delay			return L_DELAY;
 feedback		return L_FEEDBACK;
+depth_rear		return L_DEPTH_REAR;
 bass			return L_BASS;
 treble			return L_TREBLE;
 
