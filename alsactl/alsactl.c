@@ -952,10 +952,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
  _ok:
 	err = snd_ctl_elem_write(handle, ctl);
 	if (err < 0) {
-		snd_ctl_elem_id_t *id;
-		snd_ctl_elem_id_alloca(&id);
-		snd_ctl_elem_value_get_id(ctl, id);
-		error("Cannot write control '%s': %s", id_str(id), snd_strerror(err));
+		error("Cannot write control '%d:%d:%d:%s:%d' : %s", iface, device, subdevice, name, index, snd_strerror(err));
 		return err;
 	}
 	return 0;
