@@ -100,7 +100,7 @@ static int info(void)
 	}
 	snd_ctl_close(handle);
 	if ((err = snd_mixer_open(&mhandle, card)) < 0) {
-		error("Mixer device %i open error: %s", card, snd_strerror(err));
+		error("Mixer %s open error: %s", card, snd_strerror(err));
 		return err;
 	}
 	if ((err = snd_mixer_simple_control_list(mhandle, &slist)) < 0) {
@@ -353,7 +353,7 @@ static int show_control(const char *space, snd_ctl_t *handle, snd_control_id_t *
 	memset(&info, 0, sizeof(info));
 	info.id = *id;
 	if ((err = snd_ctl_cinfo(handle, &info)) < 0) {
-		error("Control %i cinfo error: %s\n", card, snd_strerror(err));
+		error("Control %s cinfo error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	if (level & 2) {
@@ -370,7 +370,7 @@ static int show_control(const char *space, snd_ctl_t *handle, snd_control_id_t *
 		for (item = 0; item < info.value.enumerated.items; item++) {
 			info.value.enumerated.item = item;
 			if ((err = snd_ctl_cinfo(handle, &info)) < 0) {
-				error("Control %i cinfo error: %s\n", card, snd_strerror(err));
+				error("Control %s cinfo error: %s\n", card, snd_strerror(err));
 				return err;
 			}
 			printf("%s; Item #%u '%s'\n", space, item, info.value.enumerated.name);
@@ -384,7 +384,7 @@ static int show_control(const char *space, snd_ctl_t *handle, snd_control_id_t *
 		memset(&control, 0, sizeof(control));
 		control.id = *id;
 		if ((err = snd_ctl_cread(handle, &control)) < 0) {
-			error("Control %i cread error: %s\n", card, snd_strerror(err));
+			error("Control %s cread error: %s\n", card, snd_strerror(err));
 			return err;
 		}
 		printf("%s: values=", space);
@@ -421,16 +421,16 @@ static int controls(int level)
 	snd_hcontrol_list_t list;
 	
 	if ((err = snd_ctl_open(&handle, card)) < 0) {
-		error("Control %i open error: %s", card, snd_strerror(err));
+		error("Control %s open error: %s", card, snd_strerror(err));
 		return err;
 	}
 	if ((err = snd_ctl_hbuild(handle, NULL)) < 0) {
-		error("Control %i hbuild error: %s\n", card, snd_strerror(err));
+		error("Control %s hbuild error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	memset(&list, 0, sizeof(list));
 	if ((err = snd_ctl_hlist(handle, &list)) < 0) {
-		error("Control %i clist error: %s", card, snd_strerror(err));
+		error("Control %s clist error: %s", card, snd_strerror(err));
 		return err;
 	}
 	list.pids = (snd_control_id_t *)malloc(list.controls * sizeof(snd_control_id_t));
@@ -440,7 +440,7 @@ static int controls(int level)
 	}
 	list.controls_request = list.controls;
 	if ((err = snd_ctl_hlist(handle, &list)) < 0) {
-		error("Control %i hlist error: %s", card, snd_strerror(err));
+		error("Control %s hlist error: %s", card, snd_strerror(err));
 		return err;
 	}
 	for (idx = 0; idx < list.controls; idx++) {
@@ -462,7 +462,7 @@ static int show_simple_control(void *handle, snd_mixer_sid_t *sid, const char *s
 	bzero(&scontrol, sizeof(scontrol));
 	scontrol.sid = *sid;
 	if ((err = snd_mixer_simple_control_read(handle, &scontrol)) < 0) {
-		error("Mixer %i simple_control error: %s", card, snd_strerror(err));
+		error("Mixer %s simple_control error: %s", card, snd_strerror(err));
 		return err;
 	}
 	if ((level & 1) != 0 && scontrol.channels) {
@@ -525,12 +525,12 @@ static int simple_controls(int level)
 	char name[simple_name_size];
 	
 	if ((err = snd_mixer_open(&handle, card)) < 0) {
-		error("Mixer %i open error: %s", card, snd_strerror(err));
+		error("Mixer %s open error: %s", card, snd_strerror(err));
 		return err;
 	}
 	memset(&list, 0, sizeof(list));
 	if ((err = snd_mixer_simple_control_list(handle, &list)) < 0) {
-		error("Mixer %i simple_control_list error: %s", card, snd_strerror(err));
+		error("Mixer %s simple_control_list error: %s", card, snd_strerror(err));
 		return err;
 	}
 	list.pids = (snd_mixer_sid_t *)malloc(list.controls * sizeof(snd_mixer_sid_t));
@@ -540,7 +540,7 @@ static int simple_controls(int level)
 	}
 	list.controls_request = list.controls;
 	if ((err = snd_mixer_simple_control_list(handle, &list)) < 0) {
-		error("Mixer %i simple_control_list (2) error: %s", card, snd_strerror(err));
+		error("Mixer %s simple_control_list (2) error: %s", card, snd_strerror(err));
 		return err;
 	}
 	for (idx = 0; idx < list.controls_count; idx++) {
@@ -708,7 +708,7 @@ static int cset(int argc, char *argv[], int roflag)
 		printf("\n");
 	}
 	if ((err = snd_ctl_open(&handle, card)) < 0) {
-		error("Control %i open error: %s\n", card, snd_strerror(err));
+		error("Control %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	memset(&info, 0, sizeof(info));
@@ -716,7 +716,7 @@ static int cset(int argc, char *argv[], int roflag)
 	info.id = id;
 	control.id = id;
 	if ((err = snd_ctl_cinfo(handle, &info)) < 0) {
-		error("Control %i cinfo error: %s\n", card, snd_strerror(err));
+		error("Control %s cinfo error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	if (!roflag) {
@@ -761,7 +761,7 @@ static int cset(int argc, char *argv[], int roflag)
 				ptr++;
 		}
 		if ((err = snd_ctl_cwrite(handle, &control)) < 0) {
-			error("Control %i cwrite error: %s\n", card, snd_strerror(err));
+			error("Control %s cwrite error: %s\n", card, snd_strerror(err));
 			return err;
 		}
 	}
@@ -823,7 +823,7 @@ static int sset(int argc, char *argv[], int roflag)
 		return 1;
 	}
 	if ((err = snd_mixer_open(&handle, card)) < 0) {
-		error("Mixer %i open error: %s\n", card, snd_strerror(err));
+		error("Mixer %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	memset(&control, 0, sizeof(control));
@@ -938,19 +938,19 @@ static int events(int argc, char *argv[])
 	int err;
 
 	if ((err = snd_ctl_open(&handle, card)) < 0) {
-		error("Control %i open error: %s\n", card, snd_strerror(err));
+		error("Control %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	if ((err = snd_ctl_hbuild(handle, NULL)) < 0) {
-		error("Control %u hbuild error: %s\n", card, snd_strerror(err));
+		error("Control %s hbuild error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	if ((err = snd_ctl_hcallback_rebuild(handle, events_rebuild, (void *)1)) < 0) {
-		error("Control %u hcallback_rebuild error: %s\n", card, snd_strerror(err));
+		error("Control %s hcallback_rebuild error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	if ((err = snd_ctl_hcallback_add(handle, events_add, (void *)2)) < 0) {
-		error("Control %u hcallback_add error: %s\n", card, snd_strerror(err));
+		error("Control %s hcallback_add error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	for (hcontrol = snd_ctl_hfirst(handle); hcontrol; hcontrol = snd_ctl_hnext(handle, hcontrol)) {
@@ -1023,7 +1023,7 @@ static int sevents(int argc, char *argv[])
 	int err;
 
 	if ((err = snd_mixer_open(&handle, card)) < 0) {
-		error("Mixer %i open error: %s\n", card, snd_strerror(err));
+		error("Mixer %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	printf("Ready to listen...\n");
