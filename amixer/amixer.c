@@ -346,6 +346,8 @@ static const char *speaker_position(int position)
 		return "Rear-Left";
 	case SND_MIXER_VOICE_REAR_RIGHT:
 		return "Rear-Right";
+	case SND_MIXER_VOICE_WOOFER:
+		return "Woofer";
 	default:
 		sprintf(str, "Speaker%i", position);
 		return str;
