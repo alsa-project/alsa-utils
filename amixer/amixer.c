@@ -774,7 +774,7 @@ static int selems(int level)
 	}
 	err = snd_mixer_load(handle);
 	if (err < 0) {
-		error("Mixer load error: %s", card, snd_strerror(err));
+		error("Mixer %s load error: %s", card, snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
 	}
@@ -1145,7 +1145,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 	}
 	err = snd_mixer_load(handle);
 	if (err < 0) {
-		error("Mixer load error: %s", card, snd_strerror(err));
+		error("Mixer %s load error: %s", card, snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
 	}
@@ -1427,7 +1427,7 @@ static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 	snd_mixer_set_callback(handle, mixer_event);
 	err = snd_mixer_load(handle);
 	if (err < 0) {
-		error("Mixer load error: %s", card, snd_strerror(err));
+		error("Mixer %s load error: %s", card, snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
 	}
