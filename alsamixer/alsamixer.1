@@ -83,14 +83,8 @@ in the top-left position together with the mixer name, etc.
 The default view mode is the playback view.  You can change it via 
 \fI-V\fP option.
 
-Each view mode can be switched via keys, \fIF3\fP, \fIF4\fP and \fIF5\fP keys
-for playback, capture and all views, respectively.  \fITAB\fP key toggles the
-current view mode circularly.
-
-In addition to these view modes, you can switch to the help mode and
-the proc info mode via \fIF1\fP and \fIF2\fP keys, respectively.
-On terminals that can't use funtion keys like gnome-terminal, \fI?\fP and
-\fI/\fP keys can be used alternatively for help and proc modes.
+Each view mode can be switched via keyboard commands, too.
+See the next section.
 
 .SH KEYBOARD COMMANDS
 \fBalsamixer\fP recognizes the following keyboard commands to control the soundcard. 
@@ -124,6 +118,18 @@ disabled first. This only works for valid input channels, of course.
 \fIL\fP re-draws the screen.
 
 .SS
+View Mode Controls
+Function keys are used to change view modes.
+You can switch to the help mode and the proc info mode via \fIF1\fP and
+\fIF2\fP keys, respectively.
+On terminals that can't use funtion keys like gnome-terminal, \fI?\fP and
+\fI/\fP keys can be used alternatively for help and proc modes.
+
+\fIF3\fP, \fIF4\fP and \fIF5\fP keys are used to switch to playback, capture
+and all view mode, respectively.  \fITAB\fP key toggles the
+current view mode circularly.
+
+.SS
 Quick Volume Changes
 
 \fIPageUp\fP increases volume by 5.
@@ -141,6 +147,9 @@ independently, as follows:
 
 If the currently selected mixer channel is not a stereo channel, then
 all UP keys will work like \fIW\fP, and all DOWN keys will work like \fIX\fP.
+
+The number keys from \fI0\fP to \fI9\fP are to change the absolute volume
+quickly.  They correspond to 0 to 90% volume.
 
 .SS
 Exiting

@@ -241,6 +241,7 @@ static int *mixer_grpidx;
 static int *mixer_type;
 
 static int	 mixer_volume_delta[2];		/* left/right volume delta in % */
+static int	 mixer_volume_absolute = -1;	/* absolute volume settings in % */
 static int	 mixer_balance_volumes = 0;	/* boolean */
 static unsigned	 mixer_toggle_mute = 0;		/* left/right mask */
 static unsigned	 mixer_toggle_capture = 0;	/* left/right mask */
@@ -519,6 +520,20 @@ mixer_calc_volume(snd_mixer_elem_t *elem,
   return CLAMP(vol1, min, max);
 }
 
+static int
+mixer_convert_volume(snd_mixer_elem_t *elem,
+		  int vol, int type)
+{
+  int vol1;
+  long v;
+  long min, max;
+  if (type != MIXER_ELEM_CAPTURE)
+    snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
+  else
+    snd_mixer_selem_get_capture_volume_range(elem, &min, &max);
+  return  mixer_conv(vol, 0, 100, min, max);
+}
+
 /* update enum list */
 static void update_enum_list(snd_mixer_elem_t *elem, int chn, int delta)
 {
@@ -576,6 +591,7 @@ mixer_write_cbar (int elem_index)
    */
   if ((mixer_volume_delta[MIXER_CHN_LEFT] ||
        mixer_volume_delta[MIXER_CHN_RIGHT] ||
+       mixer_volume_absolute != -1 ||
        mixer_balance_volumes) &&
       (mixer_type[elem_index] & MIXER_ELEM_HAS_VOLUME)) {
     int mono;
@@ -586,16 +602,20 @@ mixer_write_cbar (int elem_index)
     else
 	joined = snd_mixer_selem_has_capture_volume_joined(elem);
     mono |= joined;
-    if (mono && !mixer_volume_delta[MIXER_CHN_LEFT])
-      mixer_volume_delta[MIXER_CHN_LEFT] = mixer_volume_delta[MIXER_CHN_RIGHT];
-    vleft = mixer_calc_volume(elem, mixer_volume_delta[MIXER_CHN_LEFT], type, chn_left);
-    vbalance = vleft;
-    if (! mono) {
-      vright = mixer_calc_volume(elem, mixer_volume_delta[MIXER_CHN_RIGHT], type, chn_right);
-      vbalance += vright;
-      vbalance /= 2;
+    if (mixer_volume_absolute != -1) {
+      vbalance = vright = vleft = mixer_convert_volume(elem, mixer_volume_absolute, type);
     } else {
-      vright = vleft;
+      if (mono && !mixer_volume_delta[MIXER_CHN_LEFT])
+        mixer_volume_delta[MIXER_CHN_LEFT] = mixer_volume_delta[MIXER_CHN_RIGHT];
+      vleft = mixer_calc_volume(elem, mixer_volume_delta[MIXER_CHN_LEFT], type, chn_left);
+      vbalance = vleft;
+      if (! mono) {
+        vright = mixer_calc_volume(elem, mixer_volume_delta[MIXER_CHN_RIGHT], type, chn_right);
+        vbalance += vright;
+        vbalance /= 2;
+      } else {
+        vright = vleft;
+      }
     }
 
       if (joined) {
@@ -689,6 +709,7 @@ mixer_write_cbar (int elem_index)
   }
 
   mixer_volume_delta[MIXER_CHN_LEFT] = mixer_volume_delta[MIXER_CHN_RIGHT] = 0;
+  mixer_volume_absolute = -1;
   mixer_balance_volumes = 0;
 }
 
@@ -2082,6 +2103,18 @@ mixer_iteration (void)
         mixer_set_delta(-1);
       case 'X':
         mixer_add_delta(-1);
+	break;
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+	mixer_volume_absolute = 10 * (key - '0');
 	break;
       case 'q':
 	mixer_volume_delta[MIXER_CHN_LEFT] = 1;
