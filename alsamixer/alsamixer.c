@@ -20,11 +20,11 @@
  *
  * Wed Feb 14 13:08:17 CET 2001   Jaroslav Kysela <perex@suse.cz>
  *
- *      * ported to the latest mixer 0.6.x API (function based)
+ *      * ported to the latest mixer 0.9.x API (function based)
  *
  * Fri Jun 23 14:10:00 MEST 2000  Jaroslav Kysela <perex@suse.cz>
  *
- *      * ported to new mixer 0.6.x API (simple control)
+ *      * ported to new mixer 0.9.x API (simple control)
  *      * improved error handling (mixer_abort)
  *
  * Thu Mar  9 22:54:16 MET 2000  Takashi iwai <iwai@ww.uni-erlangen.de>
