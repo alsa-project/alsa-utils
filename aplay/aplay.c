@@ -396,13 +396,6 @@ int main(int argc, char *argv[])
 	if (!quiet_mode)
 		version();
 
-	fcn_info = snd_pcm_plugin_info;
-	fcn_params = snd_pcm_plugin_params;
-	fcn_setup = snd_pcm_plugin_setup;
-	fcn_status = snd_pcm_plugin_status;
-	fcn_flush = snd_pcm_plugin_flush;
-	fcn_write = snd_pcm_plugin_write;
-	fcn_read = snd_pcm_plugin_read;
 	if (mmap_flag) {
 		fcn_info = snd_pcm_channel_info;
 		fcn_params = snd_pcm_channel_params;
@@ -411,6 +404,14 @@ int main(int argc, char *argv[])
 		fcn_flush = snd_pcm_flush_channel;
 		fcn_write = snd_pcm_write;
 		fcn_read = snd_pcm_read;
+	} else {
+		fcn_info = snd_pcm_plugin_info;
+		fcn_params = snd_pcm_plugin_params;
+		fcn_setup = snd_pcm_plugin_setup;
+		fcn_status = snd_pcm_plugin_status;
+		fcn_flush = snd_pcm_plugin_flush;
+		fcn_write = snd_pcm_plugin_write;
+		fcn_read = snd_pcm_plugin_read;
 	}
 
 	if (!quiet_mode) {
@@ -925,6 +926,16 @@ static u_long calc_count(void)
 		case SND_PCM_SFMT_U16_LE:
 		case SND_PCM_SFMT_U16_BE:
 			count *= 2;
+			break;
+		case SND_PCM_SFMT_S24_LE:
+		case SND_PCM_SFMT_S24_BE:
+		case SND_PCM_SFMT_U24_LE:
+		case SND_PCM_SFMT_U24_BE:
+		case SND_PCM_SFMT_S32_LE:
+		case SND_PCM_SFMT_S32_BE:
+		case SND_PCM_SFMT_U32_LE:
+		case SND_PCM_SFMT_U32_BE:
+			count *= 4;
 			break;
 		case SND_PCM_SFMT_IMA_ADPCM:
 			count /= 4;
