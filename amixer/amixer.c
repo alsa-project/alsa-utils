@@ -712,6 +712,7 @@ static int cset(int argc, char *argv[], int roflag)
 		error("Control %s cinfo error: %s\n", card, snd_strerror(err));
 		return err;
 	}
+	snd_ctl_elem_info_get_id(info, id);	/* FIXME: Remove it when hctl find works ok !!! */
 	type = snd_ctl_elem_info_get_type(info);
 	count = snd_ctl_elem_info_get_count(info);
 	snd_ctl_elem_value_set_id(control, id);
@@ -763,25 +764,24 @@ static int cset(int argc, char *argv[], int roflag)
 		}
 	}
 	snd_ctl_close(handle);
-#if 0
-	/* FIXME */
 	if (!quiet) {
 		snd_hctl_t *hctl;
-		snd_hctl_t *elem;
+		snd_hctl_elem_t *elem;
 		if ((err = snd_hctl_open(&hctl, card)) < 0) {
 			error("Control %s open error: %s\n", card, snd_strerror(err));
 			return err;
 		}
-		if ((err = snd_hctl_load(&hctl)) < 0) {
+		if ((err = snd_hctl_load(hctl)) < 0) {
 			error("Control %s load error: %s\n", card, snd_strerror(err));
 			return err;
 		}
 		elem = snd_hctl_find_elem(hctl, id);
-		assert(elem);
-		show_control("  ", elem, 3);
+		if (elem)
+			show_control("  ", elem, 3);
+		else
+			printf("Could not find the specified element\n");
 		snd_hctl_close(hctl);
 	}
-#endif
 	return 0;
 }
 
