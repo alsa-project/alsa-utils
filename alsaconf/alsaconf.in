@@ -63,11 +63,12 @@ usage() {
     echo "  -p|--probe card-name"
     echo "                 probe a legacy non-isapnp card and print module options"
     echo "  -P|--listprobe list the supported legacy card modules"
+    echo "  -c|--config    specify the module config file"
     echo "  -h|--help      what you're reading"
     exit 1
 }
 
-OPTS=`getopt -o lmLhp:Pu:g:d:rs: --long legacy,modinfo,log,help,probe,listprobe,uid,gid,devmode,strict,sound -n alsaconf -- "$@"` || exit 1
+OPTS=`getopt -o lmLhp:Pu:g:d:rs:c: --long legacy,modinfo,log,help,probe,listprobe,uid,gid,devmode,strict,sound,config -n alsaconf -- "$@"` || exit 1
 eval set -- "$OPTS"
 
 do_legacy_only=0
@@ -108,6 +109,8 @@ while true ; do
 	alsa_mode="$2"; shift 2;;
     -r|--strict)
 	alsa_uid=0; alsa_gid=17; alsa_mode=0660; shift;;
+    -c|--config)
+	cfgfile="$2"; shift 2;;
     --) shift ; break ;;
     *) usage ; exit 1 ;;
     esac
@@ -155,6 +158,12 @@ esac
 
 # cfgfile = base config file to remove/update the sound setting
 # cfgout = new config file to write the sound setting (if different from $cfgfile)
+if [ -n "$cfgfile" ]; then
+  if [ ! -r "$cfgfile" ]; then
+    echo "ERROR: The config file $cfgfile doesn't exist."
+    exit 1
+  fi
+else
 if [ "$distribution" = "gentoo" ]; then
   cfgfile="/etc/modules.d/alsa"
 elif [ "$kernel" = "new" ]; then
@@ -174,6 +183,7 @@ elif [ -e /etc/conf.modules ]; then
 else
   cfgfile="/etc/modules.conf"
   touch /etc/modules.conf
+fi
 fi
 
 # Check for dialog, whiptail, gdialog, awk, ... ?
