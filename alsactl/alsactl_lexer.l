@@ -22,6 +22,12 @@
 %{
 
 #include "alsactl.h"
+
+struct bytearray {
+  unsigned char *data;
+  size_t datalen;
+};
+
 #include "alsactl_parser.h"
 
 #define YY_NO_UNPUT
@@ -41,15 +47,14 @@ int linecount;
 "["|"]"			return yytext[0];
 ")"[ \t]*"{"		return L_DOUBLE1;
 ","			return yytext[0];
+"="			return yytext[0];
 
 	/* tokens */
 
 soundcard		return L_SOUNDCARD;
 control			return L_CONTROL;
 mixer			return L_MIXER;
-channel			return L_CHANNEL;
-stereo			return L_STEREO;
-mono			return L_MONO;
+element			return L_ELEMENT;
 switch			return L_SWITCH;
 rawdata			return L_RAWDATA;
 pcm			return L_PCM;
@@ -71,8 +76,29 @@ type			return L_TYPE;
 gstatus			return L_GSTATUS;
 enable			return L_ENABLE;
 disable			return L_DISABLE;
-mute			return L_MUTE;
-swap			return L_SWAP;
+sw			return L_SW;
+mono_sw			return L_MONO_SW;
+wide			return L_WIDE;
+volume			return L_VOLUME;
+center			return L_CENTER;
+space			return L_SPACE;
+depth			return L_DEPTH;
+delay			return L_DELAY;
+feedback		return L_FEEDBACK;
+bass			return L_BASS;
+treble			return L_TREBLE;
+
+	/* element types */
+
+Switch1			return L_SWITCH1;
+Switch2			return L_SWITCH2;
+Switch3			return L_SWITCH3;
+Volume1			return L_VOLUME1;
+Accu3			return L_ACCU3;
+Mux1			return L_MUX1;
+Mux2			return L_MUX2;
+ToneControl1		return L_TONE_CONTROL1;
+_3D_Effect1		return L_3D_EFFECT1;
 
 	/* boolean */
 
@@ -81,9 +107,9 @@ true|on|yes		return L_TRUE;
 
 	/* integers */
 
-[0-9]+			{ yylval.i_value = atoi( yytext ); return L_INTEGER; }
+[0-9]+			{ yylval.i_value = atoi(yytext); return L_INTEGER; }
 0x[0-9a-f]+		{ char *end;
-                          yylval.i_value = strtol( yytext, &end, 0 );
+                          yylval.i_value = strtol(yytext, &end, 0);
                           return L_INTEGER; }
 
 	/* byte array */
@@ -92,25 +118,27 @@ true|on|yes		return L_TRUE;
 			  char *p = yytext + 1, x[3];
 			  unsigned char *d;
 			  int val;
-			  yylval.a_value = d = (unsigned char *)malloc( 32 );
-			  while ( p ) {
-                            strncpy( x, p, 2 ); x[2] = '\0';
-			    sscanf( x, "%02x", &val );
-			    *d++ = val;
+			  yylval.a_value.data = d = (unsigned char *)malloc( 32 );
+			  yylval.a_value.datalen = 0;
+			  while (p) {
+                            strncpy(x, p, 2); x[2] = '\0';
+			    sscanf(x, "%02x", &val);
+			    *d++ = val; 
+			    ++yylval.a_value.datalen;
 			  }
 		          return L_BYTEARRAY; }
 
 	/* strings */
 
-\"[^\"]*\"              { yytext[ strlen( yytext ) - 1 ] = 0;
-                          yylval.s_value = strdup( &yytext[ 1 ] );
+\"[^\"]*\"              { yytext[strlen(yytext) - 1] = 0;
+                          yylval.s_value = strdup(&yytext[1]);
                           return L_STRING; }
-\'[^\']*\'              { yytext[ strlen( yytext ) - 1 ] = 0;
-                          yylval.s_value = strdup( &yytext[ 1 ] );
+\'[^\']*\'              { yytext[strlen(yytext) - 1] = 0;
+                          yylval.s_value = strdup(&yytext[1]);
                           return L_STRING; }
-[a-z0-9/\~@-Za-z_\+=:\.]+  { yylval.s_value = strdup( yytext );
+[a-z0-9/\~@-Za-z_]+ 	{ yylval.s_value = strdup(yytext);
                           return L_STRING; }
-$[a-z0-9/\~@-Za-z_\+=:\.]+ { yylval.s_value = strdup( getenv( &yytext[ 1 ] ) );
+$[a-z0-9/\~@-Za-z_]+	{ yylval.s_value = strdup(getenv(&yytext[1]));
                           return L_STRING; }
 
 	/* comments & whitespaces */

@@ -1,8 +1,8 @@
 INCLUDES = -I$(top_srcdir)/include
-LDADD = -lasound
+LDADD = -lasound -lm
 EXTRA_DIST = README.first
 
 bin_PROGRAMS = amixer
-amixer_SOURCES = amain.cpp amixer.cpp
-noinst_HEADERS = amixer.h atypes.h
+amixer_SOURCES = amixer.c
+noinst_HEADERS = amixer.h
 man_MANS = amixer.1

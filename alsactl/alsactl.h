@@ -48,21 +48,16 @@ struct ctl {
 	struct ctl_switch *switches;
 };
 
-struct mixer_channel {
-	int no;
-	int direction;
-	int voice;
-	snd_mixer_channel_info_t info;
-	snd_mixer_channel_t data;
-	snd_mixer_channel_direction_info_t dinfo[2];
-	snd_mixer_channel_direction_t ddata[2];
-	struct mixer_channel *next;
+struct mixer_element {
+	snd_mixer_element_info_t info;
+	snd_mixer_element_t element;
+	struct mixer_element *next;
 };
 
 struct mixer {
 	int no;
 	snd_mixer_info_t info;
-	struct mixer_channel *channels;
+	struct mixer_element *elements;
 	struct ctl_switch *switches;
 	struct mixer *next;
 };
@@ -93,10 +88,17 @@ struct soundcard {
 };
 
 extern struct soundcard *soundcards;
+extern struct soundcard *rsoundcards;	/* read soundcards */
 
 void soundcard_setup_init(void);
 void soundcard_setup_done(void);
 int soundcard_setup_load(const char *filename, int skip);
-int soundcard_setup_write(const char *filename);
-int soundcard_setup_collect(int cardno);
-int soundcard_setup_process(int cardno);
+int soundcard_setup_write(const char *filename, int cardno);
+int soundcard_setup_collect_switches(int cardno);
+int soundcard_setup_collect_data(int cardno);
+int soundcard_setup_merge_switches(int cardno);
+int soundcard_setup_merge_data(int cardno);
+int soundcard_setup_process_switches(int cardno);
+int soundcard_setup_process_data(int cardno);
+
+char *mixer_element_id(snd_mixer_eid_t *eid);

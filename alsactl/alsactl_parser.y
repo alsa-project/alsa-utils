@@ -32,36 +32,53 @@ extern char cfgfile[];
 extern int linecount;
 extern FILE *yyin;
 
+	/* structure for byte arrays */ 
+
+struct bytearray {
+  unsigned char *data;
+  size_t datalen;
+};
+
 	/* local functions */
 
 static void yyerror(char *, ...);
 
-static void select_soundcard(char *name);
-static void select_mixer(char *name);
-static void select_pcm(char *name);
-static void select_rawmidi(char *name);
+static void build_soundcard(char *name);
+static void build_mixer(char *name);
+static void build_pcm(char *name);
+static void build_rawmidi(char *name);
 
-static void select_mixer_channel(char *name);
-static void select_mixer_direction(int direction);
-static void select_mixer_voice(int voice);
-static void set_mixer_volume(int volume);
-static void set_mixer_flags(int flags);
-static void select_mixer_channel_end(void);
+static void build_mixer_element(char *name, int index, int etype);
 
-#define SWITCH_CONTROL		0
-#define SWITCH_MIXER		1
-#define SWITCH_PCM		2
-#define SWITCH_RAWMIDI		3
+static void build_control_switch(char *name);
+static void build_mixer_switch(char *name);
+static void build_pcm_playback_switch(char *name);
+static void build_pcm_record_switch(char *name);
+static void build_rawmidi_output_switch(char *name);
+static void build_rawmidi_input_switch(char *name);
 
-static void select_control_switch(char *name);
-static void select_mixer_switch(char *name);
-static void select_pcm_playback_switch(char *name);
-static void select_pcm_record_switch(char *name);
-static void select_rawmidi_output_switch(char *name);
-static void select_rawmidi_input_switch(char *name);
+static void mixer_switch1(int end);
+static void mixer_switch1_value(int val);
+static void mixer_switch2(int end);
+static void mixer_switch2_value(int val);
+static void mixer_switch3(int end);
+static void mixer_switch3_value(int val);
+static void mixer_volume1(int end);
+static void mixer_volume1_value(int val);
+static void mixer_3d_effect1(int end);
+static void mixer_3d_effect1_value(unsigned int effect, int val);
+static void mixer_accu3(int end);
+static void mixer_accu3_value(int val);
+static void mixer_mux1(int end);
+static void mixer_mux1_value(char *str, int index, int type);
+static void mixer_mux2(int end);
+static void mixer_mux2_value(char *str, int index, int type);
+static void mixer_tone_control1(int end);
+static void mixer_tone_control1_value(unsigned int effect, int val);
 
 static void set_switch_boolean(int val);
 static void set_switch_integer(int val);
+static void set_switch_bytearray(struct bytearray val);
 static void set_switch_iec958ocs_begin(int end);
 static void set_switch_iec958ocs(int idx, unsigned short val, unsigned short mask);
 
@@ -71,10 +88,8 @@ static struct soundcard *Xsoundcard = NULL;
 static struct mixer *Xmixer = NULL;
 static struct pcm *Xpcm = NULL;
 static struct rawmidi *Xrawmidi = NULL;
-static struct mixer_channel *Xchannel = NULL;
-static int Xswitchtype = SWITCH_CONTROL;
-static int *Xswitchchange = NULL;
-static snd_switch_t *Xswitch = NULL;
+static struct mixer_element *Xelement  = NULL;
+static struct ctl_switch *Xswitch = NULL;
 static unsigned int Xswitchiec958ocs = 0;
 static unsigned short Xswitchiec958ocs1[16];
 
@@ -86,7 +101,7 @@ static unsigned short Xswitchiec958ocs1[16];
     int b_value;
     int i_value;
     char *s_value;
-    unsigned char *a_value;
+    struct bytearray a_value;
   };
 
 %token <b_value> L_TRUE L_FALSE
@@ -101,15 +116,20 @@ static unsigned short Xswitchiec958ocs1[16];
 	/* misc */
 %token L_DOUBLE1
 	/* other keywords */
-%token L_SOUNDCARD L_MIXER L_CHANNEL L_STEREO L_MONO L_SWITCH L_RAWDATA
-%token L_CONTROL L_PCM L_RAWMIDI L_PLAYBACK L_RECORD L_OUTPUT L_INPUT
+%token L_SOUNDCARD L_MIXER L_ELEMENT L_SWITCH L_RAWDATA
+%token L_CONTROL L_PCM L_RAWMIDI L_PLAYBACK L_RECORD L_INPUT L_OUTPUT
+%token L_SWITCH1 L_SWITCH2 L_SWITCH3 L_VOLUME1 L_3D_EFFECT1 L_ACCU3
+%token L_MUX1 L_MUX2 L_TONE_CONTROL1
 %token L_IEC958OCS L_3D L_RESET L_USER L_VALID L_DATA L_PROTECT L_PRE2
-%token L_FSUNLOCK L_TYPE L_GSTATUS L_ENABLE L_DISABLE L_MUTE L_SWAP
+%token L_FSUNLOCK L_TYPE L_GSTATUS L_ENABLE L_DISABLE
+%token L_SW L_MONO_SW L_WIDE L_VOLUME L_CENTER L_SPACE L_DEPTH L_DELAY
+%token L_FEEDBACK L_BASS L_TREBLE
+
 
 %type <b_value> boolean
 %type <i_value> integer
 %type <s_value> string
-%type <a_value> bytearray
+%type <a_value> rawdata
 
 %%
 
@@ -117,8 +137,9 @@ lines	: line
 	| lines line
 	;
 
-line	: L_SOUNDCARD '(' string { select_soundcard( $3 ); } L_DOUBLE1 soundcards { select_soundcard( NULL ); } '}'
-	| error			{ yyerror( "unknown keyword in top level" ); }
+line	: L_SOUNDCARD '(' string { build_soundcard($3); }
+	  L_DOUBLE1 soundcards '}' { build_soundcard(NULL); }
+	| error			{ yyerror("unknown keyword in top level"); }
 	;
 
 soundcards : soundcard
@@ -126,61 +147,139 @@ soundcards : soundcard
 	;
 
 soundcard : L_CONTROL '{' controls '}'
-	| L_MIXER '(' string { select_mixer( $3 ); } L_DOUBLE1 mixers { select_mixer( NULL ); } '}'
-	| L_PCM '(' string { select_pcm( $3 ); } L_DOUBLE1 pcms { select_pcm( NULL ); } '}'
-	| L_RAWMIDI '(' string { select_rawmidi( $3 ); } L_DOUBLE1 rawmidis { select_rawmidi( NULL ); } '}'
-	| error			{ yyerror( "unknown keyword in soundcard{} level" ); }
+	| L_MIXER '(' string	{ build_mixer($3); }
+	  L_DOUBLE1 mixers '}'	{ build_mixer(NULL); }
+	| L_PCM '(' string	{ build_pcm($3); }
+	  L_DOUBLE1 pcms '}'	{ build_pcm(NULL); }
+	| L_RAWMIDI '(' string	{ build_rawmidi($3); }
+	  L_DOUBLE1 rawmidis '}' { build_rawmidi(NULL); }
+	| error			{ yyerror( "an unknown keyword in the soundcard{} level"); }
 	;
 
 controls : control
 	| controls control
 	;
 
-control : L_SWITCH '(' string { select_control_switch( $3 ); } ',' switches ')' { select_control_switch( NULL ); }
-	| error			{ yyerror( "unknown keyword in control{} level" ); }
+control : L_SWITCH '(' string	{ build_control_switch($3); }
+	  ',' switches ')'	{ build_control_switch(NULL); }
+	| error			{ yyerror("an unknown keyword in the control{} level"); }
 	;
+
 
 mixers	: mixer
 	| mixers mixer
 	;
 
-mixer	: L_CHANNEL '(' string	{ select_mixer_channel( $3 ); } 
-	  ',' settings ')' 	{ select_mixer_channel_end(); 
-	  			  select_mixer_channel( NULL ); }
-	| L_SWITCH '(' string	{ select_mixer_switch( $3 ); }
-	  ',' switches ')'	{ select_mixer_switch( NULL ); }
-	| error			{ yyerror( "unknown keyword in mixer level" ); }
+mixer	: L_ELEMENT '(' string
+	  ',' integer ',' integer { build_mixer_element($3, $5, $7); } 
+	  ',' etype ')' 	{ build_mixer_element(NULL, -1, -1); }
+	| L_SWITCH '(' string	{ build_mixer_switch($3); }
+	  ',' switches ')'	{ build_mixer_switch(NULL); }
+	| error			{ yyerror("an unknown keyword in the mixer level"); }
 	;
 
 
-settings: setting
-	| settings ',' setting
+etype	: L_SWITCH1 '('		{ mixer_switch1(0); } 
+	  m_switch1 ')'		{ mixer_switch1(1); }
+	| L_SWITCH2 '('		{ mixer_switch2(0); }
+	  m_switch2 ')'		{ mixer_switch2(1); }
+	| L_SWITCH3 '('		{ mixer_switch3(0); }
+          m_switch3 ')'		{ mixer_switch3(1); }
+	| L_VOLUME1 '('		{ mixer_volume1(0); }
+	  m_volume1 ')'		{ mixer_volume1(1); }
+	| L_3D_EFFECT1 '('	{ mixer_3d_effect1(0); }
+	  m_3d_effect1 ')'	{ mixer_3d_effect1(1); }
+	| L_ACCU3 '('		{ mixer_accu3(0); }
+	  m_accu3 ')'		{ mixer_accu3(1); }
+	| L_MUX1 '('		{ mixer_mux1(0); }
+	  m_mux1 ')'		{ mixer_mux1(1); }
+	| L_MUX2 '('		{ mixer_mux2(0); }
+	  L_ELEMENT '('
+	  string ','
+	  integer ','
+	  integer ')'		{ mixer_mux2_value($6, $8, $10); }
+	  ')'			{ mixer_mux2(1); }
+	| L_TONE_CONTROL1 '('	{ mixer_tone_control1(0); }
+	  m_tone_control1 ')'	{ mixer_tone_control1(1); }
+	| error			{ yyerror("an unknown keyword in the mixer element level"); }
 	;
 
-setting	: L_OUTPUT		{ select_mixer_direction(OUTPUT); }
-	  dsetting
-	| L_INPUT		{ select_mixer_direction(INPUT); }
-	  dsetting
-	| error			{ yyerror( "unknown keyword in mixer channel level" ); }
+m_switch1 : m_switch1_0
+	| m_switch1 ',' m_switch1_0
 	;
 
-dsetting: L_STEREO '('		{ select_mixer_voice(LEFT); }
-	vsettings ','		{ select_mixer_voice(RIGHT); }
-	vsettings ')'
-	| L_MONO '('		{ select_mixer_voice(LEFT|RIGHT); }
-	  vsettings ')'
-	| error			{ yyerror( "unknown keyword in mixer direction level" ); }
+m_switch1_0 : boolean		{ mixer_switch1_value($1); }
+	| error			{ yyerror("an unknown keyword in the Switch1 element level"); }
 	;
 
-vsettings: vsetting
-	| vsettings vsetting
+m_switch2 : m_switch2_0
+	| m_switch2 ',' m_switch2_0
 	;
 
-vsetting: L_INTEGER		{ set_mixer_volume($1); }
-	| L_MUTE		{ set_mixer_flags(SND_MIXER_DFLG_MUTE); }
-	| L_SWAP		{ set_mixer_flags(SND_MIXER_DFLG_SWAP); }
-	| error			{ yyerror( "unknown keyword in mixer voice level" ); }
+m_switch2_0 : boolean		{ mixer_switch2_value($1); }
+	| error			{ yyerror("an unknown keyword in the Switch2 element level"); }
 	;
+
+m_switch3 : m_switch3_0
+	| m_switch3 ',' m_switch3_0
+	;
+
+m_switch3_0 : boolean		{ mixer_switch3_value($1); }
+	| error			{ yyerror("an unknown keyword in the Switch3 element level"); }
+	;
+
+m_volume1 : m_volume1_0
+	| m_volume1 ',' m_volume1_0
+	;
+
+m_volume1_0 : integer		{ mixer_volume1_value($1); }
+	| error			{ yyerror("an unknown keyword in the Volume1 element level"); }
+	;
+
+m_3d_effect1 : m_3d_effect1_0
+	| m_3d_effect1 ',' m_3d_effect1_0
+	;
+
+m_3d_effect1_0 : L_SW '=' boolean { mixer_3d_effect1_value(SND_MIXER_EFF1_SW, $3); }
+	| L_MONO_SW '=' boolean	{ mixer_3d_effect1_value(SND_MIXER_EFF1_MONO_SW, $3); }
+	| L_WIDE '=' integer	{ mixer_3d_effect1_value(SND_MIXER_EFF1_WIDE, $3); }
+	| L_VOLUME '=' integer	{ mixer_3d_effect1_value(SND_MIXER_EFF1_VOLUME, $3); }
+	| L_CENTER '=' integer	{ mixer_3d_effect1_value(SND_MIXER_EFF1_CENTER, $3); }
+	| L_SPACE '=' integer	{ mixer_3d_effect1_value(SND_MIXER_EFF1_SPACE, $3); }
+	| L_DEPTH '=' integer	{ mixer_3d_effect1_value(SND_MIXER_EFF1_DEPTH, $3); }
+	| L_DELAY '=' integer	{ mixer_3d_effect1_value(SND_MIXER_EFF1_DELAY, $3); }
+	| L_FEEDBACK '=' integer { mixer_3d_effect1_value(SND_MIXER_EFF1_FEEDBACK, $3); }
+	| error			{ yyerror("an unknown keyword in the 3D Effect1 element level"); }
+	;
+
+m_accu3 : m_accu3_0
+	| m_accu3 ',' m_accu3_0
+	;
+
+m_accu3_0 : integer		{ mixer_accu3_value($1); }
+	| error			{ yyerror("an unknown keyword in the Accu3 element level"); }
+	;
+
+m_mux1	: m_mux1_0
+	| m_mux1 ',' m_mux1_0
+	;
+
+m_mux1_0 : L_ELEMENT '(' string
+	   ',' integer ','
+	   integer ')'		{ mixer_mux1_value($3, $5, $7); }
+	| error			{ yyerror("an unknown keyword in the Mux1 element level"); }
+	;
+
+m_tone_control1 : m_tone_control1_0
+	| m_tone_control1 ',' m_tone_control1_0
+	;
+
+m_tone_control1_0 : L_SW '=' boolean { mixer_tone_control1_value(SND_MIXER_TC1_SW, $3); }
+	| L_BASS '=' integer	{ mixer_tone_control1_value(SND_MIXER_TC1_BASS, $3); }
+	| L_TREBLE '=' integer	{ mixer_tone_control1_value(SND_MIXER_TC1_TREBLE, $3); }
+	| error			{ yyerror("an unknown keyword in the ToneControl1 element level"); }
+	;
+
 
 pcms	: pcm
 	| pcms pcm
@@ -188,23 +287,25 @@ pcms	: pcm
 
 pcm	: L_PLAYBACK '{' playbacks '}'
 	| L_RECORD '{' records '}'
-	| error			{ yyerror( "unknown keyword in pcm{} section" ); }
+	| error			{ yyerror("an unknown keyword in the pcm{} section"); }
 	;
 
 playbacks : playback
 	| playbacks playback
 	;
 
-playback : L_SWITCH '(' string { select_pcm_playback_switch( $3 ); } ',' switches ')' { select_pcm_playback_switch( NULL ); }
-	| error			{ yyerror( "unknown keyword in playback{} section" ); }
+playback : L_SWITCH '(' string	{ build_pcm_playback_switch($3); }
+	   ',' switches ')'	{ build_pcm_playback_switch(NULL); }
+	| error			{ yyerror("an unknown keyword in the playback{} section"); }
 	;
 
 records : record
 	| records record
 	;
 
-record	: L_SWITCH '(' string { select_pcm_record_switch( $3 ); } ',' switches ')' { select_pcm_record_switch( NULL ); }
-	| error			{ yyerror( "unknown keyword in record{} section" ); }
+record	: L_SWITCH '(' string	{ build_pcm_record_switch($3); }
+	  ',' switches ')'	{ build_pcm_record_switch(NULL); }
+	| error			{ yyerror("an unknown keyword in the record{} section"); }
 	;
 
 rawmidis : rawmidi
@@ -219,31 +320,34 @@ inputs	: input
 	| inputs input
 	;
 
-input	: L_SWITCH '(' string { select_rawmidi_input_switch( $3 ); } ',' switches ')' { select_rawmidi_input_switch( NULL ); }
-	| error			{ yyerror( "unknown keyword in input{} section" ); }
+input	: L_SWITCH '(' string	{ build_rawmidi_input_switch($3); }
+	  ',' switches ')'	{ build_rawmidi_input_switch(NULL); }
+	| error			{ yyerror( "an unknown keyword in the input{} section" ); }
 	;
 
 outputs	: output
 	| outputs output
 	;
 
-output	: L_SWITCH '(' string { select_rawmidi_output_switch( $3 ); } ',' switches ')' { select_rawmidi_output_switch( NULL ); }
-	| error			{ yyerror( "unknown keyword in output{} section" ); }
+output	: L_SWITCH '(' string	{ build_rawmidi_output_switch($3); }
+	  ',' switches ')'	{ build_rawmidi_output_switch(NULL); }
+	| error			{ yyerror( "an unknown keyword in the output{} section" ); }
 	;
 
 switches : switch
 	| switches switch
 	;
 
-switch	: L_TRUE		{ set_switch_boolean( 1 ); }
-	| L_FALSE		{ set_switch_boolean( 0 ); }
-	| L_INTEGER		{ set_switch_integer( $1 ); }
-	| L_IEC958OCS '(' { set_switch_iec958ocs_begin( 0 ); } iec958ocs { set_switch_iec958ocs_begin( 1 ); } ')'
-	| error			{ yyerror( "unknown keyword in switch() data parameter" ); }
+switch	: boolean		{ set_switch_boolean($1); }
+	| integer		{ set_switch_integer($1); }
+	| L_IEC958OCS '('	{ set_switch_iec958ocs_begin(0); }
+	  iec958ocs ')'		{ set_switch_iec958ocs_begin(1); }
+	| rawdata		{ set_switch_bytearray($1); }
+	| error			{ yyerror( "an unknown keyword in the switch() data parameter" ); }
 	;
 
 iec958ocs : iec958ocs1
-	| iec958ocs iec958ocs1
+	| iec958ocs ',' iec958ocs1
 	;
 
 iec958ocs1 : L_ENABLE		{ set_switch_iec958ocs( 0, 1, 0 ); }
@@ -258,24 +362,21 @@ iec958ocs1 : L_ENABLE		{ set_switch_iec958ocs( 0, 1, 0 ); }
 	| L_FSUNLOCK		{ set_switch_iec958ocs( 5, 0x0020, ~0x0020 ); }
 	| L_TYPE '(' integer ')' { set_switch_iec958ocs( 5, ($3 & 0x7f) << 6, ~(0x7f<<6) ); }
 	| L_GSTATUS		{ set_switch_iec958ocs( 5, 0x2000, ~0x2000 ); }
-	| error			{ yyerror( "unknown keyword in iec958ocs1() arguments" ); }
+	| error			{ yyerror( "an unknown keyword in the iec958ocs1() arguments" ); }
 	;
 
 boolean	: L_TRUE		{ $$ = 1; }
 	| L_FALSE		{ $$ = 0; }
-	| error			{ yyerror( "unknown boolean value" ); }
 	;
 
 integer	: L_INTEGER		{ $$ = $1; }
-	| error			{ yyerror( "unknown integer value" ); }
 	;
 
 string	: L_STRING		{ $$ = $1; }
-	| error			{ yyerror( "unknown string value" ); }
 	;
 
-bytearray : L_BYTEARRAY		{ $$ = $1; }
-	| error			{ yyerror( "unknown byte array value" ); }
+rawdata : L_RAWDATA '(' L_BYTEARRAY ')'	{ $$ = $3; }
+	| L_RAWDATA error	{ yyerror( "malformed rawdata value" ); }
 	;
 
 %%
@@ -293,7 +394,12 @@ static void yyerror(char *string,...)
 	exit(1);
 }
 
-static void select_soundcard(char *name)
+static void error_nomem(void)
+{
+	yyerror("No enough memory...\n");
+}
+
+static void build_soundcard(char *name)
 {
 	struct soundcard *soundcard;
 
@@ -301,17 +407,24 @@ static void select_soundcard(char *name)
 		Xsoundcard = NULL;
 		return;
 	}
-	for (soundcard = soundcards; soundcard; soundcard = soundcard->next)
-		if (!strcmp(soundcard->control.hwinfo.id, name)) {
-			Xsoundcard = soundcard;
-			free(name);
-			return;
-		}
-	yyerror("Cannot find soundcard '%s'...", name);
+	Xsoundcard = (struct soundcard *)malloc(sizeof(struct soundcard));
+	if (!Xsoundcard) {
+		free(name);
+		error_nomem();
+		return;
+	}
+	bzero(Xsoundcard, sizeof(*Xsoundcard));
+	for (soundcard = rsoundcards; soundcard && soundcard->next; soundcard = soundcard->next);
+	if (soundcard) {
+		soundcard->next = Xsoundcard;
+	} else {
+		rsoundcards = Xsoundcard;
+	}
+	strncpy(Xsoundcard->control.hwinfo.id, name, sizeof(Xsoundcard->control.hwinfo.id));
 	free(name);
 }
 
-static void select_mixer(char *name)
+static void build_mixer(char *name)
 {
 	struct mixer *mixer;
 
@@ -319,17 +432,24 @@ static void select_mixer(char *name)
 		Xmixer = NULL;
 		return;
 	}
-	for (mixer = Xsoundcard->mixers; mixer; mixer = mixer->next)
-		if (!strcmp(mixer->info.name, name)) {
-			Xmixer = mixer;
-			free(name);
-			return;
-		}
-	yyerror("Cannot find mixer '%s' for soundcard '%s'...", name, Xsoundcard->control.hwinfo.id);
+	Xmixer = (struct mixer *)malloc(sizeof(struct pcm));
+	if (!Xmixer) {
+		free(name);
+		error_nomem();
+		return;
+	}
+	bzero(Xmixer, sizeof(*Xmixer));
+	for (mixer = Xsoundcard->mixers; mixer && mixer->next; mixer = mixer->next);
+	if (mixer) {
+		mixer->next = Xmixer;
+	} else {
+		Xsoundcard->mixers = Xmixer;
+	}
+	strncpy(Xmixer->info.name, name, sizeof(Xmixer->info.name));
 	free(name);
 }
 
-static void select_pcm(char *name)
+static void build_pcm(char *name)
 {
 	struct pcm *pcm;
 
@@ -337,17 +457,24 @@ static void select_pcm(char *name)
 		Xpcm = NULL;
 		return;
 	}
-	for (pcm = Xsoundcard->pcms; pcm; pcm = pcm->next)
-		if (!strcmp(pcm->info.name, name)) {
-			Xpcm = pcm;
-			free(name);
-			return;
-		}
-	yyerror("Cannot find pcm device '%s' for soundcard '%s'...", name, Xsoundcard->control.hwinfo.id);
+	Xpcm = (struct pcm *)malloc(sizeof(struct pcm));
+	if (!Xpcm) {
+		free(name);
+		error_nomem();
+		return;
+	}
+	bzero(Xpcm, sizeof(*Xpcm));
+	for (pcm = Xsoundcard->pcms; pcm && pcm->next; pcm = pcm->next);
+	if (pcm) {
+		pcm->next = Xpcm;
+	} else {
+		Xsoundcard->pcms = Xpcm;
+	}
+	strncpy(Xpcm->info.name, name, sizeof(Xpcm->info.name));
 	free(name);
 }
 
-static void select_rawmidi(char *name)
+static void build_rawmidi(char *name)
 {
 	struct rawmidi *rawmidi;
 
@@ -355,185 +482,342 @@ static void select_rawmidi(char *name)
 		Xrawmidi = NULL;
 		return;
 	}
-	for (rawmidi = Xsoundcard->rawmidis; rawmidi; rawmidi = rawmidi->next)
-		if (!strcmp(rawmidi->info.name, name)) {
-			Xrawmidi = rawmidi;
-			free(name);
-			return;
-		}
-	yyerror("Cannot find rawmidi device '%s' for soundcard '%s'...", name, Xsoundcard->control.hwinfo.id);
-	free(name);
-}
-
-static void select_mixer_channel(char *name)
-{
-	struct mixer_channel *channel;
-
-	if (!name) {
-		Xchannel = NULL;
+	Xrawmidi = (struct rawmidi *)malloc(sizeof(struct rawmidi));
+	if (!Xrawmidi) {
+		free(name);
+		error_nomem();
 		return;
 	}
-	for (channel = Xmixer->channels; channel; channel = channel->next)
-		if (!strcmp(channel->info.name, name)) {
-			Xchannel = channel;
-			Xchannel->ddata[OUTPUT].flags = 0;
-			Xchannel->ddata[INPUT].flags = 0;
-			free(name);
-			return;
-		}
-	yyerror("Cannot find mixer channel '%s'...", name);
+	bzero(Xrawmidi, sizeof(*Xrawmidi));
+	for (rawmidi = Xsoundcard->rawmidis; rawmidi && rawmidi->next; rawmidi = rawmidi->next);
+	if (rawmidi) {
+		rawmidi->next = Xrawmidi;
+	} else {
+		Xsoundcard->rawmidis = Xrawmidi;
+	}
+	strncpy(Xrawmidi->info.name, name, sizeof(Xrawmidi->info.name));
 	free(name);
 }
 
-static void select_mixer_direction(int direction)
+static void build_mixer_element(char *name, int index, int etype)
 {
-	Xchannel->direction = direction;
-}
+	struct mixer_element *element;
 
-static void select_mixer_voice(int voice)
-{
-	Xchannel->voice = voice;
-}
-
-static void set_mixer_volume(int volume)
-{
-	snd_mixer_channel_direction_info_t *i = &Xchannel->dinfo[Xchannel->direction];
-	snd_mixer_channel_direction_t *d = &Xchannel->ddata[Xchannel->direction];
-	if (Xchannel->voice & LEFT) {
-		if (i->min > volume || i->max < volume)
-			yyerror("Value out of range (%i-%i)...", i->min, i->max);
-		d->left = volume;
+	if (!name) {
+		Xelement = NULL;
+		return;
 	}
-	if (Xchannel->voice & RIGHT) {
-		if (i->min > volume || i->max < volume)
-			yyerror("Value out of range (%i-%i)...", i->min, i->max);
-		d->right = volume;
+	Xelement = (struct mixer_element *)malloc(sizeof(struct mixer_element));
+	if (!Xelement) {
+		free(name);
+		error_nomem();
+		return;
 	}
+	bzero(Xelement, sizeof(*Xelement));	
+	for (element = Xmixer->elements; element && element->next; element = element->next);
+	if (element) {
+		element->next = Xelement;
+	} else {
+		Xmixer->elements = Xelement;
+	}
+	strncpy(Xelement->element.eid.name, name, sizeof(Xelement->element.eid.name));
+	Xelement->element.eid.index = index;
+	Xelement->element.eid.type = etype;
+	Xelement->info.eid = Xelement->element.eid;
+	free(name);
 }
 
-static void set_mixer_flags(int flags)
+static void mixer_type_check(int type)
 {
-	snd_mixer_channel_direction_t *d = &Xchannel->ddata[Xchannel->direction];
-	if (Xchannel->voice & LEFT) {
-		if (flags & SND_MIXER_DFLG_MUTE)
-			d->flags |= SND_MIXER_DFLG_MUTE_LEFT;
-		if (flags & SND_MIXER_DFLG_SWAP)
-			d->flags |= SND_MIXER_DFLG_LTOR;
-	}
-	if (Xchannel->voice & RIGHT) {
-		if (flags & SND_MIXER_DFLG_MUTE)
-			d->flags |= SND_MIXER_DFLG_MUTE_RIGHT;
-		if (flags & SND_MIXER_DFLG_SWAP)
-			d->flags |= SND_MIXER_DFLG_RTOL;
-	}
+	if (Xelement->element.eid.type != type)
+		yyerror("The element has got the unexpected data type.");
 }
 
-static void select_mixer_channel_end(void)
+static void mixer_switch1(int end)
 {
+	mixer_type_check(SND_MIXER_ETYPE_SWITCH1);
 }
 
-static void find_switch(int xtype, struct ctl_switch *first, char *name, char *err)
+static void mixer_switch1_value(int val)
+{
+	unsigned int *ptr;
+
+	if (Xelement->element.data.switch1.sw_size <= Xelement->element.data.switch1.sw) {
+		Xelement->element.data.switch1.sw_size += 32;
+		ptr = (unsigned int *)realloc(Xelement->element.data.switch1.psw, ((Xelement->element.data.switch1.sw_size + 31) / 32) * sizeof(unsigned int));
+		if (ptr == NULL) {
+			error_nomem();
+			return;
+		}
+		Xelement->element.data.switch1.psw = ptr;
+	}
+	snd_mixer_set_bit(Xelement->element.data.switch1.psw, Xelement->element.data.switch1.sw++, val ? 1 : 0);
+}
+
+static void mixer_switch2(int end)
+{
+	mixer_type_check(SND_MIXER_ETYPE_SWITCH2);
+}
+
+static void mixer_switch2_value(int val)
+{
+	Xelement->element.data.switch2.sw = val ? 1 : 0;
+}
+
+static void mixer_switch3(int end)
+{
+	mixer_type_check(SND_MIXER_ETYPE_SWITCH3);
+}
+
+static void mixer_switch3_value(int val)
+{
+	unsigned int *ptr;
+
+	if (Xelement->element.data.switch3.rsw_size <= Xelement->element.data.switch3.rsw) {
+		Xelement->element.data.switch3.rsw_size += 32;
+		ptr = (unsigned int *)realloc(Xelement->element.data.switch1.psw, ((Xelement->element.data.switch3.rsw_size + 31) / 32) * sizeof(unsigned int));
+		if (ptr == NULL) {
+			error_nomem();
+			return;
+		}
+		Xelement->element.data.switch3.prsw = ptr;
+	}
+	snd_mixer_set_bit(Xelement->element.data.switch3.prsw, Xelement->element.data.switch3.rsw++, val ? 1 : 0);
+}
+
+static void mixer_volume1(int end)
+{
+	mixer_type_check(SND_MIXER_ETYPE_VOLUME1);
+}
+
+static void mixer_volume1_value(int val)
+{
+	int *ptr;
+
+	if (Xelement->element.data.volume1.voices_size <= Xelement->element.data.volume1.voices) {
+		Xelement->element.data.volume1.voices_size += 4;
+		ptr = (int *)realloc(Xelement->element.data.volume1.pvoices, Xelement->element.data.volume1.voices_size * sizeof(int));
+		if (ptr == NULL) {
+			error_nomem();
+			return;
+		}
+		Xelement->element.data.volume1.pvoices = ptr;
+	}
+	Xelement->element.data.volume1.pvoices[Xelement->element.data.volume1.voices++] = val;
+} 
+
+static void mixer_3d_effect1(int end)
+{
+	mixer_type_check(SND_MIXER_ETYPE_3D_EFFECT1);
+}
+
+static void mixer_3d_effect1_value(unsigned int effect, int val)
+{
+	switch (effect) {
+	case SND_MIXER_EFF1_SW:
+		Xelement->element.data.teffect1.sw = val ? 1 : 0;
+		break;
+	case SND_MIXER_EFF1_MONO_SW:
+		Xelement->element.data.teffect1.mono_sw = val ? 1 : 0;
+		break;
+	case SND_MIXER_EFF1_WIDE:
+		Xelement->element.data.teffect1.wide = val;
+		break;
+	case SND_MIXER_EFF1_VOLUME:
+		Xelement->element.data.teffect1.volume = val;
+		break;
+	case SND_MIXER_EFF1_CENTER:
+		Xelement->element.data.teffect1.center = val;
+		break;
+	case SND_MIXER_EFF1_SPACE:
+		Xelement->element.data.teffect1.space = val;
+		break;
+	case SND_MIXER_EFF1_DEPTH:
+		Xelement->element.data.teffect1.depth = val;
+		break;
+	case SND_MIXER_EFF1_DELAY:
+		Xelement->element.data.teffect1.delay = val;
+		break;
+	case SND_MIXER_EFF1_FEEDBACK:
+		Xelement->element.data.teffect1.feedback = val;
+		break;
+	default:
+		yyerror("Unknown effect 0x%x\n", effect);
+	}
+} 
+
+static void mixer_accu3(int end)
+{
+	mixer_type_check(SND_MIXER_ETYPE_ACCU3);
+}
+
+static void mixer_accu3_value(int val)
+{
+	int *ptr;
+
+	if (Xelement->element.data.accu3.voices_size <= Xelement->element.data.accu3.voices) {
+		Xelement->element.data.accu3.voices_size += 4;
+		ptr = (int *)realloc(Xelement->element.data.accu3.pvoices, Xelement->element.data.accu3.voices_size * sizeof(int));
+		if (ptr == NULL) {
+			error_nomem();
+			return;
+		}
+		Xelement->element.data.accu3.pvoices = ptr;
+	}
+	Xelement->element.data.accu3.pvoices[Xelement->element.data.accu3.voices++] = val;
+} 
+
+static void mixer_mux1(int end)
+{
+	mixer_type_check(SND_MIXER_ETYPE_MUX1);
+}
+
+static void mixer_mux1_value(char *name, int index, int type)
+{
+	snd_mixer_eid_t *ptr;
+	snd_mixer_eid_t *eid;
+
+	if (Xelement->element.data.mux1.output_size <= Xelement->element.data.mux1.output) {
+		Xelement->element.data.mux1.output_size += 4;
+		ptr = (snd_mixer_eid_t *)realloc(Xelement->element.data.mux1.poutput, Xelement->element.data.mux1.output_size * sizeof(snd_mixer_eid_t));
+		if (ptr == NULL) {
+			error_nomem();
+			free(name);
+			return;
+		}
+		Xelement->element.data.mux1.poutput = ptr;
+	}
+	eid = &Xelement->element.data.mux1.poutput[Xelement->element.data.mux1.output++];
+	strncpy(eid->name, name, sizeof(eid->name));
+	eid->index = index;
+	eid->type = type;
+	free(name);
+} 
+
+static void mixer_mux2(int end)
+{
+	mixer_type_check(SND_MIXER_ETYPE_MUX2);
+}
+
+static void mixer_mux2_value(char *name, int index, int type)
+{
+	snd_mixer_eid_t *eid;
+
+	eid = &Xelement->element.data.mux2.output;
+	strncpy(eid->name, name, sizeof(eid->name));
+	eid->index = index;
+	eid->type = type;
+	free(name);
+} 
+
+static void mixer_tone_control1(int end)
+{
+	mixer_type_check(SND_MIXER_ETYPE_TONE_CONTROL1);
+}
+
+static void mixer_tone_control1_value(unsigned int effect, int val)
+{
+	switch (effect) {
+	case SND_MIXER_TC1_SW:
+		Xelement->element.data.tc1.sw = val ? 1 : 0;
+		break;
+	case SND_MIXER_TC1_BASS:
+		Xelement->element.data.tc1.bass = val;
+		break;
+	case SND_MIXER_TC1_TREBLE:
+		Xelement->element.data.tc1.treble = val;
+		break;
+	default:
+		yyerror("Unknown effect 0x%x\n", effect);
+	}
+} 
+
+static void build_switch(struct ctl_switch **first, char *name)
 {
 	struct ctl_switch *sw;
 
 	if (!name) {
 		Xswitch = NULL;
-		Xswitchchange = NULL;
 		return;
 	}
-	for (sw = first; sw; sw = sw->next) {
-		if (!strcmp(sw -> s.name, name)) {
-			Xswitchtype = xtype;
-			Xswitchchange = &sw->change;
-			Xswitch = &sw->s;
-			free(name);
-			return;
-		}
+	Xswitch = (struct ctl_switch *)malloc(sizeof(struct ctl_switch));
+	if (!Xswitch) {
+		free(name);
+		error_nomem();
+		return;
 	}
-	yyerror("Cannot find %s switch '%s'...", err, name);
+	bzero(Xswitch, sizeof(*Xswitch));
+	for (sw = *first; sw && sw->next; sw = sw->next);
+	if (sw) {
+		sw->next = Xswitch;
+	} else {
+		*first = Xswitch;
+	}
+	strncpy(Xswitch->s.name, name, sizeof(Xswitch->s.name));
 	free(name);
 }
 
-static void select_control_switch(char *name)
+static void build_control_switch(char *name)
 {
-	find_switch(SWITCH_CONTROL, Xsoundcard->control.switches, name, "control");
+	build_switch(&Xsoundcard->control.switches, name);
 }
 
-static void select_mixer_switch(char *name)
+static void build_mixer_switch(char *name)
 {
-	find_switch(SWITCH_MIXER, Xmixer->switches, name, "mixer");
+	build_switch(&Xmixer->switches, name);
 }
 
-static void select_pcm_playback_switch(char *name)
+static void build_pcm_playback_switch(char *name)
 {
-	find_switch(SWITCH_PCM, Xpcm->pswitches, name, "pcm playback");
+	build_switch(&Xpcm->pswitches, name);
 }
 
-static void select_pcm_record_switch(char *name)
-{
-	find_switch(SWITCH_PCM, Xpcm->rswitches, name, "pcm record");
+static void build_pcm_record_switch(char *name)
+{ 
+	build_switch(&Xpcm->rswitches, name);
 }
 
-static void select_rawmidi_output_switch(char *name)
+static void build_rawmidi_output_switch(char *name)
 {
-	find_switch(SWITCH_RAWMIDI, Xrawmidi->oswitches, name, "rawmidi output");
+	build_switch(&Xrawmidi->oswitches, name);
 }
 
-static void select_rawmidi_input_switch(char *name)
+static void build_rawmidi_input_switch(char *name)
 {
-	find_switch(SWITCH_RAWMIDI, Xrawmidi->iswitches, name, "rawmidi input");
+	build_switch(&Xrawmidi->iswitches, name);
 }
 
 static void set_switch_boolean(int val)
 {
-	snd_switch_t *sw = Xswitch;
-	unsigned int xx;
-
-	if (sw->type != SND_SW_TYPE_BOOLEAN)
-		yyerror("Switch '%s' isn't boolean type...", sw->name);
-	xx = val ? 1 : 0;
-	if (sw->value.enable != xx)
-		*Xswitchchange = 1;
-	sw->value.enable = xx;
-#if 0
-	printf("name = '%s', sw->value.enable = %i\n", sw->name, xx);
-#endif
+	Xswitch->s.type = SND_SW_TYPE_BOOLEAN;
+	Xswitch->s.value.enable = val ? 1 : 0;
 }
 
 static void set_switch_integer(int val)
 {
-	snd_switch_t *sw = Xswitch;
 	unsigned int xx;
 
-	if (sw->type != SND_SW_TYPE_BYTE &&
-	    sw->type != SND_SW_TYPE_WORD &&
-	    sw->type != SND_SW_TYPE_DWORD)
-		yyerror("Switch '%s' isn't integer type...", sw->name);
-	if (val < sw->low || val > sw->high)
-		yyerror("Value for switch '%s' out of range (%i-%i)...\n", sw->name, sw->low, sw->high);
+	Xswitch->s.type = SND_SW_TYPE_DWORD;
 	xx = val;
-	if (memcmp(&sw->value, &xx, sizeof(xx)))
-		*Xswitchchange = 1;
-	memcpy(&sw->value, &xx, sizeof(xx));
+	memcpy(&Xswitch->s.value, &xx, sizeof(xx));
+}
+
+static void set_switch_bytearray(struct bytearray val)
+{
+	Xswitch->s.type = SND_SW_TYPE_LAST + 1;
+
+	if (val.datalen > 32)
+		yyerror("Byte array too large for switch.");
+
+	memcpy(Xswitch->s.value.data8, val.data, val.datalen);
 }
 
 static void set_switch_iec958ocs_begin(int end)
 {
-	snd_switch_t *sw = Xswitch;
-
 	if (end) {
-		if (Xswitchiec958ocs != sw->value.enable) {
-			sw->value.enable = Xswitchiec958ocs;
-			*Xswitchchange = 1;
-		}
-		if (Xswitchiec958ocs1[4] != sw->value.data16[4]) {
-			sw->value.data16[4] = Xswitchiec958ocs1[4];
-			*Xswitchchange = 1;
-		}
-		if (Xswitchiec958ocs1[5] != sw->value.data16[5]) {
-			sw->value.data16[5] = Xswitchiec958ocs1[5];
-			*Xswitchchange = 1;
-		}
+		Xswitch->s.value.enable = Xswitchiec958ocs;
+		Xswitch->s.value.data16[4] = Xswitchiec958ocs1[4];
+		Xswitch->s.value.data16[5] = Xswitchiec958ocs1[5];
 #if 0
 		printf("IEC958: enable = %i, ocs1[4] = 0x%x, ocs1[5] = 0x%x\n",
 		       sw->value.enable,
@@ -542,11 +826,8 @@ static void set_switch_iec958ocs_begin(int end)
 #endif
 		return;
 	}
-	if (Xswitchtype != SWITCH_MIXER || sw->type != SND_SW_TYPE_BOOLEAN ||
-	    strcmp(sw->name, SND_MIXER_SW_IEC958OUT))
-		yyerror("Switch '%s' cannot store IEC958 information for Cirrus Logic chips...", sw->name);
-	if (sw->value.data32[1] != (('C' << 8) | 'S'))
-		yyerror("Switch '%s' doesn't have Cirrus Logic signature!!!", sw->name);
+	Xswitch->s.type = SND_SW_TYPE_BOOLEAN;
+	Xswitch->s.value.data32[1] = ('C' << 8) | 'S';
 	Xswitchiec958ocs = 0;
 	Xswitchiec958ocs1[4] = 0x0000;
 	Xswitchiec958ocs1[5] = 0x0004;	/* copy permitted */

@@ -64,28 +64,6 @@ static void help(void)
 	printf("                    from configuration file\n");
 }
 
-static int collect_all(void)
-{
-	int idx, err;
-	unsigned int card_mask;
-
-	card_mask = snd_cards_mask();
-	if (!card_mask) {
-		error("No soundcards found...");
-		return 1;
-	}
-	soundcard_setup_init();
-	for (idx = 0; idx < 32; idx++) {
-		if (card_mask & (1 << idx)) {	/* find each installed soundcards */
-			if ((err = soundcard_setup_collect(idx))) {
-				soundcard_setup_done();
-				return err;
-			}
-		}
-	}
-	return 0;
-}
-
 static int store_setup(const char *cardname)
 {
 	int err;
@@ -101,12 +79,18 @@ static int store_setup(const char *cardname)
 		soundcard_setup_init();
 		for (idx = 0; idx < 32; idx++) {
 			if (card_mask & (1 << idx)) {	/* find each installed soundcards */
-				if ((err = soundcard_setup_collect(idx))) {
+				if ((err = soundcard_setup_collect_switches(idx))) {
+					soundcard_setup_done();
+					return err;
+				}
+				if ((err = soundcard_setup_collect_data(idx))) {
 					soundcard_setup_done();
 					return err;
 				}
 			}
 		}
+		err = soundcard_setup_write(cfgfile, -1);
+		soundcard_setup_done();
 	} else {
 		int cardno;
 
@@ -115,17 +99,17 @@ static int store_setup(const char *cardname)
 			error("Cannot find soundcard '%s'...", cardname);
 			return 1;
 		}
-		if ((err = collect_all()))
-			return err;
-		if ((err = soundcard_setup_load(cfgfile, 1)))
-			return err;
-		if ((err = soundcard_setup_collect(cardno))) {
+		if ((err = soundcard_setup_collect_switches(cardno))) {
 			soundcard_setup_done();
 			return err;
 		}
+		if ((err = soundcard_setup_collect_data(cardno))) {
+			soundcard_setup_done();
+			return err;
+		}
+		err = soundcard_setup_write(cfgfile, cardno);
+		soundcard_setup_done();
 	}
-	err = soundcard_setup_write(cfgfile);
-	soundcard_setup_done();
 	return err;
 }
 
@@ -140,11 +124,32 @@ static int restore_setup(const char *cardname)
 			return 1;
 		}
 	}
-	if ((err = collect_all()))
-		return err;
 	if ((err = soundcard_setup_load(cfgfile, 0)))
 		return err;
-	err = soundcard_setup_process(cardno);
+	if ((err = soundcard_setup_collect_switches(cardno))) {
+		soundcard_setup_done();
+		return err;
+	}
+	if ((err = soundcard_setup_merge_switches(cardno))) {
+		soundcard_setup_done();
+		return err;
+	}
+	if ((err = soundcard_setup_process_switches(cardno))) {
+		soundcard_setup_done();
+		return err;
+	}
+	if ((err = soundcard_setup_collect_data(cardno))) {
+		soundcard_setup_done();
+		return err;
+	}
+	if ((err = soundcard_setup_merge_data(cardno))) {
+		soundcard_setup_done();
+		return err;
+	}
+	if ((err = soundcard_setup_process_data(cardno))) {
+		soundcard_setup_done();
+		return err;
+	}
 	soundcard_setup_done();
 	return err;
 }
@@ -210,5 +215,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
-
