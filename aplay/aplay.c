@@ -174,6 +174,7 @@ static void usage(char *command)
 	fprintf(stderr, "\nSome of these may not be available on selected hardware\n");
 	fprintf(stderr, "The availabled format shortcuts are:\n");
 	fprintf(stderr, "-f cd (16 bit little endian, 44100, stereo)\n");
+	fprintf(stderr, "-f cdr (16 bit big endian, 44100, stereo)\n");
 	fprintf(stderr, "-f dat (16 bit little endian, 48000, stereo)\n");
 }
 
@@ -389,8 +390,11 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'f':
-			if (strcasecmp(optarg, "cd") == 0) {
-				rhwparams.format = file_type == FORMAT_AU ? SND_PCM_FORMAT_S16_BE : SND_PCM_FORMAT_S16_LE;
+			if (strcasecmp(optarg, "cd") == 0 || strcasecmp(optarg, "cdr") == 0) {
+				if (strcasecmp(optarg, "cdr") == 0)
+					rhwparams.format = SND_PCM_FORMAT_S16_BE;
+				else
+					rhwparams.format = file_type == FORMAT_AU ? SND_PCM_FORMAT_S16_BE : SND_PCM_FORMAT_S16_LE;
 				rhwparams.rate = 44100;
 				rhwparams.channels = 2;
 			} else if (strcasecmp(optarg, "dat") == 0) {
