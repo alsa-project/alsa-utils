@@ -1,7 +1,5 @@
-#if 0
-
-/* AlsaMixer - Commandline mixer for the ALSA project
- * Copyright (C) 1998, 1999 Tim Janik <timj@gtk.org> and Jaroslav Kysela <perex@suse.cz>
+/* AlsaMixer - Commandline mixer for the ALSA project Copyright (C) 1998,
+ * 1999 Tim Janik <timj@gtk.org> and Jaroslav Kysela <perex@suse.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,6 +17,10 @@
  *
  *
  * ChangeLog:
+ *
+ * Wed Feb 14 13:08:17 CET 2001   Jaroslav Kysela <perex@suse.cz>
+ *
+ *      * ported to the latest mixer 0.6.x API (function based)
  *
  * Fri Jun 23 14:10:00 MEST 2000  Jaroslav Kysela <perex@suse.cz>
  *
@@ -200,14 +202,6 @@ enum {
   MIXER_ELEM_END
 };
 
-/* channel mask for each type */
-static int mixer_elem_mask[] = {
-  (SND_MIXER_SCHN_MASK_FRONT_LEFT | SND_MIXER_SCHN_MASK_FRONT_RIGHT),
-  (SND_MIXER_SCHN_MASK_REAR_LEFT | SND_MIXER_SCHN_MASK_REAR_RIGHT),
-  SND_MIXER_SCHN_MASK_FRONT_CENTER,
-  SND_MIXER_SCHN_MASK_WOOFER,
-};
-
 /* left and right channels for each type */
 static snd_mixer_selem_channel_id_t mixer_elem_chn[][2] = {
   { SND_MIXER_SCHN_FRONT_LEFT, SND_MIXER_SCHN_FRONT_RIGHT },
@@ -216,8 +210,8 @@ static snd_mixer_selem_channel_id_t mixer_elem_chn[][2] = {
   { SND_MIXER_SCHN_WOOFER, SND_MIXER_SCHN_UNKNOWN },
 };
 
-static snd_mixer_selem_id_t *mixer_sid = NULL;
-static int	 mixer_n_scontrols = 0;
+static void 	*mixer_sid = NULL;
+static int	 mixer_n_selems = 0;
 
 /* split scontrols */
 static int	 mixer_n_elems = 0;
@@ -471,11 +465,14 @@ mixer_conv(int val, int omin, int omax, int nmin, int nmax)
 }
 
 static int
-mixer_calc_volume(snd_mixer_selem_t *scontrol, int vol, snd_mixer_selem_channel_id_t chn)
+mixer_calc_volume(snd_mixer_selem_info_t *info,
+		  snd_mixer_selem_value_t *value,
+		  int vol,
+		  snd_mixer_selem_channel_id_t chn)
 {
   int vol1;
-  long min = snd_mixer_selem_get_min(scontrol);
-  long max = snd_mixer_selem_get_max(scontrol);
+  long min = snd_mixer_selem_info_get_min(info);
+  long max = snd_mixer_selem_info_get_max(info);
   vol1 = (vol < 0) ? -vol : vol;
   if (vol1 > 0) {
     if (vol1 > 100)
@@ -487,7 +484,7 @@ mixer_calc_volume(snd_mixer_selem_t *scontrol, int vol, snd_mixer_selem_channel_
     if (vol < 0)
       vol1 = -vol1;
   }
-  vol1 += snd_mixer_selem_get_channel_volume(scontrol, chn);
+  vol1 += snd_mixer_selem_value_get_volume(value, chn);
   return CLAMP(vol1, min, max);
 }
 
@@ -496,60 +493,68 @@ mixer_calc_volume(snd_mixer_selem_t *scontrol, int vol, snd_mixer_selem_channel_
 static void
 mixer_write_cbar (int elem_index)
 {
-  snd_mixer_selem_t *scontrol;
+  snd_mixer_elem_t *elem;
+  snd_mixer_selem_info_t *info;
+  snd_mixer_selem_value_t *value;
   int vleft, vright, vbalance;
   int type;
+  snd_mixer_selem_id_t *sid;
   snd_mixer_selem_channel_id_t chn_left, chn_right, chn;
   int err, changed;
-  snd_mixer_selem_alloca(&scontrol);
+  snd_mixer_selem_info_alloca(&info);
+  snd_mixer_selem_value_alloca(&value);
 
   if (mixer_sid == NULL)
     return;
-  scontrol.sid = mixer_sid[mixer_grpidx[elem_index]];
-  if ((err = snd_mixer_selem_read (mixer_handle, &scontrol)) < 0)
-    CHECK_ABORT (ERR_FCN, "snd_mixer_selem_read()", err);
   
+  sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * mixer_grpidx[elem_index]);
+  elem = snd_mixer_find_selem(mixer_handle, sid);
+  if (elem == NULL)
+    CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
+  if ((err = snd_mixer_selem_info(elem, info)) < 0)
+    CHECK_ABORT (ERR_FCN, "snd_mixer_selem_info()", err);
+  if ((err = snd_mixer_selem_read(elem, value)) < 0)
+    CHECK_ABORT (ERR_FCN, "snd_mixer_selem_read()", err);
   type = mixer_type[elem_index];
   chn_left = mixer_elem_chn[type][MIXER_CHN_LEFT];
-  if (! (scontrol.channels & (1 << snd_enum_to_int(chn_left))))
+  if (!snd_mixer_selem_info_has_channel(info, chn_left))
     return; /* ..??.. */
   chn_right = mixer_elem_chn[type][MIXER_CHN_RIGHT];
-  if (chn_right != SND_MIXER_SCHN_UNKNOWN && ! (scontrol.channels & (1 << snd_enum_to_int(chn_right))))
+  if (chn_right != SND_MIXER_SCHN_UNKNOWN && ! snd_mixer_selem_info_has_channel(info, chn_right))
     chn_right = SND_MIXER_SCHN_UNKNOWN;
 
   changed = 0;
 
-  /* volue
+  /* volume
    */
   if ((mixer_volume_delta[MIXER_CHN_LEFT] ||
        mixer_volume_delta[MIXER_CHN_RIGHT] ||
        mixer_balance_volumes) &&
-      (scontrol.caps & SND_MIXER_SCTCAP_VOLUME)) {
+       snd_mixer_selem_info_has_volume(info)) {
     int mono = 
-      (chn_right == SND_MIXER_SCHN_UNKNOWN || (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_VOLUME));
+      (chn_right == SND_MIXER_SCHN_UNKNOWN ||
+       snd_mixer_selem_info_has_joined_volume(info));
     if (mono && !mixer_volume_delta[MIXER_CHN_LEFT])
       mixer_volume_delta[MIXER_CHN_LEFT] = mixer_volume_delta[MIXER_CHN_RIGHT];
-    vleft = mixer_calc_volume(&scontrol, mixer_volume_delta[MIXER_CHN_LEFT], chn_left);
+    vleft = mixer_calc_volume(info, value, mixer_volume_delta[MIXER_CHN_LEFT], chn_left);
     vbalance = vleft;
     if (! mono) {
-      vright = mixer_calc_volume(&scontrol, mixer_volume_delta[MIXER_CHN_RIGHT], chn_right);
+      vright = mixer_calc_volume(info, value, mixer_volume_delta[MIXER_CHN_RIGHT], chn_right);
       vbalance += vright;
       vbalance /= 2;
     } else
       vright = vleft;
     if (vleft >= 0 && vright >= 0) {
-      if (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_VOLUME) {
-	for (chn = 0; chn < SND_MIXER_SCHN_LAST; snd_enum_incr(chn)) {
-	  int c = snd_enum_to_int(chn);
-	  if (scontrol.channels & (1 << c))
-	    scontrol.volume.values[c] = vleft;
-	}
+      if (snd_mixer_selem_info_has_joined_volume(info)) {
+	for (chn = 0; chn < SND_MIXER_SCHN_LAST; snd_enum_incr(chn))
+	  if (snd_mixer_selem_info_has_channel(info, chn))
+	    snd_mixer_selem_value_set_volume(value, chn, vleft);
       } else {
 	if (mixer_balance_volumes)
 	  vleft = vright = vbalance;
-	scontrol.volume.values[snd_enum_to_int(chn_left)] = vleft;
+	snd_mixer_selem_value_set_volume(value, chn_left, vleft);
 	if (! mono)
-	  scontrol.volume.values[snd_enum_to_int(chn_right)] = vright;
+	  snd_mixer_selem_value_set_volume(value, chn_right, vright);
       }
       changed = 1;
     }
@@ -559,16 +564,15 @@ mixer_write_cbar (int elem_index)
 
   /* mute
    */
-  if (mixer_toggle_mute && (scontrol.caps & SND_MIXER_SCTCAP_MUTE)) {
-    scontrol.mute &= scontrol.channels;
-    if (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_MUTE)
-      scontrol.mute = scontrol.mute ? 0 : scontrol.channels;
+  if (mixer_toggle_mute && snd_mixer_selem_info_has_mute(info)) {
+    if (snd_mixer_selem_info_has_joined_mute(info))
+      snd_mixer_selem_value_set_mute_all(value, snd_mixer_selem_value_get_mute(value, chn_left) ? 0 : 1);
     else {
       if (mixer_toggle_mute & MIXER_MASK_LEFT)
-	scontrol.mute ^= (1 << snd_enum_to_int(chn_left));
+        snd_mixer_selem_value_set_mute(value, chn_left, snd_mixer_selem_value_get_mute(value, chn_left) ? 0 : 1);
       if (chn_right != SND_MIXER_SCHN_UNKNOWN && 
 	  (mixer_toggle_mute & MIXER_MASK_RIGHT))
-	scontrol.mute ^= (1 << snd_enum_to_int(chn_right));
+        snd_mixer_selem_value_set_mute(value, chn_right, snd_mixer_selem_value_get_mute(value, chn_right) ? 0 : 1);
     }
     changed = 1;
   }
@@ -576,22 +580,21 @@ mixer_write_cbar (int elem_index)
 
   /* capture
    */
-  if (mixer_toggle_capture && (scontrol.caps & SND_MIXER_SCTCAP_CAPTURE)) {
-    scontrol.capture &= scontrol.channels;
-    if (scontrol.caps & SND_MIXER_SCTCAP_JOINTLY_CAPTURE)
-      scontrol.capture = scontrol.capture ? 0 : scontrol.channels;
+  if (mixer_toggle_capture && snd_mixer_selem_info_has_capture(info)) {
+    if (snd_mixer_selem_info_has_joined_capture(info))
+      snd_mixer_selem_value_set_capture_all(value, snd_mixer_selem_value_get_capture(value, chn_left) ? 0 : 1);
     else {
       if (mixer_toggle_capture & MIXER_MASK_LEFT)
-	scontrol.capture ^= (1 << snd_enum_to_int(chn_left));
+        snd_mixer_selem_value_set_capture(value, chn_left, snd_mixer_selem_value_get_capture(value, chn_left) ? 0 : 1);
       if (chn_right != SND_MIXER_SCHN_UNKNOWN && (mixer_toggle_capture & MIXER_MASK_RIGHT))
-	scontrol.capture ^= (1 << snd_enum_to_int(chn_right));
+        snd_mixer_selem_value_set_capture(value, chn_right, snd_mixer_selem_value_get_capture(value, chn_right) ? 0 : 1);
     }
     changed = 1;
   }
   mixer_toggle_capture = 0;
       
   if (changed) {
-    if ((err = snd_mixer_selem_write (mixer_handle, &scontrol)) < 0)
+    if ((err = snd_mixer_selem_write (elem, value)) < 0)
       CHECK_ABORT (ERR_FCN, "snd_mixer_selem_write()", err);
   }
 }
@@ -602,43 +605,50 @@ mixer_update_cbar (int elem_index)
 {
   char string[128], string1[64];
   int err, dc;
-  snd_mixer_selem_t scontrol;
+  snd_mixer_elem_t *elem;
+  snd_mixer_selem_info_t *info;
+  snd_mixer_selem_value_t *value;
   int vleft, vright;
   int type;
+  snd_mixer_selem_id_t *sid;
   snd_mixer_selem_channel_id_t chn_left, chn_right;
   int x, y, i;
-  int c_left, c_right;
+  snd_mixer_selem_info_alloca(&info);
+  snd_mixer_selem_value_alloca(&value);
 
   /* set new scontrol indices and read info
    */
-  bzero(&scontrol, sizeof(scontrol));
   if (mixer_sid == NULL)
     return;
-  scontrol.sid = mixer_sid[mixer_grpidx[elem_index]];
-  if ((err = snd_mixer_selem_read (mixer_handle, &scontrol)) < 0)
+
+  sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * mixer_grpidx[elem_index]);
+  elem = snd_mixer_find_selem(mixer_handle, sid);
+  if (elem == NULL)
+    CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
+  if ((err = snd_mixer_selem_info(elem, info)) < 0)
+    CHECK_ABORT (ERR_FCN, "snd_mixer_selem_info()", err);
+  if ((err = snd_mixer_selem_read(elem, value)) < 0)
     CHECK_ABORT (ERR_FCN, "snd_mixer_selem_read()", err);
-  
+
   type = mixer_type[elem_index];
   chn_left = mixer_elem_chn[type][MIXER_CHN_LEFT];
-  if (! (scontrol.channels & (1 << snd_enum_to_int(chn_left))))
+  if (!snd_mixer_selem_info_has_channel(info, chn_left))
     return; /* ..??.. */
   chn_right = mixer_elem_chn[type][MIXER_CHN_RIGHT];
-  if (chn_right != SND_MIXER_SCHN_UNKNOWN && 
-      ! (scontrol.channels & (1 << snd_enum_to_int(chn_right))))
+  if (chn_right != SND_MIXER_SCHN_UNKNOWN && ! snd_mixer_selem_info_has_channel(info, chn_right))
     chn_right = SND_MIXER_SCHN_UNKNOWN;
-  c_left = snd_enum_to_int(chn_left);
-  c_right = snd_enum_to_int(chn_right);
-  
-  /* first, read values for the numbers to be displayed
-   */
-  if ((err = snd_mixer_selem_read (mixer_handle, &scontrol)) < 0)
-    CHECK_ABORT (ERR_FCN, "snd_mixer_selem_read()", err);
-  
-  vleft = scontrol.volume.values[c_left];
-  vleft = mixer_conv(vleft, scontrol.min, scontrol.max, 0, 100);
+
+  vleft = snd_mixer_selem_value_get_volume(value, chn_left);
+  vleft = mixer_conv(vleft,
+  		     snd_mixer_selem_info_get_min(info),
+  		     snd_mixer_selem_info_get_max(info),
+  		     0, 100);
   if (chn_right != SND_MIXER_SCHN_UNKNOWN) {
-    vright = scontrol.volume.values[c_right];
-    vright = mixer_conv(vright, scontrol.min, scontrol.max, 0, 100);
+    vright = snd_mixer_selem_value_get_volume(value, chn_right);
+    vright = mixer_conv(vright,
+			snd_mixer_selem_info_get_min(info),
+			snd_mixer_selem_info_get_max(info),
+			0, 100);
   } else {
     vright = vleft;
   }
@@ -653,9 +663,9 @@ mixer_update_cbar (int elem_index)
     for (i = 0; i < 63; i++)
       string1[i] = ' ';
     string1[63] = '\0';
-    strcpy(string, scontrol.sid.name);
-    if (scontrol.sid.index > 0)
-      sprintf(string + strlen(string), " %i", scontrol.sid.index);
+    strcpy(string, snd_mixer_selem_id_get_name(sid));
+    if (snd_mixer_selem_id_get_index(sid) > 0)
+      sprintf(string + strlen(string), " %i", snd_mixer_selem_id_get_index(sid));
     string[63] = '\0';
     strncpy(string1, string, strlen(string));
     addstr(string1);
@@ -669,10 +679,10 @@ mixer_update_cbar (int elem_index)
   /* channel bar name
    */
   mixer_dc (elem_index == mixer_focus_elem ? DC_CBAR_FOCUS_LABEL : DC_CBAR_LABEL);
-  if (scontrol.sid.index > 0)
-    sprintf(string1, "%s %d", scontrol.sid.name, scontrol.sid.index);
+  if (snd_mixer_selem_id_get_index(sid) > 0)
+    sprintf(string1, "%s %d", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
   else
-    strcpy(string1, scontrol.sid.name);
+    strcpy(string1, snd_mixer_selem_id_get_name(sid));
   string1[8] = 0;
   for (i = 0; i < 8; i++)
     {
@@ -733,10 +743,10 @@ mixer_update_cbar (int elem_index)
   mvaddstr (y, x, "         ");
   mixer_dc (DC_CBAR_FRAME);
   mvaddch (y, x + 2, ACS_ULCORNER);
-  dc = scontrol.mute & (1 << c_left) ? DC_CBAR_MUTE : DC_CBAR_NOMUTE;
+  dc = snd_mixer_selem_value_get_mute(value, chn_left) ? DC_CBAR_MUTE : DC_CBAR_NOMUTE;
   mvaddch (y, x + 3, mixer_dc (dc));
   if (chn_right != SND_MIXER_SCHN_UNKNOWN)
-    dc = scontrol.mute & (1 << c_right) ? DC_CBAR_MUTE : DC_CBAR_NOMUTE;
+    dc = snd_mixer_selem_value_get_mute(value, chn_right) ? DC_CBAR_MUTE : DC_CBAR_NOMUTE;
   mvaddch (y, x + 4, mixer_dc (dc));
   mixer_dc (DC_CBAR_FRAME);
   mvaddch (y, x + 5, ACS_URCORNER);
@@ -744,21 +754,21 @@ mixer_update_cbar (int elem_index)
   
   /* capture input?
    */
-  if ((scontrol.capture & (1 << c_left)) ||
-      (chn_right != SND_MIXER_SCHN_UNKNOWN && (scontrol.capture & (1 << c_right))))
+  if ((snd_mixer_selem_value_get_capture(value, chn_left)) ||
+      (chn_right != SND_MIXER_SCHN_UNKNOWN && snd_mixer_selem_value_get_capture(value, chn_right)))
     {
       mixer_dc (DC_CBAR_CAPTURE);
       mvaddstr (y, x + 1, "CAPTUR");
-      if (scontrol.capture & (1 << c_left)) {
+      if (snd_mixer_selem_value_get_capture(value, chn_left)) {
 	mvaddstr (y + 1, x + 1, "L");
 	if (chn_right == SND_MIXER_SCHN_UNKNOWN)
 	  mvaddstr (y + 1, x + 6, "R");
       }
       if (chn_right != SND_MIXER_SCHN_UNKNOWN &&
-	  (scontrol.capture & (1 << c_right)))
+	  snd_mixer_selem_value_get_capture(value, chn_right))
 	mvaddstr (y + 1, x + 6, "R");
     }
-  else if (scontrol.caps & SND_MIXER_SCTCAP_CAPTURE)
+  else if (snd_mixer_selem_info_has_capture(info))
     for (i = 0; i < 6; i++)
       mvaddch (y, x + 1 + i, mixer_dc (DC_CBAR_NOCAPTURE));
   else
@@ -1229,8 +1239,14 @@ mixer_init (void)
   snd_ctl_close (ctl_handle);
   /* open mixer device
    */
-  if ((err = snd_mixer_open (&mixer_handle, card_id)) < 0)
-    mixer_abort (ERR_OPEN, "snd_mixer_open", err);
+  if ((err = snd_mixer_open (&mixer_handle)) < 0)
+    mixer_abort (ERR_FCN, "snd_mixer_open", err);
+  if ((err = snd_mixer_attach (mixer_handle, card_id)) < 0)
+    mixer_abort (ERR_FCN, "snd_mixer_attach", err);
+  if ((err = snd_mixer_selem_register (mixer_handle, NULL)) < 0)
+    mixer_abort (ERR_FCN, "snd_mixer_selem_register", err);
+  if ((err = snd_mixer_load (mixer_handle)) < 0)
+    mixer_abort (ERR_FCN, "snd_mixer_load", err);
   
   /* setup global variables
    */
@@ -1241,52 +1257,47 @@ mixer_init (void)
 static void
 mixer_reinit (void)
 {
-  snd_mixer_selem_list_t scontrols;
-  int idx, err, elem_index, i;
-  snd_mixer_selem_id_t focus_gid;
+  snd_mixer_elem_t *elem;
+  int idx, err, elem_index, i, j;
+  snd_mixer_selem_id_t *sid;
+  snd_mixer_selem_id_t *focus_gid;
   int focus_type = -1;
+  snd_mixer_selem_id_alloca(&focus_gid);
   
   if (mixer_sid) {
-    focus_gid = mixer_sid[mixer_grpidx[mixer_focus_elem]];
+    snd_mixer_selem_id_copy(focus_gid, (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * mixer_grpidx[mixer_focus_elem]));
     focus_type = mixer_type[mixer_focus_elem];
   }
-  while (1) {
-    bzero(&scontrols, sizeof(scontrols));
-    if ((err = snd_mixer_selem_list(mixer_handle, &scontrols)) < 0)
-      mixer_abort (ERR_FCN, "snd_mixer_selem_list", err);
-    mixer_n_scontrols = scontrols.controls;
-    if (mixer_n_scontrols > 0) {
-      scontrols.controls_request = mixer_n_scontrols;
-      scontrols.pids = (snd_mixer_selem_id_t *)malloc(sizeof(snd_mixer_selem_id_t) * mixer_n_scontrols);
-      if (scontrols.pids == NULL)
-        mixer_abort (ERR_FCN, "malloc", 0);
-      scontrols.controls_offset = 0;
-      scontrols.controls_count = 0;
-      if ((err = snd_mixer_selem_list(mixer_handle, &scontrols)) < 0)
-        mixer_abort (ERR_FCN, "snd_mixer_selem_list", err);
-      if (scontrols.controls > scontrols.controls_count) {
-        free(scontrols.pids);
-        continue;
-      }
-    }
-    if (mixer_sid)
-      free(mixer_sid);
-    mixer_sid = scontrols.pids;
-    break;
+  if (mixer_sid != NULL)
+    free(mixer_sid);
+  mixer_sid = malloc(snd_mixer_selem_id_sizeof() * snd_mixer_elem_count(mixer_handle));
+  if (mixer_sid == NULL)
+    mixer_abort (ERR_FCN, "malloc", 0);
+  
+  mixer_n_selems = 0;
+  for (elem = snd_mixer_first_elem(mixer_handle); elem; elem = snd_mixer_elem_next(elem)) {
+    sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * mixer_n_selems);
+    snd_mixer_selem_get_id(elem, sid);
+    mixer_n_selems++;
   }
-#if 0
-  snd_mixer_sort_gid_table(mixer_sid, mixer_n_scontrols, snd_mixer_default_weights);
-#endif
 
   mixer_n_elems = 0;
-  for (idx = 0; idx < mixer_n_scontrols; idx++) {
-    snd_mixer_selem_t scontrol;
-    bzero(&scontrol, sizeof(scontrol));
-    scontrol.sid = mixer_sid[idx];
-    if ((err = snd_mixer_selem_read(mixer_handle, &scontrol)) < 0)
-      CHECK_ABORT (ERR_FCN, "snd_mixer_selem_read()", 0);
+  for (idx = 0; idx < mixer_n_selems; idx++) {
+    snd_mixer_selem_info_t *info;
+    snd_mixer_selem_info_alloca(&info);
+    sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * idx);
+    elem = snd_mixer_find_selem(mixer_handle, sid);
+    if (elem == NULL)
+      CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
+    if ((err = snd_mixer_selem_info(elem, info)) < 0)
+      CHECK_ABORT (ERR_FCN, "snd_mixer_selem_info()", 0);
     for (i = 0; i < MIXER_ELEM_END; i++) {
-      if (scontrol.channels & mixer_elem_mask[i])
+      int ok;
+      for (j = ok = 0; j < 2; j++) {
+        if (snd_mixer_selem_info_has_channel(info, mixer_elem_chn[i][j]))
+	  ok++;
+      }
+      if (ok)
 	mixer_n_elems++;
     }
   }
@@ -1302,19 +1313,27 @@ mixer_reinit (void)
   if (mixer_grpidx == NULL)
     mixer_abort(ERR_FCN, "malloc", 0);
   elem_index = 0;
-  for (idx = 0; idx < mixer_n_scontrols; idx++) {
-    snd_mixer_selem_t scontrol;
-    bzero(&scontrol, sizeof(scontrol));
-    scontrol.sid = mixer_sid[idx];
-    if ((err = snd_mixer_selem_read(mixer_handle, &scontrol)) < 0)
-      CHECK_ABORT (ERR_FCN, "snd_mixer_selem_read()", err);
+  for (idx = 0; idx < mixer_n_selems; idx++) {
+    snd_mixer_selem_info_t *info;
+    snd_mixer_selem_info_alloca(&info);
+    sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * idx);
+    elem = snd_mixer_find_selem(mixer_handle, sid);
+    if (elem == NULL)
+      CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
+    if ((err = snd_mixer_selem_info(elem, info)) < 0)
+      CHECK_ABORT (ERR_FCN, "snd_mixer_selem_info()", 0);
     for (i = 0; i < MIXER_ELEM_END; i++) {
-      if (scontrol.channels & mixer_elem_mask[i]) {
+      int ok;
+      for (j = ok = 0; j < 2; j++) {
+        if (snd_mixer_selem_info_has_channel(info, mixer_elem_chn[i][j]))
+          ok++;
+      }
+      if (ok) {
 	mixer_grpidx[elem_index] = idx;
 	mixer_type[elem_index] = i;
 	elem_index++;
 	if (elem_index >= mixer_n_elems)
-	  break;
+  	  break;
       }
     }
   }
@@ -1322,7 +1341,11 @@ mixer_reinit (void)
   mixer_focus_elem = 0;
   if (focus_type >= 0) {
     for (elem_index = 0; elem_index < mixer_n_elems; elem_index++) {
-      if (!memcmp(&focus_gid, &mixer_sid[mixer_grpidx[elem_index]], sizeof(focus_gid)) &&
+      sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * mixer_grpidx[elem_index]);
+      if (!strcmp(snd_mixer_selem_id_get_name(focus_gid),
+                  snd_mixer_selem_id_get_name(sid)) &&
+          snd_mixer_selem_id_get_index(focus_gid) ==
+          snd_mixer_selem_id_get_index(sid) &&
 	  mixer_type[elem_index] == focus_type) {
         mixer_focus_elem = elem_index;
         break;
@@ -1411,21 +1434,6 @@ mixer_resize (void)
 }
 
 static void
-mixer_callback_rebuild (snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED)
-{
-  /* we don't actually need to update the individual channels because
-   * we redraw the whole screen upon every main iteration anyways.
-   */
-  mixer_reinit ();
-}
-
-static void
-mixer_callback_scontrol (snd_mixer_t *handle ATTRIBUTE_UNUSED, void *private_data ATTRIBUTE_UNUSED, snd_mixer_selem_id_t *gid ATTRIBUTE_UNUSED)
-{
-  mixer_reinit ();
-}
-
-static void
 mixer_set_delta(int delta)
 {
   int grp;
@@ -1447,44 +1455,53 @@ static int
 mixer_iteration (void)
 {
   struct timeval delay = { 0, 0 };
-  snd_mixer_simple_callbacks_t callbacks = { 0, };
-  int mixer_fd;
-  fd_set rfds;
+  unsigned int count;
+  struct pollfd *fds;
+  int err;
   int finished = 0;
   int key = 0;
   int old_view;
   
-  callbacks.rebuild = mixer_callback_rebuild;
-  callbacks.value = mixer_callback_scontrol;
-  callbacks.change = mixer_callback_scontrol;
-  callbacks.add = mixer_callback_scontrol;
-  callbacks.remove = mixer_callback_scontrol;
-
   /* setup for select on stdin and the mixer fd */
-  mixer_fd = snd_mixer_poll_descriptor (mixer_handle);
-  FD_ZERO (&rfds);
-  FD_SET (fileno (stdin), &rfds);
-  FD_SET (mixer_fd, &rfds);
-
+  if ((err = snd_mixer_poll_descriptors_count(mixer_handle, &count)) < 0)
+    mixer_abort (ERR_FCN, "snd_mixer_poll_descriptors_count", err);
+  fds = calloc(count + 1, sizeof(struct pollfd));
+  if (fds == NULL)
+    mixer_abort (ERR_FCN, "malloc", 0);
+  fds->fd = fileno(stdin);
+  fds->events = POLLIN;
+  if ((err = snd_mixer_poll_descriptors(mixer_handle, fds + 1, count)) < 0)
+    mixer_abort (ERR_FCN, "snd_mixer_poll_descriptors", err);
+  if (err != count)
+    mixer_abort (ERR_FCN, "snd_mixer_poll_descriptors (err != count)", 0);
+  
   delay.tv_sec = 0;
   delay.tv_usec = 0 * 100 * 1000;
 
-  finished = select (mixer_fd + 1, &rfds, NULL, NULL, mixer_needs_resize ? &delay : NULL) < 0;
+  finished = poll(fds, count + 1, -1);
 
   /* don't abort on handled signals */
   if (finished && errno == EINTR)
-    {
-      FD_ZERO (&rfds);
-      finished = 0;
-    }
+    finished = 0;
   else if (mixer_needs_resize)
     mixer_resize ();
 
-  if (FD_ISSET (mixer_fd, &rfds))
-    snd_mixer_simple_read (mixer_handle, &callbacks);
+  if (finished) {
+    if (fds->revents & POLLIN) {
+      key = getch ();
+      finished--;
+    }
+  }
+  
+  if (finished) {
+    if (fds->revents & POLLIN) {
+      snd_mixer_handle_events(mixer_handle);
+      finished = 0;
+    }
+  }
 
-  if (FD_ISSET (fileno (stdin), &rfds))
-    key = getch ();
+  finished = 0;
+  free(fds);
 
   old_view = mixer_view;
   
@@ -1808,12 +1825,3 @@ main (int    argc,
   
   mixer_abort (ERR_NONE, "", 0);
 };
-#else
-#include <stdlib.h>
-#include <stdio.h>
-int main(void)
-{
-	printf("Please wait for the new code...\n");
-	return EXIT_FAILURE;
-}
-#endif
