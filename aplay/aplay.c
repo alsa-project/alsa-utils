@@ -1465,14 +1465,13 @@ static void begin_wave(int fd, size_t cnt)
 #if 0
 	tmp2 = (samplesize == 8) ? 1 : 2;
 	f.byte_p_spl = LE_SHORT(tmp2);
-	tmp2 = dsp_speed * hwparams.channels * tmp2;
-	f.byte_p_sec = LE_SHORT(tmp2);
+	tmp = dsp_speed * hwparams.channels * (u_int) tmp2;
 #else
 	tmp2 = hwparams.channels * ((bits + 7) / 8);
 	f.byte_p_spl = LE_SHORT(tmp2);
-	tmp2 = tmp2 * hwparams.rate;
-	f.byte_p_sec = LE_SHORT(tmp2);
+	tmp = (u_int) tmp2 * hwparams.rate;
 #endif
+	f.byte_p_sec = LE_INT(tmp);
 	f.bit_p_spl = LE_SHORT(bits);
 
 	cd.type = WAV_DATA;
