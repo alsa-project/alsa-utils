@@ -40,6 +40,7 @@
 #include <sys/poll.h>
 #include <sys/uio.h>
 #include <sys/time.h>
+#include <sys/signal.h>
 #include "aconfig.h"
 #include "formats.h"
 #include "version.h"
@@ -89,7 +90,8 @@ static size_t chunk_bytes;
 static snd_output_t *log;
 static unsigned int max_peak = 0;
 
-static int count;
+static int fd = -1;
+static int count, fdcount;
 static int vocmajor, vocminor;
 
 /* needed prototypes */
@@ -104,6 +106,7 @@ static void end_voc(int fd);
 static void begin_wave(int fd, size_t count);
 static void end_wave(int fd);
 static void begin_au(int fd, size_t count);
+static void end_au(int fd);
 
 struct fmt_capture {
 	void (*start) (int fd, size_t count);
@@ -113,7 +116,7 @@ struct fmt_capture {
 	{	NULL,		end_wave,	"raw data"	},
 	{	begin_voc,	end_voc,	"VOC"		},
 	{	begin_wave,	end_wave,	"WAVE"		},
-	{	begin_au,	end_wave,	"Sparc Audio"	}
+	{	begin_au,	end_au,		"Sparc Audio"	}
 };
 
 #if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
@@ -258,6 +261,19 @@ static void pcm_list(void)
 static void version(void)
 {
 	fprintf(stderr, "%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@suse.cz>", command);
+}
+
+static void signal_handler(int sig)
+{
+	if (!quiet_mode)
+		fprintf(stderr, "Aborted...\n");
+	if (stream == SND_PCM_STREAM_CAPTURE)
+		fmt_rec_table[file_type].end(fd);
+	if (fd > 1)
+		close(fd);
+	if (handle)
+		snd_pcm_close(handle);
+	exit(EXIT_FAILURE);
 }
 
 #define OPT_HELP 1
@@ -470,6 +486,10 @@ int main(int argc, char *argv[])
 		readn_func = snd_pcm_readn;
 	}
 
+
+	signal(SIGINT, signal_handler);
+	signal(SIGTERM, signal_handler);
+	signal(SIGABRT, signal_handler);
 	if (interleaved) {
 		if (optind > argc - 1) {
 			if (stream == SND_PCM_STREAM_PLAYBACK)
@@ -612,6 +632,9 @@ static ssize_t test_wavefile(int fd, char *buffer, size_t size)
 		break;
 	case 16:
 		hwparams.format = SND_PCM_FORMAT_S16_LE;
+		break;
+	case 32:
+		hwparams.format = SND_PCM_FORMAT_S32_LE;
 		break;
 	default:
 		error(" can't play WAVE-files with sample %d bits wide", LE_SHORT(f->bit_p_spl));
@@ -1349,7 +1372,7 @@ static void begin_voc(int fd, size_t cnt)
 		exit(EXIT_FAILURE);
 	}
 	if (hwparams.channels > 1) {
-		/* write a extended block */
+		/* write an extended block */
 		bt.type = 8;
 		bt.datalen = 4;
 		bt.datalen_m = bt.datalen_h = 0;
@@ -1399,6 +1422,9 @@ static void begin_wave(int fd, size_t cnt)
 		break;
 	case SND_PCM_FORMAT_S16_LE:
 		bits = 16;
+		break;
+	case SND_PCM_FORMAT_S32_LE:
+		bits = 32;
 		break;
 	default:
 		error("Wave doesn't support %s format...", snd_pcm_format_name(hwparams.format));
@@ -1473,17 +1499,55 @@ static void begin_au(int fd, size_t cnt)
 /* closing .VOC */
 static void end_voc(int fd)
 {
+	off_t length_seek;
+	VocBlockType bt;
+	size_t cnt;
 	char dummy = 0;		/* Write a Terminator */
+
 	if (write(fd, &dummy, 1) != 1) {
 		error("write error");
 		exit(EXIT_FAILURE);
 	}
+	length_seek = sizeof(VocHeader);
+	if (hwparams.channels > 1)
+		length_seek += sizeof(VocBlockType) + sizeof(VocExtBlock);
+	bt.type = 1;
+	cnt = fdcount;
+	cnt += sizeof(VocVoiceData);	/* Channel_data block follows */
+	bt.datalen = (u_char) (cnt & 0xFF);
+	bt.datalen_m = (u_char) ((cnt & 0xFF00) >> 8);
+	bt.datalen_h = (u_char) ((cnt & 0xFF0000) >> 16);
+	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
+		write(fd, &bt, sizeof(VocBlockType));
 	if (fd != 1)
 		close(fd);
 }
 
 static void end_wave(int fd)
 {				/* only close output */
+	WaveChunkHeader cd;
+	off_t length_seek;
+	
+	length_seek = sizeof(WaveHeader) +
+		      sizeof(WaveChunkHeader) +
+		      sizeof(WaveFmtBody);
+	cd.type = WAV_DATA;
+	cd.length = LE_INT(fdcount);
+	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
+		write(fd, &cd, sizeof(WaveChunkHeader));
+	if (fd != 1)
+		close(fd);
+}
+
+static void end_au(int fd)
+{				/* only close output */
+	AuHeader ah;
+	off_t length_seek;
+	
+	length_seek = (char *)&ah.data_size - (char *)&ah;
+	ah.data_size = BE_INT(fdcount);
+	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
+		write(fd, &ah.data_size, sizeof(ah.data_size));
 	if (fd != 1)
 		close(fd);
 }
@@ -1542,6 +1606,7 @@ void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
 				perror(name);
 				exit(EXIT_FAILURE);
 			}
+			fdcount += r;
 			if (r == 0)
 				break;
 			l += r;
@@ -1562,7 +1627,7 @@ void playback_go(int fd, size_t loaded, size_t count, int rtype, char *name)
 void capture_go(int fd, size_t count, int rtype, char *name)
 {
 	size_t c;
-	ssize_t r;
+	ssize_t r, err;
 
 	header(rtype, name);
 	set_params();
@@ -1575,10 +1640,12 @@ void capture_go(int fd, size_t count, int rtype, char *name)
 		if ((r = pcm_read(audiobuf, c)) != c)
 			break;
 		r = r * bits_per_frame / 8;
-		if (write(fd, audiobuf, r) != r) {
+		if ((err = write(fd, audiobuf, r)) != r) {
 			perror(name);
 			exit(EXIT_FAILURE);
 		}
+		if (err > 0)
+			fdcount += err;
 		count -= r;
 	}
 }
@@ -1589,13 +1656,14 @@ void capture_go(int fd, size_t count, int rtype, char *name)
 
 static void playback(char *name)
 {
-	int fd, ofs;
+	int ofs;
 	size_t dta;
 	ssize_t dtawave;
 
+	fdcount = 0;
 	count = calc_count();
 	if (!name || !strcmp(name, "-")) {
-		fd = 0;
+		fd = fileno(stdin);
 		name = "stdin";
 	} else {
 		if ((fd = open(name, O_RDONLY, 0)) == -1) {
@@ -1639,10 +1707,8 @@ static void playback(char *name)
 
 static void capture(char *name)
 {
-	int fd;
-
 	if (!name || !strcmp(name, "-")) {
-		fd = 1;
+		fd = fileno(stdout);
 		name = "stdout";
 	} else {
 		remove(name);
@@ -1651,6 +1717,7 @@ static void capture(char *name)
 			exit(EXIT_FAILURE);
 		}
 	}
+	fdcount = 0;
 	count = calc_count();
 	count += count % 2;
 	/* WAVE-file should be even (I'm not sure), but wasting one byte
