@@ -20,6 +20,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
 #include <netdb.h>
 #include <sys/asoundlib.h>
 #include <getopt.h>
@@ -370,7 +371,7 @@ static void init_server(int port)
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &curstate, sizeof(curstate));
 	/* the return value is ignored.. */
 
-	if (bind(sockfd, &addr, sizeof(addr)) < 0)  {
+	if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0)  {
 		perror("can't bind");
 		exit(1);
 	}
@@ -439,7 +440,7 @@ static void init_client(char *server, int port)
 	addr.sin_port = htons(port);
 	addr.sin_family = AF_INET;
 	memcpy(&addr.sin_addr, host->h_addr, host->h_length);
-	if (connect(fd, &addr, sizeof(addr)) < 0) {
+	if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		perror("connect");
 		exit(1);
 	}
