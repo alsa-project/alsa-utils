@@ -257,14 +257,14 @@ static int	 mixer_help_yoffs = 0;
 static char     *mixer_help_text =
 (
  " Esc     exit alsamixer\n"
- " F1 / 1  show Help screen\n"
- " F2 / 2  show /proc info screen\n"
- " F3 / 3  show Playback controls only\n"
- " F4 / 4  show Capture controls only\n"
- " F5 / 5  show all controls\n"
+ " F1 ?    show Help screen\n"
+ " F2 /    show /proc info screen\n"
+ " F3      show Playback controls only\n"
+ " F4      show Capture controls only\n"
+ " F5      show all controls\n"
+ " Tab     toggle view mode\n"
  " Return  return to main screen\n"
  " Space   toggle Capture facility\n"
- " Tab     toggle ExactMode\n"
  " m M     toggle mute on both channels\n"
  " < >     toggle mute on left/right channel\n"
  " Up      increase left and right volume\n"
@@ -1908,18 +1908,15 @@ mixer_iteration (void)
     case 'H':
     case '?':
     case KEY_F (1):
-    case '1':
       mixer_view = VIEW_HELP;
       key = 0;
       break;
     case '/':
     case KEY_F (2):
-    case '2':
       mixer_view = VIEW_PROCINFO;
       key = 0;
       break;
     case KEY_F (3):
-    case '3':
       if (mixer_view == VIEW_PLAYBACK) {
 	mixer_clear (FALSE);
       } else {
@@ -1935,7 +1932,6 @@ mixer_iteration (void)
       key = 0;
       break;
     case KEY_F (4):
-    case '4':
       if (mixer_view == VIEW_CAPTURE) {
 	mixer_clear (FALSE);
       } else {
@@ -1951,7 +1947,6 @@ mixer_iteration (void)
       key = 0;
       break;
     case KEY_F (5):
-    case '5':
       if (mixer_view == VIEW_CHANNELS) {
 	mixer_clear (FALSE);
       } else {
@@ -1960,6 +1955,15 @@ mixer_iteration (void)
         mixer_reinit ();
       } 
       key = 0;
+      break;
+    case 9: /* Tab */
+      if (mixer_view >= VIEW_CHANNELS && mixer_view <= VIEW_CAPTURE) {
+	mixer_view = (mixer_view + 1) % 3 + VIEW_CHANNELS;
+	mixer_view_saved = mixer_view;
+	mixer_changed_state = 1;
+	mixer_reinit ();
+	key = 0;
+      }
       break;
     case '\014':
     case 'L':
