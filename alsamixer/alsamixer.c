@@ -242,7 +242,7 @@ static char     *mixer_help_text =
  " F1      show Help screen\n"
  " F2      show /proc info screen\n"
  " Return  return to main screen\n"
- " Space   toggle Record facility\n"
+ " Space   toggle Capture facility\n"
  " Tab     toggle ExactMode\n"
  " m M     mute both channels\n"
  " < >     mute left/right channel\n"
@@ -1575,10 +1575,12 @@ mixer_iteration (void)
       case KEY_NPAGE:
         mixer_set_delta(-5);
 	break;
+#if 0
       case KEY_BEG:
       case KEY_HOME:
         mixer_set_delta(100);
 	break;
+#endif
       case KEY_LL:
       case KEY_END:
         mixer_set_delta(-100);

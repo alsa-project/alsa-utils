@@ -340,8 +340,8 @@ static const char *speaker_position(int position)
 	static char str[32];
 
 	switch (position) {
-	case SND_MIXER_VOICE_UNUSED:
-		return "Unused";
+	case SND_MIXER_VOICE_UNKNOWN:
+		return "Unknown";
 	case SND_MIXER_VOICE_MONO:
 		return "Mono";
 	case SND_MIXER_VOICE_LEFT:
@@ -495,6 +495,7 @@ int show_element_info(void *handle, snd_mixer_eid_t *eid, const char *space)
 		error("Mixer %i/%i info error: %s", card, device, snd_strerror(err));
 		return -1;
 	}
+	printf("%sInput/output voices: %i/%i\n", space, info.input_voices, info.output_voices);
 	switch (info.eid.type) {
 	case SND_MIXER_ETYPE_INPUT:
 	case SND_MIXER_ETYPE_OUTPUT:
@@ -503,17 +504,10 @@ int show_element_info(void *handle, snd_mixer_eid_t *eid, const char *space)
 				info.data.io.attrib & SND_MIXER_EIO_DIGITAL ? " digital" : "");
 		}
 		for (idx = 0; idx < info.data.io.voices; idx++) {
-			if (!info.data.io.pvoices[idx].vindex) {
-				printf("%sVoice %i: %s\n",
-					space,
-					idx,
-					speaker_position(info.data.io.pvoices[idx].voice));
-			} else {
-				printf("%sVoice %i: %i\n",
-					space,
-					idx,
-					info.data.io.pvoices[idx].voice);
-			}
+			printf("%sVoice %i: %s\n",
+				space,
+				idx,
+				speaker_position(info.data.io.pvoices[idx].position));
 		}
 		break;
 	case SND_MIXER_ETYPE_CAPTURE1:
@@ -553,14 +547,6 @@ int show_element_info(void *handle, snd_mixer_eid_t *eid, const char *space)
 			break;
 		default:
 			printf("unknown %i\n", info.data.switch3.type);
-		}
-		for (idx = 0; idx < info.data.switch3.voices; idx++) {
-			snd_mixer_voice_t voice = info.data.switch3.pvoices[idx];
-			if (voice.vindex) {
-				printf("%sVoice %i: %i\n", space, idx, voice.voice);
-			} else {
-				printf("%sSpeaker %i: %s\n", space, idx, speaker_position(voice.voice));
-			}
 		}
 		break;
 	case SND_MIXER_ETYPE_VOLUME1:
@@ -698,28 +684,17 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 		printf("%sSwitch is %s\n", space, element.data.switch2.sw ? "ON" : "OFF");
 		break;
 	case SND_MIXER_ETYPE_SWITCH3:
-		if (element.data.switch3.rsw != info.data.switch3.voices * info.data.switch3.voices) {
+		if (element.data.switch3.rsw != info.input_voices * info.output_voices) {
 			error("Switch3 !!!\n");
 			goto __end;
 		}
 		for (idx = 0; idx < element.data.switch3.rsw; idx++) {
-			snd_mixer_voice_t input, output;
 			int val = snd_mixer_get_bit(element.data.switch3.prsw, idx);
-			printf("%sInput <", space);
-			input = info.data.switch3.pvoices[idx / info.data.switch3.voices];
-			output = info.data.switch3.pvoices[idx % info.data.switch3.voices];
-			if (input.vindex) {
-				printf("voice %i", input.voice);
-			} else {
-				printf(speaker_position(input.voice));
-			}
-			printf("> Output <");
-			if (output.vindex) {
-				printf("voice %i", output.voice);
-			} else {
-				printf(speaker_position(output.voice));
-			}
-			printf(">: Switch is %s\n", val ? "ON" : "OFF");
+			printf("%sInput <%i> Output <%i>: Switch is %s\n",
+					space,
+					idx / info.input_voices,
+					idx % info.output_voices,
+					val ? "ON" : "OFF");
 		}
 		break;
 	case SND_MIXER_ETYPE_VOLUME1:
