@@ -951,9 +951,12 @@ static int cset(int argc, char *argv[], int roflag)
 					tmp = snd_ctl_elem_value_get_boolean(control, idx);
 					tmp = tmp > 0 ? 0 : 1;
 					ptr += 6;
-				} else if (atoi(ptr)) {
-					tmp = 1;
+				} else if (isdigit(*ptr)) {
+					tmp = atoi(ptr) > 0 ? 1 : 0;
 					while (isdigit(*ptr))
+						ptr++;
+				} else {
+					while (*ptr && *ptr != ',')
 						ptr++;
 				}
 				snd_ctl_elem_value_set_boolean(control, idx, tmp);
