@@ -111,7 +111,7 @@ while true ; do
     case "$1" in
     -l|--legacy)
 	do_legacy_only=1; shift ;;
-    -m|--modifno)
+    -m|--modinfo)
 	use_modinfo_db=1; shift ;;
     -s|--sound)
 	TESTSOUND=$2; shift 2;;
