@@ -89,7 +89,6 @@ usage() {
   -c|--config file
                  specify the module config file
   -h|--help      what you're reading"
-    exit 1
 }
 
 OPTS=`getopt -o lmL:hp:Pu:g:d:rs:c: --long legacy,modinfo,log:,help,probe:,listprobe,uid:,gid:,devmode:,strict,sound:,config: -n alsaconf -- "$@"` || exit 1
@@ -117,7 +116,7 @@ while true ; do
     -s|--sound)
 	TESTSOUND=$2; shift 2;;
     -h|--help)
-	usage; exit 1 ;;
+	usage; exit 0 ;;
     -L|--log)
 	LOGFILE="$2"; shift 2;;
     -p|--probe)
