@@ -93,6 +93,7 @@ static int info(void)
 		error("Control device %i open error: %s", card, snd_strerror(err));
 		return err;
 	}
+	
 	if ((err = snd_ctl_card_info(handle, info)) < 0) {
 		error("Control device %i hw info error: %s", card, snd_strerror(err));
 		return err;
@@ -1131,16 +1132,16 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 				sptr = ptr;
 				if (!strncmp(ptr, "mute", 4) && snd_mixer_selem_has_playback_switch(elem)) {
 					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
-					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "mute", 0, ival));
+					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "mute", 1, ival));
 				} else if (!strncmp(ptr, "off", 3) && snd_mixer_selem_has_playback_switch(elem)) {
 					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
-					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "off", 0, ival));
+					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "off", 1, ival));
 				} else if (!strncmp(ptr, "unmute", 6) && snd_mixer_selem_has_playback_switch(elem)) {
 					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
-					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "unmute", 1, ival));
+					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "unmute", 0, ival));
 				} else if (!strncmp(ptr, "on", 2) && snd_mixer_selem_has_playback_switch(elem)) {
 					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
-					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "on", 1, ival));
+					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "on", 0, ival));
 				} else if ((isdigit(*ptr) || *ptr == '-' || *ptr == '+') && snd_mixer_selem_has_playback_volume(elem)) {
 					snd_mixer_selem_get_playback_volume(elem, chn, &lval);
 					snd_mixer_selem_set_playback_volume(elem, chn, get_volume_simple(&ptr, pmin, pmax, lval));
