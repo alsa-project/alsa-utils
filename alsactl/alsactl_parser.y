@@ -167,7 +167,7 @@ control : L_SWITCH '(' string	{ build_control_switch($3); }
 	;
 
 
-mixers	: mixer
+mixers	: /* empty */
 	| mixers mixer
 	;
 
