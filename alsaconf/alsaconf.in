@@ -638,6 +638,7 @@ If you have a big amplifier, lower your volumes or say no.
           and look if you can hear test sound.
 " 13 65 
       then
+          clear
 	  echo
 	  aplay $TESTSOUND
       fi
@@ -646,6 +647,7 @@ If you have a big amplifier, lower your volumes or say no.
 	echo "Saving the mixer setup used for this in /etc/asound.state."
 	$sbindir/alsactl store
     fi
+    clear
     cat <<END
 ===============================================================================
 
