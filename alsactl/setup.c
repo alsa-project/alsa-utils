@@ -267,7 +267,7 @@ int soundcard_setup_collect( int cardno )
     if ( (err = snd_ctl_switch_read( handle, idx, &ctl -> s )) < 0 ) {
       free( ctl );
       snd_ctl_close( handle );
-      error( "CTL switch read error (%s) - skipping" );
+      error( "CTL switch read error (%s) - skipping", snd_strerror( err ) );
       break;
     }
     if ( !ctlprev ) {
