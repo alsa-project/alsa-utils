@@ -1332,7 +1332,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hf:dlev", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hf:Fdv", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
