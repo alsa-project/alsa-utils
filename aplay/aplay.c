@@ -305,6 +305,8 @@ int main(int argc, char *argv[])
 		{"buffer-time", 1, 0, 'B'},
 		{"verbose", 0, 0, 'v'},
 		{"separate-channels", 0, 0, 'I'},
+		{"playback", 0, 0, 'P'},
+		{"capture", 0, 0, 'C'},
 		{0, 0, 0, 0}
 	};
 	char *pcm_name = "default";
@@ -435,6 +437,17 @@ int main(int argc, char *argv[])
 			break;
 		case 'I':
 			interleaved = 0;
+			break;
+		case 'P':
+			stream = SND_PCM_STREAM_PLAYBACK;
+			command = "aplay";
+			break;
+		case 'C':
+			stream = SND_PCM_STREAM_CAPTURE;
+			command = "arecord";
+			start_delay = 1;
+			if (file_type == FORMAT_DEFAULT)
+				file_type = FORMAT_WAVE;
 			break;
 		default:
 			fprintf(stderr, "Try `%s --help' for more information.\n", command);
