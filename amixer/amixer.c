@@ -969,27 +969,16 @@ static void events_remove(snd_hctl_elem_t *helem)
 	printf("\n");
 }
 
-static void events_rebuild()
+int element_callback(snd_hctl_elem_t *elem, unsigned int mask)
 {
-	printf("event rebuild\n");
-}
-
-int element_callback(snd_hctl_elem_t *elem, snd_ctl_event_type_t event)
-{
-	switch (event) {
-	case SND_CTL_EVENT_INFO:
-		events_info(elem);
-		break;
-	case SND_CTL_EVENT_VALUE:
-		events_value(elem);
-		break;
-	case SND_CTL_EVENT_REMOVE:
+	if (mask == SND_CTL_EVENT_MASK_REMOVE) {
 		events_remove(elem);
-		break;
-	default:
-		assert(0);
-		break;
+		return 0;
 	}
+	if (mask & SND_CTL_EVENT_MASK_INFO) 
+		events_info(elem);
+	if (mask & SND_CTL_EVENT_MASK_VALUE) 
+		events_value(elem);
 	return 0;
 }
 
@@ -1004,20 +993,11 @@ static void events_add(snd_hctl_elem_t *helem)
 	snd_hctl_elem_set_callback(helem, element_callback);
 }
 
-int ctl_callback(snd_hctl_t *ctl, snd_ctl_event_type_t event,
+int ctl_callback(snd_hctl_t *ctl, unsigned int mask,
 		 snd_hctl_elem_t *elem)
 {
-	switch (event) {
-	case SND_CTL_EVENT_REBUILD:
-		events_rebuild();
-		break;
-	case SND_CTL_EVENT_ADD:
+	if (mask & SND_CTL_EVENT_MASK_ADD)
 		events_add(elem);
-		break;
-	default:
-		assert(0);
-		break;
-	}
 	return 0;
 }
 
@@ -1066,31 +1046,20 @@ static void sevents_remove(snd_mixer_selem_id_t *sid)
 	printf("event remove: '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
 }
 
-int melem_event(snd_mixer_elem_t *elem, snd_ctl_event_type_t event)
+int melem_event(snd_mixer_elem_t *elem, unsigned int mask)
 {
 	snd_mixer_selem_id_t *sid;
 	snd_mixer_selem_id_alloca(&sid);
 	snd_mixer_selem_get_id(elem, sid);
-	switch (event) {
-	case SND_CTL_EVENT_INFO:
-		sevents_info(sid);
-		break;
-	case SND_CTL_EVENT_VALUE:
-		sevents_value(sid);
-		break;
-	case SND_CTL_EVENT_REMOVE:
+	if (mask == SND_CTL_EVENT_MASK_REMOVE) {
 		sevents_remove(sid);
-		break;
-	default:
-		assert(0);
-		break;
+		return 0;
 	}
+	if (mask & SND_CTL_EVENT_MASK_INFO) 
+		sevents_info(sid);
+	if (mask & SND_CTL_EVENT_MASK_VALUE) 
+		sevents_value(sid);
 	return 0;
-}
-
-static void sevents_rebuild()
-{
-	printf("event rebuild\n");
 }
 
 static void sevents_add(snd_mixer_elem_t *elem)
@@ -1102,20 +1071,11 @@ static void sevents_add(snd_mixer_elem_t *elem)
 	snd_mixer_elem_set_callback(elem, melem_event);
 }
 
-int mixer_event(snd_mixer_t *mixer, snd_ctl_event_type_t event,
+int mixer_event(snd_mixer_t *mixer, unsigned int mask,
 		snd_mixer_elem_t *elem)
 {
-	switch (event) {
-	case SND_CTL_EVENT_REBUILD:
-		sevents_rebuild();
-		break;
-	case SND_CTL_EVENT_ADD:
+	if (mask & SND_CTL_EVENT_MASK_ADD)
 		sevents_add(elem);
-		break;
-	default:
-		assert(0);
-		break;
-	}
 	return 0;
 }
 
