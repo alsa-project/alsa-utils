@@ -83,7 +83,7 @@ static int verbose = 0;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t chunk_bytes;
-static snd_control_type_t digtype = SND_CONTROL_TYPE_NONE;
+static snd_ctl_element_type_t digtype = SND_CTL_ELEMENT_TYPE_NONE;
 static snd_aes_iec958_t spdif;
 static snd_output_t *log;
 
@@ -173,9 +173,9 @@ static void device_list(void)
 {
 	snd_ctl_t *handle;
 	int card, err, dev, idx;
-	snd_ctl_info_t *info;
+	snd_ctl_card_info_t *info;
 	snd_pcm_info_t *pcminfo;
-	snd_ctl_info_alloca(&info);
+	snd_ctl_card_info_alloca(&info);
 	snd_pcm_info_alloca(&pcminfo);
 
 	card = -1;
@@ -190,7 +190,7 @@ static void device_list(void)
 			error("control open (%i): %s", card, snd_strerror(err));
 			continue;
 		}
-		if ((err = snd_ctl_info(handle, info)) < 0) {
+		if ((err = snd_ctl_card_info(handle, info)) < 0) {
 			error("control hardware info (%i): %s", card, snd_strerror(err));
 			snd_ctl_close(handle);
 			continue;
@@ -211,7 +211,7 @@ static void device_list(void)
 				continue;
 			}
 			fprintf(stderr, "card %i: %s [%s], device %i: %s [%s]\n",
-				card, snd_ctl_info_get_id(info), snd_ctl_info_get_name(info),
+				card, snd_ctl_card_info_get_id(info), snd_ctl_card_info_get_name(info),
 				dev,
 				snd_pcm_info_get_id(pcminfo),
 				snd_pcm_info_get_name(pcminfo));
@@ -410,7 +410,7 @@ int main(int argc, char *argv[])
 			interleaved = 0;
 			break;
 		case 'C':
-			digtype = SND_CONTROL_TYPE_IEC958;
+			digtype = SND_CTL_ELEMENT_TYPE_IEC958;
 			spdif.status[0] = IEC958_AES0_NONAUDIO |
 					     IEC958_AES0_CON_EMPHASIS_NONE;
 			spdif.status[1] = IEC958_AES1_CON_ORIGINAL |
@@ -419,7 +419,7 @@ int main(int argc, char *argv[])
 			spdif.status[3] = IEC958_AES3_CON_FS_48000;
 			break;
 		case 'P':
-			digtype = SND_CONTROL_TYPE_IEC958;
+			digtype = SND_CTL_ELEMENT_TYPE_IEC958;
 			spdif.status[0] = IEC958_AES0_PROFESSIONAL |
 					     IEC958_AES0_NONAUDIO |
 					     IEC958_AES0_PRO_EMPHASIS_NONE |
@@ -447,17 +447,17 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	if (digtype != SND_CONTROL_TYPE_NONE) {
-		snd_control_t *ctl;
+	if (digtype != SND_CTL_ELEMENT_TYPE_NONE) {
+		snd_ctl_element_t *ctl;
 		snd_ctl_t *ctl_handle;
 		char ctl_name[12];
 		int ctl_card;
-		snd_control_alloca(&ctl);
-		snd_control_set_interface(ctl, SND_CONTROL_IFACE_PCM);
-		snd_control_set_device(ctl, snd_pcm_info_get_device(info));
-		snd_control_set_subdevice(ctl, snd_pcm_info_get_subdevice(info));
-		snd_control_set_name(ctl, "IEC958 (S/PDIF) Stream");
-		snd_control_set_iec958(ctl, &spdif);
+		snd_ctl_element_alloca(&ctl);
+		snd_ctl_element_set_interface(ctl, SND_CTL_ELEMENT_IFACE_PCM);
+		snd_ctl_element_set_device(ctl, snd_pcm_info_get_device(info));
+		snd_ctl_element_set_subdevice(ctl, snd_pcm_info_get_subdevice(info));
+		snd_ctl_element_set_name(ctl, "IEC958 (S/PDIF) Stream");
+		snd_ctl_element_set_iec958(ctl, &spdif);
 		ctl_card = snd_pcm_info_get_card(info);
 		if (ctl_card < 0) {
 			error("Unable to setup the IEC958 (S/PDIF) interface - PCM has no assigned card");
@@ -468,7 +468,7 @@ int main(int argc, char *argv[])
 			error("Unable to open the control interface '%s': %s", ctl_name, snd_strerror(err));
 			goto __diga_end;
 		}
-		if ((err = snd_ctl_cwrite(ctl_handle, ctl)) < 0) {
+		if ((err = snd_ctl_element_write(ctl_handle, ctl)) < 0) {
 			error("Unable to update the IEC958 control: %s", snd_strerror(err));
 			goto __diga_end;
 		}
