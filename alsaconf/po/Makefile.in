@@ -26,7 +26,10 @@ MSGMERGE_UPDATE = @MSGMERGE@ --update
 DISTFILES = $(POFILES) Makefile.in
 CATALOGS = $(POFILES:.po=.gmo)
 
-all: $(CATALOGS)
+all: all-@USE_NLS@
+
+all-yes: $(CATALOGS)
+all-no:
 
 .SUFFIXES: .po .gmo .mo
 
