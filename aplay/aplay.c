@@ -806,7 +806,7 @@ static void set_params(void)
 	chunk_size = snd_pcm_hw_params_get_period_size(params, 0);
 	buffer_size = snd_pcm_hw_params_get_buffer_size(params);
 	if (chunk_size == buffer_size) {
-		error("Can't use period equal to buffer size (%u == %lu)", chunk_size, buffer_size);
+		error("Can't use period equal to buffer size (%u == %lu)", chunk_size, (long)buffer_size);
 		exit(EXIT_FAILURE);
 	}
 	snd_pcm_sw_params_current(handle, swparams);
@@ -1682,6 +1682,7 @@ void playbackv_go(int* fds, unsigned int channels, size_t loaded, size_t count, 
 {
 	int r;
 	size_t vsize;
+
 	unsigned int channel;
 	u_char *bufs[channels];
 
