@@ -29,7 +29,7 @@ static int merge_one_control(struct ctl_control *cctl, struct ctl_control *uctl,
 		return 0;
 	switch (cctl->info.type) {
 	case SND_CONTROL_TYPE_BOOLEAN:
-		if (uctl->type != SND_CONTROL_TYPE_BOOLEAN && uctl->type != SND_CONTROL_TYPE_INTEGER) {
+		if (uctl->type != SND_CONTROL_TYPE_BOOLEAN) {
 			error("A wrong type %i for the control '%s'. The type integer is expected. Skipping...", uctl->type, control_id(&uctl->c.id));
 			return 1;
 		}
@@ -41,7 +41,7 @@ static int merge_one_control(struct ctl_control *cctl, struct ctl_control *uctl,
 		}
 		break;			
 	case SND_CONTROL_TYPE_INTEGER:
-		if (uctl->type != SND_CONTROL_TYPE_BOOLEAN && uctl->type != SND_CONTROL_TYPE_INTEGER) {
+		if (uctl->type != SND_CONTROL_TYPE_INTEGER) {
 			error("A wrong type %i for the control '%s'. The type integer is expected. Skipping...", uctl->type, control_id(&uctl->c.id));
 			return 1;
 		}
@@ -58,18 +58,18 @@ static int merge_one_control(struct ctl_control *cctl, struct ctl_control *uctl,
 		}
 		break;
 	case SND_CONTROL_TYPE_ENUMERATED:
-		if (uctl->type != SND_CONTROL_TYPE_BOOLEAN && uctl->type != SND_CONTROL_TYPE_INTEGER) {
+		if (uctl->type != SND_CONTROL_TYPE_ENUMERATED) {
 			error("A wrong type %i for the control '%s'. The type integer is expected. Skipping...", uctl->type, control_id(&uctl->c.id));
 			return 1;
 		}
 		for (idx = 0; idx < cctl->info.values_count; idx++) {
-			if (cctl->info.value.enumerated.items <= uctl->c.value.integer.value[idx]) {
+			if (cctl->info.value.enumerated.items <= uctl->c.value.enumerated.item[idx]) {
 			    	error("The value %u for the control '%s' is out of range 0-%i.", uctl->c.value.integer.value[idx], control_id(&uctl->c.id), cctl->info.value.enumerated.items-1);
 				return 1;
 			}
-			if (cctl->c.value.enumerated.item[idx] != uctl->c.value.integer.value[idx]) {
+			if (cctl->c.value.enumerated.item[idx] != uctl->c.value.enumerated.item[idx]) {
 				cctl->change = 1;
-				cctl->c.value.enumerated.item[idx] = uctl->c.value.integer.value[idx];
+				cctl->c.value.enumerated.item[idx] = uctl->c.value.enumerated.item[idx];
 			}
 		}
 		break;

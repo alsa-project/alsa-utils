@@ -44,11 +44,16 @@ struct bytearray {
 static void yyerror(char *, ...);
 
 static void build_soundcard(char *name);
-static void build_control_begin(int iface, unsigned int device, unsigned int subdevice, char *name, unsigned int index);
+static void build_control_begin(void);
 static void build_control_end(void);
+static void set_control_iface(int iface);
+static void set_control_device(int dev);
+static void set_control_subdevice(int subdev);
+static void set_control_name(char *name);
+static void set_control_index(int idx);
+static void set_control_type(snd_control_type_t type);
 static void set_control_boolean(int val);
 static void set_control_integer(long val);
-static void set_control_bytearray(struct bytearray val);
 
 	/* local variables */
 
@@ -82,7 +87,8 @@ static snd_control_type_t Xtype = SND_CONTROL_TYPE_NONE;
 	/* other keywords */
 %token L_SOUNDCARD L_CONTROL L_RAWDATA
 %token L_GLOBAL L_HWDEP L_MIXER L_PCM L_RAWMIDI L_TIMER L_SEQUENCER
-
+%token L_IDENT L_IFACE L_NAME L_DEVICE L_SUBDEVICE L_INDEX
+%token L_BOOL L_INT L_ENUM L_BYTE
 
 %type <b_value> boolean
 %type <i_value> integer iface
@@ -104,20 +110,40 @@ soundcards :
 	| soundcards soundcard
 	;
 
-soundcard : L_CONTROL '(' iface ',' integer ',' integer ',' string ',' integer
-				{ build_control_begin($3, $5, $7, $9, $11); }
-	',' controls ')'	{ build_control_end(); }
-	| error			{ yyerror( "an unknown keyword in the soundcard{} level"); }
+soundcard : L_CONTROL '(' L_IDENT '=' 	{ build_control_begin(); }
+	'{' ctlids '}' ',' controls ')'	{ build_control_end(); }
+	| error			{ yyerror("an unknown keyword in the soundcard{} level"); }
+	;
+
+ctlids	: ctlid
+	| ctlids ',' ctlid
+	;
+
+ctlid	: L_IFACE '=' iface	{ set_control_iface($3); }
+	| L_DEVICE '=' integer	{ set_control_device($3); }
+	| L_SUBDEVICE '=' integer { set_control_subdevice($3); }
+	| L_NAME '=' string	{ set_control_name($3); }
+	| L_INDEX '=' integer	{ set_control_index($3); }
+	| error			{ yyerror("an unknown keyword in the control ID level"); }
 	;
 
 controls : control
-	| controls ',' control
 	;
 
-control : boolean		{ set_control_boolean($1); }
-	| integer		{ set_control_integer($1); }
-	| rawdata		{ set_control_bytearray($1); }
+control : L_BOOL '=' { set_control_type(SND_CONTROL_TYPE_BOOLEAN); } '{' datas '}' 
+	| L_INT '=' { set_control_type(SND_CONTROL_TYPE_INTEGER); } '{' datas '}'
+	| L_ENUM '=' { set_control_type(SND_CONTROL_TYPE_ENUMERATED); } '{' datas '}'
+	| L_BYTE '=' { set_control_type(SND_CONTROL_TYPE_BYTES); } '{' datas '}'
 	| error			{ yyerror( "an unknown keyword in the control() data parameter" ); }
+	;
+
+datas	: data
+	| datas ',' data
+	;
+
+data	: boolean		{ set_control_boolean($1); }
+	| integer		{ set_control_integer($1); }
+	| error			{ yyerror( "an unknown keyword in the control() data argument" ); }
 	;
 
 iface	: L_INTEGER		{ $$ = $1; }
@@ -190,7 +216,7 @@ static void build_soundcard(char *name)
 	free(name);
 }
 
-static void build_control_begin(int iface, unsigned int device, unsigned int subdevice, char *name, unsigned int index)
+static void build_control_begin(void)
 {
 	struct ctl_control **first;
 	struct ctl_control *ctl;
@@ -198,7 +224,6 @@ static void build_control_begin(int iface, unsigned int device, unsigned int sub
 	first = &Xsoundcard->control.controls;
 	Xcontrol = (struct ctl_control *)malloc(sizeof(struct ctl_control));
 	if (!Xcontrol) {
-		free(name);
 		error_nomem();
 		return;
 	}
@@ -211,12 +236,6 @@ static void build_control_begin(int iface, unsigned int device, unsigned int sub
 	} else {
 		*first = Xcontrol;
 	}
-	Xcontrol->c.id.iface = iface;
-	Xcontrol->c.id.device = device;
-	Xcontrol->c.id.subdevice = subdevice;
-	strncpy(Xcontrol->c.id.name, name, sizeof(Xcontrol->c.id.name));
-	Xcontrol->c.id.index = index;
-	free(name);
 }
 
 static void build_control_end(void)
@@ -224,52 +243,77 @@ static void build_control_end(void)
 	Xcontrol = NULL;
 }
 
+static void set_control_iface(int iface)
+{
+	Xcontrol->c.id.iface = iface;
+}
+
+static void set_control_device(int dev)
+{
+	Xcontrol->c.id.device = dev;
+}
+
+static void set_control_subdevice(int subdev)
+{
+	Xcontrol->c.id.subdevice = subdev;
+}
+
+static void set_control_name(char *name)
+{
+	if (name == NULL)
+		return;
+	strncpy(Xcontrol->c.id.name, name, sizeof(Xcontrol->c.id.name));
+	free(name);
+}
+
+static void set_control_index(int idx)
+{
+	Xcontrol->c.id.index = idx;
+}
+
+static void set_control_type(snd_control_type_t type)
+{
+	Xcontrol->type = Xtype = type;
+}
+
 static void set_control_boolean(int val)
 {
+	if (Xposition >= 512)
+		yyerror("Array overflow.");
 	switch (Xtype) {
-	case SND_CONTROL_TYPE_NONE:
 	case SND_CONTROL_TYPE_BOOLEAN:
-		Xtype = Xcontrol->type = SND_CONTROL_TYPE_BOOLEAN;
+		Xcontrol->c.value.integer.value[Xposition++] = val ? 1 : 0;
 		break;
 	case SND_CONTROL_TYPE_INTEGER:
-		break;
-	default:
-		yyerror("Unexpected previous type (%i).\n", Xtype);
-	}
-	if (Xposition < 512)
 		Xcontrol->c.value.integer.value[Xposition++] = val ? 1 : 0;
-	else
-		yyerror("Array overflow.");
+		break;
+	case SND_CONTROL_TYPE_ENUMERATED:
+		Xcontrol->c.value.enumerated.item[Xposition++] = val ? 1 : 0;
+		break;
+	case SND_CONTROL_TYPE_BYTES:
+		Xcontrol->c.value.bytes.data[Xposition++] = val ? 1 : 0;
+		break;
+	default: break;
+	}
 }
 
 static void set_control_integer(long val)
 {
-	unsigned int xx;
-
+	if (Xposition >= 512)
+		yyerror("Array overflow.");
 	switch (Xtype) {
-	case SND_CONTROL_TYPE_NONE:
 	case SND_CONTROL_TYPE_BOOLEAN:
-	case SND_CONTROL_TYPE_INTEGER:
-		Xtype = Xcontrol->type = SND_CONTROL_TYPE_INTEGER;
+		Xcontrol->c.value.integer.value[Xposition++] = val ? 1 : 0;
 		break;
-	default:
-		yyerror("Unexpected previous type (%i).\n", Xtype);
-	}
-	if (Xposition < 512) {
-		xx = val;
+	case SND_CONTROL_TYPE_INTEGER:
 		Xcontrol->c.value.integer.value[Xposition++] = val;
+		break;
+	case SND_CONTROL_TYPE_ENUMERATED:
+		Xcontrol->c.value.enumerated.item[Xposition++] = (unsigned int)val;
+		break;
+	case SND_CONTROL_TYPE_BYTES:
+		Xcontrol->c.value.bytes.data[Xposition++] = (unsigned char)val;
+		break;
+	default: break;
 	}
-}
-
-static void set_control_bytearray(struct bytearray val)
-{
-	if (Xtype != SND_CONTROL_TYPE_NONE && Xtype != SND_CONTROL_TYPE_BYTES)
-		yyerror("Unexpected previous type (%i).\n", Xtype);
-	Xtype = Xcontrol->type = SND_CONTROL_TYPE_BYTES;
-
-	if (val.datalen + Xposition > 512)
-		yyerror("Byte array too large for control.");
-
-	memcpy(&Xcontrol->c.value.bytes.data[Xposition], val.data, val.datalen);
-	Xposition += val.datalen;
 }

@@ -342,32 +342,43 @@ static void soundcard_setup_write_control(FILE * out, const char *space, int car
 	case SND_CONTROL_IFACE_SEQUENCER: s = "sequencer"; break;
 	default: sprintf(v, "%i", info.id.iface); s = v; break;
 	}
-	fprintf(out, "%scontrol(%s, %i, %i, \"%s\", %i", space, s, info.id.device, info.id.subdevice, info.id.name, info.id.index);
-	if (info.type == SND_CONTROL_TYPE_BYTES)
-		fprintf(out, "rawdata(@");
+	fprintf(out, "%scontrol(ident={iface=%s", space, s);
+	if (info.id.device > 0)
+		fprintf(out, ", device=%i", info.id.device);
+	if (info.id.subdevice > 0)
+		fprintf(out, ", subdevice=%i", info.id.subdevice);
+	fprintf(out, ", name='%s'", info.id.name);
+	if (info.id.index > 0)
+		fprintf(out, ", index=%i", info.id.index);
+	fprintf(out, "}, ");
+	switch (info.type) {
+	case SND_CONTROL_TYPE_BOOLEAN:	fprintf(out, "bool={");	break;
+	case SND_CONTROL_TYPE_INTEGER:	fprintf(out, "int={");	break;
+	case SND_CONTROL_TYPE_ENUMERATED: fprintf(out, "enum={");	break;
+	case SND_CONTROL_TYPE_BYTES: fprintf(out, "byte={");	break;
+	default: break;
+	}
 	for (idx = 0; idx < info.values_count; idx++) {
+		if (idx > 0)
+			fprintf(out, ",");
 		switch (info.type) {
 		case SND_CONTROL_TYPE_BOOLEAN:
-			fprintf(out, ", %s", control->c.value.integer.value[idx] ? "true" : "false");
+			fprintf(out, "%s", control->c.value.integer.value[idx] ? "true" : "false");
 			break;
 		case SND_CONTROL_TYPE_INTEGER:
-			fprintf(out, ", %li", control->c.value.integer.value[idx]);
+			fprintf(out, "%li", control->c.value.integer.value[idx]);
 			break;
 		case SND_CONTROL_TYPE_ENUMERATED:
-			fprintf(out, ", %u", control->c.value.enumerated.item[idx]);
+			fprintf(out, "%u", control->c.value.enumerated.item[idx]);
 			break;
 		case SND_CONTROL_TYPE_BYTES:
-			if (idx > 0)
-				fprintf(out, ":");
 			fprintf(out, "%02x", control->c.value.bytes.data[idx]);
 			break;
 		default:
 			break;
 		}
 	}		
-	if (info.type == SND_CONTROL_TYPE_BYTES)
-		fprintf(out, ")");
-	fprintf(out, ")\n");
+	fprintf(out, "})\n");
 }
 
 static void soundcard_setup_write_controls(FILE *out, const char *space, int card, struct ctl_control **controls)

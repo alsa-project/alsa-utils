@@ -62,6 +62,18 @@ rawmidi			return L_RAWMIDI;
 timer			return L_TIMER;
 sequencer		return L_SEQUENCER;
 
+ident			return L_IDENT;
+iface			return L_IFACE;
+name			return L_NAME;
+device			return L_DEVICE;
+subdevice		return L_SUBDEVICE;
+index			return L_INDEX;
+
+bool			return L_BOOL;
+int			return L_INT;
+enum			return L_ENUM;
+byte			return L_BYTE;
+
 	/* boolean */
 
 false|off|no		return L_FALSE;
@@ -71,26 +83,6 @@ true|on|yes		return L_TRUE;
 
 [0-9]+			{ yylval.i_value = strtol(yytext, (char **)NULL, 10); return L_INTEGER; }
 0x[0-9a-f]+		{ yylval.i_value = strtol(yytext, (char **)NULL, 0); return L_INTEGER; }
-
-	/* byte array */
-
-"@"([0-9a-f]{2}:){0,31}([0-9a-f]{2})"@" {
-			  char *p = yytext + 1, x[3];
-			  unsigned char *d;
-			  int val;
-			  yylval.a_value.data = d = (unsigned char *)malloc( 32 );
-			  yylval.a_value.datalen = 0;
-			  while (*p) {
-				strncpy(x, p, 2); x[2] = '\0';
-				sscanf(x, "%02x", &val);
-				*d++ = val; 
-				++yylval.a_value.datalen;
-				p += 2;
-				if (*p == '@')
-					break;
-				p++;
-			  }
-		          return L_BYTEARRAY; }
 
 	/* strings */
 
