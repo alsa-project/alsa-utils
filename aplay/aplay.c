@@ -108,6 +108,40 @@ struct fmt_capture {
 	{	begin_au,	end_wave,	"Sparc Audio"	}
 };
 
+struct {
+	char *name;
+	int format;
+} formats[] = {
+	{ "s8", SND_PCM_SFMT_S8 },
+	{ "u8", SND_PCM_SFMT_U8 },
+	{ "s16l", SND_PCM_SFMT_S16_LE },
+	{ "s16b", SND_PCM_SFMT_S16_BE },
+	{ "u16l", SND_PCM_SFMT_U16_LE },
+	{ "u16b", SND_PCM_SFMT_U16_BE },
+	{ "s24l", SND_PCM_SFMT_S24_LE },
+	{ "s24b", SND_PCM_SFMT_S24_BE },
+	{ "u24l", SND_PCM_SFMT_U24_LE },
+	{ "u24b", SND_PCM_SFMT_U24_BE },
+	{ "s32l", SND_PCM_SFMT_S32_LE },
+	{ "s32b", SND_PCM_SFMT_S32_BE },
+	{ "u32l", SND_PCM_SFMT_U32_LE },
+	{ "u32b", SND_PCM_SFMT_U32_BE },
+	{ "f32l", SND_PCM_SFMT_FLOAT_LE },
+	{ "f32b", SND_PCM_SFMT_FLOAT_BE },
+	{ "f64l", SND_PCM_SFMT_FLOAT64_LE },
+	{ "f64b", SND_PCM_SFMT_FLOAT64_BE },
+	{ "iec958l", SND_PCM_SFMT_IEC958_SUBFRAME_LE },
+	{ "iec958b", SND_PCM_SFMT_IEC958_SUBFRAME_BE },
+	{ "mulaw", SND_PCM_SFMT_MU_LAW },
+	{ "alaw", SND_PCM_SFMT_A_LAW },
+	{ "adpcm", SND_PCM_SFMT_IMA_ADPCM },
+	{ "mpeg", SND_PCM_SFMT_MPEG },
+	{ "gsm", SND_PCM_SFMT_GSM },
+	{ "special", SND_PCM_SFMT_SPECIAL }
+};
+
+#define NUMFORMATS (sizeof(formats)/sizeof(formats[0]))
+
 static void check_new_format(snd_pcm_format_t * format)
 {
 	if (cinfo.min_rate > format->rate || cinfo.max_rate < format->rate) {
@@ -122,6 +156,7 @@ static void check_new_format(snd_pcm_format_t * format)
 
 static void usage(char *command)
 {
+	int i;
 	fprintf(stderr,
 		"Usage: %s [switches] [filename] <filename> ...\n"
 		"Available switches:\n"
@@ -133,19 +168,21 @@ static void usage(char *command)
 		"  -d <device>   select device #, defaults to 0\n"
 		"  -q            quiet mode\n"
 		"  -v            file format Voc\n"
-		"  -u            file format Sparc Audio (.au)\n"
 		"  -w            file format Wave\n"
 		"  -r            file format Raw\n"
 		"  -S            stereo\n"
-		"  -t <secs>     timelimit (seconds)\n"
 		"  -s <Hz>       speed (Hz)\n"
-		"  -b <bits>     sample size (8,16 bits)\n"
-		"  -m            set CD-ROM quality (44100Hz,stereo,16-bit linear)\n"
-		"  -M            set DAT quality (48000Hz,stereo,16-bit linear)\n"
-		"  -p <type>     compression type (alaw, ulaw, adpcm)\n"
+		"  -f <format>   data format\n"
+		"  -m            set CD-ROM quality (44100Hz,stereo,16-bit linear, little endian)\n"
+		"  -M            set DAT quality (48000Hz,stereo,16-bit linear, little endian)\n"
+		"  -t <secs>     timelimit (seconds)\n"
 		"  -e		 stream mode\n"
 		"  -E            mmap mode\n"
 		,command, snd_cards()-1);
+	fprintf(stderr, "\nRecognized data formats are:");
+	for (i = 0; i < NUMFORMATS; ++i)
+		fprintf(stderr, " %s", formats[i].name);
+	fprintf(stderr, "\nSome of this may not be available on selected hardware\n");
 }
 
 static void device_list(void)
@@ -260,7 +297,7 @@ int main(int argc, char *argv[])
 		version();
 		return 0;
 	}
-	while ((c = getopt(argc, argv, "hlc:d:qs:So:t:b:vrwuxB:c:p:mMVeE")) != EOF)
+	while ((c = getopt(argc, argv, "hlc:d:qs:So:t:vrwxB:c:p:mMVeEf:")) != EOF)
 		switch (c) {
 		case 'h':
 			usage(command);
@@ -304,10 +341,6 @@ int main(int argc, char *argv[])
 		case 'w':
 			active_format = FORMAT_WAVE;
 			break;
-		case 'u':
-			active_format = FORMAT_AU;
-			rformat.format = SND_PCM_SFMT_MU_LAW;
-			break;
 		case 's':
 			tmp = atoi(optarg);
 			if (tmp < 300)
@@ -321,42 +354,23 @@ int main(int argc, char *argv[])
 		case 't':
 			timelimit = atoi(optarg);
 			break;
-		case 'b':
-			tmp = atoi(optarg);
-			switch (tmp) {
-			case 8:
-				rformat.format = SND_PCM_SFMT_U8;
-				break;
-			case 16:
-				rformat.format = SND_PCM_SFMT_S16_LE;
-				break;
-			}
-			break;
 		case 'x':
 			verbose_mode = 1;
 			quiet_mode = 0;
 			break;
-		case 'p':
-			if (!strcmp(optarg, "alaw")) {
-				rformat.format = SND_PCM_SFMT_A_LAW;
-				active_format = FORMAT_RAW;
-				break;
-			} else if (!strcmp(optarg, "ulaw") || !strcmp(optarg, "mulaw")) {
-				rformat.format = SND_PCM_SFMT_MU_LAW;
-				active_format = FORMAT_RAW;
-				break;
-			} else if (!strcmp(optarg, "adpcm")) {
-				rformat.format = SND_PCM_SFMT_IMA_ADPCM;
-				active_format = FORMAT_RAW;
-				break;
+		case 'f':
+			for (tmp = 0; tmp < NUMFORMATS; ++tmp) {
+				if (!strcmp(optarg, formats[tmp].name)) {
+					rformat.format = formats[tmp].format;
+					active_format = FORMAT_RAW;
+					break;
+				}
 			}
-			if (!strcmp(optarg, "special")) {
-				rformat.format = SND_PCM_SFMT_SPECIAL;
-				active_format = FORMAT_RAW;
-				break;
+			if (tmp == NUMFORMATS) {
+				fprintf(stderr, "Error: wrong extended format '%s'\n", optarg);
+				return 1;
 			}
-			fprintf(stderr, "Error: wrong extended format '%s'\n", optarg);
-			return 1;
+			break;
 		case 'm':
 		case 'M':
 			rformat.format = SND_PCM_SFMT_S16_LE;
