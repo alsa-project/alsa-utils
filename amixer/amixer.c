@@ -121,7 +121,6 @@ int info(void)
 	printf("Mixer '%s/%s':\n", info.id, info.name);
 	printf("  Elements      : %i\n", info.elements);
 	printf("  Groups        : %i\n", info.groups);
-	printf("  Switches      : %i\n", info.switches);
 	printf("  Attribute     : 0x%x\n", info.attrib);
 	snd_mixer_close(handle);
 	return 0;
