@@ -72,6 +72,7 @@ static int seq_port;
 
 static int server_mode;
 static int verbose = 0;
+static int info = 0;
 
 
 /*
@@ -84,6 +85,7 @@ static struct option long_option[] = {
 	{"dest", 1, NULL, 'd'},
 	{"help", 0, NULL, 'h'},
 	{"verbose", 0, NULL, 'v'},
+	{"info", 0, NULL, 'i'},
 	{NULL, 0, NULL, 0},
 };
 
@@ -93,7 +95,7 @@ int main(int argc, char **argv)
 	int port = DEFAULT_PORT;
 	char *source = NULL, *dest = NULL;
 
-	while ((c = getopt_long(argc, argv, "p:s:d:v", long_option, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "p:s:d:vi", long_option, NULL)) != -1) {
 		switch (c) {
 		case 'p':
 			if (isdigit(*optarg))
@@ -109,6 +111,9 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			verbose++;
+			break;
+		case 'i':
+			info++;
 			break;
 		default:
 			usage();
@@ -157,6 +162,7 @@ static void usage(void)
 	fprintf(stderr, "  -s,--source addr : read from given addr (client:port)\n");
 	fprintf(stderr, "  -d,--dest addr : write to given addr (client:port)\n");
 	fprintf(stderr, "  -v, --verbose : print verbose messages\n");
+	fprintf(stderr, "  -i, --info : print certain received events\n");
 }
 
 
@@ -234,7 +240,7 @@ static void init_seq(char *source, char *dest)
 	err = snd_seq_poll_descriptors(handle, seqofds, counto, POLLOUT);
 	assert(err == counto);
 
-	snd_seq_nonblock(handle, 0);
+	snd_seq_nonblock(handle, 1);
 
 	/* set client info */
 	if (server_mode)
@@ -420,7 +426,7 @@ static void do_loop(void)
 	for (;;) {
 		memset(pollfds, 0, pollfds_count * sizeof(struct pollfd));
 		seqifd_ptr = 0;
-		memcpy(pollfds, seqifds, width = seqifds_count);
+		memcpy(pollfds, seqifds, sizeof(*seqifds)*(width = seqifds_count));
 		if (server_mode) {
 			sockfd_ptr = width;
 			pollfds[width].fd = sockfd;
@@ -435,9 +441,13 @@ static void do_loop(void)
 				width++;
 			}
 		}
-		rc = poll(pollfds, width, -1);
-		if (rc <= 0)
+		do {
+			rc = poll(pollfds, width, -1);
+		} while (rc <= 0 && errno == EINTR);
+		if (rc <= 0) {
+			perror("poll");
 			exit(1);
+		}
 		if (server_mode) {
 			if (pollfds[sockfd_ptr].revents & (POLLIN|POLLOUT))
 				start_connection();
@@ -492,6 +502,30 @@ static char *get_writebuf(int len)
 	return buf;
 }
 
+static void print_event(snd_seq_event_t *ev)
+{
+	switch (ev->type) {
+	case SND_SEQ_EVENT_CONTROLLER: 
+		printf("Channel %2d: Control event : %5d\n",
+			ev->data.control.channel, ev->data.control.value);
+		break;
+	case SND_SEQ_EVENT_PITCHBEND:
+		printf("Channel %2d: Pitchbender   : %5d\n", 
+			ev->data.control.channel, ev->data.control.value);
+		break;
+	case SND_SEQ_EVENT_NOTEON:
+		printf("Channel %2d: Note On event : %5d\n",
+			ev->data.control.channel, ev->data.note.note);
+		break;        
+	case SND_SEQ_EVENT_NOTEOFF: 
+		printf("Channel %2d: Note Off event: %5d\n",         
+			ev->data.control.channel, ev->data.note.note);           
+		break;        
+	}
+}
+
+#define EVENT_PACKET_SIZE	32
+
 /*
  * copy events from sequencer to port(s)
  */
@@ -509,14 +543,16 @@ static int copy_local_to_remote(void)
 		}
 		if (snd_seq_ev_is_variable(ev)) {
 			int len;
-			len = sizeof(snd_seq_event_t) + ev->data.ext.len;
+			len = EVENT_PACKET_SIZE + ev->data.ext.len;
 			buf = get_writebuf(len);
 			memcpy(buf, ev, sizeof(snd_seq_event_t));
-			memcpy(buf + sizeof(snd_seq_event_t), ev->data.ext.ptr, ev->data.ext.len);
+			memcpy(buf + EVENT_PACKET_SIZE, ev->data.ext.ptr, ev->data.ext.len);
 		} else {
-			buf = get_writebuf(sizeof(snd_seq_event_t));
-			memcpy(buf, ev, sizeof(snd_seq_event_t));
+			buf = get_writebuf(EVENT_PACKET_SIZE);
+			memcpy(buf, ev, EVENT_PACKET_SIZE);
 		}
+		if (info)
+			print_event(ev);
 		snd_seq_free_event(ev);
 	}
 	flush_writebuf();
@@ -543,8 +579,8 @@ static int copy_remote_to_local(int fd)
 
 	while (count > 0) {
 		ev = (snd_seq_event_t*)buf;
-		buf += sizeof(snd_seq_event_t);
-		count -= sizeof(snd_seq_event_t);
+		buf += EVENT_PACKET_SIZE;
+		count -= EVENT_PACKET_SIZE;
 		if (snd_seq_ev_is_variable(ev) && ev->data.ext.len > 0) {
 			ev->data.ext.ptr = buf;
 			buf += ev->data.ext.len;
@@ -553,6 +589,8 @@ static int copy_remote_to_local(int fd)
 		snd_seq_ev_set_direct(ev);
 		snd_seq_ev_set_source(ev, seq_port);
 		snd_seq_ev_set_subs(ev);
+		if (info)
+			print_event(ev);
 		snd_seq_event_output(handle, ev);
 	}
 
