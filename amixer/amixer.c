@@ -630,11 +630,11 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 				    (cmono || !snd_mixer_selem_has_capture_channel(elem, chn)))
 					continue;
 				printf("%s%s: ", space, snd_mixer_selem_channel_name(chn));
-				if (snd_mixer_selem_has_common_volume(elem)) {
+				if (!pmono && !cmono && snd_mixer_selem_has_common_volume(elem)) {
 					snd_mixer_selem_get_playback_volume(elem, chn, &pvol);
 					printf("%s ", get_percent(pvol, pmin, pmax));
 				}
-				if (snd_mixer_selem_has_common_switch(elem)) {
+				if (!pmono && !cmono && snd_mixer_selem_has_common_switch(elem)) {
 					snd_mixer_selem_get_playback_switch(elem, chn, &psw);
 					printf("[%s] ", psw ? "on" : "off");
 				}
