@@ -845,7 +845,7 @@ void xrun(void)
 		struct timeval now, diff;
 		gettimeofday(&now, 0);
 		timersub(&now, &status.trigger_time, &diff);
-		fprintf(stderr, "xrun at position %lu (at least %.3f ms long)!!!\n", (unsigned long)status.hw_ptr, diff.tv_sec * 1000 + diff.tv_usec / 1000.0);
+		fprintf(stderr, "xrun!!! (at least %.3f ms long)\n", diff.tv_sec * 1000 + diff.tv_usec / 1000.0);
 		if (verbose) {
 			fprintf(stderr, "Status:\n");
 			snd_pcm_dump_status(&status, stderr);
