@@ -241,6 +241,10 @@ static void load_file(void)
 		error("cannot read from %s: %s", send_file_name, strerror(errno));
 		goto _error;
 	}
+	if (length >= 4 && !memcmp(send_data, "MThd", 4)) {
+		error("%s is a Standard MIDI File; use aplaymidi to send it", send_file_name);
+		goto _error;
+	}
 	send_data_length = length;
 	goto _exit;
 _error:
