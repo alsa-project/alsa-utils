@@ -1678,7 +1678,7 @@ static void playbackv(char **names, unsigned int count)
 	for (channel = 0; channel < channels; ++channel)
 		fds[channel] = -1;
 
-	if (count == 1) {
+	if (count == 1 && channels > 1) {
 		size_t len = strlen(names[0]);
 		char format[1024];
 		memcpy(format, names[0], len);
