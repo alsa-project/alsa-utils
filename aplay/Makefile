@@ -21,7 +21,7 @@ $(TARGET): .depend $(OBJECTS)
 	ln -sf $(TARGET) $(TARGET1)
 
 clean:
-	rm -f core .depend *.o *.orig *~
+	rm -f core aplay .depend *.o *.orig *~
 
 .depend:
 	$(CPP) $(COPTS) $(INCLUDE) -M *.c > .depend

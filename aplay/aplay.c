@@ -113,21 +113,19 @@ static void check_new_format( snd_pcm_format_t *format )
       fprintf( stderr, "%s: unsupported rate %iHz for playback (valid range is %iHz-%iHz)\n", command, format -> rate, pinfo.min_rate, pinfo.max_rate );
       exit( 1 );
     }
-    if ( format -> format != SND_PCM_SFMT_MU_LAW )
-      if ( !(pinfo.formats & (1 << format -> format)) ) {
-        fprintf( stderr, "%s: requested format %s isn't supported with hardware\n", command, get_format( format -> format ) );
-        exit( 1 );
-      }
+    if ( !(pinfo.formats & (1 << format -> format)) ) {
+      fprintf( stderr, "%s: requested format %s isn't supported with hardware\n", command, get_format( format -> format ) );
+      exit( 1 );
+    }
   } else {
     if ( rinfo.min_rate > format -> rate || rinfo.max_rate < format -> rate ) {
       fprintf( stderr, "%s: unsupported rate %iHz for record (valid range is %iHz-%iHz)\n", command, format -> rate, rinfo.min_rate, rinfo.max_rate );
       exit( 1 );
     }
-    if ( format -> format != SND_PCM_SFMT_MU_LAW )
-      if ( !(rinfo.formats & (1 << format -> format)) ) {
-        fprintf( stderr, "%s: requested format %s isn't supported with hardware\n", command, get_format( rformat.format ) );
-        exit( 1 );
-      }
+    if ( !(rinfo.formats & (1 << format -> format)) ) {
+      fprintf( stderr, "%s: requested format %s isn't supported with hardware\n", command, get_format( rformat.format ) );
+      exit( 1 );
+    }
   }
 }
 
@@ -209,7 +207,8 @@ static void device_list( void )
         printf( "    Formats:\n" );
         for ( idx = 0; idx < SND_PCM_SFMT_GSM; idx++ ) {
           if ( playinfo.formats & (1 << idx) )
-            printf( "      %s\n", get_format( idx ) ); 
+            printf( "      %s%s\n", get_format( idx ),
+            	playinfo.hw_formats & (1 << idx) ? " [hardware]" : "" ); 
         }
         if ( (err = snd_ctl_pcm_record_info( handle, dev, &recinfo )) < 0 ) {
           printf( "Error: control digital audio record info (%i): %s\n", card, snd_strerror( err ) );
@@ -223,7 +222,8 @@ static void device_list( void )
         printf( "    Formats:\n" );
         for ( idx = 0; idx < SND_PCM_SFMT_GSM; idx++ ) {
           if ( recinfo.formats & (1 << idx) )
-            printf( "      %s\n", get_format( idx ) ); 
+            printf( "      %s%s\n", get_format( idx ),
+            	recinfo.hw_formats & (1 << idx) ? " [hardware]" : "" ); 
         }
       }
     }
