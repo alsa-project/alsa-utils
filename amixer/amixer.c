@@ -937,7 +937,7 @@ static int cset(int argc, char *argv[], int roflag)
 	
 	if (!roflag) {
 		ptr = argv[1];
-		for (idx = 0; idx < count && idx < 128 && *ptr; idx++) {
+		for (idx = 0; idx < count && idx < 128 && ptr && *ptr; idx++) {
 			switch (type) {
 			case SND_CTL_ELEM_TYPE_BOOLEAN:
 				tmp = 0;
