@@ -233,12 +233,12 @@ static void init_seq(char *source, char *dest)
 {
 	snd_seq_addr_t addr;
 
-	if (snd_seq_open(&handle, SND_SEQ_OPEN) < 0) {
+	if (snd_seq_open(&handle, "hw", SND_SEQ_OPEN_DUPLEX, 0) < 0) {
 		perror("snd_seq_open");
 		exit(1);
 	}
 	seqfd = snd_seq_poll_descriptor(handle);
-	snd_seq_block_mode(handle, 0);
+	snd_seq_nonblock(handle, 0);
 
 	/* set client info */
 	if (server_mode)
