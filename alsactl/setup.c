@@ -215,7 +215,7 @@ static int switch_list(void *handle, snd_switch_list_t *list, int interface, int
 	case 2:
 		return snd_ctl_pcm_playback_switch_list(handle, device, list);
 	case 3:
-		return snd_ctl_pcm_record_switch_list(handle, device, list);
+		return snd_ctl_pcm_capture_switch_list(handle, device, list);
 	case 4:
 		return snd_ctl_rawmidi_output_switch_list(handle, device, list);
 	case 5:
@@ -235,7 +235,7 @@ static int switch_read(void *handle, snd_switch_t *sw, int interface, int device
 	case 2:
 		return snd_ctl_pcm_playback_switch_read(handle, device, sw);
 	case 3:
-		return snd_ctl_pcm_record_switch_read(handle, device, sw);
+		return snd_ctl_pcm_capture_switch_read(handle, device, sw);
 	case 4:
 		return snd_ctl_rawmidi_output_switch_read(handle, device, sw);
 	case 5:
@@ -256,7 +256,7 @@ static int switch_write(void *handle, snd_switch_t *sw, int interface, int devic
 	case 2:
 		return snd_ctl_pcm_playback_switch_write(handle, device, sw);
 	case 3:
-		return snd_ctl_pcm_record_switch_write(handle, device, sw);
+		return snd_ctl_pcm_capture_switch_write(handle, device, sw);
 	case 4:
 		return snd_ctl_rawmidi_output_switch_write(handle, device, sw);
 	case 5:
@@ -947,7 +947,7 @@ int soundcard_setup_write(const char *cfgfile, int cardno)
 				fprintf(out, "    }\n");
 			}
 			if (pcm->rswitches) {
-				fprintf(out, "    record {");
+				fprintf(out, "    capture {");
 				soundcard_setup_write_switches(out, "      ", SND_INTERFACE_PCM, &pcm->rswitches);
 				fprintf(out, "    }\n");
 			}

@@ -163,7 +163,7 @@ int soundcard_setup_merge_switches(int cardno)
 				continue;
 			}
 			soundcard_setup_merge_sw(pcm->pswitches, rpcm->pswitches, soundcard->no, pcm->no, "PCM playback");
-			soundcard_setup_merge_sw(pcm->rswitches, rpcm->rswitches, soundcard->no, pcm->no, "PCM record");
+			soundcard_setup_merge_sw(pcm->rswitches, rpcm->rswitches, soundcard->no, pcm->no, "PCM capture");
 		}
 		for (rrawmidi = rsoundcard->rawmidis; rrawmidi; rrawmidi = rrawmidi->next) {
 			for (rawmidi = soundcard->rawmidis; rawmidi; rawmidi = rawmidi->next) {
@@ -429,8 +429,8 @@ int soundcard_setup_process_switches(int cardno)
 			for (ctlsw = pcm->rswitches; ctlsw; ctlsw = ctlsw->next) {
 				if (ctlsw->change)
 					if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-						if ((err = snd_ctl_pcm_record_switch_write(ctlhandle, pcm->no, &ctlsw->s)) < 0)
-							error("PCM record switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
+						if ((err = snd_ctl_pcm_capture_switch_write(ctlhandle, pcm->no, &ctlsw->s)) < 0)
+							error("PCM capture switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
 					}
 			}
 		}

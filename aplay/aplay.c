@@ -1,5 +1,5 @@
 /*
- *  aplay.c - plays and records 
+ *  aplay.c - plays and records
  *
  *      CREATIVE LABS VOICE-files
  *      Microsoft WAVE-files
@@ -53,7 +53,7 @@
 char *command;
 snd_pcm_t *pcm_handle;
 struct snd_pcm_playback_info pinfo;
-struct snd_pcm_record_info rinfo;
+struct snd_pcm_capture_info rinfo;
 snd_pcm_format_t rformat, format;
 int timelimit = 0;
 int quiet_mode = 0;
@@ -69,7 +69,7 @@ int vocmajor, vocminor;
 /* needed prototypes */
 
 static void playback(char *filename);
-static void record(char *filename);
+static void capture(char *filename);
 
 static void begin_voc(int fd, u_long count);
 static void end_voc(int fd);
@@ -77,7 +77,7 @@ static void begin_wave(int fd, u_long count);
 static void end_wave(int fd);
 static void begin_au(int fd, u_long count);
 
-struct fmt_record {
+struct fmt_capture {
 	void (*start) (int fd, u_long count);
 	void (*end) (int fd);
 	char *what;
@@ -122,7 +122,7 @@ static void check_new_format(snd_pcm_format_t * format)
 		}
 	} else {
 		if (rinfo.min_rate > format->rate || rinfo.max_rate < format->rate) {
-			fprintf(stderr, "%s: unsupported rate %iHz for record (valid range is %iHz-%iHz)\n", command, format->rate, rinfo.min_rate, rinfo.max_rate);
+			fprintf(stderr, "%s: unsupported rate %iHz for capture (valid range is %iHz-%iHz)\n", command, format->rate, rinfo.min_rate, rinfo.max_rate);
 			exit(1);
 		}
 		if (!(rinfo.formats & (1 << format->format))) {
@@ -166,7 +166,7 @@ static void device_list(void)
 	struct snd_ctl_hw_info info;
 	snd_pcm_info_t pcminfo;
 	snd_pcm_playback_info_t playinfo;
-	snd_pcm_record_info_t recinfo;
+	snd_pcm_capture_info_t recinfo;
 
 	mask = snd_cards_mask();
 	if (!mask) {
@@ -198,7 +198,7 @@ static void device_list(void)
 			       pcminfo.name);
 			printf("  Directions: %s%s%s\n",
 			       pcminfo.flags & SND_PCM_INFO_PLAYBACK ? "playback " : "",
-			       pcminfo.flags & SND_PCM_INFO_RECORD ? "record " : "",
+			       pcminfo.flags & SND_PCM_INFO_CAPTURE ? "capture " : "",
 			       pcminfo.flags & SND_PCM_INFO_DUPLEX ? "duplex " : "");
 			if ((err = snd_ctl_pcm_playback_info(handle, dev, &playinfo)) < 0) {
 				printf("Error: control digital audio playback info (%i): %s\n", card, snd_strerror(err));
@@ -214,12 +214,12 @@ static void device_list(void)
 						printf("      %s%s\n", get_format(idx),
 						       playinfo.hw_formats & (1 << idx) ? " [hardware]" : "");
 				}
-				if ((err = snd_ctl_pcm_record_info(handle, dev, &recinfo)) < 0) {
-					printf("Error: control digital audio record info (%i): %s\n", card, snd_strerror(err));
+				if ((err = snd_ctl_pcm_capture_info(handle, dev, &recinfo)) < 0) {
+					printf("Error: control digital audio capture info (%i): %s\n", card, snd_strerror(err));
 					continue;
 				}
 			}
-			if (pcminfo.flags & SND_PCM_INFO_RECORD) {
+			if (pcminfo.flags & SND_PCM_INFO_CAPTURE) {
 				printf("  Record:\n");
 				printf("    Rate range: %iHz-%iHz\n", recinfo.min_rate, recinfo.max_rate);
 				printf("    Voices range: %i-%i\n", recinfo.min_channels, recinfo.max_channels);
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 	command = argv[0];
 	active_format = FORMAT_DEFAULT;
 	if (strstr(argv[0], "arecord")) {
-		direction = SND_PCM_OPEN_RECORD;
+		direction = SND_PCM_OPEN_CAPTURE;
 		active_format = FORMAT_WAVE;
 		command = "Arecord";
 	} else if (strstr(argv[0], "aplay")) {
@@ -396,8 +396,8 @@ int main(int argc, char *argv[])
 		tmp = pinfo.buffer_size;
 		tmp /= 4;	/* 4 fragments are best */
 	} else {
-		if ((err = snd_pcm_record_info(pcm_handle, &rinfo)) < 0) {
-			fprintf(stderr, "Error: record info error: %s\n", snd_strerror(err));
+		if ((err = snd_pcm_capture_info(pcm_handle, &rinfo)) < 0) {
+			fprintf(stderr, "Error: capture info error: %s\n", snd_strerror(err));
 			return 1;
 		}
 		tmp = rinfo.buffer_size;
@@ -420,13 +420,13 @@ int main(int argc, char *argv[])
 		if (direction == SND_PCM_OPEN_PLAYBACK)
 			playback(NULL);
 		else
-			record(NULL);
+			capture(NULL);
 	} else {
 		while (optind <= argc - 1) {
 			if (direction == SND_PCM_OPEN_PLAYBACK)
 				playback(argv[optind++]);
 			else
-				record(argv[optind++]);
+				capture(argv[optind++]);
 		}
 	}
 	snd_pcm_close(pcm_handle);
@@ -562,7 +562,7 @@ static void set_format(void)
 	unsigned int bps;	/* bytes per second */
 	unsigned int size;	/* fragment size */
 	struct snd_pcm_playback_params pparams;
-	struct snd_pcm_record_params rparams;
+	struct snd_pcm_capture_params rparams;
 
 	bps = format.rate * format.channels;
 	switch (format.format) {
@@ -597,15 +597,15 @@ static void set_format(void)
 			exit(1);
 		}
 	} else {
-		if (snd_pcm_record_format(pcm_handle, &format) < 0) {
-			fprintf(stderr, "%s: unable to set record format %s, %iHz, %i voices\n", command, get_format(format.format), format.rate, format.channels);
+		if (snd_pcm_capture_format(pcm_handle, &format) < 0) {
+			fprintf(stderr, "%s: unable to set capture format %s, %iHz, %i voices\n", command, get_format(format.format), format.rate, format.channels);
 			exit(1);
 		}
 		memset(&rparams, 0, sizeof(rparams));
 		rparams.fragment_size = size;
 		rparams.fragments_min = 1;
-		if (snd_pcm_record_params(pcm_handle, &rparams) < 0) {
-			fprintf(stderr, "%s: unable to set record params\n", command);
+		if (snd_pcm_capture_params(pcm_handle, &rparams) < 0) {
+			fprintf(stderr, "%s: unable to set capture params\n", command);
 			exit(1);
 		}
 	}
@@ -1059,9 +1059,9 @@ void playback_go(int fd, int loaded, u_long count, int rtype, char *name)
 	}			/* while (count) */
 }
 
-/* recording raw data, this proc handels WAVE files and .VOCs (as one block) */
+/* captureing raw data, this proc handels WAVE files and .VOCs (as one block) */
 
-void record_go(int fd, int loaded, u_long count, int rtype, char *name)
+void capture_go(int fd, int loaded, u_long count, int rtype, char *name)
 {
 	int l;
 	u_long c;
@@ -1089,7 +1089,7 @@ void record_go(int fd, int loaded, u_long count, int rtype, char *name)
 }
 
 /*
- *  let's play or record it (record_type says VOC/WAVE/raw)
+ *  let's play or capture it (capture_type says VOC/WAVE/raw)
  */
 
 static void playback(char *name)
@@ -1145,11 +1145,11 @@ static void playback(char *name)
 		close(fd);
 }
 
-static void record(char *name)
+static void capture(char *name)
 {
 	int fd;
 
-	snd_pcm_flush_record(pcm_handle);
+	snd_pcm_flush_capture(pcm_handle);
 	if (!name || !strcmp(name, "-")) {
 		fd = 1;
 		name = "stdout";
@@ -1165,6 +1165,6 @@ static void record(char *name)
 	   isn't a problem (this can only be in 8 bit mono) */
 	if (fmt_rec_table[active_format].start)
 		fmt_rec_table[active_format].start(fd, count);
-	record_go(fd, 0, count, active_format, name);
+	capture_go(fd, 0, count, active_format, name);
 	fmt_rec_table[active_format].end(fd);
 }

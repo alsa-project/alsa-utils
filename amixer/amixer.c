@@ -297,7 +297,7 @@ int show_mux1_info(void *handle, snd_mixer_element_info_t *info, const char *spa
 	snd_mixer_routes_t routes;
 	snd_mixer_eid_t *element;
 
-	printf("%sMux supports none input: %s\n", space, (info->data.mux1.attribute & SND_MIXER_MUX1_NONE) ? "YES" : "NO");
+	printf("%sMux supports none input: %s\n", space, (info->data.mux1.attrib & SND_MIXER_MUX1_NONE) ? "YES" : "NO");
 	bzero(&elements, sizeof(elements));
 	if ((err = snd_mixer_elements(handle, &elements)) < 0) {
 		error("Mixer %i/%i elements error: %s", card, device, snd_strerror(err));
@@ -366,9 +366,9 @@ int show_element_info(void *handle, snd_mixer_eid_t *eid, const char *space)
 	switch (info.eid.type) {
 	case SND_MIXER_ETYPE_INPUT:
 	case SND_MIXER_ETYPE_OUTPUT:
-		if (info.data.io.attribute) {
+		if (info.data.io.attrib) {
 			printf("%sAttributes%s\n", space,
-				info.data.io.attribute & SND_MIXER_EIO_DIGITAL ? " digital" : "");
+				info.data.io.attrib & SND_MIXER_EIO_DIGITAL ? " digital" : "");
 		}
 		for (idx = 0; idx < info.data.io.voices; idx++) {
 			if (!info.data.io.pvoices[idx].vindex) {
