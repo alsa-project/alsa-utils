@@ -187,7 +187,7 @@ static int update_iec958_status(snd_aes_iec958_t *iec958, int *parms)
 			case 48000:
 				iec958->status[0] |= IEC958_AES0_PRO_FS_48000;
 				break;
-			case 3200:
+			case 32000:
 				iec958->status[0] |= IEC958_AES0_PRO_FS_32000;
 				break;
 			}
@@ -200,7 +200,7 @@ static int update_iec958_status(snd_aes_iec958_t *iec958, int *parms)
 			case 48000:
 				iec958->status[3] |= IEC958_AES3_CON_FS_48000;
 				break;
-			case 3200:
+			case 32000:
 				iec958->status[3] |= IEC958_AES3_CON_FS_32000;
 				break;
 			}
