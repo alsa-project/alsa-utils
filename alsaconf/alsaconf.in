@@ -679,7 +679,7 @@ check_irq_avail () {
 ac_try_load () {
     test $do_logging = 1 && echo "$1 ${*:2}" >> $LOGFILE
     /sbin/modprobe snd-$1 ${*:2} >/dev/null 2>&1
-    $lsmod | grep -E '(snd-|snd_)' $1 >/dev/null 2>&1 || return 1
+    $lsmod | grep -E '(snd-|snd_)'$1 >/dev/null 2>&1 || return 1
 
     # mute mixers
     amixer set Master 0% mute >/dev/null 2>&1
@@ -713,7 +713,7 @@ ac_try_load () {
 ac_try_capture () {
     test $do_logging = 1 && echo "$1 ${*:2}" >> $LOGFILE
     /sbin/modprobe snd-$1 ${*:3} >/dev/null 2>&1
-    $lsmod | grep -E '(snd-|snd_)' $1 >/dev/null 2>&1 || return 1
+    $lsmod | grep -E '(snd-|snd_)'$1 >/dev/null 2>&1 || return 1
 
     # mute mixers
     amixer set Master 0% mute >/dev/null 2>&1
@@ -915,7 +915,7 @@ ac_try_card_cs4236 () {
     card=cs4236
     irq_list=`check_irq_avail 5 7 9 11 12 15`
     isapnp=`ac_check_option $card ${mpfx}isapnp 0`
-    for cport in 0x538 0x210; do
+    for cport in 0x538 0x210 0xf00; do
 	for port in 0x530 0x534; do
 	    opts="${mpfx}port=$port ${mpfx}cport=$cport $isapnp"
 	    ac_try_dmas $card "$opts" $irq_list && return 0
@@ -928,7 +928,7 @@ ac_try_card_cs4232 () {
     card=cs4232
     irq_list=`check_irq_avail 5 7 9 11 12 15`
     isapnp=`ac_check_option $card ${mpfx}isapnp 0`
-    for cport in 0x538 0x210; do
+    for cport in 0x538 0x210 0xf00; do
 	for port in 0x530 0x534; do
 	    opts="${mpfx}port=$port ${mpfx}cport=$cport $isapnp"
 	    ac_try_dmas $card "$opts" $irq_list && return 0
