@@ -33,7 +33,7 @@ Select the mixer device to control.
 Toggle the using of colors.
 
 .TP
-\fI-m\fP <minimize mixer window>
+\fI-s\fP <minimize mixer window>
 Minimize the mixer window.
 
 .SH KEYBOARD COMMANDS
@@ -51,28 +51,27 @@ currently selected device. You can also use \fI+\fP or \fI-\fP for the
 same purpose. Both the left and right signals are affected. For
 independent left and right control, see below.
  
+The \fIB\fP or \fI=\fP key adjusts the balance of volumes on left and
+right channels.
+
 \fIM\fP toggles muting for the current channel (both left and right). You can
-mute left and right independently by using \fI,\fP and \fI.\fP respectively.
+mute left and right independently by using \fI,\fP (or \fI<\fP) and
+\fI.\fP (or \fI>\fP) respectively.
 
 \fISPACE\fP toggles recording: the current channel will be added or
 removed from the sources used for recording. This only works for valid
 input channels, of course.
-
-\fIR\fP toggle display of playback or record mixer.
+You can toggle left and right independently by using \fIInsert\fP (or \fI;\fP)
+and \fIDelete\fP (or \fI'\fP) respectively.
 
 \fIL\fP re-draws the screen.
-
-\fITAB\fP toggles the mode for volume display. See description for the
-\fI-e\fP flag above.
 
 .SS
 Quick Volume Changes
 
-\fIPageUp\fP increases volume by 10.
+\fIPageUp\fP increases volume by 5.
 
-\fIPageDown\fP decreases volume by 10.
-
-\fIHome\fP sets volume to maximum.
+\fIPageDown\fP decreases volume by 5.
 
 \fIEnd\fP sets volume to 0.
 
