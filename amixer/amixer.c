@@ -1512,7 +1512,7 @@ int main(int argc, char *argv[])
 	}
 	if (morehelp) {
 		help();
-		return 1;
+		return 0;
 	}
 	if (argc - optind <= 0) {
 		return selems(LEVEL_BASIC | level) ? 1 : 0;
