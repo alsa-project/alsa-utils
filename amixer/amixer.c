@@ -385,6 +385,66 @@ int show_mux1_info(void *handle, snd_mixer_element_info_t *info, const char *spa
 	return 0;
 } 
 
+int show_mux2_info(void *handle, snd_mixer_element_info_t *info, const char *space)
+{
+	int idx, idx1, err;
+	snd_mixer_elements_t elements;
+	snd_mixer_routes_t routes;
+	snd_mixer_eid_t *element;
+
+	printf("%sMux supports none input: %s\n", space, (info->data.mux2.attrib & SND_MIXER_MUX2_NONE) ? "YES" : "NO");
+	bzero(&elements, sizeof(elements));
+	if ((err = snd_mixer_elements(handle, &elements)) < 0) {
+		error("Mixer %i/%i elements error: %s", card, device, snd_strerror(err));
+		return -1;
+	}
+	elements.pelements = (snd_mixer_eid_t *)malloc(elements.elements_over * sizeof(snd_mixer_eid_t));
+	if (!elements.pelements) {
+		error("Not enough memory");
+		return -1;
+	}
+	elements.elements_size = elements.elements_over;
+	elements.elements_over = elements.elements = 0;
+	if ((err = snd_mixer_elements(handle, &elements)) < 0) {
+		error("Mixer %i/%i elements (2) error: %s", card, device, snd_strerror(err));
+		return -1;
+	}
+	for (idx = 0; idx < elements.elements; idx++) {
+		bzero(&routes, sizeof(routes));
+		routes.eid = elements.pelements[idx];
+		if ((err = snd_mixer_routes(handle, &routes)) < 0) {
+			error("Mixer %i/%i route error: %s", card, device, snd_strerror(err));
+			free(elements.pelements);
+			return -1;
+		}
+		if (!routes.routes_over)
+			continue;
+		routes.proutes = (snd_mixer_eid_t *)malloc(routes.routes_over * sizeof(snd_mixer_eid_t));
+		if (!routes.proutes) {
+			error("Not enough memory...");
+			free(elements.pelements);
+			return -1;
+		}
+		routes.routes_size = routes.routes_over;
+		routes.routes = routes.routes_over = 0;
+		if ((err = snd_mixer_routes(handle, &routes)) < 0) {
+			error("Mixer %i/%i group (2) error: %s", card, device, snd_strerror(err));
+			free(elements.pelements);
+			return -1;
+		}
+		for (idx1 = 0; idx1 < routes.routes; idx1++) {
+			element = &routes.proutes[idx1];
+			if (!strncmp(element->name, info->eid.name, sizeof(element->name)) &&
+			    element->index == info->eid.index &&
+			    element->type == info->eid.type)
+				printf("%sInput element '%s',%i,%s\n", space, element_name(routes.eid.name), routes.eid.index, element_type(routes.eid.type));
+		}
+		free(routes.proutes);
+	}
+	free(elements.pelements);
+	return 0;
+} 
+
 int show_element_info(void *handle, snd_mixer_eid_t *eid, const char *space)
 {
 	int err, idx;
@@ -491,6 +551,9 @@ int show_element_info(void *handle, snd_mixer_eid_t *eid, const char *space)
 		break;
 	case SND_MIXER_ETYPE_MUX1:
 		show_mux1_info(handle, &info, space);
+		break;
+	case SND_MIXER_ETYPE_MUX2:
+		show_mux2_info(handle, &info, space);
 		break;
 	case SND_MIXER_ETYPE_TONE_CONTROL1:
 		if (info.data.tc1.tc & SND_MIXER_TC1_SW)
@@ -634,9 +697,27 @@ int show_element_contents(void *handle, snd_mixer_eid_t *eid, const char *space)
 	case SND_MIXER_ETYPE_MUX1:
 		for (idx = 0; idx < element.data.mux1.output; idx++) {
 			snd_mixer_eid_t *eid = &element.data.mux1.poutput[idx];
-			printf("%sVoice %i: Element '%s',%i,%i\n", space, idx,
+			printf("%sVoice %i: Element ", space, idx);
+			if (eid->name[0] == '\0') {
+				printf("NONE\n");
+			} else {
+				printf("'%s',%i,%i\n", space, idx,
 					element_name(eid->name),
 					eid->index, eid->type);
+			}
+		}
+		break;
+	case SND_MIXER_ETYPE_MUX2:
+		{
+			printf("%sAll voices: Element ", space);
+			if (element.data.mux2.output.name[0] == '\0') {
+				printf("NONE\n");
+			} else {
+				printf("'%s',%i,%i\n",
+					element_name(element.data.mux2.output.name),
+					element.data.mux2.output.index,
+					element.data.mux2.output.type);
+			}
 		}
 		break;
 	case SND_MIXER_ETYPE_TONE_CONTROL1:
@@ -900,6 +981,8 @@ static int parse_eid(const char *str, snd_mixer_eid_t *eid)
 	if (!(*str))
 		return 1;
 	bzero(eid, sizeof(*eid));
+	if (!strncmp(str, "none", 4) || !strncmp(str, "NONE", 4))
+		return 0;
 	ptr = eid->name;
 	size = 0;
 	if (*str != '"' && *str != '\'') {
@@ -1226,6 +1309,49 @@ int eset_mux1(int argc, char *argv[], void *handle, snd_mixer_eid_t *eid)
 	return 0;
 }
 
+int eset_mux2(int argc, char *argv[], void *handle, snd_mixer_eid_t *eid)
+{
+	int err, idx = 0;
+	snd_mixer_element_t element;
+	snd_mixer_element_info_t info;
+	snd_mixer_eid_t xeid;
+	
+	if (argc != 1) {
+		fprintf(stderr, "The set Mux2 command requires an argument:\n");
+		fprintf(stderr, "     element\n");
+		return 1;
+	}
+	bzero(&info, sizeof(info));
+	info.eid = *eid;
+	if ((err = snd_mixer_element_info_build(handle, &info)) < 0) {
+		error("Mixer element read error: %s", snd_strerror(err));
+		return 1;
+	}
+	bzero(&element, sizeof(element));
+	element.eid = *eid;
+	if ((err = snd_mixer_element_build(handle, &element)) < 0) {
+		error("Mixer element read error: %s", snd_strerror(err));
+		snd_mixer_element_info_free(&info);
+		return 1;
+	}
+	if (parse_eid(argv[0], &xeid)) {
+		fprintf(stderr, "Wrong element identifier: %s\n", argv[0]);
+		snd_mixer_element_free(&element);
+		snd_mixer_element_info_free(&info);
+		return 1;
+	}
+	element.data.mux2.output = xeid;
+	if ((err = snd_mixer_element_write(handle, &element)) < 0) {
+		error("Mixer element write error: %s\n", snd_strerror(err));
+		snd_mixer_element_free(&element);
+		snd_mixer_element_info_free(&info);
+		return 1;
+	}
+	snd_mixer_element_free(&element);
+	snd_mixer_element_info_free(&info);
+	return 0;
+}
+
 int eset(int argc, char *argv[])
 {
 	int err;
@@ -1266,6 +1392,10 @@ int eset(int argc, char *argv[])
 		break;
 	case SND_MIXER_ETYPE_MUX1:
 		if (eset_mux1(argc - 1, argv + 1, handle, &eid))
+			goto __end;
+		break;
+	case SND_MIXER_ETYPE_MUX2:
+		if (eset_mux2(argc - 1, argv + 1, handle, &eid))
 			goto __end;
 		break;
 	}
