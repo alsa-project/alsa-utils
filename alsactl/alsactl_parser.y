@@ -485,8 +485,8 @@ static void set_switch_integer( int val )
   snd_ctl_switch_t *sw = (snd_ctl_switch_t *)Xswitch;
   unsigned int xx;
 
-  if ( sw -> type != SND_CTL_SW_TYPE_BYTE ||
-       sw -> type != SND_CTL_SW_TYPE_WORD ||
+  if ( sw -> type != SND_CTL_SW_TYPE_BYTE &&
+       sw -> type != SND_CTL_SW_TYPE_WORD &&
        sw -> type != SND_CTL_SW_TYPE_DWORD )
     yyerror( "Switch '%s' isn't integer type...", sw -> name );
   if ( val < sw -> low || val > sw -> high )
