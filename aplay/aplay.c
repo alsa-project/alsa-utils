@@ -334,6 +334,8 @@ int main(int argc, char *argv[])
 	int do_device_list = 0, do_pcm_list = 0;
 	snd_pcm_info_t *info;
 
+	snd_pcm_info_alloca(&info);
+
 	err = snd_output_stdio_attach(&log, stderr, 0);
 	assert(err >= 0);
 
@@ -488,9 +490,11 @@ int main(int argc, char *argv[])
 	if (do_device_list) {
 		if (do_pcm_list) pcm_list();
 		device_list();
+		snd_config_update_free_global();
 		return 0;
 	} else if (do_pcm_list) {
 		pcm_list();
+		snd_config_update_free_global();
 		return 0;
 	}
 
@@ -500,7 +504,6 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	snd_pcm_info_alloca(&info);
 	if ((err = snd_pcm_info(handle, info)) < 0) {
 		error("info error: %s", snd_strerror(err));
 		return 1;
@@ -562,6 +565,7 @@ int main(int argc, char *argv[])
 	snd_pcm_close(handle);
 	free(audiobuf);
 	snd_output_close(log);
+	snd_config_update_free_global();
 	return EXIT_SUCCESS;
 }
 
@@ -1289,7 +1293,7 @@ static void voc_play(int fd, int ofs, char *name)
 	char was_extended = 0, output = 0;
 	u_short *sp, repeat = 0;
 	size_t silence;
-	int filepos = 0;
+	off64_t filepos = 0;
 
 #define COUNT(x)	nextblock -= x; in_buffer -= x; data += x
 #define COUNT1(x)	in_buffer -= x; data += x
@@ -1420,7 +1424,7 @@ static void voc_play(int fd, int ofs, char *name)
 				d_printf("Repeat loop %d times\n", repeat);
 #endif
 				if (filepos >= 0) {	/* if < 0, one seek fails, why test another */
-					if ((filepos = lseek(fd, 0, 1)) < 0) {
+					if ((filepos = lseek64(fd, 0, 1)) < 0) {
 						error("can't play loops; %s isn't seekable\n", name);
 						repeat = 0;
 					} else {
@@ -1442,7 +1446,7 @@ static void voc_play(int fd, int ofs, char *name)
 					else
 						d_printf("Neverending loop\n");
 #endif
-					lseek(fd, filepos, 0);
+					lseek64(fd, filepos, 0);
 					in_buffer = 0;	/* clear the buffer */
 					goto Fill_the_buffer;
 				}
@@ -1673,7 +1677,7 @@ static void begin_au(int fd, size_t cnt)
 /* closing .VOC */
 static void end_voc(int fd)
 {
-	off_t length_seek;
+	off64_t length_seek;
 	VocBlockType bt;
 	size_t cnt;
 	char dummy = 0;		/* Write a Terminator */
@@ -1693,7 +1697,7 @@ static void end_voc(int fd)
 	bt.datalen = (u_char) (cnt & 0xFF);
 	bt.datalen_m = (u_char) ((cnt & 0xFF00) >> 8);
 	bt.datalen_h = (u_char) ((cnt & 0xFF0000) >> 16);
-	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
+	if (lseek64(fd, length_seek, SEEK_SET) == length_seek)
 		write(fd, &bt, sizeof(VocBlockType));
 	if (fd != 1)
 		close(fd);
@@ -1708,7 +1712,7 @@ static void end_raw(int fd)
 static void end_wave(int fd)
 {				/* only close output */
 	WaveChunkHeader cd;
-	off_t length_seek;
+	off64_t length_seek;
 	u_int rifflen;
 	
 	length_seek = sizeof(WaveHeader) +
@@ -1718,9 +1722,9 @@ static void end_wave(int fd)
 	cd.length = fdcount > 0x7fffffff ? 0x7fffffff : LE_INT(fdcount);
 	rifflen = fdcount + 2*sizeof(WaveChunkHeader) + sizeof(WaveFmtBody) + 4;
 	rifflen = rifflen > 0x7fffffff ? 0x7fffffff : LE_INT(rifflen);
-	if (lseek(fd, 4, SEEK_SET) == 4)
+	if (lseek64(fd, 4, SEEK_SET) == 4)
 		write(fd, &rifflen, 4);
-	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
+	if (lseek64(fd, length_seek, SEEK_SET) == length_seek)
 		write(fd, &cd, sizeof(WaveChunkHeader));
 	if (fd != 1)
 		close(fd);
@@ -1729,11 +1733,11 @@ static void end_wave(int fd)
 static void end_au(int fd)
 {				/* only close output */
 	AuHeader ah;
-	off_t length_seek;
+	off64_t length_seek;
 	
 	length_seek = (char *)&ah.data_size - (char *)&ah;
 	ah.data_size = fdcount > 0xffffffff ? 0xffffffff : BE_INT(fdcount);
-	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
+	if (lseek64(fd, length_seek, SEEK_SET) == length_seek)
 		write(fd, &ah.data_size, sizeof(ah.data_size));
 	if (fd != 1)
 		close(fd);
@@ -1854,7 +1858,7 @@ static void playback(char *name)
 		fd = fileno(stdin);
 		name = "stdin";
 	} else {
-		if ((fd = open(name, O_RDONLY, 0)) == -1) {
+		if ((fd = open64(name, O_RDONLY, 0)) == -1) {
 			perror(name);
 			exit(EXIT_FAILURE);
 		}
@@ -1905,7 +1909,7 @@ static void capture(char *name)
 		name = "stdout";
 	} else {
 		remove(name);
-		if ((fd = open(name, O_WRONLY | O_CREAT, 0644)) == -1) {
+		if ((fd = open64(name, O_WRONLY | O_CREAT, 0644)) == -1) {
 			perror(name);
 			exit(EXIT_FAILURE);
 		}
