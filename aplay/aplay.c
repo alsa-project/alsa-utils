@@ -381,13 +381,8 @@ int main(int argc, char *argv[])
 			version();
 			return 0;
 		case 'e':
-			if (!mmap_flag) {
+			if (!mmap_flag)
 				mode = SND_PCM_MODE_STREAM;
-				if (direction == SND_PCM_OPEN_CAPTURE)
-					direction = SND_PCM_OPEN_STREAM_CAPTURE;
-				if (direction == SND_PCM_OPEN_PLAYBACK)
-					direction = SND_PCM_OPEN_STREAM_PLAYBACK;
-			}
 			break;
 		case 'E':
 			if (mode == SND_PCM_MODE_BLOCK)
