@@ -248,7 +248,7 @@ static void version(void)
 int main(int argc, char *argv[])
 {
 	int option_index;
-	char *short_options = "lLD:qt:c:f:r:d:eMNF:A:X:B:vI";
+	char *short_options = "lLD:qt:c:f:r:d:eMNF:A:X:B:vIPC";
 	static struct option long_options[] = {
 		{"help", 0, 0, OPT_HELP},
 		{"version", 0, 0, OPT_VERSION},
