@@ -48,9 +48,11 @@ fi
 AC_SUBST(CURSESINC)
 AC_SUBST(CURSESLIB)
 
-dnl Check for Gtk+
-dnl AM_PATH_GTK(1.0.1)
-dnl CFLAGS="$CFLAGS $GTK_CFLAGS"
+AC_ARG_WITH(testsound,
+  [  --with-testsound=file        give the path of test sound file for alsaconf],
+  TESTSOUND="$withval",
+  TESTSOUND="/usr/share/sounds/alsa/test.wav")
+AC_SUBST(TESTSOUND)
 
 AM_CONFIG_HEADER(include/aconfig.h)
 
@@ -65,5 +67,6 @@ AC_PROG_GCC_TRADITIONAL
 SAVE_UTIL_VERSION
 
 AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amidi/Makefile amixer/Makefile \
+	  alsaconf/alsaconf alsaconf/Makefile \
 	  aplay/Makefile include/Makefile iecset/Makefile utils/Makefile \
 	  utils/alsa-utils.spec seq/Makefile seq/aconnect/Makefile seq/aseqnet/Makefile)

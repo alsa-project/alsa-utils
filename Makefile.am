@@ -4,7 +4,7 @@ ALSAMIXER_DIR=alsamixer
 else
 ALSAMIXER_DIR=
 endif
-SUBDIRS=include alsactl $(ALSAMIXER_DIR) amidi amixer aplay iecset seq utils
+SUBDIRS=include alsactl alsaconf $(ALSAMIXER_DIR) amidi amixer aplay iecset seq utils
 EXTRA_DIST=ChangeLog INSTALL TODO README configure cvscompile depcomp
 
 rpm: dist
