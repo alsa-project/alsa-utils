@@ -737,8 +737,8 @@ static ssize_t pcm_write(u_char *data, size_t count)
 	ssize_t result = 0;
 
 	if (mode == SND_PCM_MODE_FRAGMENT &&
-	    count != buffer_size) {
-		snd_pcm_format_set_silence(format.format, data + count * bits_per_frame / 8, buffer_size * format.channels);
+	    count < buffer_size) {
+		snd_pcm_format_set_silence(format.format, data + count * bits_per_frame / 8, (buffer_size - count) * format.channels);
 		count = buffer_size;
 	}
 	while (count > 0) {
