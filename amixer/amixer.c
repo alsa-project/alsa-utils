@@ -947,6 +947,10 @@ static int cset(int argc, char *argv[], int roflag)
 				} else if (!strncasecmp(ptr, "yes", 3)) {
 					tmp = 1;
 					ptr += 3;
+				} else if (!strncasecmp(ptr, "toggle", 6)) {
+					snd_ctl_elem_value_get_boolean(control, idx, &tmp);
+					tmp = tmp ? 0 : 1;
+					ptr += 6;
 				} else if (atoi(ptr)) {
 					tmp = 1;
 					while (isdigit(*ptr))
