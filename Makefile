@@ -32,6 +32,9 @@ install: all
 	$(INSTALL) -d -m 755 -o root -g root ${mandir}/man1
 	$(INSTALL) -m 644 -o root -g root amixer/amixer.1 ${mandir}/man1
 	$(INSTALL) -s -m 755 -o root -g root alsamixer/alsamixer ${bindir}
+	$(INSTALL) -m 644 -o root -g root alsamixer/alsamixer.1 ${mandir}/man1
+	$(INSTALL) -m 644 -o root -g root aplay/arecord.1 ${mandir}/man1
+	ln -sf arecord.1 ${mandir}/man1/aplay.1
 
 clean:
 	$(MAKE) -C include clean
