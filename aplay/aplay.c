@@ -527,7 +527,7 @@ static int test_wavefile(void *buffer, size_t size)
 		return 0;
 	c = (WaveChunkHeader*)((char *)buffer + sizeof(WaveHeader));
 	while (c->type != WAV_FMT) {
-		c = (WaveChunkHeader*)((char*)c + sizeof(*c) + c->length);
+		c = (WaveChunkHeader*)((char*)c + sizeof(*c) + LE_INT(c->length));
 		if ((char *)c + sizeof(*c) > (char*) buffer + size) {
 			fprintf(stderr, "%s: cannot found WAVE fmt chunk\n", command);
 			exit(EXIT_FAILURE);
@@ -558,7 +558,7 @@ static int test_wavefile(void *buffer, size_t size)
 	}
 	format.rate = LE_INT(f->sample_fq);
 	while (c->type != WAV_DATA) {
-		c = (WaveChunkHeader*)((char*)c + sizeof(*c) + c->length);
+		c = (WaveChunkHeader*)((char*)c + sizeof(*c) + LE_INT(c->length));
 		if ((char *)c + sizeof(*c) > (char*) buffer + size) {
 			fprintf(stderr, "%s: cannot found WAVE data chunk\n", command);
 			exit(EXIT_FAILURE);
@@ -1231,6 +1231,8 @@ static void begin_wave(int fd, size_t cnt)
 	WaveFmtHeader f;
 	WaveChunkHeader c;
 	int bits;
+	u_int tmp;
+	u_short tmp2;
 
 	bits = 8;
 	switch (format.format) {
@@ -1245,25 +1247,30 @@ static void begin_wave(int fd, size_t cnt)
 		exit(EXIT_FAILURE);
 	}
 	h.magic = WAV_RIFF;
-	h.length = cnt + sizeof(WaveHeader) + sizeof(WaveFmtHeader) + sizeof(WaveChunkHeader) - 8;
+	tmp = cnt + sizeof(WaveHeader) + sizeof(WaveFmtHeader) + sizeof(WaveChunkHeader) - 8;
+	h.length = LE_INT(tmp);
 	h.type = WAV_WAVE;
 
 	f.type = WAV_FMT;
-	f.length = 16;
-	f.format = WAV_PCM_CODE;
-	f.modus = format.channels;
-	f.sample_fq = format.rate;
+	f.length = LE_INT(16);
+	f.format = LE_INT(WAV_PCM_CODE);
+	f.modus = LE_SHORT(format.voices);
+	f.sample_fq = LE_INT(format.rate);
 #if 0
-	f.byte_p_spl = (samplesize == 8) ? 1 : 2;
-	f.byte_p_sec = dsp_speed * f.modus * f.byte_p_spl;
+	tmp2 = (samplesize == 8) ? 1 : 2;
+	f.byte_p_spl = LE_SHORT(tmp2);
+	tmp2 = dsp_speed * format.channels * tmp2;
+	f.byte_p_sec = LE_SHORT(tmp2);
 #else
-	f.byte_p_spl = f.modus * ((bits + 7) / 8);
-	f.byte_p_sec = f.byte_p_spl * format.rate;
+	tmp2 = format.voices * ((bits + 7) / 8);
+	f.byte_p_spl = LE_SHORT(tmp2);
+	tmp2 = tmp2 * format.rate;
+	f.byte_p_sec = LE_SHORT(tmp2);
 #endif
-	f.bit_p_spl = bits;
+	f.bit_p_spl = LE_SHORT(bits);
 
 	c.type = WAV_DATA;
-	c.length = cnt;
+	c.length = LE_INT(cnt);
 
 	if (write(fd, &h, sizeof(WaveHeader)) != sizeof(WaveHeader) ||
 	    write(fd, &f, sizeof(WaveFmtHeader)) != sizeof(WaveFmtHeader) ||
@@ -1465,7 +1472,7 @@ static void playback(char *name)
 		check_new_format(&rformat);
 		init_raw_data();
 		count = calc_count();
-		playback_go(fd, 50, count, FORMAT_RAW, name);
+		playback_go(fd, 64, count, FORMAT_RAW, name);
 	}
       __end:
 	if (fd != 0)
