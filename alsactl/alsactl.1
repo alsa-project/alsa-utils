@@ -1,10 +1,10 @@
-.TH ALSACTL 1 "25 Nov 1998"
+.TH ALSACTL 1 "15 May 2001"
 .SH NAME
 alsactl \- advanced controls for ALSA soundcard driver
 
 .SH SYNOPSIS
 
-\fBalsactl\fP [\fIoptions\fP] [\fIstore\fP|\fIrestore\fP] <card #>
+\fBalsactl\fP [\fIoptions\fP] [\fIstore\fP|\fIrestore\fP] <card # or id>
 
 .SH DESCRIPTION
 \fBalsactl\fP is used to control advanced settings for the ALSA
@@ -14,14 +14,14 @@ you have come to the right place.
 
 .SH INVOKING
 
-\fBalsactl\fP [\fIoptions\fP] [\fIstore\fP|\fIrestore\fP] <card #>
+\fBalsactl\fP [\fIoptions\fP] [\fIstore\fP|\fIrestore\fP] <card # or id>
 
 .SS Commands
 
-\fIstore\fP saves the current driver setup for the selected soundcard
+\fIstore\fP saves the current driver state for the selected soundcard
 to the configuration file.
 
-\fIrestore\fP loads driver setup for the selected soundcard from the configuration file.
+\fIrestore\fP loads driver state for the selected soundcard from the configuration file.
 
 If no soundcards are specified, setup for all cards will be saved or
 loaded.
@@ -34,7 +34,7 @@ Help: show available flags and commands.
 
 .TP
 \fI-f, --f\fP file
-Select the configuration file to use. The default is /etc/asound.conf
+Select the configuration file to use. The default is /etc/asound.state
 
 .TP
 \fI-d, --debug\fP
@@ -45,7 +45,7 @@ Use debug mode: a bit more verbose.
 Print alsactl version number.
 
 .SH FILES
-\fI/etc/asound.conf\fP (or whatever file you specify with the
+\fI/etc/asound.state\fP (or whatever file you specify with the
 \fB-f\fP flag) is used to store current settings for your
 soundcards. The settings include all the usual soundcard mixer
 settings.  More importantly, alsactl is
@@ -58,81 +58,6 @@ necessary for some soundcard features (e.g. enabling/disabling
 automatic mic gain, digital output, joystick/game ports, some future MIDI
 routing options, etc).
 
-.SS Configuration File Syntax
-
-There are some terms in the config file that bear explaining. The
-"capabilities" comments before each line tells you some
-characteristics of each channel. This is purely informational; these
-are not flags you can set. Capabilities are listed below.
-
-.TP
-\fIhardware-mute\fP 
-The soundcard itself is capable of muting the channel.
-Otherwise, kernel midlevel code will set the volume to minimum when an
-application requests muting on this channel.
-
-.TP
-\fIjoin-mute\fP
-Muting this channel can \fBonly\fP be
-toggled for left and right at the same time, \fBnot\fP independently
--- even if you can control the volumes for left and right independently!
-
-.TP
-\fIstereo\fP
-The channel is stereo.
-
-.TP
-\fIrecord\fP
-The channel may be used as a recording source.
-
-.TP
-\fIjoin-record\fP
-Recording from this channel can only be toggled for \fBboth\fP left
-and right at once; they cannot be toggled independently.
-
-.TP
-\fIrecord-by-mute\fP
-This channel can be recorded even if it's muted, so you can avoid
-feeding your record source back to the speakers. 
-
-.TP
-\fIexternal-input\fP
-The channel
-controls a signal from an external input (like Line-In or CD). This
-serves to distinguish external source channels from onboard
-source channels (like OPL-3 synth).
-
-.TP
-\fIdigital\fP
-This channel is fed to an onboard digital mixer for possible hardware
-processing (for instance, surround-sound processing if your card has it).
-
-.PP
-The configuration file also has \fIboolean switches\fP
-which are used to toggle certain card-specific advanced features. For
-example:
-
-    ; Type is 'bool'.
-    switch( "MIC Gain", false )
-
-This shows that my card has a switchable mic gain, and that it's
-currently turned off. To turn it on, just change "false" to "true,"
-save the config file, and run \fBalsactl restore\fP.
-
-
-.SH EXAMPLES
-
-Let's say I have this entry in /etc/asound.conf for my PCM output.
-
-    ; Capabilities: stereo hardware-mute digital.
-    ; Accepted channel range is from 0 to 63.
-    channel( "PCM", stereo( 40 mute, 50 mute ))
-
-When \fBalsactl restore\fP is run, the PCM volume will be set
-to 40 for the left and 50 for the right, but both will be
-muted. Since this card supports \fIhardware-mute\fP, muting will be done by
-hardware rather than by zeroing the levels.
-
 .SH SEE ALSO
 \fB
 amixer(1),
@@ -144,8 +69,5 @@ aplay(1)
 None known.
 
 .SH AUTHOR
-\fBalsactl\fP is by Jaroslav Kysela <perex@suse.cz>
-This document is by Paul Winkler <zarmzarm@erols.com>.
-
-
-
+\fBalsactl\fP is by Jaroslav Kysela <perex@suse.cz> and Abramo Bagnara
+<abramo@alsa-project.org>. This document is by Paul Winkler <zarmzarm@erols.com>.
