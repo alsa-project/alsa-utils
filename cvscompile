@@ -2,7 +2,7 @@
 
 aclocal $ACLOCAL_FLAGS
 autoheader
-automake --foreign --add-missing
+automake --foreign --copy --add-missing
 autoconf
 export CFLAGS='-O2 -Wall -pipe -g'
 echo "CFLAGS=$CFLAGS"
