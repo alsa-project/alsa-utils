@@ -794,7 +794,6 @@ static void set_params(void)
 	if (xrun_mode == SND_PCM_XRUN_FRAGMENT)
 		params.xfer_align = params.frag_size;
 	params.xfer_min = format.rate * xfer_min / 1000;
-	params.xrun_max = 0;
 	if (snd_pcm_params(handle, &params) < 0) {
 		error("unable to set params (where=0x%x, why=0x%x)", params.fail_mask, params.fail_reason);
 		exit(EXIT_FAILURE);
