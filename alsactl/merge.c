@@ -427,7 +427,7 @@ int soundcard_setup_process_switches(int cardno)
 			for (ctlsw = mixer->switches; ctlsw; ctlsw = ctlsw->next)
 				if (ctlsw->change)
 					if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-						if ((err = snd_ctl_mixer_switch_write(ctlhandle, mixer->no, &ctlsw->s)) < 0)
+						if ((err = snd_ctl_switch_write(ctlhandle, &ctlsw->s)) < 0)
 							error("Mixer switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
 					}
 		}
@@ -435,14 +435,14 @@ int soundcard_setup_process_switches(int cardno)
 			for (ctlsw = pcm->pswitches; ctlsw; ctlsw = ctlsw->next) {
 				if (ctlsw->change)
 					if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-						if ((err = snd_ctl_pcm_playback_switch_write(ctlhandle, pcm->no, &ctlsw->s)) < 0)
+						if ((err = snd_ctl_switch_write(ctlhandle, &ctlsw->s)) < 0)
 							error("PCM playback switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
 					}
 			}
 			for (ctlsw = pcm->rswitches; ctlsw; ctlsw = ctlsw->next) {
 				if (ctlsw->change)
 					if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-						if ((err = snd_ctl_pcm_capture_switch_write(ctlhandle, pcm->no, &ctlsw->s)) < 0)
+						if ((err = snd_ctl_switch_write(ctlhandle, &ctlsw->s)) < 0)
 							error("PCM capture switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
 					}
 			}
@@ -451,14 +451,14 @@ int soundcard_setup_process_switches(int cardno)
 			for (ctlsw = rawmidi->oswitches; ctlsw; ctlsw = ctlsw->next) {
 				if (ctlsw->change)
 					if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-						if ((err = snd_ctl_rawmidi_output_switch_write(ctlhandle, rawmidi->no, &ctlsw->s)) < 0)
+						if ((err = snd_ctl_switch_write(ctlhandle, &ctlsw->s)) < 0)
 							error("RAWMIDI output switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
 					}
 			}
 			for (ctlsw = rawmidi->iswitches; ctlsw; ctlsw = ctlsw->next) {
 				if (ctlsw->change)
 					if (!soundcard_open_ctl(&ctlhandle, soundcard)) {
-						if ((err = snd_ctl_rawmidi_output_switch_write(ctlhandle, rawmidi->no, &ctlsw->s)) < 0)
+						if ((err = snd_ctl_switch_write(ctlhandle, &ctlsw->s)) < 0)
 							error("RAWMIDI input switch '%s' write error: %s", ctlsw->s.name, snd_strerror(err));
 					}
 			}

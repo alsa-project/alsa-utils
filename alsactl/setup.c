@@ -205,69 +205,7 @@ void soundcard_setup_done(void)
 	soundcards = NULL;
 }
 
-static int switch_list(void *handle, snd_switch_list_t *list, int interface, int device)
-{
-	switch (interface) {
-	case 0:
-		return snd_ctl_switch_list(handle, list);
-	case 1:
-		return snd_ctl_mixer_switch_list(handle, device, list);
-	case 2:
-		return snd_ctl_pcm_playback_switch_list(handle, device, list);
-	case 3:
-		return snd_ctl_pcm_capture_switch_list(handle, device, list);
-	case 4:
-		return snd_ctl_rawmidi_output_switch_list(handle, device, list);
-	case 5:
-		return snd_ctl_rawmidi_input_switch_list(handle, device, list);
-	default:
-		return -EINVAL;
-	}
-}
-
-static int switch_read(void *handle, snd_switch_t *sw, int interface, int device)
-{
-	switch (interface) {
-	case 0:
-		return snd_ctl_switch_read(handle, sw);
-	case 1:
-		return snd_ctl_mixer_switch_read(handle, device, sw);
-	case 2:
-		return snd_ctl_pcm_playback_switch_read(handle, device, sw);
-	case 3:
-		return snd_ctl_pcm_capture_switch_read(handle, device, sw);
-	case 4:
-		return snd_ctl_rawmidi_output_switch_read(handle, device, sw);
-	case 5:
-		return snd_ctl_rawmidi_input_switch_read(handle, device, sw);
-	default:
-		return -EINVAL;
-	}
-}
-
-#if 0
-static int switch_write(void *handle, snd_switch_t *sw, int interface, int device)
-{
-	switch (interface) {
-	case 0:
-		return snd_ctl_switch_write(handle, sw);
-	case 1:
-		return snd_ctl_mixer_switch_write(handle, device, sw);
-	case 2:
-		return snd_ctl_pcm_playback_switch_write(handle, device, sw);
-	case 3:
-		return snd_ctl_pcm_capture_switch_write(handle, device, sw);
-	case 4:
-		return snd_ctl_rawmidi_output_switch_write(handle, device, sw);
-	case 5:
-		return snd_ctl_rawmidi_input_switch_write(handle, device, sw);
-	default:
-		return -EINVAL;
-	}
-}
-#endif
-
-static int determine_switches(void *handle, struct ctl_switch **csw, int interface, int device)
+static int determine_switches(void *handle, struct ctl_switch **csw, int iface, int device, int channel)
 {
 	int err, idx;
 	snd_switch_list_t list;
@@ -278,8 +216,11 @@ static int determine_switches(void *handle, struct ctl_switch **csw, int interfa
 
 	*csw = NULL;
 	bzero(&list, sizeof(list));
-	if ((err = switch_list(handle, &list, interface, device)) < 0) {
-		error("Cannot determine switches for interface %i and device %i: %s", interface, device, snd_strerror(err));
+	list.iface = iface;
+	list.device = device;
+	list.channel = channel;
+	if ((err = snd_ctl_switch_list(handle, &list)) < 0) {
+		error("Cannot determine switches for interface %i and device %i and channel %i: %s", iface, device, channel, snd_strerror(err));
 		return 1;
 	}
 	if (list.switches_over <= 0)
@@ -291,16 +232,19 @@ static int determine_switches(void *handle, struct ctl_switch **csw, int interfa
 		error("No enough memory...");
 		return 1;
 	}
-	if ((err = switch_list(handle, &list, interface, device)) < 0) {
-		error("Cannot determine switches (2) for interface %i and device %i: %s", interface, device, snd_strerror(err));
+	if ((err = snd_ctl_switch_list(handle, &list)) < 0) {
+		error("Cannot determine switches (2) for interface %i and device %i and channel %i: %s", iface, device, channel, snd_strerror(err));
 		return 1;
 	}
 	for (idx = 0, prev_csw = NULL; idx < list.switches; idx++) {
 		item = &list.pswitches[idx];
 		bzero(&sw, sizeof(sw));
+		sw.iface = iface;
+		sw.device = device;
+		sw.channel = channel;
 		strncpy(sw.name, item->name, sizeof(sw.name));
-		if ((err = switch_read(handle, &sw, interface, device)) < 0) {
-			error("Cannot read switch '%s' for interface %i and device %i: %s", sw.name, interface, device, snd_strerror(err));
+		if ((err = snd_ctl_switch_read(handle, &sw)) < 0) {
+			error("Cannot read switch '%s' for interface %i and device %i and channel %i: %s", sw.name, iface, device, channel, snd_strerror(err));
 			free(list.pswitches);
 			return 1;
 		}
@@ -372,7 +316,7 @@ static int soundcard_setup_collect_switches1(int cardno)
 		return 1;
 	}
 	/* --- */
-	if (determine_switches(handle, &card->control.switches, 0, 0)) {
+	if (determine_switches(handle, &card->control.switches, SND_CTL_IFACE_CONTROL, 0, 0)) {
 		snd_ctl_close(handle);
 		return 1;
 	}
@@ -386,7 +330,7 @@ static int soundcard_setup_collect_switches1(int cardno)
 		}
 		bzero(mixer, sizeof(struct mixer));
 		mixer->no = device;
-		if (determine_switches(handle, &mixer->switches, 1, device)) {
+		if (determine_switches(handle, &mixer->switches, SND_CTL_IFACE_MIXER, device, 0)) {
 			snd_ctl_close(handle);
 			return 1;
 		}
@@ -424,11 +368,11 @@ static int soundcard_setup_collect_switches1(int cardno)
 			error("PCM info error: %s", snd_strerror(err));
 			return 1;
 		}
-		if (determine_switches(handle, &pcm->pswitches, 2, device)) {
+		if (determine_switches(handle, &pcm->pswitches, SND_CTL_IFACE_PCM, device, SND_PCM_CHANNEL_PLAYBACK)) {
 			snd_ctl_close(handle);
 			return 1;
 		}
-		if (determine_switches(handle, &pcm->rswitches, 3, device)) {
+		if (determine_switches(handle, &pcm->rswitches, SND_CTL_IFACE_PCM, device, SND_PCM_CHANNEL_CAPTURE)) {
 			snd_ctl_close(handle);
 			return 1;
 		}
@@ -454,11 +398,11 @@ static int soundcard_setup_collect_switches1(int cardno)
 			error("RAWMIDI info error: %s", snd_strerror(err));
 			return 1;
 		}
-		if (determine_switches(handle, &rawmidi->oswitches, 4, device)) {
+		if (determine_switches(handle, &rawmidi->oswitches, SND_CTL_IFACE_RAWMIDI, device, SND_RAWMIDI_CHANNEL_OUTPUT)) {
 			snd_ctl_close(handle);
 			return 1;
 		}
-		if (determine_switches(handle, &rawmidi->iswitches, 5, device)) {
+		if (determine_switches(handle, &rawmidi->iswitches, SND_CTL_IFACE_RAWMIDI, device, SND_RAWMIDI_CHANNEL_INPUT)) {
 			snd_ctl_close(handle);
 			return 1;
 		}
