@@ -458,15 +458,31 @@ mixer_update_cbar (int group_index)
       vbalance_count = 0;
       if (group.caps & SND_MIXER_GRPCAP_VOLUME)
         {
+          if (group.channels == SND_MIXER_CHN_MASK_MONO) {
+            if (!mixer_volume_delta[SND_MIXER_CHN_FRONT_LEFT])
+              mixer_volume_delta[SND_MIXER_CHN_FRONT_LEFT] = mixer_volume_delta[SND_MIXER_CHN_FRONT_RIGHT];
+          }
           for (grp = 0, grp1 = -1; grp <= SND_MIXER_CHN_WOOFER; grp++)
             {
               if (!(group.channels & (1 << grp)))
                 continue;
               if (grp1 < 0 || !(group.caps & SND_MIXER_GRPCAP_JOINTLY_VOLUME))
                 grp1 = grp;
-              group.volume.values[grp] = CLAMP (group.volume.values[grp] + mixer_volume_delta[grp1], group.min, group.max);
+              if ((i = mixer_volume_delta[grp1]) < 0)
+                i = -i;
+              if (i > 0) {
+                if (i > 100)
+                  i = group.max;
+                else
+                  i = mixer_conv(i, 0, 100, group.min, group.max);
+                if (i <= 0)
+                  i = 1;
+                if (mixer_volume_delta[grp1] < 0)
+                  i = -i;
+              }
+              group.volume.values[grp] = CLAMP (group.volume.values[grp] + i, group.min, group.max);
               vbalance += group.volume.values[grp];
-              vbalance_count++;       
+              vbalance_count++;
             }
           if (mixer_balance_volumes)
   	    {
@@ -505,9 +521,14 @@ mixer_update_cbar (int group_index)
   if (snd_mixer_group_read (mixer_handle, &group) < 0)
     CHECK_ABORT (ERR_FCN, "snd_mixer_group_read()");
   vleft = group.volume.names.front_left;
-  vright = group.volume.names.front_right;
   vleft1 = mixer_conv(vleft, group.min, group.max, 0, 100);
-  vright1 = mixer_conv(vright, group.min, group.max, 0, 100);
+  if (group.channels != SND_MIXER_CHN_MASK_MONO) {
+    vright = group.volume.names.front_right;
+    vright1 = mixer_conv(vright, group.min, group.max, 0, 100);
+  } else {
+    vright = vleft;
+    vright1 = vleft1;
+  }
   
   /* get channel bar position
    */
@@ -539,13 +560,13 @@ mixer_update_cbar (int group_index)
   mixer_dc (DC_BACK);
   mvaddstr (y, x, "         ");
   mixer_dc (DC_TEXT);
-  sprintf (string, "%d", vleft);
+  sprintf (string, "%d", vleft1);
   mvaddstr (y, x + 3 - strlen (string), string);
   mixer_dc (DC_CBAR_FRAME);
   mvaddch (y, x + 3, '<');
   mvaddch (y, x + 4, '>');
   mixer_dc (DC_TEXT);
-  sprintf (string, "%d", vright);
+  sprintf (string, "%d", vright1);
   mvaddstr (y, x + 5, string);
   y--;
   
@@ -1092,7 +1113,13 @@ static void
 mixer_reinit (void)
 {
   snd_mixer_groups_t groups;
+  int focus_loaded = 0, idx;
+  snd_mixer_gid_t focus_gid;
   
+  if (mixer_gid) {
+    focus_gid = mixer_gid[mixer_focus_group];
+    focus_loaded = 1;
+  }
   while (1) {
     bzero(&groups, sizeof(groups));
     if (snd_mixer_groups(mixer_handle, &groups) < 0)
@@ -1116,6 +1143,15 @@ mixer_reinit (void)
       free(mixer_gid);
     mixer_gid = groups.pgroups;
     break;
+  }
+  mixer_focus_group = 0;
+  if (focus_loaded) {    
+    for (idx = 0; idx < mixer_n_groups; idx++) {
+      if (!memcmp(&focus_gid, &mixer_gid[idx], sizeof(focus_gid))) {
+        mixer_focus_group = idx;
+        break;
+      }
+    }
   }
 }
 
@@ -1398,18 +1434,18 @@ mixer_iteration (void)
 	mixer_focus_group -= 1;
 	break;
       case KEY_PPAGE:
-        mixer_set_delta(8);
+        mixer_set_delta(5);
 	break;
       case KEY_NPAGE:
-        mixer_set_delta(-8);
+        mixer_set_delta(-5);
 	break;
       case KEY_BEG:
       case KEY_HOME:
-        mixer_set_delta(2048);
+        mixer_set_delta(100);
 	break;
       case KEY_LL:
       case KEY_END:
-        mixer_set_delta(-2048);
+        mixer_set_delta(-100);
 	break;
       case '+':
         mixer_set_delta(1);
