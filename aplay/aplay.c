@@ -632,7 +632,7 @@ static void setup_print(snd_pcm_channel_setup_t *setup)
 	fprintf(stderr, "frag_size: %d\n", setup->frag_size);
 	fprintf(stderr, "frags: %d\n", setup->frags);
 	fprintf(stderr, "frag_boundary: %d\n", setup->frag_boundary);
-	fprintf(stderr, "pos_boundary: %d\n", setup->byte_boundary);
+	fprintf(stderr, "byte_boundary: %d\n", setup->byte_boundary);
 	fprintf(stderr, "msbits_per_sample: %d\n", setup->msbits_per_sample);
 	if (setup->mode == SND_PCM_MODE_STREAM) {
 		fprintf(stderr, "bytes_min: %d\n", setup->buf.stream.bytes_min);
