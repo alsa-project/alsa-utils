@@ -654,7 +654,7 @@ static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
 		hwparams.format = SND_PCM_FORMAT_S16_LE;
 		break;
 	case 24:
-		switch (LE_SHORT(f->byte_p_spl)) {
+		switch (LE_SHORT(f->byte_p_spl) / hwparams.channels) {
 		case 3:
 			hwparams.format = SND_PCM_FORMAT_S24_3LE;
 			break;
@@ -662,9 +662,10 @@ static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
 			hwparams.format = SND_PCM_FORMAT_S24_LE;
 			break;
 		default:
-			error(" can't play WAVE-files with sample %d bits in %d bytes wide", LE_SHORT(f->bit_p_spl), LE_SHORT(f->byte_p_spl));
-			break;
+			error(" can't play WAVE-files with sample %d bits in %d bytes wide (%d channels)", LE_SHORT(f->bit_p_spl), LE_SHORT(f->byte_p_spl), hwparams.channels);
+			exit(EXIT_FAILURE);
 		}
+		break;
 	case 32:
 		hwparams.format = SND_PCM_FORMAT_S32_LE;
 		break;
