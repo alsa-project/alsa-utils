@@ -49,8 +49,10 @@ struct mixer_types {
 struct mixer_types mixer_types[] = {
 	{ SND_MIXER_ETYPE_INPUT, 	"Input" },
 	{ SND_MIXER_ETYPE_OUTPUT,	"Output" },
-	{ SND_MIXER_ETYPE_CAPTURE,	"Capture" },
-	{ SND_MIXER_ETYPE_PLAYBACK,	"Playback" },
+	{ SND_MIXER_ETYPE_CAPTURE1,	"Capture Channel" },
+	{ SND_MIXER_ETYPE_CAPTURE2,	"Capture Subchannel" },
+	{ SND_MIXER_ETYPE_PLAYBACK1,	"Playback Channel" },
+	{ SND_MIXER_ETYPE_PLAYBACK2,	"Playback Subchannel" },
 	{ SND_MIXER_ETYPE_ADC,		"ADC" },
 	{ SND_MIXER_ETYPE_DAC,		"DAC" },
 	{ SND_MIXER_ETYPE_SWITCH1,	"Switch1" },
@@ -508,14 +510,21 @@ int show_element_info(void *handle, snd_mixer_eid_t *eid, const char *space)
 			}
 		}
 		break;
-	case SND_MIXER_ETYPE_CAPTURE:
-	case SND_MIXER_ETYPE_PLAYBACK:
-		for (idx = 0; idx < info.data.pcm.devices; idx++) {
-			printf("%sPCM device %i %i\n",
+	case SND_MIXER_ETYPE_CAPTURE1:
+	case SND_MIXER_ETYPE_PLAYBACK1:
+		for (idx = 0; idx < info.data.pcm1.devices; idx++) {
+			printf("%sPCM device %i: %i\n",
 					space,
 					idx,
-					info.data.pcm.pdevices[idx]);
+					info.data.pcm1.pdevices[idx]);
 		}
+		break;
+	case SND_MIXER_ETYPE_CAPTURE2:
+	case SND_MIXER_ETYPE_PLAYBACK2:
+		printf("%sPCM subdevice %i %i\n",
+		       space,
+		       info.data.pcm2.device,
+		       info.data.pcm2.subdevice);
 		break;
 	case SND_MIXER_ETYPE_ADC:
 	case SND_MIXER_ETYPE_DAC:
