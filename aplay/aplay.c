@@ -83,6 +83,8 @@ static char *audiobuf = NULL;
 static snd_pcm_uframes_t chunk_size = 0;
 static unsigned period_time = 0;
 static unsigned buffer_time = 0;
+static snd_pcm_uframes_t period_frames = 0;
+static snd_pcm_uframes_t buffer_frames = 0;
 static int avail_min = -1;
 static int start_delay = 0;
 static int stop_delay = 0;
@@ -142,8 +144,8 @@ static void usage(char *command)
 	fprintf(stderr,
 "Usage: %s [OPTION]... [FILE]...\n"
 "\n"
-"--help                  help\n"
-"--version               print current version\n"
+"-h, --help              help\n"
+"    --version           print current version\n"
 "-l, --list-devices      list all soundcards and digital audio devices\n"
 "-L, --list-pcms         list all PCMs defined\n"
 "-D, --device=NAME       select PCM by name\n"
@@ -158,6 +160,8 @@ static void usage(char *command)
 "-N, --nonblock          nonblocking mode\n"
 "-F, --period-time=#     distance between interrupts is # microseconds\n"
 "-B, --buffer-time=#     buffer duration is # microseconds\n"
+"    --period-size=#     distance between interrupts is # frames\n"
+"    --buffer-size=#     buffer duration is # frames\n"
 "-A, --avail-min=#       min available space for wakeup is # microseconds\n"
 "-R, --start-delay=#     delay for automatic PCM start is # microseconds \n"
 "                        (relative to buffer size if <= 0)\n"
@@ -287,15 +291,18 @@ static void signal_handler(int sig)
 	exit(EXIT_FAILURE);
 }
 
-#define OPT_HELP 1
-#define OPT_VERSION 2
+enum {
+	OPT_VERSION = 1,
+	OPT_PERIOD_SIZE,
+	OPT_BUFFER_SIZE
+};
 
 int main(int argc, char *argv[])
 {
 	int option_index;
-	char *short_options = "lLD:qt:c:f:r:d:s:MNF:A:X:R:T:B:vIPC";
+	char *short_options = "hlLD:qt:c:f:r:d:s:MNF:A:X:R:T:B:vIPC";
 	static struct option long_options[] = {
-		{"help", 0, 0, OPT_HELP},
+		{"help", 0, 0, 'h'},
 		{"version", 0, 0, OPT_VERSION},
 		{"list-devices", 0, 0, 'l'},
 		{"list-pcms", 0, 0, 'L'},
@@ -310,10 +317,12 @@ int main(int argc, char *argv[])
 		{"mmap", 0, 0, 'M'},
 		{"nonblock", 0, 0, 'N'},
 		{"period-time", 1, 0, 'F'},
+		{"period-size", 1, 0, OPT_PERIOD_SIZE},
 		{"avail-min", 1, 0, 'A'},
 		{"start-delay", 1, 0, 'R'},
 		{"stop-delay", 1, 0, 'T'},
 		{"buffer-time", 1, 0, 'B'},
+		{"buffer-size", 1, 0, OPT_BUFFER_SIZE},
 		{"verbose", 0, 0, 'v'},
 		{"separate-channels", 0, 0, 'I'},
 		{"playback", 0, 0, 'P'},
@@ -350,7 +359,7 @@ int main(int argc, char *argv[])
 
 	while ((c = getopt_long(argc, argv, short_options, long_options, &option_index)) != -1) {
 		switch (c) {
-		case OPT_HELP:
+		case 'h':
 			usage(command);
 			return 0;
 		case OPT_VERSION:
@@ -434,6 +443,12 @@ int main(int argc, char *argv[])
 			break;
 		case 'B':
 			buffer_time = atoi(optarg);
+			break;
+		case OPT_PERIOD_SIZE:
+			period_frames = atoi(optarg);
+			break;
+		case OPT_BUFFER_SIZE:
+			buffer_frames = atoi(optarg);
 			break;
 		case 'A':
 			avail_min = atoi(optarg);
@@ -829,15 +844,28 @@ static void set_params(void)
 		}
 	}
 	rate = hwparams.rate;
-	if (buffer_time == 0)
-		buffer_time = 500000;
-	err = snd_pcm_hw_params_set_buffer_time_near(handle, params,
-						     &buffer_time, 0);
+	if (buffer_time == 0 && buffer_frames > 0) {
+		err = snd_pcm_hw_params_set_buffer_size_near(handle, params,
+							     &buffer_frames);
+	} else {
+		if (buffer_time == 0)
+			buffer_time = 500000;
+		err = snd_pcm_hw_params_set_buffer_time_near(handle, params,
+							     &buffer_time, 0);
+	}
 	assert(err >= 0);
-	if (period_time == 0)
-		period_time = buffer_time / 4;
-	err = snd_pcm_hw_params_set_period_time_near(handle, params,
-						     &period_time, 0);
+	if (period_time == 0 && period_frames == 0) {
+		if (buffer_time > 0)
+			period_time = buffer_time / 4;
+		else
+			period_frames = buffer_frames / 4;
+	}
+	if (period_time > 0)
+		err = snd_pcm_hw_params_set_period_time_near(handle, params,
+							     &period_time, 0);
+	else
+		err = snd_pcm_hw_params_set_period_size_near(handle, params,
+							     &period_frames, 0);
 	assert(err >= 0);
 	err = snd_pcm_hw_params(handle, params);
 	if (err < 0) {
@@ -1006,6 +1034,7 @@ static void compute_max_peak(u_char *data, size_t count)
 		default: val = 0; step = 1; break;
 		}
 		data += step;
+		val = abs(val);
 		if (max_peak < val)
 			max_peak = val;
 	}
@@ -1013,7 +1042,10 @@ static void compute_max_peak(u_char *data, size_t count)
 	if (max <= 0)
 		max = 0x7fffffff;
 	printf("Max peak (%li samples): %05i (0x%04x) ", (long)ocount, max_peak, max_peak);
-	perc = max_peak / (max / 100);
+	if (bits_per_sample > 16)
+		perc = max_peak / (max / 100);
+	else
+		perc = max_peak * 100 / max;
 	for (val = 0; val < 20; val++)
 		if (val <= perc / 5)
 			putc('#', stdout);

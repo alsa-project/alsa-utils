@@ -25,7 +25,7 @@ If filename is not specified, the standard output or input is used. The \fBaplay
 
 .SS Options
 .TP
-\fI--help\fP
+\fI-h, --help\fP
 Help: show syntax.
 .TP
 \fI--version\fP
@@ -86,6 +86,12 @@ Distance between interrupts is # microseconds
 \fI-B, --buffer-time=#\fP     
 Buffer duration is # microseconds
 .TP
+\fI--period-size=#\fP     
+Distance between interrupts is # frames
+.TP
+\fI--buffer-size=#\fP     
+Buffer duration is # frames
+.TP
 \fI-A, --avail-min=#\fP       
 Min available space for wakeup is # microseconds
 .TP
@@ -97,14 +103,15 @@ Delay for automatic PCM start is # microseconds
 Delay for automatic PCM stop is # microseconds from xrun
 .TP
 \fI-v, --verbose\fP           
-Show PCM structure and setup
+Show PCM structure and setup.
+This option is accumulative.  The VU meter is displayed when this
+is given twice.
 .TP
 \fI-I, --separate-channels\fP 
 One file for each channel
-.TP
 
 .SS
-Example: 
+Example:
 
 .RS
 \fBaplay -c 1 -t raw -r 22050 -f mu_law foobar\fR
