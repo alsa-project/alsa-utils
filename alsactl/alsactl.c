@@ -309,22 +309,30 @@ static int get_control(snd_ctl_t *handle, snd_control_id_t *id, snd_config_t *to
 		}
 	}
 
-	if (info.type == SND_CONTROL_TYPE_BYTES) {
-		char buf[info.values_count * 2 + 1];
-		char *p = buf;
-		char *hex = "0123456789abcdef";
-		for (idx = 0; idx < info.values_count; idx++) {
-			int v = ctl.value.bytes.data[idx];
-			*p++ = hex[v >> 4];
-			*p++ = hex[v & 0x0f];
+	switch (info.type) {
+	case SND_CONTROL_TYPE_BYTES:
+		{
+			char buf[info.values_count * 2 + 1];
+			char *p = buf;
+			char *hex = "0123456789abcdef";
+			for (idx = 0; idx < info.values_count; idx++) {
+				int v = ctl.value.bytes.data[idx];
+				*p++ = hex[v >> 4];
+				*p++ = hex[v & 0x0f];
+			}
+			*p = '\0';
+			err = snd_config_string_add(control, "value", buf);
+			if (err < 0) {
+				error("snd_config_string_add: %s", snd_strerror(err));
+				return err;
+			}
+			return 0;
 		}
-		*p = '\0';
-		err = snd_config_string_add(control, "value", buf);
-		if (err < 0) {
-			error("snd_config_string_add: %s", snd_strerror(err));
-			return err;
-		}
+	case SND_CONTROL_TYPE_IEC958:
+		error("An IEC958 control ignored");
 		return 0;
+	default:
+		break;
 	}
 
 	if (info.values_count == 1) {
@@ -823,7 +831,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 				error("bad control.%d.value.%d content", numid, idx);
 				return -EINVAL;
 			}
-			ctl.value.integer.value[idx] = val;
+			ctl.value.bytes.data[idx] = val;
 			break;
 		default:
 			break;

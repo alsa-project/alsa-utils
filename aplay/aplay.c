@@ -86,7 +86,6 @@ static int verbose = 0;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t buffer_bytes;
-int digital = SND_PCM_DIG_NONE;
 
 static int count;
 static int vocmajor, vocminor;
@@ -404,10 +403,10 @@ int main(int argc, char *argv[])
 			interleaved = 0;
 			break;
 		case 'C':
-			digital = SND_PCM_DIG_AES_IEC958C;
+			// digital = SND_PCM_DIG_AES_IEC958C;
 			break;
 		case 'P':
-			digital = SND_PCM_DIG_AES_IEC958P;
+			// digital = SND_PCM_DIG_AES_IEC958P;
 			break;
 		default:
 			fprintf(stderr, "Try `%s --help' for more information.\n", command);
@@ -421,6 +420,9 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+#if 1
+#warning "The S/PDIF code needs to be recoded.."
+#else
 	if (digital != SND_PCM_DIG_NONE) {
 		snd_pcm_dig_params_t dig;
 		memset(&dig, 0, sizeof(dig));
@@ -443,6 +445,7 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 	}
+#endif
 
 	if (nonblock) {
 		err = snd_pcm_nonblock(handle, 1);
