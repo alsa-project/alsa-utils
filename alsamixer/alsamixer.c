@@ -1458,6 +1458,30 @@ mixer_init (void)
   strcpy(mixer_device_name, snd_ctl_card_info_get_mixername(hw_info));
 }
 
+/* init mixer screen
+ */
+static void
+recalc_screen_size (void)
+{
+  getmaxyx (mixer_window, mixer_max_y, mixer_max_x);
+  if (mixer_minimize)
+    {
+      mixer_max_x = MIXER_MIN_X;
+      mixer_max_y = MIXER_MIN_Y;
+    }
+  mixer_ofs_x = 2 /* extra begin padding: */ + 1;
+
+  /* required allocations */
+  mixer_n_vis_elems = (mixer_max_x - mixer_ofs_x * 2 + 1) / 9;
+  mixer_n_vis_elems = CLAMP (mixer_n_vis_elems, 1, mixer_n_view_elems);
+  mixer_extra_space = mixer_max_x - mixer_ofs_x * 2 + 1 - mixer_n_vis_elems * 9;
+  mixer_extra_space = MAX (0, mixer_extra_space / (mixer_n_vis_elems + 1));
+  if (MIXER_TEXT_Y + 10 < mixer_max_y)
+    mixer_cbar_height = 10 + MAX (0, mixer_max_y - MIXER_TEXT_Y - 10 ) / 2;
+  else
+    mixer_cbar_height = MAX (1, mixer_max_y - MIXER_TEXT_Y);
+}
+
 static void
 mixer_reinit (void)
 {
@@ -1588,6 +1612,7 @@ __again:
   }
 
   mixer_n_view_elems = elem_index;
+  recalc_screen_size();
   mixer_focus_elem = 0;
   if (focus_type >= 0) {
     for (elem_index = 0; elem_index < mixer_n_view_elems; elem_index++) {
@@ -1630,25 +1655,7 @@ mixer_init_window (void)
   keypad (mixer_window, TRUE);
   GETCH_BLOCK (1);
 
-  /* init mixer screen
-   */
-  getmaxyx (mixer_window, mixer_max_y, mixer_max_x);
-  if (mixer_minimize)
-    {
-      mixer_max_x = MIXER_MIN_X;
-      mixer_max_y = MIXER_MIN_Y;
-    }
-  mixer_ofs_x = 2 /* extra begin padding: */ + 1;
-
-  /* required allocations */
-  mixer_n_vis_elems = (mixer_max_x - mixer_ofs_x * 2 + 1) / 9;
-  mixer_n_vis_elems = CLAMP (mixer_n_vis_elems, 1, mixer_n_view_elems);
-  mixer_extra_space = mixer_max_x - mixer_ofs_x * 2 + 1 - mixer_n_vis_elems * 9;
-  mixer_extra_space = MAX (0, mixer_extra_space / (mixer_n_vis_elems + 1));
-  if (MIXER_TEXT_Y + 10 < mixer_max_y)
-    mixer_cbar_height = 10 + MAX (0, mixer_max_y - MIXER_TEXT_Y - 10 ) / 2;
-  else
-    mixer_cbar_height = MAX (1, mixer_max_y - MIXER_TEXT_Y);
+  recalc_screen_size();
 
   mixer_clear (TRUE);
 }
