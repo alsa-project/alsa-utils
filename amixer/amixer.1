@@ -35,7 +35,7 @@ Shows a complete list of simple mixer controls with their contents.
 \fIset\fP or \fIsset\fP <\fISCONTROL\fP> <\fIPARAMETER\fP> ...
 Sets the simple mixer control contents. The parameter can be the volume
 either as a percentage from 0% to 100% or an exact hardware value.
-The parameters \fIcapture, nocapture, mute, unmute, toggle\fP are used to
+The parameters \fIcap, nocap, mute, unmute, toggle\fP are used to
 change capture (recording) and muting for the group specified.
 The parameters \fIfront, rear, center, woofer\fP are used to specify
 channels to be changed. When plus(+) or minus(-) letter is appended after
@@ -95,7 +95,7 @@ Quiet mode. Do not show results of changes.
 Example #1:
 
 .RS
-\fBamixer -c 1 sset Line,0 80%,40% unmute capture\fR
+\fBamixer -c 1 sset Line,0 80%,40% unmute cap\fR
 
 .ID
 will set the second soundcard's left line input volume to 80% and
