@@ -85,8 +85,6 @@ static int verbose = 0;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t chunk_bytes;
-static snd_ctl_elem_type_t digtype = SND_CTL_ELEM_TYPE_NONE;
-static snd_aes_iec958_t spdif;
 static snd_output_t *log;
 
 static int count;
@@ -158,8 +156,6 @@ Usage: %s [OPTION]... [FILE]...
 -T, --stop-delay=#      delay for automatic PCM stop is # microseconds from xrun
 -v, --verbose           show PCM structure and setup
 -I, --separate-channels one file for each channel
--P, --iec958p           AES IEC958 professional
--C, --iec958c           AES IEC958 consumer
 ", command);
 	fprintf(stderr, "Recognized sample formats are:");
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++(unsigned long) k) {
@@ -290,8 +286,6 @@ int main(int argc, char *argv[])
 		{"stop-delay", 1, 0, 'T'},
 		{"buffer-time", 1, 0, 'B'},
 		{"verbose", 0, 0, 'v'},
-		{"iec958c", 0, 0, 'C'},
-		{"iec958p", 0, 0, 'P'},
 		{"separate-channels", 0, 0, 'I'},
 		{0, 0, 0, 0}
 	};
@@ -320,7 +314,6 @@ int main(int argc, char *argv[])
 	rhwparams.format = SND_PCM_FORMAT_U8;
 	rhwparams.rate = DEFAULT_SPEED;
 	rhwparams.channels = 1;
-	memset(&spdif, 0, sizeof(spdif));
 
 	while ((c = getopt_long(argc, argv, short_options, long_options, &option_index)) != -1) {
 		switch (c) {
@@ -424,26 +417,6 @@ int main(int argc, char *argv[])
 		case 'I':
 			interleaved = 0;
 			break;
-		case 'C':
-			digtype = SND_CTL_ELEM_TYPE_IEC958;
-			spdif.status[0] = IEC958_AES0_NONAUDIO |
-					     IEC958_AES0_CON_EMPHASIS_NONE;
-			spdif.status[1] = IEC958_AES1_CON_ORIGINAL |
-					     IEC958_AES1_CON_PCM_CODER;
-			spdif.status[2] = 0;
-			spdif.status[3] = IEC958_AES3_CON_FS_48000;
-			break;
-		case 'P':
-			digtype = SND_CTL_ELEM_TYPE_IEC958;
-			spdif.status[0] = IEC958_AES0_PROFESSIONAL |
-					     IEC958_AES0_NONAUDIO |
-					     IEC958_AES0_PRO_EMPHASIS_NONE |
-					     IEC958_AES0_PRO_FS_48000;
-			spdif.status[1] = IEC958_AES1_PRO_MODE_NOTID |
-					     IEC958_AES1_PRO_USERBITS_NOTID;
-			spdif.status[2] = IEC958_AES2_PRO_WORDLEN_NOTID;
-			spdif.status[3] = 0;
-			break;
 		default:
 			fprintf(stderr, "Try `%s --help' for more information.\n", command);
 			return 1;
@@ -460,35 +433,6 @@ int main(int argc, char *argv[])
 	if ((err = snd_pcm_info(handle, info)) < 0) {
 		error("info error: %s", snd_strerror(err));
 		return 1;
-	}
-
-	if (digtype != SND_CTL_ELEM_TYPE_NONE) {
-		snd_ctl_elem_value_t *ctl;
-		snd_ctl_t *ctl_handle;
-		char ctl_name[12];
-		int ctl_card;
-		snd_ctl_elem_value_alloca(&ctl);
-		snd_ctl_elem_value_set_interface(ctl, SND_CTL_ELEM_IFACE_PCM);
-		snd_ctl_elem_value_set_device(ctl, snd_pcm_info_get_device(info));
-		snd_ctl_elem_value_set_subdevice(ctl, snd_pcm_info_get_subdevice(info));
-		snd_ctl_elem_value_set_name(ctl, SND_CTL_NAME_IEC958("",PLAYBACK,PCM_STREAM));
-		snd_ctl_elem_value_set_iec958(ctl, &spdif);
-		ctl_card = snd_pcm_info_get_card(info);
-		if (ctl_card < 0) {
-			error("Unable to setup the IEC958 (S/PDIF) interface - PCM has no assigned card");
-			goto __diga_end;
-		}
-		sprintf(ctl_name, "hw:%d", ctl_card);
-		if ((err = snd_ctl_open(&ctl_handle, ctl_name, 0)) < 0) {
-			error("Unable to open the control interface '%s': %s", ctl_name, snd_strerror(err));
-			goto __diga_end;
-		}
-		if ((err = snd_ctl_elem_write(ctl_handle, ctl)) < 0) {
-			error("Unable to update the IEC958 control: %s", snd_strerror(err));
-			goto __diga_end;
-		}
-		snd_ctl_close(ctl_handle);
-	      __diga_end:
 	}
 
 	if (nonblock) {
