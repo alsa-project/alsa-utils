@@ -618,6 +618,7 @@ mixer_update_cbar (int elem_index)
   int type;
   snd_mixer_selem_id_t *sid;
   snd_mixer_selem_channel_id_t chn_left, chn_right;
+  snd_mixer_selem_channel_id_t cchn_right;
   int x, y, i;
   int swl, swr;
 
@@ -635,10 +636,13 @@ mixer_update_cbar (int elem_index)
   chn_left = mixer_elem_chn[type][MIXER_CHN_LEFT];
   if (!snd_mixer_selem_has_playback_channel(elem, chn_left))
     return; /* ..??.. */
-  chn_right = mixer_elem_chn[type][MIXER_CHN_RIGHT];
-  if (chn_right != SND_MIXER_SCHN_UNKNOWN && 
-      !snd_mixer_selem_has_playback_channel(elem, chn_right))
-    chn_right = SND_MIXER_SCHN_UNKNOWN;
+  cchn_right = chn_right = mixer_elem_chn[type][MIXER_CHN_RIGHT];
+  if (chn_right != SND_MIXER_SCHN_UNKNOWN) {
+    if (!snd_mixer_selem_has_playback_channel(elem, chn_right))
+      chn_right = SND_MIXER_SCHN_UNKNOWN;
+    if (!snd_mixer_selem_has_capture_channel(elem, chn_right))
+      cchn_right = SND_MIXER_SCHN_UNKNOWN;
+  }
 
   if (snd_mixer_selem_has_playback_volume(elem)) {
     snd_mixer_selem_get_playback_volume(elem, chn_left, &vleft);
@@ -766,17 +770,17 @@ mixer_update_cbar (int elem_index)
    */
   if (snd_mixer_selem_has_capture_switch(elem)) {
     snd_mixer_selem_get_capture_switch(elem, chn_left, &swl);
-    if (chn_right != SND_MIXER_SCHN_UNKNOWN)
-      snd_mixer_selem_get_capture_switch(elem, chn_right, &swr);
-    if (swl || (chn_right != SND_MIXER_SCHN_UNKNOWN && swr)) {
+    if (cchn_right != SND_MIXER_SCHN_UNKNOWN)
+      snd_mixer_selem_get_capture_switch(elem, cchn_right, &swr);
+    if (swl || (cchn_right != SND_MIXER_SCHN_UNKNOWN && swr)) {
       mixer_dc (DC_CBAR_CAPTURE);
       mvaddstr (y, x + 1, "CAPTUR");
       if (swl) {
 	mvaddstr (y + 1, x + 1, "L");
-	if (chn_right == SND_MIXER_SCHN_UNKNOWN)
+	if (cchn_right == SND_MIXER_SCHN_UNKNOWN)
 	  mvaddstr (y + 1, x + 6, "R");
       }
-      if (chn_right != SND_MIXER_SCHN_UNKNOWN && swr)
+      if (cchn_right != SND_MIXER_SCHN_UNKNOWN && swr)
 	mvaddstr (y + 1, x + 6, "R");
     } else {
       for (i = 0; i < 6; i++)
