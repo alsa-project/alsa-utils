@@ -167,6 +167,8 @@
 /* --- views --- */
 enum {
   VIEW_CHANNELS,
+  VIEW_PLAYBACK,
+  VIEW_CAPTURE,
   VIEW_HELP,
   VIEW_PROCINFO
 };
@@ -177,7 +179,7 @@ static WINDOW	*mixer_window = NULL;
 static int	 mixer_needs_resize = 0;
 static int	 mixer_minimize = 0;
 static int	 mixer_no_lrcorner = 0;
-static int	 mixer_view = VIEW_CHANNELS;
+static int	 mixer_view = VIEW_PLAYBACK;
 static int	 mixer_max_x = 0;
 static int	 mixer_max_y = 0;
 static int	 mixer_ofs_x = 0;
@@ -227,6 +229,7 @@ static int       mixer_changed_state = 1;
 
 /* split scontrols */
 static int	 mixer_n_elems = 0;
+static int	 mixer_n_view_elems = 0;
 static int	 mixer_n_vis_elems = 0;
 static int	 mixer_first_vis_elem = 0;
 static int	 mixer_focus_elem = 0;
@@ -254,6 +257,8 @@ static char     *mixer_help_text =
  " Esc     exit alsamixer\n"
  " F1      show Help screen\n"
  " F2      show /proc info screen\n"
+ " F3      show Playback controls only\n"
+ " F4      show Capture controls only\n"
  " Return  return to main screen\n"
  " Space   toggle Capture facility\n"
  " Tab     toggle ExactMode\n"
@@ -545,7 +550,7 @@ mixer_write_cbar (int elem_index)
 
   if (mixer_sid == NULL)
     return;
-  
+
   sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * mixer_grpidx[elem_index]);
   elem = snd_mixer_find_selem(mixer_handle, sid);
   if (elem == NULL)
@@ -758,7 +763,7 @@ mixer_update_cbar (int elem_index)
       vright = vleft;
     }
   }
-  
+
   if (type == MIXER_ELEM_CAPTURE && snd_mixer_selem_has_capture_volume(elem)) {
     long vmin, vmax;
     snd_mixer_selem_get_capture_volume_range(elem, &vmin, &vmax);
@@ -779,7 +784,21 @@ mixer_update_cbar (int elem_index)
     if (xlen > 63)
       xlen = 63;
     mixer_dc (DC_PROMPT);
-    mvaddstr (3, 2, "Item: ");
+    mvaddstr (3, 2, "View: ");
+    mixer_dc (DC_TEXT);
+    switch (mixer_view) {
+    case VIEW_PLAYBACK:
+      mvaddstr (3, 8, "Playback");
+      break;
+    case VIEW_CAPTURE:
+      mvaddstr (3, 8, "Capture");
+      break;
+    default:
+      mvaddstr (3, 8, "All");
+      break;
+    }
+    mixer_dc (DC_PROMPT);
+    mvaddstr (4, 2, "Item: ");
     mixer_dc (DC_TEXT);
     string1[8] = 0;
     for (i = 0; i < 63; i++)
@@ -952,7 +971,6 @@ mixer_update_cbars (void)
   static int o_y = 0;
   int i, x, y;
   
-  
   if (!mixer_cbar_get_pos (mixer_focus_elem, &x, &y))
     {
       if (mixer_focus_elem < mixer_first_vis_elem)
@@ -961,15 +979,15 @@ mixer_update_cbars (void)
 	mixer_first_vis_elem = mixer_focus_elem - mixer_n_vis_elems + 1;
       mixer_cbar_get_pos (mixer_focus_elem, &x, &y);
     }
-  if (mixer_first_vis_elem + mixer_n_vis_elems >= mixer_n_elems) {
-     mixer_first_vis_elem = mixer_n_elems - mixer_n_vis_elems;
+  if (mixer_first_vis_elem + mixer_n_vis_elems >= mixer_n_view_elems) {
+     mixer_first_vis_elem = mixer_n_view_elems - mixer_n_vis_elems;
      if (mixer_first_vis_elem < 0)
        mixer_first_vis_elem = 0;
      mixer_cbar_get_pos (mixer_focus_elem, &x, &y);
   }
   mixer_write_cbar(mixer_focus_elem);
   for (i = 0; i < mixer_n_vis_elems; i++) {
-    if (i + mixer_first_vis_elem >= mixer_n_elems)
+    if (i + mixer_first_vis_elem >= mixer_n_view_elems)
       continue;
     mixer_update_cbar (i + mixer_first_vis_elem);
   }
@@ -1521,53 +1539,57 @@ __again:
     elem = snd_mixer_find_selem(mixer_handle, sid);
     if (elem == NULL)
       CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
-    for (i = 0; i < MIXER_ELEM_CAPTURE; i++) {
-      int ok;
-      for (j = ok = 0; j < 2; j++) {
-	if (mixer_changed_state)
-	  goto __again;
-	if (snd_mixer_selem_has_playback_channel(elem, mixer_elem_chn[i][j]))
-	  ok++;
+    if ( (mixer_view == VIEW_PLAYBACK) || (mixer_view == VIEW_CHANNELS) ) {
+      for (i = 0; i < MIXER_ELEM_CAPTURE; i++) {
+        int ok;
+        for (j = ok = 0; j < 2; j++) {
+	  if (mixer_changed_state)
+	    goto __again;
+ 	  if (snd_mixer_selem_has_playback_channel(elem, mixer_elem_chn[i][j]))
+	    ok++;
+        }
+        if (ok) {
+	  sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * idx);
+	  mixer_grpidx[elem_index] = idx;
+	  if (snd_mixer_selem_is_enumerated(elem)) {
+	    mixer_type[elem_index] = MIXER_ELEM_ENUM;
+	  } else {
+	    mixer_type[elem_index] = i;
+	    if (i == 0 && snd_mixer_selem_has_playback_switch(elem))
+	      mixer_type[elem_index] |= MIXER_ELEM_MUTE_SWITCH;
+	    if (snd_mixer_selem_has_playback_volume(elem))
+	      mixer_type[elem_index] |= MIXER_ELEM_HAS_VOLUME;
+	  }
+	  elem_index++;
+	  nelems_added++;
+	  if (elem_index >= mixer_n_elems)
+	    break;
+        }
       }
-      if (ok) {
-	sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * idx);
-	mixer_grpidx[elem_index] = idx;
-	if (snd_mixer_selem_is_enumerated(elem)) {
-	  mixer_type[elem_index] = MIXER_ELEM_ENUM;
-	} else {
-	  mixer_type[elem_index] = i;
-	  if (i == 0 && snd_mixer_selem_has_playback_switch(elem))
-	    mixer_type[elem_index] |= MIXER_ELEM_MUTE_SWITCH;
-	  if (snd_mixer_selem_has_playback_volume(elem))
-	    mixer_type[elem_index] |= MIXER_ELEM_HAS_VOLUME;
-	  if (i == 0 && snd_mixer_selem_has_capture_switch(elem))
-	    mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SWITCH;
-	}
-	elem_index++;
-	nelems_added++;
-	if (elem_index >= mixer_n_elems)
+    }
+
+    if ( (mixer_view == VIEW_CAPTURE) || (mixer_view == VIEW_CHANNELS) ) {
+      if (snd_mixer_selem_has_capture_volume(elem) ||
+	  (nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem))) {
+        mixer_grpidx[elem_index] = idx;
+        mixer_type[elem_index] = MIXER_ELEM_CAPTURE;
+        if (nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem))
+	  mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SWITCH;
+        if (nelems_added)
+	  mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SUFFIX;
+        if (snd_mixer_selem_has_capture_volume(elem))
+	  mixer_type[elem_index] |= MIXER_ELEM_HAS_VOLUME;
+        elem_index++;
+        if (elem_index >= mixer_n_elems)
 	  break;
       }
     }
-    if (snd_mixer_selem_has_capture_volume(elem) ||
-	(nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem))) {
-      mixer_grpidx[elem_index] = idx;
-      mixer_type[elem_index] = MIXER_ELEM_CAPTURE;
-      if (nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem))
-	mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SWITCH;
-      if (nelems_added)
-	mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SUFFIX;
-      if (snd_mixer_selem_has_capture_volume(elem))
-	mixer_type[elem_index] |= MIXER_ELEM_HAS_VOLUME;
-      elem_index++;
-      if (elem_index >= mixer_n_elems)
-	break;
-    }
   }
 
+  mixer_n_view_elems = elem_index;
   mixer_focus_elem = 0;
   if (focus_type >= 0) {
-    for (elem_index = 0; elem_index < mixer_n_elems; elem_index++) {
+    for (elem_index = 0; elem_index < mixer_n_view_elems; elem_index++) {
       sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * mixer_grpidx[elem_index]);
       if (!strcmp(snd_mixer_selem_id_get_name(focus_gid),
                   snd_mixer_selem_id_get_name(sid)) &&
@@ -1619,7 +1641,7 @@ mixer_init_window (void)
 
   /* required allocations */
   mixer_n_vis_elems = (mixer_max_x - mixer_ofs_x * 2 + 1) / 9;
-  mixer_n_vis_elems = CLAMP (mixer_n_vis_elems, 1, mixer_n_elems);
+  mixer_n_vis_elems = CLAMP (mixer_n_vis_elems, 1, mixer_n_view_elems);
   mixer_extra_space = mixer_max_x - mixer_ofs_x * 2 + 1 - mixer_n_vis_elems * 9;
   mixer_extra_space = MAX (0, mixer_extra_space / (mixer_n_vis_elems + 1));
   if (MIXER_TEXT_Y + 10 < mixer_max_y)
@@ -1769,9 +1791,13 @@ mixer_iteration (void)
       break;
     case 13:	/* Return */
     case 10:	/* NewLine */
-      if (mixer_view == VIEW_CHANNELS)
+      if (mixer_view == VIEW_CHANNELS) {
 	mixer_clear (FALSE);
-      mixer_view = VIEW_CHANNELS;
+      } else {
+        mixer_view = VIEW_CHANNELS;
+        mixer_changed_state=1;
+        mixer_reinit ();
+      } 
       key = 0;
       break;
     case 'h':
@@ -1783,6 +1809,26 @@ mixer_iteration (void)
     case '/':
     case KEY_F (2):
       mixer_view = VIEW_PROCINFO;
+      key = 0;
+      break;
+    case KEY_F (3):
+      if (mixer_view == VIEW_PLAYBACK) {
+	mixer_clear (FALSE);
+      } else {
+        mixer_view = VIEW_PLAYBACK;
+        mixer_changed_state=1;
+        mixer_reinit ();
+      } 
+      key = 0;
+      break;
+    case KEY_F (4):
+      if (mixer_view == VIEW_CAPTURE) {
+	mixer_clear (FALSE);
+      } else {
+        mixer_view = VIEW_CAPTURE;
+        mixer_changed_state=1;
+        mixer_reinit ();
+      } 
       key = 0;
       break;
     case '\014':
@@ -1855,7 +1901,10 @@ mixer_iteration (void)
 	break;
       }
   
-  if (key && mixer_view == VIEW_CHANNELS)
+  if (key && 
+    ((mixer_view == VIEW_CHANNELS) ||
+    (mixer_view == VIEW_PLAYBACK) ||
+    (mixer_view == VIEW_CAPTURE)) )
     switch (key)
       {
       case KEY_RIGHT:
@@ -1955,7 +2004,7 @@ mixer_iteration (void)
   if (old_view != mixer_view)
     mixer_clear (FALSE);
   
-  mixer_focus_elem = CLAMP (mixer_focus_elem, 0, mixer_n_elems - 1);
+  mixer_focus_elem = CLAMP (mixer_focus_elem, 0, mixer_n_view_elems - 1);
   
   return finished;
 }
@@ -2027,7 +2076,7 @@ main (int    argc,
   mixer_init ();
   mixer_reinit ();
   
-  if (mixer_n_elems == 0) {
+  if (mixer_n_view_elems == 0) {
     fprintf(stderr, "No mixer elems found\n");
     mixer_abort (ERR_NONE, "", 0);
   }
@@ -2060,6 +2109,8 @@ main (int    argc,
 	  switch (mixer_view)
 	    {
 	    case VIEW_CHANNELS:
+	    case VIEW_PLAYBACK:
+	    case VIEW_CAPTURE:
 	      mixer_update_cbars ();
 	      break;
 	    case VIEW_HELP:
