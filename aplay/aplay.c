@@ -529,7 +529,7 @@ static int test_wavefile(void *buffer)
 		}
 		if (LE_SHORT(wp->modus) < 1 || LE_SHORT(wp->modus) > 32) {
 			fprintf(stderr, "%s: can't play WAVE-files with %d tracks\n",
-				command, wp->modus);
+				command, LE_SHORT(wp->modus));
 			exit(EXIT_FAILURE);
 		}
 		format.voices = LE_SHORT(wp->modus);
@@ -542,7 +542,7 @@ static int test_wavefile(void *buffer)
 			break;
 		default:
 			fprintf(stderr, "%s: can't play WAVE-files with sample %d bits wide\n",
-				command, wp->bit_p_spl);
+				command, LE_SHORT(wp->bit_p_spl));
 		}
 		format.rate = LE_INT(wp->sample_fq);
 		count = LE_INT(wp->data_length);
