@@ -117,31 +117,27 @@ received MIDI commands.
 
 .SH EXAMPLES
 
-.SS
+.TP
 .B amidi -p hw:0 -s my_settings.syx
-.ID
 will send the MIDI commands in
 .I my_settings.syx
 to port
 .I hw:0.
 
-.SS
+.TP
 .B amidi -S 'F0 43 10 4C 00 00 7E 00 F7'
-.ID
 sends an XG Reset to the default port.
 
-.SS
+.TP
 .B amidi -p hw:1,2 -S F0411042110C000000000074F7 -r dump.syx -t 1
-.ID
 sends a \(lqParameter Dump Request\(rq to a GS device, saves the received
 parameter data to the file
 .I dump.syx,
 and stops after the device has finished sending data
 (when no data has been received for one second).
 
-.SS
+.TP
 .B amidi -p virtual -d
-.ID
 creates a virtual RawMIDI port and prints all data sent to this port.
 
 .SH FILES

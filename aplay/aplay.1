@@ -113,15 +113,13 @@ One file for each channel
 .SS
 Example:
 
-.RS
+.TP
 \fBaplay -c 1 -t raw -r 22050 -f mu_law foobar\fR
-
-.ID
 will play the raw file "foobar" as a
 22050-Hz, mono, 8-bit, Mu-Law .au file. 
 
+.TP
 \fBarecord -d 10 -f cd -t wav -D copy foobar.wav\fP
-
 will record foobar.wav as a 10-second, CD-quality wave file, using the
 PCM "copy" (which might be defined in the user's .asoundrc file as:
 .nf

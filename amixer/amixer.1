@@ -94,10 +94,8 @@ Quiet mode. Do not show results of changes.
 .SS
 Example #1:
 
-.RS
+.TP
 \fBamixer -c 1 sset Line,0 80%,40% unmute cap\fR
-
-.ID
 will set the second soundcard's left line input volume to 80% and
 right line input to 40%, unmute it, and select it as a source for
 capture (recording).\fR
@@ -105,19 +103,15 @@ capture (recording).\fR
 .SS
 Example #2:
 
-.RS
+.TP
 \fBamixer -c 2 cset iface=MIXER,name='Line Playback Volume",index=1 40%\fR
-
-.ID
 will set the third soundcard's second line playback volume(s) to 40%
 
 .SS
 Example #3:
 
-.RS
+.TP
 \fBamixer -c 2 cset numid=34 40%\fR
-
-.ID
 will set the 34th soundcard element to 40%
 
 .SH BUGS 
