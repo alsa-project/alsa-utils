@@ -300,10 +300,10 @@ static int get_control(snd_ctl_t *handle, snd_ctl_element_id_t *id, snd_config_t
 	{
 		size_t size = type == SND_CTL_ELEMENT_TYPE_BYTES ?
 			count : sizeof(snd_aes_iec958_t);
-		char buf[count * 2 + 1];
+		char buf[size * 2 + 1];
 		char *p = buf;
 		char *hex = "0123456789abcdef";
-		const char *bytes = snd_ctl_element_get_bytes(ctl);
+		const unsigned char *bytes = snd_ctl_element_get_bytes(ctl);
 		for (idx = 0; idx < size; idx++) {
 			int v = bytes[idx];
 			*p++ = hex[v >> 4];
