@@ -61,8 +61,11 @@ static ssize_t (*writen_func)(snd_pcm_t *handle, void **bufs, size_t size);
 static char *command;
 static snd_pcm_t *handle;
 static snd_pcm_info_t info;
-static snd_pcm_hw_params_t hwparams, rhwparams;
-static snd_pcm_sw_params_t swparams;
+static struct {
+	unsigned int format;
+	unsigned int channels;
+	unsigned int rate;
+} hwparams, rhwparams;
 static int timelimit = 0;
 static int quiet_mode = 0;
 static int file_type = FORMAT_DEFAULT;
@@ -687,56 +690,77 @@ static int test_au(int fd, void *buffer)
 
 static void set_params(void)
 {
-	snd_pcm_hw_info_t info;
-	snd_pcm_strategy_t *strategy;
+	snd_pcm_hw_params_t params;
+	snd_pcm_sw_params_t swparams;
 	size_t bufsize;
 	int err;
-	snd_pcm_hw_info_any(&info);
-	if (mmap_flag)
-		info.access_mask = SND_PCM_ACCBIT_MMAP;
-	else if (interleaved)
-		info.access_mask = SND_PCM_ACCBIT_RW_INTERLEAVED;
+	err = snd_pcm_hw_params_any(handle, &params);
+	if (err < 0) {
+		error("Broken configuration for this PCM: no configurations available");
+		exit(EXIT_FAILURE);
+	}
+	if (mmap_flag) {
+		mask_t *mask = alloca(mask_sizeof());
+		mask_set(mask, SND_PCM_ACCESS_MMAP_INTERLEAVED);
+		mask_set(mask, SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
+		mask_set(mask, SND_PCM_ACCESS_MMAP_COMPLEX);
+		err = snd_pcm_hw_params_mask(handle, &params,
+					     SND_PCM_HW_PARAM_ACCESS, mask);
+	} else if (interleaved)
+		err = snd_pcm_hw_params_set(handle, &params,
+					    SND_PCM_HW_PARAM_ACCESS,
+					    SND_PCM_ACCESS_RW_INTERLEAVED);
 	else
-		info.access_mask = SND_PCM_ACCBIT_RW_NONINTERLEAVED;
-	info.format_mask = 1 << hwparams.format;
-	info.channels_min = info.channels_max = hwparams.channels;
-	info.fragments_min = 2;
-	err = snd_pcm_strategy_simple(&strategy, 1000000, 2000000);
-	assert(err >= 0);
-	err = snd_pcm_strategy_simple_near(strategy, 0, SND_PCM_HW_INFO_RATE,
-					   hwparams.rate, 1);
-	assert(err >= 0);
-	err = snd_pcm_strategy_simple_near(strategy, 1, SND_PCM_HW_INFO_FRAGMENT_LENGTH,
-					   frag_length, 1);
-	assert(err >= 0);
-	err = snd_pcm_strategy_simple_near(strategy, 2, SND_PCM_HW_INFO_BUFFER_LENGTH,
-					   buffer_length, 1);
-	assert(err >= 0);
-	err = snd_pcm_hw_info_strategy(handle, &info, strategy);
-	snd_pcm_strategy_free(strategy);
+		err = snd_pcm_hw_params_set(handle, &params,
+					    SND_PCM_HW_PARAM_ACCESS,
+					    SND_PCM_ACCESS_RW_NONINTERLEAVED);
 	if (err < 0) {
-		fprintf(stderr, "Unable to find params combination:\n");
-		err = snd_pcm_hw_info_try_explain_failure(handle, &info, NULL, 2, stderr);
-		if (err < 0) {
-			fprintf(stderr, "No explaination found for this failure\n");
-		}
+		error("Access type not available");
 		exit(EXIT_FAILURE);
 	}
-	err = snd_pcm_hw_params_info(handle, &hwparams, &info);
+	err = snd_pcm_hw_params_set(handle, &params, SND_PCM_HW_PARAM_FORMAT,
+				    hwparams.format);
 	if (err < 0) {
-		snd_pcm_dump_hw_params_fail(&hwparams, stderr);
-		error("unable to set hw params");
+		error("Sample format non available");
 		exit(EXIT_FAILURE);
 	}
-	bufsize = hwparams.fragment_size * hwparams.fragments;
+	err = snd_pcm_hw_params_set(handle, &params, SND_PCM_HW_PARAM_CHANNELS,
+				    hwparams.channels);
+	if (err < 0) {
+		error("Channels count non available");
+		exit(EXIT_FAILURE);
+	}
+
+	err = snd_pcm_hw_params_min(handle, &params,
+				    SND_PCM_HW_PARAM_FRAGMENTS, 2);
+	assert(err >= 0);
+	err = snd_pcm_hw_params_near(handle, &params,
+				     SND_PCM_HW_PARAM_RATE, hwparams.rate);
+	assert(err >= 0);
+	err = snd_pcm_hw_params_near(handle, &params,
+				     SND_PCM_HW_PARAM_FRAGMENT_LENGTH, 
+				     frag_length);
+	assert(err >= 0);
+	err = snd_pcm_hw_params_near(handle, &params,
+				     SND_PCM_HW_PARAM_BUFFER_LENGTH,
+				     buffer_length);
+	assert(err >= 0);
+	err = snd_pcm_hw_params(handle, &params);
+	if (err < 0) {
+		fprintf(stderr, "Unable to install params:\n");
+		snd_pcm_dump_hw_params(&params, stderr);
+		exit(EXIT_FAILURE);
+	}
+	bufsize = snd_pcm_hw_params_value(&params, SND_PCM_HW_PARAM_FRAGMENT_SIZE) *
+		snd_pcm_hw_params_value(&params, SND_PCM_HW_PARAM_FRAGMENTS);
 
 	swparams.start_mode = SND_PCM_START_DATA;
 	swparams.ready_mode = ready_mode;
 	swparams.xrun_mode = xrun_mode;
-	swparams.avail_min = hwparams.rate * avail_min / 1000000;
-	swparams.xfer_min = hwparams.rate * xfer_min / 1000000;
+	swparams.avail_min = snd_pcm_hw_params_value(&params, SND_PCM_HW_PARAM_RATE) * avail_min / 1000000;
+	swparams.xfer_min = snd_pcm_hw_params_value(&params, SND_PCM_HW_PARAM_RATE) * xfer_min / 1000000;
 	if (xrun_mode == SND_PCM_XRUN_FRAGMENT)
-		swparams.xfer_align = hwparams.fragment_size;
+		swparams.xfer_align = snd_pcm_hw_params_value(&params, SND_PCM_HW_PARAM_FRAGMENT_SIZE);
 	else
 		swparams.xfer_align = 1;
 	swparams.xfer_min -= swparams.xfer_min % swparams.xfer_align;
@@ -763,7 +787,7 @@ static void set_params(void)
 	if (verbose)
 		snd_pcm_dump(handle, stderr);
 
-	buffer_size = hwparams.fragment_size;
+	buffer_size = snd_pcm_hw_params_value(&params, SND_PCM_HW_PARAM_FRAGMENT_SIZE);
 	bits_per_sample = snd_pcm_format_physical_width(hwparams.format);
 	bits_per_frame = bits_per_sample * hwparams.channels;
 	buffer_bytes = buffer_size * bits_per_frame / 8;
