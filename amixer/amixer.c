@@ -39,7 +39,7 @@
 
 int quiet = 0;
 int debugflag = 0;
-char *card = "0";
+char *card = "hw:0";
 
 static void error(const char *fmt,...)
 {
@@ -57,7 +57,7 @@ static int help(void)
 	printf("Usage: amixer <options> command\n");
 	printf("\nAvailable options:\n");
 	printf("  -h,--help       this help\n");
-	printf("  -c,--card #     use a card number (0-%i) or the card name, default %s\n", snd_cards() - 1, card);
+	printf("  -c,--card N     use a ctl name, default %s\n", card);
 	printf("  -D,--debug      debug mode\n");
 	printf("  -v,--version    print version of this program\n");
 	printf("\nAvailable commands:\n");
