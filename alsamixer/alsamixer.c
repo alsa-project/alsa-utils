@@ -596,6 +596,7 @@ mixer_init (void)
 static void
 mixer_iteration_update(void *dummy, int channel)
 {
+  fprintf( stderr, "*** channel = %i\n", channel );
   mixer_update_cbar(channel);
   refresh ();
 }
@@ -603,15 +604,14 @@ mixer_iteration_update(void *dummy, int channel)
 static int
 mixer_iteration (void)
 {
-  static snd_mixer_callbacks_t callbacks = {
-    NULL,
-    mixer_iteration_update,
-  };
+  snd_mixer_callbacks_t callbacks;
   int key;
   int finished = 0;
   int mixer_fd;
   fd_set in;
 
+  bzero( &callbacks, sizeof( callbacks ) );
+  callbacks.channel_was_changed = mixer_iteration_update;
   mixer_fd = snd_mixer_file_descriptor( mixer_handle );
   while ( 1 ) {
     FD_ZERO(&in);
