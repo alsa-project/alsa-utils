@@ -721,6 +721,7 @@ static void set_params(void)
 	}
 	if (mmap_flag) {
 		mask_t *mask = alloca(mask_sizeof());
+		mask_none(mask);
 		mask_set(mask, SND_PCM_ACCESS_MMAP_INTERLEAVED);
 		mask_set(mask, SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
 		mask_set(mask, SND_PCM_ACCESS_MMAP_COMPLEX);
