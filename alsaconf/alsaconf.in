@@ -297,6 +297,7 @@ mixer() {
 
 set_mixers() {
     mixer Master 75%
+    mixer Front 75%
     mixer PCM 90%
     mixer Synth 90%
     mixer CD 90%
