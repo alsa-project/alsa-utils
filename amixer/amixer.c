@@ -281,7 +281,7 @@ int show_element(void *handle, snd_mixer_eid_t *eid, const char *space)
 		return 0;
 	routes.proutes = (snd_mixer_eid_t *)malloc(routes.routes_over * sizeof(snd_mixer_eid_t));
 	if (!routes.proutes) {
-		error("No enough memory...");
+		error("Not enough memory...");
 		return -1;
 	}
 	routes.routes_size = routes.routes_over;
@@ -338,7 +338,7 @@ int show_mux1_info(void *handle, snd_mixer_element_info_t *info, const char *spa
 	}
 	elements.pelements = (snd_mixer_eid_t *)malloc(elements.elements_over * sizeof(snd_mixer_eid_t));
 	if (!elements.pelements) {
-		error("No enough memory");
+		error("Not enough memory");
 		return -1;
 	}
 	elements.elements_size = elements.elements_over;
@@ -359,7 +359,7 @@ int show_mux1_info(void *handle, snd_mixer_element_info_t *info, const char *spa
 			continue;
 		routes.proutes = (snd_mixer_eid_t *)malloc(routes.routes_over * sizeof(snd_mixer_eid_t));
 		if (!routes.proutes) {
-			error("No enough memory...");
+			error("Not enough memory...");
 			free(elements.pelements);
 			return -1;
 		}
@@ -693,7 +693,7 @@ int elements(void)
 	}
 	elements.pelements = (snd_mixer_eid_t *)malloc(elements.elements_over * sizeof(snd_mixer_eid_t));
 	if (!elements.pelements) {
-		error("No enough memory");
+		error("Not enough memory");
 		return -1;
 	}
 	elements.elements_size = elements.elements_over;
@@ -731,7 +731,7 @@ int elements_contents(void)
 	}
 	elements.pelements = (snd_mixer_eid_t *)malloc(elements.elements_over * sizeof(snd_mixer_eid_t));
 	if (!elements.pelements) {
-		error("No enough memory");
+		error("Not enough memory");
 		return -1;
 	}
 	elements.elements_size = elements.elements_over;
@@ -833,7 +833,7 @@ int show_group(void *handle, snd_mixer_gid_t *gid, const char *space)
 		return 0;
 	group.pelements = (snd_mixer_eid_t *)malloc(group.elements_over * sizeof(snd_mixer_eid_t));
 	if (!group.pelements) {
-		error("No enough memory...");
+		error("Not enough memory...");
 		return -1;
 	}
 	group.elements_size = group.elements_over;
@@ -868,7 +868,7 @@ int groups(void)
 	}
 	groups.pgroups = (snd_mixer_gid_t *)malloc(groups.groups_over * sizeof(snd_mixer_eid_t));
 	if (!groups.pgroups) {
-		error("No enough memory");
+		error("Not enough memory");
 		return -1;
 	}
 	groups.groups_size = groups.groups_over;
@@ -1353,7 +1353,7 @@ int gset(int argc, char *argv[])
 	for (idx = 1; idx < argc; idx++) {
 		if (!strncmp(argv[idx], "mute", 4) || !strncmp(argv[idx], "off", 3)) {
 			group.mute = group.channels;
-		} else if (!strncmp(argv[idx], "on", 2)) {
+		} else if (!strncmp(argv[idx], "on", 2)) || !strncmp(argv[idx], "unmute", 6)) {
 			group.mute = 0;
 		} else if (!strncmp(argv[idx], "rec", 3)) {
 			group.record = group.channels;
