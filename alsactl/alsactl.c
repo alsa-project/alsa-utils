@@ -1463,7 +1463,6 @@ static int power(const char *argv[], int argc)
 
 int main(int argc, char *argv[])
 {
-	int morehelp;
 	struct option long_option[] =
 	{
 		{"help", 0, NULL, 'h'},
@@ -1477,7 +1476,6 @@ int main(int argc, char *argv[])
 	int res;
 
 	command = argv[0];
-	morehelp = 0;
 	while (1) {
 		int c;
 
@@ -1485,8 +1483,8 @@ int main(int argc, char *argv[])
 			break;
 		switch (c) {
 		case 'h':
-			morehelp++;
-			break;
+			help();
+			return EXIT_SUCCESS;
 		case 'f':
 			cfgfile = optarg;
 			break;
@@ -1500,16 +1498,13 @@ int main(int argc, char *argv[])
 			printf("alsactl version " SND_UTIL_VERSION_STR "\n");
 			return EXIT_SUCCESS;
 		case '?':		// error msg already printed
-			morehelp++;
+			help();
+			return EXIT_FAILURE;
 			break;
 		default:		// should never happen
 			fprintf(stderr, 
 			"Invalid option '%c' (%d) not handled??\n", c, c);
 		}
-	}
-	if (morehelp) {
-		help();
-		return EXIT_SUCCESS;
 	}
 	if (argc - optind <= 0) {
 		fprintf(stderr, "alsactl: Specify command...\n");
