@@ -264,7 +264,7 @@ static int get_volume(char **ptr, int min, int max, int min_dB, int max_dB)
 	return tmp1;
 }
 
-static int get_volume_simple(char **ptr, int min, int max)
+static int get_volume_simple(char **ptr, int min, int max, int orig)
 {
 	int tmp, tmp1, tmp2;
 
@@ -287,6 +287,13 @@ static int get_volume_simple(char **ptr, int min, int max)
 	}
 	if (**ptr == '%') {
 		tmp1 = convert_prange1(tmp, min, max);
+		(*ptr)++;
+	}
+	if (**ptr == '+') {
+		tmp1 = orig + tmp1;
+		(*ptr)++;
+	} else if (**ptr == '-') {
+		tmp1 = orig - tmp1;
 		(*ptr)++;
 	}
 	tmp1 = check_range(tmp1, min, max);
@@ -1486,9 +1493,40 @@ int eget(int argc, char *argv[])
 	return 0;
 }
 
+typedef struct channel_mask {
+	char *name;
+	unsigned int mask;
+} channel_mask_t;
+static channel_mask_t chanmask[] = {
+	{"frontleft", SND_MIXER_CHN_MASK_FRONT_LEFT},
+	{"frontright", SND_MIXER_CHN_MASK_FRONT_RIGHT},
+	{"frontcenter", SND_MIXER_CHN_MASK_FRONT_CENTER},
+	{"front", SND_MIXER_CHN_MASK_FRONT_LEFT|SND_MIXER_CHN_MASK_FRONT_RIGHT},
+	{"center", SND_MIXER_CHN_MASK_FRONT_CENTER},
+	{"rearleft", SND_MIXER_CHN_MASK_REAR_LEFT},
+	{"rearright", SND_MIXER_CHN_MASK_REAR_RIGHT},
+	{"rear", SND_MIXER_CHN_MASK_REAR_LEFT|SND_MIXER_CHN_MASK_REAR_RIGHT},
+	{"woofer", SND_MIXER_CHN_MASK_WOOFER},
+	{NULL}
+};
+
+static int check_channels(char *arg, unsigned int mask, unsigned int *mask_return)
+{
+	channel_mask_t *c;
+
+	for (c = chanmask; c->name; c++) {
+		if (! strncmp(arg, c->name, strlen(c->name))) {
+			*mask_return = c->mask & mask;
+			return 1;
+		}
+	}
+	return 0;
+}
+
 int gset(int argc, char *argv[])
 {
 	int err, idx, chn;
+	unsigned int channels;
 	snd_mixer_t *handle;
 	snd_mixer_gid_t gid;
 	snd_mixer_group_t group;
@@ -1516,29 +1554,43 @@ int gset(int argc, char *argv[])
 		snd_mixer_close(handle);
 		return -1;
 	}
+	channels = group.channels; /* all channels */
 	for (idx = 1; idx < argc; idx++) {
 		if (!strncmp(argv[idx], "mute", 4) ||
 		    !strncmp(argv[idx], "off", 3)) {
 			group.mute = group.channels;
+			continue;
 		} else if (!strncmp(argv[idx], "unmute", 6) ||
 		           !strncmp(argv[idx], "on", 2)) {
 			group.mute = 0;
+			continue;
 		} else if (!strncmp(argv[idx], "cap", 3) ||
 		           !strncmp(argv[idx], "rec", 3)) {
 			group.capture = group.channels;
+			continue;
 		} else if (!strncmp(argv[idx], "nocap", 5) ||
 		           !strncmp(argv[idx], "norec", 5)) {
 			group.capture = 0;
-		} else if (isdigit(argv[idx][0])) {
+			continue;
+		}
+		if (check_channels(argv[idx], group.channels, &channels))
+			continue;
+		if (isdigit(argv[idx][0]) ||
+		    argv[idx][0] == '+' ||
+		    argv[idx][0] == '-') {
 			char *ptr;
-			int vol;
+			int multi;
 		
+			multi = (strchr(argv[idx], ',') != NULL);
 			ptr = argv[idx];
-			vol = get_volume_simple(&ptr, group.min, group.max);
 			for (chn = 0; chn <= SND_MIXER_CHN_LAST; chn++) {
-				if (!(group.channels & (1<<chn)))
+				if (!(group.channels & (1<<chn)) ||
+				    !(channels & (1<<chn)))
 					continue;
-				group.volume.values[chn] = vol;
+
+				if (! multi)
+					ptr = argv[idx];
+				group.volume.values[chn] = get_volume_simple(&ptr, group.min, group.max, group.volume.values[chn]);
 			}
 		} else {
 			error("Unknown setup '%s'..\n", argv[idx]);
