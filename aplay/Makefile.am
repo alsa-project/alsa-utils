@@ -5,7 +5,7 @@ LDADD = -lasound
 #LDFLAGS = -static
 #LDADD += -ldl
 
-bin_PROGRAMS = aplay
+bin_PROGRAMS = aplay arecord
 man_MANS = aplay.1 arecord.1
 noinst_HEADERS = formats.h
 
