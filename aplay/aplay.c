@@ -320,6 +320,7 @@ int main(int argc, char *argv[])
 	};
 	char *pcm_name = "default";
 	int tmp, err, c;
+	int do_device_list = 0, do_pcm_list = 0;
 	snd_pcm_info_t *info;
 
 	err = snd_output_stdio_attach(&log, stderr, 0);
@@ -354,11 +355,11 @@ int main(int argc, char *argv[])
 			version();
 			return 0;
 		case 'l':
-			device_list();
-			return 0;
+			do_device_list = 1;
+			break;
 		case 'L':
-			pcm_list();
-			return 0;
+			do_pcm_list = 1;
+			break;
 		case 'D':
 			pcm_name = optarg;
 			break;
@@ -462,6 +463,15 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Try `%s --help' for more information.\n", command);
 			return 1;
 		}
+	}
+
+	if (do_device_list) {
+		if (do_pcm_list) pcm_list();
+		device_list();
+		return 0;
+	} else if (do_pcm_list) {
+		pcm_list();
+		return 0;
 	}
 
 	err = snd_pcm_open(&handle, pcm_name, stream, open_mode);

@@ -1029,7 +1029,7 @@ mixer_draw_frame (void)
 
   /* program title
    */
-  sprintf (string, "%s %s", PRGNAME_UPPER, VERSION);
+  sprintf (string, "%s %s (Press Escape to quit)", PRGNAME_UPPER, VERSION);
   max_len = strlen (string);
   if (mixer_max_x >= max_len + 4)
     {
@@ -1567,6 +1567,7 @@ mixer_init_window (void)
   /* initialize ncurses
    */
   mixer_window = initscr ();
+  curs_set (0); /* hide the cursor */
 
   mixer_no_lrcorner = tigetflag ("xenl") != 1 && tigetflag ("am") != 1;
 
