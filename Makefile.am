@@ -1,6 +1,6 @@
 INCLUDES=-I$(top_srcdir)/include
 SUBDIRS=include alsactl alsamixer amixer aplay seq utils
-EXTRA_DIST=ChangeLog INSTALL README configure cvscompile
+EXTRA_DIST=ChangeLog INSTALL TODO README configure cvscompile
 
 rpm: dist
 	$(MAKE) -C $@
