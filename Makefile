@@ -14,6 +14,7 @@ endif
 
 
 all:
+	$(MAKE) -C alsactl
 	$(MAKE) -C aplay
 	$(MAKE) -C amixer
 	$(MAKE) -C alsamixer
@@ -22,6 +23,9 @@ all:
 	@echo
 
 install: all
+	$(INSTALL) -m 755 -o root -g root -d ${sbindir}
+	$(INSTALL) -s -m 755 -o root -g root alsactl/alsactl ${sbindir}
+	$(INSTALL) -m 755 -o root -g root -d ${bindir}
 	$(INSTALL) -s -m 755 -o root -g root aplay/aplay ${bindir}
 	ln -sf aplay ${bindir}/arecord
 	$(INSTALL) -s -m 755 -o root -g root amixer/amixer ${bindir}
@@ -31,6 +35,7 @@ install: all
 
 clean:
 	$(MAKE) -C include clean
+	$(MAKE) -C alsactl clean
 	$(MAKE) -C aplay clean
 	$(MAKE) -C amixer clean
 	$(MAKE) -C alsamixer clean
