@@ -694,7 +694,7 @@ static int parse_simple_id(const char *str, snd_mixer_selem_id_t *sid)
 		str++;
 	if (!(*str))
 		return -EINVAL;
-	size = 0;
+	size = 1;	/* for '\0' */
 	if (*str != '"' && *str != '\'') {
 		while (*str && *str != ',') {
 			if (size < sizeof(buf)) {
@@ -715,8 +715,11 @@ static int parse_simple_id(const char *str, snd_mixer_selem_id_t *sid)
 		if (*str == c)
 			str++;
 	}
-	if (*str == '\0')
-		return 0;
+	if (*str == '\0') {
+		snd_mixer_selem_id_set_index(sid, 0);
+		*ptr = 0;
+		goto _set;
+	}
 	if (*str != ',')
 		return -EINVAL;
 	*ptr = 0;	/* terminate the string */
@@ -724,6 +727,7 @@ static int parse_simple_id(const char *str, snd_mixer_selem_id_t *sid)
 	if (!isdigit(*str))
 		return -EINVAL;
 	snd_mixer_selem_id_set_index(sid, atoi(str));
+       _set:
 	snd_mixer_selem_id_set_name(sid, buf);
 	return 0;
 }
