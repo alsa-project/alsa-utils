@@ -100,18 +100,18 @@ static int merge_one_sw(struct ctl_switch *csw, struct ctl_switch *usw, int card
 		}
 		break;
 	case SND_SW_TYPE_LIST:
-		if (usw->s.type != SND_SW_TYPE_LIST) {
+		if (usw->s.type != SND_SW_TYPE_DWORD) {
 			error("A wrong type for the switch %s. The type list is expected. Skipping...", sw_id(usw->s.name, cardno, devno, id));
 			return 1;
 		}
-		if (csw->s.low > usw->s.value.item_number ||
-		    csw->s.high < usw->s.value.item_number) {
-		    	error("The value %i for the switch %s is out of range %i-%i.", usw->s.value.item_number, sw_id(usw->s.name, cardno, devno, id), csw->s.low, csw->s.high);
+		if (csw->s.low > usw->s.value.data32[0] ||
+		    csw->s.high < usw->s.value.data32[0]) {
+		    	error("The value %i for the switch %s is out of range %i-%i.", usw->s.value.data32[0], sw_id(usw->s.name, cardno, devno, id), csw->s.low, csw->s.high);
 			return 1;
 		}
-		if (csw->s.value.item_number != usw->s.value.item_number) {
+		if (csw->s.value.item_number != usw->s.value.data32[0]) {
 			csw->change = 1;
-			csw->s.value.item_number = usw->s.value.item_number;
+			csw->s.value.item_number = usw->s.value.data32[0];
 		}
 		break;
 	case SND_SW_TYPE_USER_READ_ONLY:
