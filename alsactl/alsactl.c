@@ -581,7 +581,7 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 		snd_ctl_elem_info_set_item(info, idx);
 		err = snd_ctl_elem_info(handle, info);
 		if (err < 0) {
-			error("snd_ctl_card_info: %s", snd_strerror(err));
+			error("snd_ctl_elem_info: %s", snd_strerror(err));
 			return err;
 		}
 		if (strcmp(str, snd_ctl_elem_info_get_item_name(info)) == 0)
