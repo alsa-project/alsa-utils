@@ -57,18 +57,18 @@ static int help(void)
 	printf("Usage: amixer <options> command\n");
 	printf("\nAvailable options:\n");
 	printf("  -h,--help       this help\n");
-	printf("  -c,--card N     use a ctl name, default %s\n", card);
+	printf("  -c,--card N     select the card, default %s\n", card);
 	printf("  -D,--debug      debug mode\n");
 	printf("  -v,--version    print version of this program\n");
 	printf("\nAvailable commands:\n");
 	printf("  scontrols       show all mixer simple controls\n");
 	printf("  scontents	  show contents of all mixer simple controls (default command)\n");
 	printf("  sset sID P      set contents for one mixer simple control\n");
-	printf("  sget sID P      get contents for one mixer simple control\n");
+	printf("  sget sID        get contents for one mixer simple control\n");
 	printf("  controls        show all controls for given card\n");
 	printf("  contents        show contents of all controls for given card\n");
-	printf("  cset cID P	  set control contents for one control\n");
-	printf("  cget cID P	  get control contents for one control\n");
+	printf("  cset cID P      set control contents for one control\n");
+	printf("  cget cID        get control contents for one control\n");
 	return 0;
 }
 

@@ -32,9 +32,9 @@ Shows a complete list of simple mixer controls.
 Shows a complete list of simple mixer controls with their contents.
 
 .TP
-\fIsset\fP
+\fIsset\fP <\fISCONTROL\fP> <\fIPARAMETER\fP> ...
 Sets the simple mixer control contents. The parameter can be the volume
-either as a percentage from 0% to 100% or a exact hardware value.
+either as a percentage from 0% to 100% or an exact hardware value.
 The parameters \fIcapture, nocapture, mute, unmute\fP are used to
 toggle capture (recording) and muting for the group specified.
 The parameters \fIfront, rear, center, woofer\fP are used to specify
@@ -46,7 +46,7 @@ A simple mixer control must be specified. Only one device can be controlled
 at a time.
 
 .TP
-\fIsget\fP
+\fIsget\fP <\fISCONTROL\fP>
 Shows the simple mixer control contents.
 
 A simple mixer control must be specified. Only one device can be controlled
@@ -61,14 +61,14 @@ Shows a complete list of card controls.
 Shows a complete list of card controls with their contents.
 
 .TP
-\fIcset\fP
+\fIcset\fP <\fICONTROL\fP> <\fIPARAMETER\fP> ...
 Sets the card control contents. This feature is not documented and is intended
 for experienced users only.
 
 .TP
-\fIeget\fP
+\fIcget\fP <\fICONTROL\fP>
 Shows the card control contents. This feature is not documented and is
-indended for experienced users only.
+intended for experienced users only.
 
 .SS Options
 
@@ -88,7 +88,7 @@ Quiet mode. Do not show results of changes.
 Example: 
 
 .RS
-\fBamixer -c 1 set Line 80%,40% unmute capture\fR
+\fBamixer -c 1 sset Line,0 80%,40% unmute capture\fR
 
 .ID
 will set the second soundcard's left line input volume to 80% and
