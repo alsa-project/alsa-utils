@@ -16,6 +16,7 @@
 /* Begin #define statements */
 
 #define RCFILE ".xamixerrc"
+#define VERSION "0.1.3"
 
 /* End #define statements */
 /*****************************************************************************/

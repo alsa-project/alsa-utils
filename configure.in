@@ -26,7 +26,8 @@ AC_SUBST(CURSESLIB)
 dnl Check for Gtk+
 AM_PATH_GTK(1.0.1)
 CFLAGS="$CFLAGS $GTK_CFLAGS"
-LDFALGS="$LDFLAGS $GTK_LIBS"
+LDFLAGS="$LDFLAGS $GTK_LIBS"
+
 
 AM_CONFIG_HEADER(include/aconfig.h)
 
@@ -45,8 +46,8 @@ AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amixer/Makefile aplay/Mak
           include/Makefile utils/Makefile utils/alsa-utils.spec xamixer2/Makefile)
 
 else
+	AC_MSG_RESULT(Not building XAmixer2 as Gtk+ was not found.)
 AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amixer/Makefile aplay/Makefile \
           include/Makefile utils/Makefile utils/alsa-utils.spec)
-	AC_MSG_RESULT(Not building XAmixer2 as Gtk+ was not found.)
 fi
 
