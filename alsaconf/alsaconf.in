@@ -24,8 +24,10 @@ if [ -f /etc/SuSE-release -o -f /etc/UnitedLinux-release ]; then
   distribution="suse"
 elif [ -f /etc/debian_version ]; then
   distribution="debian"
-elif [ -f /etc/redhat-release ]; then
+elif [ -f /etc/redhat-release -a `grep -c "Red Hat" /etc/redhat-release 2>/dev/null` != 0 ]; then
   distribution="redhat"
+elif [ -f /etc/fedora-release -a `grep -c "Fedora" /etc/fedora-release 2>/dev/null` != 0 ]; then
+  distribution="fedora"
 else
   distribution="unknown"
 fi
@@ -546,10 +548,8 @@ Do you want to modify ${cfgfile}?" 8 50 || acex 0
 	SOUND_CORE="snd"
     fi
 
-    if [ "$distribution" = "redhat" ] ; then
-        if grep -q "Red Hat" /etc/redhat-release >/dev/null 2>&1 ; then
-	    remove_ac_block < $cfgfile | remove_sndconfig_block | uniq > $TMP
-        fi
+    if [ "$distribution" = "redhat" -o "$distribution" = "fedora" ] ; then
+        remove_ac_block < $cfgfile | remove_sndconfig_block | uniq > $TMP
     else
 	remove_ac_block < $cfgfile | remove_y2_block | uniq > $TMP
     fi
