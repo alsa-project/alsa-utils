@@ -1,0 +1,90 @@
+.\" -*- nroff -*-
+.\" macros
+.de EX \" Begin Example
+.  IP
+.  ft CW
+.  nf
+.  ne \\$1
+..
+.de EE \" End Example
+.  ft P
+.  fi
+.  PP
+..
+.TH SPEAKER\-TEST 1 "20 September 2004" speaker-test
+.SH NAME
+speaker\-test \- command-line speaker test tone generator for ALSA 
+.SH SYNOPSIS
+.B speaker\-test
+.BR "" [ \-D | \-\-device 
+.IR FILE ]
+.BR "" [ \-r | \-\-rate
+.IR RATE ]
+.BR "" [ \-c | \-\-channels
+.IR NUM ]
+.BR "" [ \-f | \-\-frequency
+.IR FREQ ]
+.BR "" [ \-p | \-\-period
+.IR TIME ]
+.BR "" [ \-s | \-\-speaker " " "1|2" ]
+.P
+.B speaker\-test
+.B \-\-help
+
+.SH DESCRIPTION
+\fBspeaker\-test\fP generates a tone that can be used to test the speakers of a computer.
+
+.SH OPTIONS
+
+.TP
+\fB\-c\fP | \fB\-\-channels\fP \fINUM\fP
+\fINUM\fP channels in stream
+
+.TP
+\fB\-D\fP | \fB\-\-device\fP \fINAME\fP
+PCM device name \fINAME\fP
+
+.TP
+\fB\-f\fP | \fB\-\-frequency\fP \fIFREQ\fP
+sine wave of \fIFREQ\fP Hz
+
+.TP
+\fB\-\-help\fP
+Print usage help
+
+.TP
+\fB\-p\fP | \fB\-\-period\fP \fITIME\fP
+period size of \fITIME\fP microseconds
+
+.TP
+\fB\-r\fP | \fB\-\-rate\fP \fIRATE\fP
+stream of \fIRATE\fP Hz
+
+.TP
+\fB\-s\fP | \fB\-\-speaker\fP \fB1\fP|\fB2\fP
+Test speaker 1 or speaker 2 only, rather than both
+
+.SH USAGE EXAMPLES
+
+Produce stereo sound from one stereo jack:
+.EX
+  speaker-test -Dfront -c2
+.EE
+
+Produce 4 speaker sound from two stereo jacks:
+.EX
+  speaker-test -Dsurround40 -c4
+.EE
+
+Produce 5.1 speaker sound from three stereo jacks:
+.EX
+  speaker-test -Dsurround51 -c6
+.EE
+
+To send a nice low 75Hz tone to the Woofer and then exit without touching any other speakers:
+.EX
+  speaker-test -Dplug:surround51 -c6 -s1 -f75
+.EE
+
+.SH AUTHOR
+The speaker-test program was written by James Courtier-Dutton.
