@@ -507,7 +507,7 @@ static int get_controls(int cardno, snd_config_t *top)
 	}
 	err = snd_config_search(state, id, &card);
 	if (err == 0 &&
-	    snd_config_get_type(state) != SND_CONFIG_TYPE_COMPOUND) {
+	    snd_config_get_type(card) != SND_CONFIG_TYPE_COMPOUND) {
 		error("config state.%s node is not a compound", id);
 		err = -EINVAL;
 		goto _close;
@@ -527,18 +527,22 @@ static int get_controls(int cardno, snd_config_t *top)
 			goto _close;
 		}
 	}
-	err = snd_config_compound_add(card, "control", 1, &control);
-	if (err < 0) {
-		error("snd_config_compound_add: %s", snd_strerror(err));
-		goto _close;
-	}
 	err = snd_ctl_elem_list(handle, list);
 	if (err < 0) {
 		error("Cannot determine controls: %s", snd_strerror(err));
 		goto _close;
 	}
 	count = snd_ctl_elem_list_get_count(list);
-	if (count <= 0) {
+	if (count < 0) {
+		err = 0;
+		goto _close;
+	}
+	err = snd_config_compound_add(card, "control", count > 0, &control);
+	if (err < 0) {
+		error("snd_config_compound_add: %s", snd_strerror(err));
+		goto _close;
+	}
+	if (count == 0) {
 		err = 0;
 		goto _close;
 	}
