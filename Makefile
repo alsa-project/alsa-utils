@@ -36,10 +36,13 @@ clean:
 	rm -f core .depend *.o *.orig *~
 	rm -f `find . -name "out.txt"`
 
-cvsclean: clean
+mrproper: clean
 	rm -f config.cache config.log config.status Makefile.conf \
-              include/aconfig.h utils/alsa-utils.spec configure
+              include/aconfig.h utils/alsa-utils.spec
 
-pack: cvsclean
+cvsclean: clean
+	rm -f configure
+
+pack: mrproper
 	chown -R root.root ../alsa-utils
 	tar cvz -C .. -f ../alsa-utils-$(SND_UTIL_VERSION).tar.gz alsa-utils
