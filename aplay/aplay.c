@@ -60,7 +60,6 @@ static snd_pcm_sframes_t (*writen_func)(snd_pcm_t *handle, void **bufs, snd_pcm_
 
 static char *command;
 static snd_pcm_t *handle;
-static snd_pcm_info_t info;
 static struct {
 	unsigned int format;
 	unsigned int channels;
@@ -175,7 +174,8 @@ static void device_list(void)
 	snd_ctl_t *handle;
 	int card, err, dev, idx;
 	snd_ctl_hw_info_t info;
-	snd_pcm_info_t pcminfo;
+	snd_pcm_info_t *pcminfo;
+	snd_pcm_info_alloca(&pcminfo);
 
 	card = -1;
 	if (snd_card_next(&card) < 0 || card < 0) {
@@ -196,32 +196,32 @@ static void device_list(void)
 		}
 		dev = -1;
 		while (1) {
+			unsigned int count;
 			if (snd_ctl_pcm_next_device(handle, &dev)<0)
 				error("snd_ctl_pcm_next_device");
 			if (dev < 0)
 				break;
-			pcminfo.device = dev;
-			pcminfo.stream = -stream - 1;
-			pcminfo.subdevice = 0;
-			if ((err = snd_ctl_pcm_info(handle, &pcminfo)) < 0) {
-				error("control digital audio info (%i): %s", card, snd_strerror(err));
+			snd_pcm_info_set_device(pcminfo, dev);
+			snd_pcm_info_set_subdevice(pcminfo, 0);
+			snd_pcm_info_set_stream(pcminfo, stream);
+			if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
+				if (err != -ENOENT)
+					error("control digital audio info (%i): %s", card, snd_strerror(err));
 				continue;
 			}
-			if (pcminfo.stream != stream)
-				continue;
-			fprintf(stderr, "%s: %i [%s] / #%i: %s\n",
-			       info.name,
-			       card + 1,
-			       info.id,
-			       dev,
-			       pcminfo.name);
-			fprintf(stderr, "  Subdevices: %i/%i\n", pcminfo.subdevices_avail, pcminfo.subdevices_count);
-			for (idx = 0; idx < pcminfo.subdevices_count; idx++) {
-				pcminfo.subdevice = idx;
-				if ((err = snd_ctl_pcm_info(handle, &pcminfo)) < 0) {
+			fprintf(stderr, "card %i: %s [%s], device %i: %s [%s]\n",
+				card, info.id, info.name,
+				dev,
+				snd_pcm_info_device_id(pcminfo),
+				snd_pcm_info_device_name(pcminfo));
+			count = snd_pcm_info_subdevices_count(pcminfo);
+			fprintf(stderr, "  Subdevices: %i/%i\n", snd_pcm_info_subdevices_avail(pcminfo), count);
+			for (idx = 0; idx < count; idx++) {
+				snd_pcm_info_set_subdevice(pcminfo, idx);
+				if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
 					error("control digital audio playback info (%i): %s", card, snd_strerror(err));
 				} else {
-					fprintf(stderr, "  Subdevice #%i: %s\n", idx, pcminfo.subname);
+					fprintf(stderr, "  Subdevice #%i: %s\n", idx, snd_pcm_info_subdevice_name(pcminfo));
 				}
 			}
 		}
@@ -289,6 +289,7 @@ int main(int argc, char *argv[])
 	};
 	char *pcm_name = "plug:0,0";
 	int tmp, err, c;
+	snd_pcm_info_t *info;
 
 	err = snd_output_stdio_attach(&log, stderr, 0);
 	assert(err >= 0);
@@ -439,8 +440,8 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	memset(&info, 0, sizeof(info));
-	if ((err = snd_pcm_info(handle, &info)) < 0) {
+	snd_pcm_info_alloca(&info);
+	if ((err = snd_pcm_info(handle, info)) < 0) {
 		error("info error: %s", snd_strerror(err));
 		return 1;
 	}
@@ -453,10 +454,10 @@ int main(int argc, char *argv[])
 		memset(&ctl, 0, sizeof(ctl));
 		ctl.id.numid = 0;
 		ctl.id.iface = SND_CONTROL_IFACE_PCM;
-		ctl.id.device = info.device;
-		ctl.id.subdevice = info.subdevice;
+		ctl.id.device = snd_pcm_info_device(info);
+		ctl.id.subdevice = snd_pcm_info_subdevice(info);
 		strcpy(ctl.id.name, "IEC958 (S/PDIF) Stream");
-		ctl_card = snd_pcm_card(handle);
+		ctl_card = snd_pcm_info_card(info);
 		if (ctl_card < 0) {
 			error("Unable to setup the IEC958 (S/PDIF) interface - PCM has no assigned card");
 			goto __diga_end;
@@ -716,13 +717,15 @@ static int test_au(int fd, void *buffer)
 
 static void set_params(void)
 {
-	snd_pcm_hw_params_t params;
-	snd_pcm_sw_params_t swparams;
+	snd_pcm_hw_params_t *params;
+	snd_pcm_sw_params_t *swparams;
 	size_t buffer_size;
 	int err;
 	size_t n;
 	size_t xfer_align;
-	err = snd_pcm_hw_params_any(handle, &params);
+	snd_pcm_hw_params_alloca(&params);
+	snd_pcm_sw_params_alloca(&swparams);
+	err = snd_pcm_hw_params_any(handle, params);
 	if (err < 0) {
 		error("Broken configuration for this PCM: no configurations available");
 		exit(EXIT_FAILURE);
@@ -733,27 +736,27 @@ static void set_params(void)
 	snd_mask_set(mask, SND_PCM_ACCESS_MMAP_INTERLEAVED);
 	snd_mask_set(mask, SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
 	snd_mask_set(mask, SND_PCM_ACCESS_MMAP_COMPLEX);
-		err = snd_pcm_hw_param_mask(handle, &params,
+		err = snd_pcm_hw_param_mask(handle, params,
 					    SND_PCM_HW_PARAM_ACCESS, mask);
 	} else if (interleaved)
-		err = snd_pcm_hw_param_set(handle, &params,
+		err = snd_pcm_hw_param_set(handle, params,
 					   SND_PCM_HW_PARAM_ACCESS,
 					   SND_PCM_ACCESS_RW_INTERLEAVED, 0);
 	else
-		err = snd_pcm_hw_param_set(handle, &params,
+		err = snd_pcm_hw_param_set(handle, params,
 					   SND_PCM_HW_PARAM_ACCESS,
 					   SND_PCM_ACCESS_RW_NONINTERLEAVED, 0);
 	if (err < 0) {
 		error("Access type not available");
 		exit(EXIT_FAILURE);
 	}
-	err = snd_pcm_hw_param_set(handle, &params, SND_PCM_HW_PARAM_FORMAT,
+	err = snd_pcm_hw_param_set(handle, params, SND_PCM_HW_PARAM_FORMAT,
 				   hwparams.format, 0);
 	if (err < 0) {
 		error("Sample format non available");
 		exit(EXIT_FAILURE);
 	}
-	err = snd_pcm_hw_param_set(handle, &params, SND_PCM_HW_PARAM_CHANNELS,
+	err = snd_pcm_hw_param_set(handle, params, SND_PCM_HW_PARAM_CHANNELS,
 				   hwparams.channels, 0);
 	if (err < 0) {
 		error("Channels count non available");
@@ -761,53 +764,53 @@ static void set_params(void)
 	}
 
 #if 0
-	err = snd_pcm_hw_param_min(handle, &params,
+	err = snd_pcm_hw_param_min(handle, params,
 				   SND_PCM_HW_PARAM_PERIODS, 2);
 	assert(err >= 0);
 #endif
-	err = snd_pcm_hw_param_near(handle, &params,
+	err = snd_pcm_hw_param_near(handle, params,
 				    SND_PCM_HW_PARAM_RATE, hwparams.rate, 0);
 	assert(err >= 0);
 	if (buffer_time < 0)
 		buffer_time = 500000;
-	buffer_time = snd_pcm_hw_param_near(handle, &params,
+	buffer_time = snd_pcm_hw_param_near(handle, params,
 					    SND_PCM_HW_PARAM_BUFFER_TIME,
 					    buffer_time, 0);
 	assert(buffer_time >= 0);
 	if (period_time < 0)
 		period_time = buffer_time / 4;
-	period_time = snd_pcm_hw_param_near(handle, &params,
+	period_time = snd_pcm_hw_param_near(handle, params,
 					    SND_PCM_HW_PARAM_PERIOD_TIME, 
 					    period_time, 0);
 	assert(period_time >= 0);
-	err = snd_pcm_hw_params(handle, &params);
+	err = snd_pcm_hw_params(handle, params);
 	if (err < 0) {
 		fprintf(stderr, "Unable to install hw params:\n");
-		snd_pcm_hw_params_dump(&params, log);
+		snd_pcm_hw_params_dump(params, log);
 		exit(EXIT_FAILURE);
 	}
-	chunk_size = snd_pcm_hw_param_value(&params, SND_PCM_HW_PARAM_PERIOD_SIZE, 0);
-	buffer_size = snd_pcm_hw_param_value(&params, SND_PCM_HW_PARAM_BUFFER_SIZE, 0);
-	snd_pcm_sw_params_current(handle, &swparams);
-	xfer_align = snd_pcm_sw_param_value(&swparams, SND_PCM_SW_PARAM_XFER_ALIGN);
+	chunk_size = snd_pcm_hw_param_value(params, SND_PCM_HW_PARAM_PERIOD_SIZE, 0);
+	buffer_size = snd_pcm_hw_param_value(params, SND_PCM_HW_PARAM_BUFFER_SIZE, 0);
+	snd_pcm_sw_params_current(handle, swparams);
+	xfer_align = snd_pcm_sw_param_value(swparams, SND_PCM_SW_PARAM_XFER_ALIGN);
 	if (sleep_min)
 		xfer_align = 1;
-	err = snd_pcm_sw_param_set(handle, &swparams,
+	err = snd_pcm_sw_param_set(handle, swparams,
 				   SND_PCM_SW_PARAM_SLEEP_MIN, sleep_min);
 	assert(err >= 0);
 	if (avail_min < 0)
 		n = chunk_size;
 	else
-		n = snd_pcm_hw_param_value(&params, SND_PCM_HW_PARAM_RATE, 0) * (double) avail_min / 1000000;
-	err = snd_pcm_sw_param_near(handle, &swparams,
+		n = snd_pcm_hw_param_value(params, SND_PCM_HW_PARAM_RATE, 0) * (double) avail_min / 1000000;
+	err = snd_pcm_sw_param_near(handle, swparams,
 				    SND_PCM_SW_PARAM_AVAIL_MIN, n);
 				   
-	err = snd_pcm_sw_param_near(handle, &swparams,
+	err = snd_pcm_sw_param_near(handle, swparams,
 				    SND_PCM_SW_PARAM_XFER_ALIGN, xfer_align);
 	assert(err >= 0);
-	if (snd_pcm_sw_params(handle, &swparams) < 0) {
+	if (snd_pcm_sw_params(handle, swparams) < 0) {
 		error("unable to install sw params:");
-		snd_pcm_sw_params_dump(&swparams, log);
+		snd_pcm_sw_params_dump(swparams, log);
 		exit(EXIT_FAILURE);
 	}
 	if (snd_pcm_prepare(handle) < 0) {
@@ -833,22 +836,23 @@ static void set_params(void)
 
 void xrun(void)
 {
-	snd_pcm_status_t status;
+	snd_pcm_status_t *status;
 	int res;
 	
-	memset(&status, 0, sizeof(status));
-	if ((res = snd_pcm_status(handle, &status))<0) {
+	snd_pcm_status_alloca(&status);
+	if ((res = snd_pcm_status(handle, status))<0) {
 		error("status error: %s", snd_strerror(res));
 		exit(EXIT_FAILURE);
 	}
-	if (status.state == SND_PCM_STATE_XRUN) {
-		struct timeval now, diff;
+	if (snd_pcm_status_state(status) == SND_PCM_STATE_XRUN) {
+		struct timeval now, diff, tstamp;
 		gettimeofday(&now, 0);
-		timersub(&now, &status.trigger_time, &diff);
+		snd_pcm_status_trigger_tstamp(status, &tstamp);
+		timersub(&now, &tstamp, &diff);
 		fprintf(stderr, "xrun!!! (at least %.3f ms long)\n", diff.tv_sec * 1000 + diff.tv_usec / 1000.0);
 		if (verbose) {
 			fprintf(stderr, "Status:\n");
-			snd_pcm_status_dump(&status, log);
+			snd_pcm_status_dump(status, log);
 		}
 		if ((res = snd_pcm_prepare(handle))<0) {
 			error("xrun: prepare error: %s", snd_strerror(res));
