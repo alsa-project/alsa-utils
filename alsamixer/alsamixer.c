@@ -545,7 +545,7 @@ mixer_write_cbar (int elem_index)
   sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * mixer_grpidx[elem_index]);
   elem = snd_mixer_find_selem(mixer_handle, sid);
   if (elem == NULL)
-    CHECK_ABORT (ERR_FCN, __FUNCTION__ ": snd_mixer_find_selem()", -EINVAL);
+    CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
   type = mixer_type[elem_index] & MIXER_ELEM_TYPE_MASK;
   chn_left = mixer_elem_chn[type][MIXER_CHN_LEFT];
   chn_right = mixer_elem_chn[type][MIXER_CHN_RIGHT];
@@ -726,7 +726,7 @@ mixer_update_cbar (int elem_index)
   sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * mixer_grpidx[elem_index]);
   elem = snd_mixer_find_selem(mixer_handle, sid);
   if (elem == NULL)
-    CHECK_ABORT (ERR_FCN, __FUNCTION__ ": snd_mixer_find_selem()", -EINVAL);
+    CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
 
   type = mixer_type[elem_index] & MIXER_ELEM_TYPE_MASK;
   chn_left = mixer_elem_chn[type][MIXER_CHN_LEFT];
@@ -1459,7 +1459,7 @@ __again:
       goto __again;
     elem = snd_mixer_find_selem(mixer_handle, sid);
     if (elem == NULL)
-      CHECK_ABORT (ERR_FCN, __FUNCTION__ ": snd_mixer_find_selem()", -EINVAL);
+      CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
     for (i = 0; i < MIXER_ELEM_CAPTURE; i++) {
       int ok;
       for (j = ok = 0; j < 2; j++) {
@@ -1496,7 +1496,7 @@ __again:
       goto __again;
     elem = snd_mixer_find_selem(mixer_handle, sid);
     if (elem == NULL)
-      CHECK_ABORT (ERR_FCN, __FUNCTION__ ": snd_mixer_find_selem()", -EINVAL);
+      CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
     for (i = 0; i < MIXER_ELEM_CAPTURE; i++) {
       int ok;
       for (j = ok = 0; j < 2; j++) {
@@ -1710,6 +1710,7 @@ mixer_iteration (void)
 
   old_view = mixer_view;
   
+#if 0 /* DISABLED: it's not so usefull rather annoying... */
   /* feature Escape prefixing for some keys */
   if (key == 27)
     {
@@ -1726,6 +1727,7 @@ mixer_iteration (void)
 	  break;
 	}
     }
+#endif /* DISABLED */
   
   /* general keys */
   switch (key)
