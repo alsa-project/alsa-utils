@@ -414,7 +414,7 @@ int main(int argc, char *argv[])
 			if (tmp < 300)
 				tmp *= 1000;
 			rhwparams.rate = tmp;
-			if (tmp < 2000 || tmp > 128000) {
+			if (tmp < 2000 || tmp > 192000) {
 				error("bad speed value %i", tmp);
 				return 1;
 			}
