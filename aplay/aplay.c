@@ -726,7 +726,7 @@ void playback_write_error(void)
 		exit(EXIT_FAILURE);
 	}
 	if (status.status == SND_PCM_STATUS_XRUN) {
-		printf("underrun at position %u!!!\n", status.pos_io);
+		fprintf(stderr, "underrun at position %u!!!\n", status.pos_io);
 		if (snd_pcm_channel_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK)<0) {
 			fprintf(stderr, "underrun: playback channel prepare error\n");
 			exit(EXIT_FAILURE);
@@ -752,7 +752,7 @@ void capture_read_error(void)
 	if (status.status == SND_PCM_STATUS_RUNNING)
 		return;		/* everything is ok, but the driver is waiting for data */
 	if (status.status == SND_PCM_STATUS_XRUN) {
-		printf("overrun at position %u!!!\n", status.pos_io);
+		fprintf(stderr, "overrun at position %u!!!\n", status.pos_io);
 		if (snd_pcm_channel_prepare(pcm_handle, SND_PCM_CHANNEL_CAPTURE)<0) {
 			fprintf(stderr, "overrun: capture channel prepare error\n");
 			exit(EXIT_FAILURE);
