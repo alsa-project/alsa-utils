@@ -180,6 +180,7 @@ static int	 mixer_needs_resize = 0;
 static int	 mixer_minimize = 0;
 static int	 mixer_no_lrcorner = 0;
 static int	 mixer_view = VIEW_PLAYBACK;
+static int	 mixer_view_saved = VIEW_PLAYBACK;
 static int	 mixer_max_x = 0;
 static int	 mixer_max_y = 0;
 static int	 mixer_ofs_x = 0;
@@ -253,12 +254,12 @@ static int	 mixer_help_xoffs = 0;
 static int	 mixer_help_yoffs = 0;
 static char     *mixer_help_text =
 (
- "\n"
  " Esc     exit alsamixer\n"
  " F1      show Help screen\n"
  " F2      show /proc info screen\n"
  " F3      show Playback controls only\n"
  " F4      show Capture controls only\n"
+ " F5      show all controls\n"
  " Return  return to main screen\n"
  " Space   toggle Capture facility\n"
  " Tab     toggle ExactMode\n"
@@ -1791,13 +1792,11 @@ mixer_iteration (void)
       break;
     case 13:	/* Return */
     case 10:	/* NewLine */
-      if (mixer_view == VIEW_CHANNELS) {
-	mixer_clear (FALSE);
-      } else {
-        mixer_view = VIEW_CHANNELS;
+      if (mixer_view != mixer_view_saved) {
+        mixer_view = mixer_view_saved;
         mixer_changed_state=1;
         mixer_reinit ();
-      } 
+      }
       key = 0;
       break;
     case 'h':
@@ -1816,7 +1815,7 @@ mixer_iteration (void)
       if (mixer_view == VIEW_PLAYBACK) {
 	mixer_clear (FALSE);
       } else {
-        mixer_view = VIEW_PLAYBACK;
+        mixer_view = mixer_view_saved = VIEW_PLAYBACK;
         mixer_changed_state=1;
         mixer_reinit ();
       } 
@@ -1826,7 +1825,17 @@ mixer_iteration (void)
       if (mixer_view == VIEW_CAPTURE) {
 	mixer_clear (FALSE);
       } else {
-        mixer_view = VIEW_CAPTURE;
+        mixer_view = mixer_view_saved = VIEW_CAPTURE;
+        mixer_changed_state=1;
+        mixer_reinit ();
+      } 
+      key = 0;
+      break;
+    case KEY_F (5):
+      if (mixer_view == VIEW_CHANNELS) {
+	mixer_clear (FALSE);
+      } else {
+        mixer_view = mixer_view_saved = VIEW_CHANNELS;
         mixer_changed_state=1;
         mixer_reinit ();
       } 
