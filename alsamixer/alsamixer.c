@@ -102,6 +102,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/signal.h>
+#include <sys/time.h>
 
 #ifndef CURSESINC
 #include <ncurses.h>
