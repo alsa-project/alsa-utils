@@ -61,6 +61,7 @@ static ssize_t (*writev_func)(snd_pcm_t *handle, const struct iovec *vector, uns
 static char *command;
 static snd_pcm_t *handle;
 static snd_pcm_info_t cinfo;
+static snd_pcm_params_info_t cpinfo;
 static snd_pcm_format_t rformat, format;
 static snd_pcm_setup_t setup;
 static int timelimit = 0;
@@ -114,10 +115,10 @@ struct fmt_capture {
 
 static void check_new_format(snd_pcm_format_t * format)
 {
-        if (cinfo.rates & (SND_PCM_RATE_CONTINUOUS|SND_PCM_RATE_KNOT)) {
-                if (format->rate < cinfo.min_rate ||
-                    format->rate > cinfo.max_rate) {
-			fprintf(stderr, "%s: unsupported rate %iHz (valid range is %iHz-%iHz)\n", command, format->rate, cinfo.min_rate, cinfo.max_rate);
+        if (cpinfo.rates & (SND_PCM_RATE_CONTINUOUS|SND_PCM_RATE_KNOT)) {
+                if (format->rate < cpinfo.min_rate ||
+                    format->rate > cpinfo.max_rate) {
+			fprintf(stderr, "%s: unsupported rate %iHz (valid range is %iHz-%iHz)\n", command, format->rate, cpinfo.min_rate, cpinfo.max_rate);
 			exit(EXIT_FAILURE);
 		}
         } else {
@@ -136,16 +137,16 @@ static void check_new_format(snd_pcm_format_t * format)
                 case 192000:    r = SND_PCM_RATE_192000; break;
                 default:        r = 0; break;
                 }
-                if (!(cinfo.rates & r)) {
+                if (!(cpinfo.rates & r)) {
 			fprintf(stderr, "%s: unsupported rate %iHz\n", command, format->rate);
 			exit(EXIT_FAILURE);
 		}
 	}
-	if (cinfo.min_channels > format->channels || cinfo.max_channels < format->channels) {
-		fprintf(stderr, "%s: unsupported number of channels %i (valid range is %i-%i)\n", command, format->channels, cinfo.min_channels, cinfo.max_channels);
+	if (cpinfo.min_channels > format->channels || cpinfo.max_channels < format->channels) {
+		fprintf(stderr, "%s: unsupported number of channels %i (valid range is %i-%i)\n", command, format->channels, cpinfo.min_channels, cpinfo.max_channels);
 		exit(EXIT_FAILURE);
 	}
-	if (!(cinfo.formats & (1 << format->format))) {
+	if (!(cpinfo.formats & (1 << format->format))) {
 		fprintf(stderr, "%s: unsupported format %s\n", command, snd_pcm_get_format_name(format->format));
 		exit(EXIT_FAILURE);
 	}
@@ -415,7 +416,7 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 			if (client_channel >= rformat.channels) {
-				fprintf(stderr, "Error: attempt to bind unavailable stream channel %d\n", client_channel);
+				fprintf(stderr, "Error: attempt to bind unavailable channel %d\n", client_channel);
 				return 1;
 			}
 			if (slave_channel >= pcm_channels) {
@@ -605,9 +606,14 @@ int main(int argc, char *argv[])
 		}
 	}
 	memset(&cinfo, 0, sizeof(cinfo));
-	cinfo.stream = stream;
 	if ((err = snd_pcm_info(handle, &cinfo)) < 0) {
-		fprintf(stderr, "Error: stream info error: %s\n", snd_strerror(err));
+		fprintf(stderr, "Error: info error: %s\n", snd_strerror(err));
+		return 1;
+	}
+
+	memset(&cpinfo, 0, sizeof(cpinfo));
+	if ((err = snd_pcm_params_info(handle, &cpinfo)) < 0) {
+		fprintf(stderr, "Error: params info error: %s\n", snd_strerror(err));
 		return 1;
 	}
 
@@ -801,7 +807,7 @@ static void set_params(void)
 	params.frames_fill_max = 1024;
 	params.frames_xrun_max = 0;
 	if (snd_pcm_params(handle, &params) < 0) {
-		fprintf(stderr, "%s: unable to set stream params\n", command);
+		fprintf(stderr, "%s: unable to set params\n", command);
 		exit(EXIT_FAILURE);
 	}
 	if (mmap_flag) {
@@ -811,7 +817,7 @@ static void set_params(void)
 		}
 	}
 	if (snd_pcm_prepare(handle) < 0) {
-		fprintf(stderr, "%s: unable to prepare stream\n", command);
+		fprintf(stderr, "%s: unable to prepare PCM\n", command);
 		exit(EXIT_FAILURE);
 	}
 	memset(&setup, 0, sizeof(setup));
@@ -843,13 +849,13 @@ void playback_underrun(void)
 	
 	memset(&status, 0, sizeof(status));
 	if (snd_pcm_status(handle, &status)<0) {
-		fprintf(stderr, "playback stream status error\n");
+		fprintf(stderr, "playback status error\n");
 		exit(EXIT_FAILURE);
 	}
 	if (status.state == SND_PCM_STATE_XRUN) {
 		fprintf(stderr, "underrun at position %u!!!\n", status.frame_io);
 		if (snd_pcm_prepare(handle)<0) {
-			fprintf(stderr, "underrun: playback stream prepare error\n");
+			fprintf(stderr, "underrun: playback prepare error\n");
 			exit(EXIT_FAILURE);
 		}
 		return;		/* ok, data should be accepted again */
@@ -866,7 +872,7 @@ void capture_overrun(void)
 	
 	memset(&status, 0, sizeof(status));
 	if (snd_pcm_status(handle, &status)<0) {
-		fprintf(stderr, "capture stream status error\n");
+		fprintf(stderr, "capture status error\n");
 		exit(EXIT_FAILURE);
 	}
 	if (status.state == SND_PCM_STATE_RUNNING)
@@ -874,7 +880,7 @@ void capture_overrun(void)
 	if (status.state == SND_PCM_STATE_XRUN) {
 		fprintf(stderr, "overrun at position %u!!!\n", status.frame_io);
 		if (snd_pcm_prepare(handle)<0) {
-			fprintf(stderr, "overrun: capture stream prepare error\n");
+			fprintf(stderr, "overrun: capture prepare error\n");
 			exit(EXIT_FAILURE);
 		}
 		return;		/* ok, data should be accepted again */
