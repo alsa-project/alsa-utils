@@ -1730,7 +1730,7 @@ main (int    argc,
 	case '?':
 	case 'h':
 	  fprintf (stderr, "%s %s\n", PRGNAME_UPPER, VERSION);
-	  fprintf (stderr, "Usage: %s [-c <card: 0...%i>] [-z]\n", PRGNAME, snd_cards () - 1);
+	  fprintf (stderr, "Usage: %s [-c <card: 0...7>] [-z]\n", PRGNAME);
 	  mixer_abort (ERR_NONE, "", 0);
 	case 'c':
 	  card_id = optarg;

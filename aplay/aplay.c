@@ -171,19 +171,16 @@ static void device_list(void)
 {
 	snd_ctl_t *handle;
 	int card, err, dev, idx;
-	unsigned int mask;
 	snd_ctl_hw_info_t info;
 	snd_pcm_info_t pcminfo;
 
-	mask = snd_cards_mask();
-	if (!mask) {
+	card = -1;
+	if (snd_card_next(&card) < 0 || card < 0) {
 		error("no soundcards found...");
 		return;
 	}
-	for (card = 0; card < SND_CARDS; card++) {
+	while (card >= 0) {
 		char name[32];
-		if (!(mask & (1 << card)))
-			continue;
 		sprintf(name, "hw:%d", card);
 		if ((err = snd_ctl_open(&handle, name)) < 0) {
 			error("control open (%i): %s", card, snd_strerror(err));
@@ -194,7 +191,12 @@ static void device_list(void)
 			snd_ctl_close(handle);
 			continue;
 		}
-		for (dev = 0; dev < info.pcmdevs; dev++) {
+		dev = -1;
+		while (1) {
+			if (snd_ctl_pcm_next_device(handle, &dev)<0)
+				error("snd_ctl_pcm_next_device");
+			if (dev < 0)
+				break;
 			pcminfo.device = dev;
 			pcminfo.stream = -stream - 1;
 			pcminfo.subdevice = -1;
@@ -221,6 +223,10 @@ static void device_list(void)
 			}
 		}
 		snd_ctl_close(handle);
+		if (snd_card_next(&card) < 0) {
+			error("snd_card_next");
+			break;
+		}
 	}
 }
 

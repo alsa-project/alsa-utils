@@ -915,19 +915,23 @@ static int save_state(char *file, const char *cardname)
 	}
 
 	if (!cardname) {
-		unsigned int card_mask, idx;
+		unsigned int card, first = 1;
 
-		card_mask = snd_cards_mask();
-		if (!card_mask) {
-			error("No soundcards found...");
-			return 1;
-		}
-		for (idx = 0; idx < 32; idx++) {
-			if (card_mask & (1 << idx)) {	/* find each installed soundcards */
-				if ((err = get_controls(idx, config))) {
-					return err;
+		card = -1;
+		/* find each installed soundcards */
+		while (1) {
+			if (snd_card_next(&card) < 0)
+				break;
+			if (card < 0) {
+				if (first) {
+					error("No soundcards found...");
+					return 1;
 				}
+				break;
 			}
+			first = 0;
+			if ((err = get_controls(card, config)))
+				return err;
 		}
 	} else {
 		int cardno;
@@ -987,19 +991,23 @@ static int load_state(char *file, const char *cardname)
 	}
 
 	if (!cardname) {
-		unsigned int card_mask, idx;
+		unsigned int card, first = 1;
 
-		card_mask = snd_cards_mask();
-		if (!card_mask) {
-			error("No soundcards found...");
-			return 1;
-		}
-		for (idx = 0; idx < 32; idx++) {
-			if (card_mask & (1 << idx)) {	/* find each installed soundcards */
-				if ((err = set_controls(idx, config))) {
-					return err;
+		card = -1;
+		/* find each installed soundcards */
+		while (1) {
+			if (snd_card_next(&card) < 0)
+				break;
+			if (card < 0) {
+				if (first) {
+					error("No soundcards found...");
+					return 1;
 				}
+				break;
 			}
+			first = 0;
+			if ((err = set_controls(card, config)))
+				return err;
 		}
 	} else {
 		int cardno;
