@@ -972,10 +972,16 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
  *  read function
  */
 
-static ssize_t pcm_read(u_char *data, size_t count)
+static ssize_t pcm_read(u_char *data, size_t rcount)
 {
 	ssize_t r;
 	size_t result = 0;
+	size_t count = rcount;
+
+	if (mode == SND_PCM_MODE_FRAGMENT &&
+	    count != buffer_size) {
+		count = buffer_size;
+	}
 
 	while (count > 0) {
 		r = read_func(handle, data, count);
@@ -996,13 +1002,19 @@ static ssize_t pcm_read(u_char *data, size_t count)
 			data += r * bits_per_frame / 8;
 		}
 	}
-	return result;
+	return rcount;
 }
 
-static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t count)
+static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 {
 	ssize_t r;
 	size_t result = 0;
+	size_t count = rcount;
+
+	if (mode == SND_PCM_MODE_FRAGMENT &&
+	    count != buffer_size) {
+		count = buffer_size;
+	}
 
 	while (count > 0) {
 		unsigned int channel;
@@ -1030,7 +1042,7 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t count)
 			count -= r;
 		}
 	}
-	return result;
+	return rcount;
 }
 
 /*
