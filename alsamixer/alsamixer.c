@@ -113,6 +113,8 @@
 #include <sys/signal.h>
 #include <sys/time.h>
 
+#include <locale.h>
+
 #ifndef CURSESINC
 #include <ncurses.h>
 #else
@@ -1580,6 +1582,7 @@ mixer_init_window (void)
 {
   /* initialize ncurses
    */
+  setlocale(LC_CTYPE, "");
   mixer_window = initscr ();
   curs_set (0); /* hide the cursor */
 
