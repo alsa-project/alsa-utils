@@ -6,6 +6,8 @@ autoconf
 export CFLAGS='-O2 -Wall -pipe -g'
 echo "CFLAGS=$CFLAGS"
 echo "./configure $@"
-./configure $@
+./configure $@ || exit 1
 unset CFLAGS
-make
+if [ -z "$CVSCOMPILE_NO_MAKE" ]; then
+  make
+fi
