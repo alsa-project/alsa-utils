@@ -955,6 +955,7 @@ static void set_params(void)
 
 	err = snd_pcm_sw_params_set_xfer_align(handle, swparams, xfer_align);
 	assert(err >= 0);
+
 	if (snd_pcm_sw_params(handle, swparams) < 0) {
 		error("unable to install sw params:");
 		snd_pcm_sw_params_dump(swparams, log);
@@ -1062,19 +1063,46 @@ static void suspend(void)
 static void compute_max_peak(u_char *data, size_t count)
 {
 	signed int val, max, max_peak = 0, perc;
-	size_t step, ocount = count;
+	size_t ocount = count;
 	
-	while (count-- > 0) {
-		switch (bits_per_sample) {
-		case 8: val = *(signed char *)data ^ snd_pcm_format_silence(hwparams.format); step = 1; break;
-		case 16: val = *(signed short *)data ^ snd_pcm_format_silence_16(hwparams.format); step = 2; break;
-		case 32: val = *(signed int *)data ^ snd_pcm_format_silence_32(hwparams.format); step = 4; break;
-		default: val = 0; step = 1; break;
+	switch (bits_per_sample) {
+	case 8: {
+		signed char *valp = (signed char *)data;
+		signed char mask = snd_pcm_format_silence(hwparams.format);
+		while (count-- > 0) {
+			val = *valp++ ^ mask;
+			val = abs(val);
+			if (max_peak < val)
+				max_peak = val;
 		}
-		data += step;
-		val = abs(val);
-		if (max_peak < val)
-			max_peak = val;
+		break;
+	}
+	case 16: {
+		signed short *valp = (signed short *)data;
+		signed short mask = snd_pcm_format_silence_16(hwparams.format);
+		count /= 2;
+		while (count-- > 0) {
+			val = *valp++ ^ mask;
+			val = abs(val);
+			if (max_peak < val)
+				max_peak = val;
+		}
+		break;
+	}
+	case 32: {
+		signed int *valp = (signed int *)data;
+		signed int mask = snd_pcm_format_silence_32(hwparams.format);
+		count /= 4;
+		while (count-- > 0) {
+			val = *valp++ ^ mask;
+			val = abs(val);
+			if (max_peak < val)
+				max_peak = val;
+		}
+		break;
+	}
+	default:
+		break;
 	}
 	max = 1 << (bits_per_sample-1);
 	if (max <= 0)
