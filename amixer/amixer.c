@@ -1528,7 +1528,7 @@ int main(int argc, char *argv[])
 			if (!strcmp(optarg, "none"))
 				smixer_options.abstract = SND_MIXER_SABSTRACT_NONE;
 			else if (!strcmp(optarg, "basic"))
-				smixer_options.abstract = SND_MIXER_SABSTRACT_NONE;
+				smixer_options.abstract = SND_MIXER_SABSTRACT_BASIC;
 			else {
 				fprintf(stderr, "Select correct abstraction level (none or basic)...\n");
 				morehelp++;
