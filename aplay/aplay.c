@@ -79,6 +79,8 @@ static int chunk_size = -1;
 static int period_time = -1;
 static int buffer_time = -1;
 static int avail_min = -1;
+static int start_delay = 1;
+static int stop_delay = 0;
 static int verbose = 0;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
@@ -134,28 +136,30 @@ static void usage(char *command)
 	fprintf(stderr, "\
 Usage: %s [OPTION]... [FILE]...
 
---help                   help
---version                print current version
--l, --list-devices       list all soundcards and digital audio devices
--L, --list-pcms          list all PCMs defined
--D, --device=NAME        select PCM by name
--q, --quiet              quiet mode
--t, --file-type TYPE     file type (voc, wav, raw or au)
--c, --channels=#         channels
--f, --format=FORMAT      sample format (case insensitive)
--r, --rate=#             sample rate
--d, --duration=#         interrupt after # seconds
--s, --sleep-min=#        min ticks to sleep
--M, --mmap               mmap stream
--N, --nonblock           nonblocking mode
--F, --period-time=#      distance between interrupts is # microseconds
--B, --buffer-time=#      buffer duration is # microseconds
--A, --avail-min=#        min available space for wakeup is # microseconds
--X, --xfer-min=#	 min xfer size is # microseconds
--v, --verbose            show PCM structure and setup
--I, --separate-channels  one file for each channel
--P, --iec958p            AES IEC958 professional
--C, --iec958c            AES IEC958 consumer
+--help                  help
+--version               print current version
+-l, --list-devices      list all soundcards and digital audio devices
+-L, --list-pcms         list all PCMs defined
+-D, --device=NAME       select PCM by name
+-q, --quiet             quiet mode
+-t, --file-type TYPE    file type (voc, wav, raw or au)
+-c, --channels=#        channels
+-f, --format=FORMAT     sample format (case insensitive)
+-r, --rate=#            sample rate
+-d, --duration=#        interrupt after # seconds
+-s, --sleep-min=#       min ticks to sleep
+-M, --mmap              mmap stream
+-N, --nonblock          nonblocking mode
+-F, --period-time=#     distance between interrupts is # microseconds
+-B, --buffer-time=#     buffer duration is # microseconds
+-A, --avail-min=#       min available space for wakeup is # microseconds
+-R, --start-delay=#     delay for automatic PCM start is # microseconds 
+                        (relative to buffer size if <= 0)
+-T, --stop-delay=#      delay for automatic PCM stop is # microseconds from xrun
+-v, --verbose           show PCM structure and setup
+-I, --separate-channels one file for each channel
+-P, --iec958p           AES IEC958 professional
+-C, --iec958c           AES IEC958 consumer
 ", command);
 	fprintf(stderr, "Recognized sample formats are:");
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++(unsigned long) k) {
@@ -264,7 +268,7 @@ static void version(void)
 int main(int argc, char *argv[])
 {
 	int option_index;
-	char *short_options = "lLD:qt:c:f:r:d:s:MNF:A:X:B:vIPC";
+	char *short_options = "lLD:qt:c:f:r:d:s:MNF:A:X:R:T:B:vIPC";
 	static struct option long_options[] = {
 		{"help", 0, 0, OPT_HELP},
 		{"version", 0, 0, OPT_VERSION},
@@ -282,7 +286,8 @@ int main(int argc, char *argv[])
 		{"nonblock", 0, 0, 'N'},
 		{"period_time", 1, 0, 'F'},
 		{"avail-min", 1, 0, 'A'},
-		{"xfer-min", 1, 0, 'X'},
+		{"start-delay", 1, 0, 'R'},
+		{"stop-delay", 1, 0, 'T'},
 		{"buffer-time", 1, 0, 'B'},
 		{"verbose", 0, 0, 'v'},
 		{"iec958c", 0, 0, 'C'},
@@ -403,6 +408,12 @@ int main(int argc, char *argv[])
 			break;
 		case 'A':
 			avail_min = atoi(optarg);
+			break;
+		case 'R':
+			start_delay = atoi(optarg);
+			break;
+		case 'T':
+			stop_delay = atoi(optarg);
 			break;
 		case 'v':
 			verbose = 1;
@@ -732,6 +743,8 @@ static void set_params(void)
 	int err;
 	size_t n;
 	size_t xfer_align;
+	unsigned int rate;
+	snd_pcm_uframes_t start_threshold, stop_threshold;
 	snd_pcm_hw_params_alloca(&params);
 	snd_pcm_sw_params_alloca(&swparams);
 	err = snd_pcm_hw_params_any(handle, params);
@@ -773,6 +786,7 @@ static void set_params(void)
 #endif
 	err = snd_pcm_hw_params_set_rate_near(handle, params, hwparams.rate, 0);
 	assert(err >= 0);
+	rate = err;
 	if (buffer_time < 0)
 		buffer_time = 500000;
 	buffer_time = snd_pcm_hw_params_set_buffer_time_near(handle, params,
@@ -805,9 +819,22 @@ static void set_params(void)
 	if (avail_min < 0)
 		n = chunk_size;
 	else
-		n = snd_pcm_hw_params_get_rate(params, 0) * (double) avail_min / 1000000;
+		n = (double) rate * avail_min / 1000000;
 	err = snd_pcm_sw_params_set_avail_min(handle, swparams, n);
-				   
+
+	if (start_delay <= 0) 
+		start_threshold = buffer_size + (double) rate * start_delay / 1000000;
+	else
+		start_threshold = (double) rate * start_delay / 1000000;
+	err = snd_pcm_sw_params_set_start_threshold(handle, swparams, start_threshold);
+	assert(err >= 0);
+	if (stop_delay <= 0) 
+		stop_threshold = buffer_size + (double) rate * stop_delay / 1000000;
+	else
+		stop_threshold = (double) rate * stop_delay / 1000000;
+	err = snd_pcm_sw_params_set_stop_threshold(handle, swparams, stop_threshold);
+	assert(err >= 0);
+
 	err = snd_pcm_sw_params_set_xfer_align(handle, swparams, xfer_align);
 	assert(err >= 0);
 	if (snd_pcm_sw_params(handle, swparams) < 0) {
