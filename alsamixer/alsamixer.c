@@ -1389,7 +1389,7 @@ mixer_set_delta(int delta)
 {
   int grp;
   
-  for (grp = 0; grp <= SND_MIXER_CHN_WOOFER; grp++)
+  for (grp = 0; grp < 2; grp++)
     mixer_volume_delta[grp] = delta;
 }
 
@@ -1398,7 +1398,7 @@ mixer_add_delta(int delta)
 {
   int grp;
   
-  for (grp = 0; grp <= SND_MIXER_CHN_WOOFER; grp++)
+  for (grp = 0; grp < 2; grp++)
     mixer_volume_delta[grp] += delta;
 }
 

@@ -546,17 +546,17 @@ static int test_wavefile(void *buffer)
 
 	if (wp->main_chunk == WAV_RIFF && wp->chunk_type == WAV_WAVE &&
 	    wp->sub_chunk == WAV_FMT && wp->data_chunk == WAV_DATA) {
-		if (wp->format != WAV_PCM_CODE) {
+		if (LE_SHORT(wp->format) != WAV_PCM_CODE) {
 			fprintf(stderr, "%s: can't play not PCM-coded WAVE-files\n", command);
 			exit(EXIT_FAILURE);
 		}
-		if (wp->modus < 1 || wp->modus > 32) {
+		if (LE_SHORT(wp->modus) < 1 || LE_SHORT(wp->modus) > 32) {
 			fprintf(stderr, "%s: can't play WAVE-files with %d tracks\n",
 				command, wp->modus);
 			exit(EXIT_FAILURE);
 		}
-		format.voices = wp->modus;
-		switch (wp->bit_p_spl) {
+		format.voices = LE_SHORT(wp->modus);
+		switch (LE_SHORT(wp->bit_p_spl)) {
 		case 8:
 			format.format = SND_PCM_SFMT_U8;
 			break;
@@ -567,8 +567,8 @@ static int test_wavefile(void *buffer)
 			fprintf(stderr, "%s: can't play WAVE-files with sample %d bits wide\n",
 				command, wp->bit_p_spl);
 		}
-		format.rate = wp->sample_fq;
-		count = wp->data_length;
+		format.rate = LE_INT(wp->sample_fq);
+		count = LE_INT(wp->data_length);
 		check_new_format(&format);
 		return 0;
 	}
@@ -726,7 +726,7 @@ void playback_write_error(void)
 		exit(EXIT_FAILURE);
 	}
 	if (status.status == SND_PCM_STATUS_XRUN) {
-		fprintf(stderr, "underrun at position %u!!!\n", status.pos_io);
+		printf("underrun at position %u!!!\n", status.pos_io);
 		if (snd_pcm_channel_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK)<0) {
 			fprintf(stderr, "underrun: playback channel prepare error\n");
 			exit(EXIT_FAILURE);
@@ -752,7 +752,7 @@ void capture_read_error(void)
 	if (status.status == SND_PCM_STATUS_RUNNING)
 		return;		/* everything is ok, but the driver is waiting for data */
 	if (status.status == SND_PCM_STATUS_XRUN) {
-		fprintf(stderr, "overrun at position %u!!!\n", status.pos_io);
+		printf("overrun at position %u!!!\n", status.pos_io);
 		if (snd_pcm_channel_prepare(pcm_handle, SND_PCM_CHANNEL_CAPTURE)<0) {
 			fprintf(stderr, "overrun: capture channel prepare error\n");
 			exit(EXIT_FAILURE);
