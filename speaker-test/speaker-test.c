@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2000-2004 James Courtier-Dutton
+ * Copyright (C) 2005 Nathan Hurst
  *
  * This file is part of the speaker-test tool.
  *
@@ -22,7 +23,13 @@
  *
  * Main program by James Courtier-Dutton (including some source code fragments from the alsa project.)
  * Some cleanup from Daniel Caujolle-Bert <segfault@club-internet.fr>
+ * Pink noise option added Nathan Hurst, 
+ *   based on generator by Phil Burk (pink.c)
  *
+ * Changelog:
+ *   0.0.8 Added support for pink noise output.
+ * Changelog:
+ *   0.0.7 Added support for more than 6 channels.
  * Changelog:
  *   0.0.6 Added support for different sample formats.
  *
@@ -42,6 +49,7 @@
 #include <alsa/asoundlib.h>
 #include <sys/time.h>
 #include <math.h>
+#include "pink.h"
 
 static char              *device      = "plughw:0,0";       /* playback device */
 static snd_pcm_format_t   format      = SND_PCM_FORMAT_S16; /* sample format */
@@ -52,6 +60,8 @@ static unsigned int       buffer_time = 500000;	            /* ring buffer lengt
 static unsigned int       period_time = 100000;	            /* period time in us */
 #define PERIODS 4
 static double             freq        = 440;                /* sinusoidal wave frequency in Hz */
+static int                test_type   = 1;                  /* Test type. 1 = noise, 2 = sine wave */
+static pink_noise_t pink;
 static snd_output_t      *output      = NULL;
 static snd_pcm_uframes_t  buffer_size;
 static snd_pcm_uframes_t  period_size;
@@ -151,13 +161,30 @@ static void generate_sine(signed short *samples, int channel, int count, double 
   *_phase = phase;
 }
 
-/* FIXME: Implement, because it is a better test than sine wave
- * because we can tell where pink noise is coming from more easily that a sine wave
+/* Pink noise is a better test than sine wave because we can tell
+ * where pink noise is coming from more easily that a sine wave.
  */
-#if 0
-static void generate_pink_noise( snd_pcm_uframes_t offset, int count, double *_phase) {
+
+
+static void generate_pink_noise( signed short *samples, int channel, int count) {
+  double res;
+  int    chn, ires;
+
+  while (count-- > 0) {
+    for(chn=0;chn<channels;chn++) {
+      if (chn==channel) {
+	// I've chosen to write different noise to each channel as it
+	// is more pleasant. -- njh
+	res = generate_pink_noise_sample(&pink) * 32767;
+	ires = res;
+	*samples++ = ires;
+      } else
+	*samples++ = 0;
+    }
+
+  }
+     
 }
-#endif
 
 static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_access_t access) {
   unsigned int rrate;
@@ -350,8 +377,11 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, signed short 
   int    err, cptr, n;
 
   for(n = 0; n < periods; n++) {
-
-    generate_sine(samples, channel, period_size, &phase);
+    if(test_type==1)
+      generate_pink_noise(samples, channel, period_size);
+    else
+      generate_sine(samples, channel, period_size, &phase);
+      
     ptr = samples;
     cptr = period_size;
 
@@ -393,6 +423,7 @@ static void help(void)
       "-F,--format	sample format\n"
       "-b,--buffer	ring buffer size in us\n"
       "-p,--period	period size in us\n"
+      "-t,--test	1=use pink noise, 2=use sine wave\n"
       "-s,--speaker	single speaker test. Values 1=Left or 2=right\n"
       "\n");
 #if 1
@@ -427,7 +458,8 @@ int main(int argc, char *argv[]) {
     {"format",    1, NULL, 'F'},
     {"buffer",    1, NULL, 'b'},
     {"period",    1, NULL, 'p'},
-    {"speaker",    1, NULL, 's'},
+    {"test",      1, NULL, 't'},
+    {"speaker",   1, NULL, 's'},
     {NULL,        0, NULL, 0  },
   };
 
@@ -440,7 +472,7 @@ int main(int argc, char *argv[]) {
   while (1) {
     int c;
     
-    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:s:", long_option, NULL)) < 0)
+    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:t:s:", long_option, NULL)) < 0)
       break;
     
     switch (c) {
@@ -478,6 +510,11 @@ int main(int argc, char *argv[]) {
       period_time = period_time < 1000 ? 1000 : period_time;
       period_time = period_time > 1000000 ? 1000000 : period_time;
       break;
+    case 't':
+      test_type = atoi(optarg);
+      test_type = test_type < 1 ? 1 : test_type;
+      test_type = test_type > 2 ? 2 : test_type;
+      break;
     case 's':
       speaker = atoi(optarg);
       speaker = speaker < 1 ? 0 : speaker;
@@ -507,7 +544,11 @@ int main(int argc, char *argv[]) {
 
   printf("Playback device is %s\n", device);
   printf("Stream parameters are %iHz, %s, %i channels\n", rate, snd_pcm_format_name(format), channels);
-  printf("Sine wave rate is %.4fHz\n", freq);
+  if(test_type==1)
+    printf("Using 16 octaves of pink noise\n");
+  else
+    printf("Sine wave rate is %.4fHz\n", freq);
+
 loop:
   while ((err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
     printf("Playback open error: %d,%s\n", err,snd_strerror(err));
@@ -529,6 +570,8 @@ loop:
   }
 
   samples = malloc((period_size * channels * snd_pcm_format_width(format)) / 8);
+  initialize_pink_noise( &pink, 16);
+  
   if (samples == NULL) {
     printf("No enough memory\n");
     exit(EXIT_FAILURE);
