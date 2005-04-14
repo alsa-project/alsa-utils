@@ -104,12 +104,15 @@ static void generate_sine(signed short *samples, int channel, int count, double 
 
   while (count-- > 0) {
     //res = sin((phase * 2 * M_PI) / max_phase - M_PI) * 32767;
-    res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0x07ffffff; /* Don't use MAX volume */
+    //res = sin((phase * 2 * M_PI) / max_phase - M_PI) * 32767;
+    res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0x03fffffff; /* Don't use MAX volume */
     //if (res > 0) res = 10000;
     //if (res < 0) res = -10000;
 
     /* printf("%e\n",res); */
     ires = res;
+    //ires = ((16 - (count & 0xf)) <<24);
+    //ires = 0;
 
     for(chn=0;chn<channels;chn++) {
       if (sample_size_bits == 8) {
@@ -124,6 +127,7 @@ static void generate_sine(signed short *samples, int channel, int count, double 
 	  *samp16++ = ires >>16;
 	  //*samp16++ = 0x1234;
         } else {
+	  //*samp16++ = (ires >>16)+1;
 	  *samp16++ = 0;
         }
       } else if (sample_size_bits == 32) {
@@ -132,6 +136,8 @@ static void generate_sine(signed short *samples, int channel, int count, double 
 	  //*samp32++ = 0xF2345678;
 	//printf("res=%lf, ires=%d 0x%x, samp32=0x%x\n",res,ires, ires, samp32[-1]);
         } else {
+	  //*samp32++ = ires+0x10000;
+	  //*samp32++ = ires;
 	  *samp32++ = 0;
         }
       }
@@ -357,8 +363,9 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, signed short 
         continue;
 
       if (err < 0) {
+        printf("Write error: %d,%s\n", err, snd_strerror(err));
         if (xrun_recovery(handle, err) < 0) {
-          printf("Write error: %d,%s\n", err, snd_strerror(err));
+          printf("xrun_recovery failed: %d,%s\n", err, snd_strerror(err));
 	  return -1;
         }
         break;	/* skip one period */
