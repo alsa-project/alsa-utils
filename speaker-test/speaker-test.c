@@ -99,6 +99,16 @@ static const int	channels6[] = {
   2,
   5
 }; 
+static const int	channels8[] = {
+  0,
+  4,
+  1,
+  7,
+  3,
+  2,
+  6,
+  5
+}; 
 
 static void generate_sine(signed short *samples, int channel, int count, double *_phase) {
   double phase = *_phase;
@@ -587,6 +597,9 @@ loop:
 	}
 	if (channels == 6) {
 	    channel=channels6[chn];
+	}
+	if (channels == 8) {
+	    channel=channels8[chn];
 	}
         printf(" %d - %s\n", channel, channel_name[channel]);
 
