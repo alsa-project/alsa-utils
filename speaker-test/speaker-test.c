@@ -42,6 +42,8 @@
 #include <sched.h>
 #include <errno.h>
 #include <getopt.h>
+#include <inttypes.h>
+
 /* #include "aconfig.h" */
 
 #define ALSA_PCM_NEW_HW_PARAMS_API
@@ -110,16 +112,16 @@ static const int	channels8[] = {
   5
 }; 
 
-static void generate_sine(signed short *samples, int channel, int count, double *_phase) {
+static void generate_sine(uint8_t *frames, int channel, int count, double *_phase) {
   double phase = *_phase;
   double max_phase = 1.0 / freq;
   double step = 1.0 / (double)rate;
   double res;
   int    chn;
   int32_t  ires;
-  int8_t *samp8 = (int8_t*) samples;
-  int16_t *samp16 = (int16_t*) samples;
-  int32_t *samp32 = (int32_t*) samples;
+  int8_t *samp8 = (int8_t*) frames;
+  int16_t *samp16 = (int16_t*) frames;
+  int32_t *samp32 = (int32_t*) frames;
   int sample_size_bits = snd_pcm_format_width(format); 
 
   while (count-- > 0) {
@@ -176,20 +178,42 @@ static void generate_sine(signed short *samples, int channel, int count, double 
  */
 
 
-static void generate_pink_noise( signed short *samples, int channel, int count) {
-  double res;
-  int    chn, ires;
+static void generate_pink_noise( uint8_t *frames, int channel, int count) {
+  double   res;
+  int      chn;
+  int32_t  ires;
+  int8_t  *samp8 = (int8_t*) frames;
+  int16_t *samp16 = (int16_t*) frames;
+  int32_t *samp32 = (int32_t*) frames;
+  int sample_size_bits = snd_pcm_format_width(format); 
 
   while (count-- > 0) {
     for(chn=0;chn<channels;chn++) {
-      if (chn==channel) {
-	// I've chosen to write different noise to each channel as it
-	// is more pleasant. -- njh
-	res = generate_pink_noise_sample(&pink) * 32767;
-	ires = res;
-	*samples++ = ires;
-      } else
-	*samples++ = 0;
+      if (sample_size_bits == 8) {
+        if (chn==channel) {
+	  res = generate_pink_noise_sample(&pink) * 0xffffffff;
+	  ires = res;
+	  *samp8++ = ires >> 24;
+        } else {
+	  *samp8++ = 0;
+        }
+      } else if (sample_size_bits == 16) {
+        if (chn==channel) {
+	  res = generate_pink_noise_sample(&pink) * 0xffffffff;
+	  ires = res;
+	  *samp16++ = ires >>16;
+        } else {
+	  *samp16++ = 0;
+        }
+      } else if (sample_size_bits == 32) {
+        if (chn==channel) {
+	  res = generate_pink_noise_sample(&pink) * 0xffffffff;
+	  ires = res;
+	  *samp32++ = ires;
+        } else {
+	  *samp32++ = 0;
+        }
+      }
     }
 
   }
@@ -325,7 +349,7 @@ static int set_swparams(snd_pcm_t *handle, snd_pcm_sw_params_t *swparams) {
     return err;
   }
 
-  /* allow the transfer when at least period_size samples can be processed */
+  /* allow the transfer when at least period_size frames can be processed */
   err = snd_pcm_sw_params_set_avail_min(handle, swparams, period_size);
   if (err < 0) {
     printf("Unable to set avail min for playback: %s\n", snd_strerror(err));
@@ -381,18 +405,19 @@ static int xrun_recovery(snd_pcm_t *handle, int err) {
  *   Transfer method - write only
  */
 
-static int write_loop(snd_pcm_t *handle, int channel, int periods, signed short *samples) {
+static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *frames) {
   double phase = 0;
-  signed short *ptr;
+  uint8_t *ptr;
   int    err, cptr, n;
+  int    bytes_per_frame=snd_pcm_frames_to_bytes(handle, 1);
 
   for(n = 0; n < periods; n++) {
     if(test_type==1)
-      generate_pink_noise(samples, channel, period_size);
+      generate_pink_noise(frames, channel, period_size);
     else
-      generate_sine(samples, channel, period_size, &phase);
+      generate_sine(frames, channel, period_size, &phase);
       
-    ptr = samples;
+    ptr = frames;
     cptr = period_size;
 
     while (cptr > 0) {
@@ -411,7 +436,7 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, signed short 
         break;	/* skip one period */
       }
 
-      ptr += (err * channels);
+      ptr += (err * bytes_per_frame);
       cptr -= err;
     }
   }
@@ -454,7 +479,7 @@ int main(int argc, char *argv[]) {
   int                   err, morehelp;
   snd_pcm_hw_params_t  *hwparams;
   snd_pcm_sw_params_t  *swparams;
-  signed short         *samples;
+  uint8_t              *frames;
   int                   chn;
   double		time1,time2,time3;
   struct   timeval	tv1,tv2;
@@ -579,10 +604,10 @@ loop:
     exit(EXIT_FAILURE);
   }
 
-  samples = malloc((period_size * channels * snd_pcm_format_width(format)) / 8);
+  frames = malloc((period_size * channels * snd_pcm_format_width(format)) / 8);
   initialize_pink_noise( &pink, 16);
   
-  if (samples == NULL) {
+  if (frames == NULL) {
     printf("No enough memory\n");
     exit(EXIT_FAILURE);
   }
@@ -603,12 +628,12 @@ loop:
 	}
         printf(" %d - %s\n", channel, channel_name[channel]);
 
-        err = write_loop(handle, channel, ((rate*3)/period_size), samples);
-        //err = write_loop(handle, 255, ((rate*3)/period_size), samples);
+        err = write_loop(handle, channel, ((rate*3)/period_size), frames);
+        //err = write_loop(handle, 255, ((rate*3)/period_size), frames);
 
         if (err < 0) {
           printf("Transfer failed: %s\n", snd_strerror(err));
-          free(samples);
+          free(frames);
           snd_pcm_close(handle);
 	  printf("Pausing\n");
 	  goto loop ;
@@ -626,7 +651,7 @@ loop:
     }
   } else {
     printf("  - %s\n", channel_name[speaker-1]);
-    err = write_loop(handle, speaker-1, ((rate*5)/period_size), samples);
+    err = write_loop(handle, speaker-1, ((rate*5)/period_size), frames);
 
     if (err < 0) {
       printf("Transfer failed: %s\n", snd_strerror(err));
@@ -634,7 +659,7 @@ loop:
   }
 
 
-  free(samples);
+  free(frames);
   snd_pcm_close(handle);
 
   exit(EXIT_SUCCESS);
