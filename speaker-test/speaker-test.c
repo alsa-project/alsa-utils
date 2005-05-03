@@ -191,7 +191,7 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
     for(chn=0;chn<channels;chn++) {
       if (sample_size_bits == 8) {
         if (chn==channel) {
-	  res = generate_pink_noise_sample(&pink) * 0xffffffff;
+	  res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
 	  ires = res;
 	  *samp8++ = ires >> 24;
         } else {
@@ -199,7 +199,7 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
         }
       } else if (sample_size_bits == 16) {
         if (chn==channel) {
-	  res = generate_pink_noise_sample(&pink) * 0xffffffff;
+	  res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
 	  ires = res;
 	  *samp16++ = ires >>16;
         } else {
@@ -207,7 +207,7 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
         }
       } else if (sample_size_bits == 32) {
         if (chn==channel) {
-	  res = generate_pink_noise_sample(&pink) * 0xffffffff;
+	  res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
 	  ires = res;
 	  *samp32++ = ires;
         } else {
