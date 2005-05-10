@@ -4,7 +4,7 @@ alsactl \- advanced controls for ALSA soundcard driver
 
 .SH SYNOPSIS
 
-\fBalsactl\fP [\fIoptions\fP] [\fIstore\fP|\fIrestore\fP] <card # or id>
+\fBalsactl\fP [\fIoptions\fP] [\fIstore\fP|\fIrestore\fP|\fInames\fP] <card # or id>
 
 .SH DESCRIPTION
 \fBalsactl\fP is used to control advanced settings for the ALSA
@@ -14,14 +14,19 @@ you have come to the right place.
 
 .SH INVOKING
 
-\fBalsactl\fP [\fIoptions\fP] [\fIstore\fP|\fIrestore\fP] <card # or id>
+\fBalsactl\fP [\fIoptions\fP] [\fIstore\fP|\fIrestore\fP|\fInames\fP] <card # or id>
 
 .SS Commands
 
 \fIstore\fP saves the current driver state for the selected soundcard
 to the configuration file.
 
-\fIrestore\fP loads driver state for the selected soundcard from the configuration file.
+\fIrestore\fP loads driver state for the selected soundcard from the
+configuration file.
+
+\fInames\fP generates list of available device names for applications.
+The card number or id is ignored for this command. The list is always
+generated for all available cards.
 
 If no soundcards are specified, setup for all cards will be saved or
 loaded.
@@ -34,7 +39,8 @@ Help: show available flags and commands.
 
 .TP
 \fI\-f, \-\-file\fP
-Select the configuration file to use. The default is /etc/asound.state
+Select the configuration file to use. The default is /etc/asound.state or
+/etc/asound.names (for the \fInames\fP command).
 
 .TP
 \fI\-F, \-\-force\fP
@@ -62,6 +68,13 @@ The configuration file is generated automatically by running
 necessary for some soundcard features (e.g. enabling/disabling
 automatic mic gain, digital output, joystick/game ports, some future MIDI
 routing options, etc).
+
+\fI/etc/asound.names\fP (or whatever file you specify with the
+\fB\-f\fP flag) is used to store the list of device names available
+in your system. The list does not contain all virtual names, because
+the name space is infinite, but it detects present hardware and
+generates list of common names. The user / system administrator / another
+configuration tool might modify the file to add virtual names as well.
 
 .SH SEE ALSO
 \fB
