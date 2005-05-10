@@ -186,6 +186,24 @@ static void usage(char *command)
 	fprintf(stderr, "-f dat (16 bit little endian, 48000, stereo)\n");
 }
 
+static void names_list(void)
+{
+	int err;
+	snd_devname_t *list, *item;
+
+	err = snd_names_list("pcm", &list);
+	if (err < 0) {
+		error("snd_names_list error: %s", snd_strerror(err));
+		return;
+	}
+	item = list;
+	while (item) {
+		printf("%s [%s]\n", item->name, item->comment);
+		item = item->next;
+	}
+	snd_names_list_free(list);
+}
+
 static void device_list(void)
 {
 	snd_ctl_t *handle;
@@ -305,10 +323,11 @@ enum {
 int main(int argc, char *argv[])
 {
 	int option_index;
-	char *short_options = "hlLD:qt:c:f:r:d:s:MNF:A:R:T:B:vIPC";
+	char *short_options = "hnlLD:qt:c:f:r:d:s:MNF:A:R:T:B:vIPC";
 	static struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"version", 0, 0, OPT_VERSION},
+		{"list-devnames", 0, 0, 'n'},
 		{"list-devices", 0, 0, 'l'},
 		{"list-pcms", 0, 0, 'L'},
 		{"device", 1, 0, 'D'},
@@ -336,7 +355,7 @@ int main(int argc, char *argv[])
 	};
 	char *pcm_name = "default";
 	int tmp, err, c;
-	int do_device_list = 0, do_pcm_list = 0;
+	int do_names_list = 0, do_device_list = 0, do_pcm_list = 0;
 	snd_pcm_info_t *info;
 
 	snd_pcm_info_alloca(&info);
@@ -372,6 +391,9 @@ int main(int argc, char *argv[])
 		case OPT_VERSION:
 			version();
 			return 0;
+		case 'n':
+			do_names_list = 1;
+			break;
 		case 'l':
 			do_device_list = 1;
 			break;
@@ -492,7 +514,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (do_device_list) {
+	if (do_names_list) {
+		names_list();
+		return 0;
+	} else if (do_device_list) {
 		if (do_pcm_list) pcm_list();
 		device_list();
 		snd_config_update_free_global();
