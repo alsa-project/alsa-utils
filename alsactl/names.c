@@ -432,7 +432,7 @@ static int probe_seq(snd_config_t *config)
 	err = add_entry(c, "default", "Default Device", "Duplex", "Sequencer");
 	if (err < 0)
 		return err;
-	err = add_entry(c, "seq", "Physical Device", "Duplex", "Sequencer");
+	err = add_entry(c, "hw", "Physical Device", "Duplex", "Sequencer");
 	if (err < 0)
 		return err;
 	return 0;
