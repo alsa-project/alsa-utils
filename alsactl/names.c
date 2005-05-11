@@ -279,6 +279,36 @@ static int probe_pcm(snd_config_t *config)
 	return 0;
 }
 
+static int probe_rawmidi_virtual(snd_config_t *config,
+				 const char *name, const char *comment)
+{
+	snd_rawmidi_t *rawmidi1, *rawmidi2;
+	int err1, err2, playback, capture, err;
+	char *flag;
+	
+	if (!debugflag)
+		snd_lib_error_set_handler(dummy_error_handler);
+	err1 = snd_rawmidi_open(NULL, &rawmidi1, name, SND_RAWMIDI_NONBLOCK);
+	err2 = snd_rawmidi_open(&rawmidi2, NULL, name, SND_RAWMIDI_NONBLOCK);
+	snd_lib_error_set_handler(NULL);
+	if (err1 >= 0)
+		snd_rawmidi_close(rawmidi1);
+	if (err2 >= 0)
+		snd_rawmidi_close(rawmidi2);
+	playback = (err1 == 0 || err1 == -EBUSY);
+	capture = (err2 == 0 || err2 == -EBUSY);
+	if (playback && capture)
+		flag = "Duplex";
+	else if (playback)
+		flag = "Playback";
+	else if (capture)
+		flag = "Capture";
+	else
+		return 0;
+	err = add_entry(config, name, "Abstract Device", flag, comment);
+	return err;
+}
+
 static int probe_rawmidi_card(int card, snd_ctl_t *ctl, snd_config_t *config)
 {
 	int dev = -1, err, err1, err2;
@@ -286,11 +316,7 @@ static int probe_rawmidi_card(int card, snd_ctl_t *ctl, snd_config_t *config)
 	char name[16];
 	const char *dname;
 	char *flag;
-	int first = 1, idx;
-	static const char *vnames1[] = {
-		"default:%i", "Default Device",
-		NULL
-	};
+	int idx;
 	
 	snd_rawmidi_info_alloca(&info1);
 	snd_rawmidi_info_alloca(&info2);
@@ -321,11 +347,6 @@ static int probe_rawmidi_card(int card, snd_ctl_t *ctl, snd_config_t *config)
 			flag = "Input";
 			dname = snd_rawmidi_info_get_name(info2);
 		}
-		if (first) {
-			for (idx = 0; vnames1[idx] != NULL; idx += 2)
-				probe_pcm_virtual(card, ctl, config, vnames1[idx], vnames1[idx+1]);
-		}
-		first = 0;
 		sprintf(name, "hw:%i,%i", card, dev);
 		err = add_entry(config, name, "Physical Device", flag, dname);
 		if (err < 0)
@@ -343,6 +364,9 @@ static int probe_rawmidi(snd_config_t *config)
 	if (err < 0)
 		return err;
 	err = snd_config_add(config, c);
+	if (err < 0)
+		return err;
+	err = probe_rawmidi_virtual(c, "default", "Default Device");
 	if (err < 0)
 		return err;
 	err = for_each_card(probe_rawmidi_card, c);
