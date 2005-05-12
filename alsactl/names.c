@@ -315,8 +315,9 @@ static int probe_rawmidi_card(int card, snd_ctl_t *ctl, snd_config_t *config)
 	snd_rawmidi_info_t * info1, * info2;
 	char name[16];
 	const char *dname;
+	const char *subname;
 	char *flag;
-	int idx;
+	int subdev;
 	
 	snd_rawmidi_info_alloca(&info1);
 	snd_rawmidi_info_alloca(&info2);
@@ -339,6 +340,7 @@ static int probe_rawmidi_card(int card, snd_ctl_t *ctl, snd_config_t *config)
 			continue;
 		}
 		dname = snd_rawmidi_info_get_name(info1);
+		subname = snd_rawmidi_info_get_subdevice_name(info1);
 		if (err1 == 0 && err2 == 0)
 			flag = "Duplex";
 		else if (err1 == 0)
@@ -346,11 +348,37 @@ static int probe_rawmidi_card(int card, snd_ctl_t *ctl, snd_config_t *config)
 		else {
 			flag = "Input";
 			dname = snd_rawmidi_info_get_name(info2);
+			subname = snd_rawmidi_info_get_subdevice_name(info2);
 		}
-		sprintf(name, "hw:%i,%i", card, dev);
-		err = add_entry(config, name, "Physical Device", flag, dname);
-		if (err < 0)
-			return err;
+		if (subname[0] == '\0') {
+			sprintf(name, "hw:%i,%i", card, dev);
+			err = add_entry(config, name, "Physical Device", flag, dname);
+			if (err < 0)
+				return err;
+		} else {
+			subdev = 0;
+			do {
+				sprintf(name, "hw:%i,%i,%i", card, dev, subdev);
+				if (err1 == 0)
+					subname = snd_rawmidi_info_get_subdevice_name(info1);
+				else
+					subname = snd_rawmidi_info_get_subdevice_name(info2);
+				if (err1 == 0 && err2 == 0)
+					flag = "Duplex";
+				else if (err1 == 0)
+					flag = "Output";
+				else
+					flag = "Input";
+				err = add_entry(config, name, "Physical Device", flag, subname);
+				if (err < 0)
+					return err;
+				++subdev;
+				snd_rawmidi_info_set_subdevice(info1, subdev);
+				snd_rawmidi_info_set_subdevice(info2, subdev);
+				err1 = snd_ctl_rawmidi_info(ctl, info1);
+				err2 = snd_ctl_rawmidi_info(ctl, info2);
+			} while (err1 == 0 || err2 == 0);
+		}
 	}
 	return 0;
 }
