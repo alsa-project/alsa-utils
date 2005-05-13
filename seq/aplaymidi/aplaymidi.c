@@ -109,7 +109,6 @@ static void check_snd(const char *operation, int err)
 static void init_seq(void)
 {
 	int err;
-	snd_seq_client_info_t *info;
 
 	/* open sequencer */
 	err = snd_seq_open(&seq, "default", SND_SEQ_OPEN_DUPLEX, 0);
