@@ -1364,6 +1364,7 @@ static int events(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 		}
 	}
 	snd_hctl_close(handle);
+	return 0;
 }
 
 static void sevents_value(snd_mixer_selem_id_t *sid)
@@ -1452,6 +1453,7 @@ static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 		}
 	}
 	snd_mixer_close(handle);
+	return 0;
 }
 
 int main(int argc, char *argv[])
