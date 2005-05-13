@@ -16,8 +16,8 @@ install-man8:
 	    loc="";; \
 	  esac; \
 	  $(mkinstalldirs) $(DESTDIR)$(mandir)$$loc/man$$ext; \
-	  echo " $(INSTALL_DATA) $$i $(DESTDIR)$(mandir)$$loc/man$$ext/$$inst"; \
-	  $(INSTALL_DATA) $$i $(DESTDIR)$(mandir)$$loc/man$$ext/$$inst; \
+	  echo " $(INSTALL_DATA) $$i $(DESTDIR)$(mandir)$$loc/man$$ext/$$inst.$$ext"; \
+	  $(INSTALL_DATA) $$i $(DESTDIR)$(mandir)$$loc/man$$ext/$$inst.$$ext; \
 	done
 
 uninstall-man8:
@@ -32,6 +32,6 @@ uninstall-man8:
 	  *)\
 	    loc="";; \
 	  esac; \
-	  echo " rm -f $(DESTDIR)$(mandir)$$loc/man$$ext/$$inst"; \
-	  rm -f $(DESTDIR)$(mandir)$$loc/man$$ext/$$inst; \
+	  echo " rm -f $(DESTDIR)$(mandir)$$loc/man$$ext/$$inst.$$ext"; \
+	  rm -f $(DESTDIR)$(mandir)$$loc/man$$ext/$$inst.$$ext; \
 	done
