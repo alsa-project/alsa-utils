@@ -517,7 +517,9 @@ int generate_names(const char *cfgfile)
 		globidx = 1;
 		err = (probes[idx])(config);
 		if (err < 0) {
-			error("probe %i failed: %s", idx, snd_strerror(err));
+			/* ignore -ENOTTY indicating the non-existing component */
+			if (err != -ENOTTY)
+				error("probe %i failed: %s", idx, snd_strerror(err));
 		} else {
 			ok++;
 		}
