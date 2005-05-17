@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	{
 		{"help", 0, NULL, 'h'},
 		{"file", 1, NULL, 'f'},
-		{"force", 1, NULL, 'F'},
+		{"force", 0, NULL, 'F'},
 		{"debug", 0, NULL, 'd'},
 		{"version", 0, NULL, 'v'},
 		{NULL, 0, NULL, 0},
