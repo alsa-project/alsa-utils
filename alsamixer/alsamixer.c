@@ -722,7 +722,7 @@ static void draw_blank(int x, int y, int lines)
 }
 
 /* show the information of the focused item */
-static void display_item_info(int elem_index, snd_mixer_selem_id_t *sid, int is_off)
+static void display_item_info(int elem_index, snd_mixer_selem_id_t *sid, char *extra_info)
 {
   char string[64], idxstr[10];
   int idx;
@@ -753,7 +753,7 @@ static void display_item_info(int elem_index, snd_mixer_selem_id_t *sid, int is_
 	   snd_mixer_selem_id_get_name(sid),
 	   (mixer_type[elem_index] & MIXER_ELEM_CAPTURE_SUFFIX) ? " Capture" : "",
 	   idx > 0 ? idxstr : "",
-	   is_off ? " [Off]" : "");
+	   extra_info);
   for (i = strlen(string); i < sizeof(string) - 1; i++)
     string[i] = ' ';
   string[xlen] = '\0';
@@ -788,7 +788,7 @@ static void display_enum_list(snd_mixer_elem_t *elem, int y, int x)
 {
   int cury, ch, err;
 
-  draw_blank(x, y, mixer_cbar_height + 6);
+  draw_blank(x, y, mixer_cbar_height + 5);
   
   cury = y - 4;
   for (ch = 0; ch < 2; ch++) {
@@ -897,6 +897,7 @@ mixer_update_cbar (int elem_index)
   snd_mixer_selem_channel_id_t chn_left, chn_right;
   int x, y;
   int swl, swr;
+  char * extra_info;
 
   /* set new scontrol indices and read info
    */
@@ -953,14 +954,34 @@ mixer_update_cbar (int elem_index)
   if (elem_index == mixer_focus_elem) {
     /* control muted? */
     swl = swr = 1;
+    extra_info = "";
     if (mixer_type[elem_index] & MIXER_ELEM_MUTE_SWITCH) {
       snd_mixer_selem_get_playback_switch(elem, chn_left, &swl);
       swr = swl;
       if (chn_right != SND_MIXER_SCHN_UNKNOWN)
 	snd_mixer_selem_get_playback_switch(elem, chn_right, &swr);
+      extra_info = !swl && !swr ? " [Off]" : "";
     }
-
-    display_item_info(elem_index, sid, !swl && !swr);
+    if (mixer_type[elem_index] & MIXER_ELEM_ENUM) {
+      while (1) {
+	int eidx, err, length;
+        char tmp[50];
+	tmp[0]=' ';
+	tmp[1]='[';
+        err = snd_mixer_selem_get_enum_item(elem, 0, &eidx);
+        if (err < 0)
+          break;
+        if (snd_mixer_selem_get_enum_item_name(elem, eidx, sizeof(tmp) - 3, tmp+2) < 0)
+          break;
+        tmp[48] = 0;
+	length=strlen(tmp);
+	tmp[length]=']';
+	tmp[length+1]=0;
+        extra_info = tmp;
+	break;
+      }
+    }
+    display_item_info(elem_index, sid, extra_info);
   }
 
   /* get channel bar position
