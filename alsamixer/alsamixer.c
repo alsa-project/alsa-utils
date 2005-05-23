@@ -1679,12 +1679,12 @@ __again:
 
   if (mixer_type)
     free(mixer_type);
-  mixer_type = (int *)malloc(sizeof(int) * mixer_n_elems);
+  mixer_type = (int *)calloc(mixer_n_elems, sizeof(int));
   if (mixer_type == NULL)
     mixer_abort(ERR_FCN, "malloc", 0);
   if (mixer_grpidx)
     free(mixer_grpidx);
-  mixer_grpidx = (int *)malloc(sizeof(int) * mixer_n_elems);
+  mixer_grpidx = (int *)calloc(mixer_n_elems, sizeof(int));
   if (mixer_grpidx == NULL)
     mixer_abort(ERR_FCN, "malloc", 0);
   elem_index = 0;
