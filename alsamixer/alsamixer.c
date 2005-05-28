@@ -962,9 +962,10 @@ mixer_update_cbar (int elem_index)
 	snd_mixer_selem_get_playback_switch(elem, chn_right, &swr);
       extra_info = !swl && !swr ? " [Off]" : "";
     }
+#if 0
     if (mixer_type[elem_index] & MIXER_ELEM_ENUM) {
       while (1) {
-	int eidx, err, length;
+	unsigned int eidx, err, length;
         char tmp[50];
 	tmp[0]=' ';
 	tmp[1]='[';
@@ -981,6 +982,7 @@ mixer_update_cbar (int elem_index)
 	break;
       }
     }
+#endif
     display_item_info(elem_index, sid, extra_info);
   }
 
