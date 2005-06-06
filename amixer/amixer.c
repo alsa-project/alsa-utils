@@ -121,7 +121,7 @@ static int info(void)
 		error("Mixer open error: %s", snd_strerror(err));
 		return err;
 	}
-	if ((err = snd_mixer_attach(mhandle, card)) < 0) {
+	if (smixer_level == 0 && (err = snd_mixer_attach(mhandle, card)) < 0) {
 		error("Mixer attach %s error: %s", card, snd_strerror(err));
 		snd_mixer_close(mhandle);
 		return err;
@@ -771,7 +771,7 @@ static int selems(int level)
 		error("Mixer %s open error: %s", card, snd_strerror(err));
 		return err;
 	}
-	if ((err = snd_mixer_attach(handle, card)) < 0) {
+	if (smixer_level == 0 && (err = snd_mixer_attach(handle, card)) < 0) {
 		error("Mixer attach %s error: %s", card, snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
@@ -1142,7 +1142,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 		error("Mixer %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
-	if ((err = snd_mixer_attach(handle, card)) < 0) {
+	if (smixer_level == 0 && (err = snd_mixer_attach(handle, card)) < 0) {
 		error("Mixer attach %s error: %s", card, snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
@@ -1424,7 +1424,7 @@ static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 		error("Mixer %s open error: %s", card, snd_strerror(err));
 		return err;
 	}
-	if ((err = snd_mixer_attach(handle, card)) < 0) {
+	if (smixer_level == 0 && (err = snd_mixer_attach(handle, card)) < 0) {
 		error("Mixer attach %s error: %s", card, snd_strerror(err));
 		snd_mixer_close(handle);
 		return err;
@@ -1545,6 +1545,7 @@ int main(int argc, char *argv[])
 		help();
 		return 1;
 	}
+	smixer_options.device = card;
 	if (argc - optind <= 0) {
 		return selems(LEVEL_BASIC | level) ? 1 : 0;
 	}
