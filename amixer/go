@@ -1,0 +1,6 @@
+#!/bin/bash
+
+ALSA_MIXER_SIMPLE_MODULES="$HOME/alsa/alsa-lib/src/mixer/simple/.libs" \
+ALSA_MIXER_SIMPLE="$HOME/alsa/alsa-lib/src/conf/smixer.conf" \
+LD_PRELOAD="$HOME/alsa/alsa-lib/src/.libs/libasound.so" \
+exec ./amixer "$@"
