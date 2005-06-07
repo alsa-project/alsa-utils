@@ -753,7 +753,7 @@ ac_try_load () {
     if $lsmod | grep -q -E '^(snd-|snd_)'$1' '; then
 	: ;
     else
-	modprobe -r snd-$1 >/dev/null 2>&1
+	/sbin/modprobe -r snd-$1 >/dev/null 2>&1
 	return 1
     fi
 
@@ -792,7 +792,7 @@ ac_try_capture () {
     if $lsmod | grep -q -E '^(snd-|snd_)'$1' '; then
 	: ;
     else
-	modprobe -r snd-$1 >/dev/null 2>&1
+	/sbin/modprobe -r snd-$1 >/dev/null 2>&1
 	return 1
     fi
 
