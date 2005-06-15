@@ -564,7 +564,26 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 					printf(" cswitch-exclusive");
 			}
 		}
+		if (snd_mixer_selem_is_enumerated(elem)) {
+			printf(" enum");
+		}
 		printf("\n");
+		if (snd_mixer_selem_is_enumerated(elem)) {
+			int i, items, idx;
+			char itemname[40];
+			items = snd_mixer_selem_get_enum_items(elem);
+			printf("  Items:");
+			for (i = 0; i < items; i++) {
+				snd_mixer_selem_get_enum_item_name(elem, i, sizeof(itemname) - 1, itemname);
+				printf(" '%s'", itemname);
+			}
+			printf("\n");
+			for (i = 0; !snd_mixer_selem_get_enum_item(elem, i, &idx); i++) {
+				snd_mixer_selem_get_enum_item_name(elem, idx, sizeof(itemname) - 1, itemname);
+				printf("  Item%d: '%s'\n", i, itemname);
+			}
+			return 0; /* no more thing to do */
+		}
 		if (snd_mixer_selem_has_capture_switch_exclusive(elem))
 			printf("%sCapture exclusive group: %i\n", space,
 			       snd_mixer_selem_get_capture_group(elem));
@@ -800,7 +819,7 @@ static int selems(int level)
 
 static int parse_control_id(const char *str, snd_ctl_elem_id_t *id)
 {
-	int c, size;
+	int c, size, numid;
 	char *ptr;
 
 	while (*str == ' ' || *str == '\t')
@@ -811,6 +830,11 @@ static int parse_control_id(const char *str, snd_ctl_elem_id_t *id)
 	while (*str) {
 		if (!strncasecmp(str, "numid=", 6)) {
 			str += 6;
+			numid = atoi(str);
+			if (numid <= 0) {
+				fprintf(stderr, "amixer: Invalid numid %d\n", numid);
+				return -EINVAL;
+			}
 			snd_ctl_elem_id_set_numid(id, atoi(str));
 			while (isdigit(*str))
 				str++;
@@ -972,7 +996,7 @@ static int cset(int argc, char *argv[], int roflag)
 	}
 	snd_ctl_elem_info_set_id(info, id);
 	if ((err = snd_ctl_elem_info(handle, info)) < 0) {
-		error("Control %s cinfo error: %s\n", card, snd_strerror(err));
+		error("Cannot find the given element from control %s\n", card);
 		return err;
 	}
 	snd_ctl_elem_info_get_id(info, id);	/* FIXME: Remove it when hctl find works ok !!! */
@@ -1113,6 +1137,31 @@ static unsigned int dir_mask(char **arg, unsigned int def)
 	return def;
 }
 
+static int get_enum_item_index(snd_mixer_elem_t *elem, char **ptrp)
+{
+	char *ptr = *ptrp;
+	int items, i, len;
+	char name[40];
+	
+	items = snd_mixer_selem_get_enum_items(elem);
+	if (items <= 0)
+		return -1;
+
+	for (i = 0; i < items; i++) {
+		if (snd_mixer_selem_get_enum_item_name(elem, i, sizeof(name)-1, name) < 0)
+			continue;
+		len = strlen(name);
+		if (! strncmp(name, ptr, len)) {
+			if (! ptr[len] || ptr[len] == ',' || ptr[len] == '\n') {
+				ptr += len;
+				*ptrp = ptr;
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
 static int sset(unsigned int argc, char *argv[], int roflag)
 {
 	int err;
@@ -1186,6 +1235,18 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 
 			if (!(channels & (1 << chn)))
 				continue;
+			/* enum control */
+			if (snd_mixer_selem_is_enumerated(elem)) {
+				int idx = get_enum_item_index(elem, &ptr);
+				if (idx < 0)
+					break;
+				else
+					snd_mixer_selem_set_enum_item(elem, chn, idx);
+				if (!multi)
+					ptr = optr;
+				continue;
+			}
+
 			if ((dir & 1) && snd_mixer_selem_has_playback_channel(elem, chn)) {
 				sptr = ptr;
 				if (!strncmp(ptr, "mute", 4) && snd_mixer_selem_has_playback_switch(elem)) {
