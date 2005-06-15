@@ -721,14 +721,9 @@ static void draw_blank(int x, int y, int lines)
     mvaddstr (y - i, x, "         ");
 }
 
-/* show the information of the focused item */
-static void display_item_info(int elem_index, snd_mixer_selem_id_t *sid, char *extra_info)
+/* show the current view mode */
+static void display_view_info(void)
 {
-  char string[64], idxstr[10];
-  int idx;
-  int i, xlen = mixer_max_x - 8;
-  if (xlen > sizeof(string) - 1)
-    xlen = sizeof(string) - 1;
   mixer_dc (DC_PROMPT);
   mvaddstr (3, 2, "View:  Playback  Capture  All ");
   mixer_dc (DC_TEXT);
@@ -743,6 +738,16 @@ static void display_item_info(int elem_index, snd_mixer_selem_id_t *sid, char *e
     mvaddstr (3, 27, "[All]");
     break;
   }
+}
+
+/* show the information of the focused item */
+static void display_item_info(int elem_index, snd_mixer_selem_id_t *sid, char *extra_info)
+{
+  char string[64], idxstr[10];
+  int idx;
+  int i, xlen = mixer_max_x - 8;
+  if (xlen > sizeof(string) - 1)
+    xlen = sizeof(string) - 1;
   mixer_dc (DC_PROMPT);
   mvaddstr (4, 2, "Item: ");
   mixer_dc (DC_TEXT);
@@ -788,7 +793,7 @@ static void display_enum_list(snd_mixer_elem_t *elem, int y, int x)
 {
   int cury, ch, err;
 
-  draw_blank(x, y, mixer_cbar_height + 5);
+  draw_blank(x, y, mixer_cbar_height + (mixer_view == VIEW_PLAYBACK ? 5 : 6));
   
   cury = y - 4;
   for (ch = 0; ch < 2; ch++) {
@@ -962,26 +967,21 @@ mixer_update_cbar (int elem_index)
 	snd_mixer_selem_get_playback_switch(elem, chn_right, &swr);
       extra_info = !swl && !swr ? " [Off]" : "";
     }
-    if (mixer_type[elem_index] == MIXER_ELEM_ENUM) {
-      while (1) {
-	unsigned int eidx, err, length;
-        char tmp[50];
-	tmp[0]=' ';
-	tmp[1]='[';
-        err = snd_mixer_selem_get_enum_item(elem, 0, &eidx);
-        if (err < 0)
-          break;
-        if (snd_mixer_selem_get_enum_item_name(elem, eidx, sizeof(tmp) - 3, tmp+2) < 0)
-          break;
-        tmp[48] = 0;
+    if (type == MIXER_ELEM_ENUM) {
+      unsigned int eidx, length;
+      char tmp[50];
+      tmp[0]=' ';
+      tmp[1]='[';
+      if (! snd_mixer_selem_get_enum_item(elem, 0, &eidx) &&
+	  ! snd_mixer_selem_get_enum_item_name(elem, eidx, sizeof(tmp) - 3, tmp+2)) {
+	tmp[48] = 0;
 	length=strlen(tmp);
 	tmp[length]=']';
 	tmp[length+1]=0;
-        extra_info = tmp;
-	break;
-      }
+	display_item_info(elem_index, sid, tmp);
+      } else
+	display_item_info(elem_index, sid, extra_info);
     }
-    display_item_info(elem_index, sid, extra_info);
   }
 
   /* get channel bar position
@@ -1078,6 +1078,7 @@ mixer_update_cbars (void)
   static int o_y = 0;
   int i, x, y;
   
+  display_view_info();
   if (!mixer_cbar_get_pos (mixer_focus_elem, &x, &y))
     {
       if (mixer_focus_elem < mixer_first_vis_elem)
@@ -1932,6 +1933,7 @@ mixer_iteration (void)
       /* ignore */
       break;
     case 27:	/* Escape */
+    case KEY_F (10):
       finished = 1;
       key = 0;
       break;
@@ -1963,11 +1965,6 @@ mixer_iteration (void)
         mixer_view = mixer_view_saved = VIEW_PLAYBACK;
         mixer_changed_state=1;
         mixer_reinit ();
-        if (mixer_n_view_elems == 0) {
-          mixer_view = mixer_view_saved = VIEW_CAPTURE;
-          mixer_changed_state=1;
-          mixer_reinit ();
-        }
       } 
       key = 0;
       break;
@@ -1978,11 +1975,6 @@ mixer_iteration (void)
         mixer_view = mixer_view_saved = VIEW_CAPTURE;
         mixer_changed_state=1;
         mixer_reinit ();
-        if (mixer_n_view_elems == 0) {
-          mixer_view = mixer_view_saved = VIEW_PLAYBACK;
-          mixer_changed_state=1;
-          mixer_reinit ();
-        }
       } 
       key = 0;
       break;
@@ -2190,7 +2182,10 @@ mixer_iteration (void)
   if (old_view != mixer_view)
     mixer_clear (FALSE);
   
-  mixer_focus_elem = CLAMP (mixer_focus_elem, 0, mixer_n_view_elems - 1);
+  if (! mixer_n_view_elems)
+    mixer_focus_elem = 0;
+  else
+    mixer_focus_elem = CLAMP (mixer_focus_elem, 0, mixer_n_view_elems - 1);
   
   return finished;
 }
@@ -2270,7 +2265,7 @@ main (int    argc,
   mixer_init ();
   mixer_reinit ();
   
-  if (mixer_n_view_elems == 0) {
+  if (mixer_n_elems == 0) {
     fprintf(stderr, "No mixer elems found\n");
     mixer_abort (ERR_NONE, "", 0);
   }
@@ -2321,4 +2316,4 @@ main (int    argc,
   while (!mixer_iteration ());
   
   mixer_abort (ERR_NONE, "", 0);
-};
+}
