@@ -957,6 +957,7 @@ mixer_update_cbar (int elem_index)
   /* update the focused full bar name
    */
   if (elem_index == mixer_focus_elem) {
+    char tmp[50];
     /* control muted? */
     swl = swr = 1;
     extra_info = "";
@@ -968,20 +969,20 @@ mixer_update_cbar (int elem_index)
       extra_info = !swl && !swr ? " [Off]" : "";
     }
     if (type == MIXER_ELEM_ENUM) {
+      /* FIXME: should show the item names of secondary and later channels... */
       unsigned int eidx, length;
-      char tmp[50];
       tmp[0]=' ';
       tmp[1]='[';
       if (! snd_mixer_selem_get_enum_item(elem, 0, &eidx) &&
 	  ! snd_mixer_selem_get_enum_item_name(elem, eidx, sizeof(tmp) - 3, tmp+2)) {
-	tmp[48] = 0;
+	tmp[sizeof(tmp)-2] = 0;
 	length=strlen(tmp);
 	tmp[length]=']';
 	tmp[length+1]=0;
-	display_item_info(elem_index, sid, tmp);
-      } else
-	display_item_info(elem_index, sid, extra_info);
+	extra_info = tmp;
+      }
     }
+    display_item_info(elem_index, sid, extra_info);
   }
 
   /* get channel bar position
