@@ -193,6 +193,8 @@ static char	 card_id[64] = "default";
 static snd_mixer_t *mixer_handle;
 static char	 mixer_card_name[128];
 static char	 mixer_device_name[128];
+static int	 mixer_level = 0;
+static struct snd_mixer_selem_regopt mixer_options;
 
 /* mixer bar channel : left or right */
 #define MIXER_CHN_LEFT		0
@@ -1573,9 +1575,9 @@ mixer_init (void)
    */
   if ((err = snd_mixer_open (&mixer_handle, 0)) < 0)
     mixer_abort (ERR_FCN, "snd_mixer_open", err);
-  if ((err = snd_mixer_attach (mixer_handle, card_id)) < 0)
+  if (mixer_level == 0 && (err = snd_mixer_attach (mixer_handle, card_id)) < 0)
     mixer_abort (ERR_FCN, "snd_mixer_attach", err);
-  if ((err = snd_mixer_selem_register (mixer_handle, NULL, NULL)) < 0)
+  if ((err = snd_mixer_selem_register (mixer_handle, mixer_level > 0 ? &mixer_options : NULL, NULL)) < 0)
     mixer_abort (ERR_FCN, "snd_mixer_selem_register", err);
   snd_mixer_set_callback (mixer_handle, mixer_event);
   if ((err = snd_mixer_load (mixer_handle)) < 0)
@@ -2221,14 +2223,13 @@ main (int    argc,
    */
   do
     {
-      opt = getopt (argc, argv, "c:D:shgV:");
+      opt = getopt (argc, argv, "c:D:shgV:a:");
       switch (opt)
 	{
 	case '?':
 	case 'h':
 	  fprintf (stderr, "%s v%s\n", PRGNAME_UPPER, VERSION);
-	  fprintf (stderr, "Usage: %s [-h] [-c <card: 0...7>] [-D <mixer device>] [-g] [-s] [-V <view>]\n", PRGNAME);
-	  mixer_abort (ERR_NONE, "", 0);
+	  fprintf (stderr, "Usage: %s [-h] [-c <card: 0...7>] [-D <mixer device>] [-g] [-s] [-V <view>] [-a <abst>]\n", PRGNAME);
 	case 'c':
 	  {
 	    int i = snd_card_get_index(optarg);
@@ -2257,9 +2258,24 @@ main (int    argc,
 	  else
 	    mixer_view = VIEW_CHANNELS;
 	  break;
+	case 'a':
+	  mixer_level = 1;
+	  memset(&mixer_options, 0, sizeof(mixer_options));
+	  mixer_options.ver = 1;
+	  if (!strcmp(optarg, "none"))
+	    mixer_options.abstract = SND_MIXER_SABSTRACT_NONE;
+	  else if (!strcmp(optarg, "basic"))
+	    mixer_options.abstract = SND_MIXER_SABSTRACT_BASIC;
+	  else {
+	    fprintf(stderr, "Select correct abstraction level (none or basic)...\n");
+	    mixer_abort (ERR_NONE, "", 0);
+	  }
+	  break;
 	}
     }
   while (opt > 0);
+  
+  mixer_options.device = card_id;
   
   /* initialize mixer
    */
