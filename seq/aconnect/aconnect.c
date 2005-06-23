@@ -25,6 +25,8 @@
 #include <stdarg.h>
 #include <sys/ioctl.h>
 #include <alsa/asoundlib.h>
+#include "aconfig.h"
+#include "gettext.h"
 
 static void error_handler(const char *file, int line, const char *function, int err, const char *fmt, ...)
 {
@@ -43,23 +45,23 @@ static void error_handler(const char *file, int line, const char *function, int 
 
 static void usage(void)
 {
-	fprintf(stderr, "aconnect - ALSA sequencer connection manager\n");
-	fprintf(stderr, "Copyright (C) 1999-2000 Takashi Iwai\n");
-	fprintf(stderr, "Usage:\n");
-	fprintf(stderr, " * Connection/disconnection between two ports\n");
-	fprintf(stderr, "   aconnect [-options] sender receiver\n");
-	fprintf(stderr, "     sender, receiver = client:port pair\n");
-	fprintf(stderr, "     -d,--disconnect     disconnect\n");
-	fprintf(stderr, "     -e,--exclusive      exclusive connection\n");
-	fprintf(stderr, "     -r,--real #         convert real-time-stamp on queue\n");
-	fprintf(stderr, "     -t,--tick #         convert tick-time-stamp on queue\n");
-	fprintf(stderr, " * List connected ports (no subscription action)\n");
-	fprintf(stderr, "   aconnect -i|-o [-options]\n");
-	fprintf(stderr, "     -i,--input          list input (readable) ports\n");
-	fprintf(stderr, "     -o,--output         list output (writable) ports\n");
-	fprintf(stderr, "     -l,--list           list current connections of each port\n");
-	fprintf(stderr, " * Remove all exported connections\n");
-	fprintf(stderr, "     -x, --removeall\n");
+	fprintf(stderr, _("aconnect - ALSA sequencer connection manager\n"));
+	fprintf(stderr, _("Copyright (C) 1999-2000 Takashi Iwai\n"));
+	fprintf(stderr, _("Usage:\n"));
+	fprintf(stderr, _(" * Connection/disconnection between two ports\n"));
+	fprintf(stderr, _("   aconnect [-options] sender receiver\n"));
+	fprintf(stderr, _("     sender, receiver = client:port pair\n"));
+	fprintf(stderr, _("     -d,--disconnect     disconnect\n"));
+	fprintf(stderr, _("     -e,--exclusive      exclusive connection\n"));
+	fprintf(stderr, _("     -r,--real #         convert real-time-stamp on queue\n"));
+	fprintf(stderr, _("     -t,--tick #         convert tick-time-stamp on queue\n"));
+	fprintf(stderr, _(" * List connected ports (no subscription action)\n"));
+	fprintf(stderr, _("   aconnect -i|-o [-options]\n"));
+	fprintf(stderr, _("     -i,--input          list input (readable) ports\n"));
+	fprintf(stderr, _("     -o,--output         list output (writable) ports\n"));
+	fprintf(stderr, _("     -l,--list           list current connections of each port\n"));
+	fprintf(stderr, _(" * Remove all exported connections\n"));
+	fprintf(stderr, _("     -x, --removeall\n"));
 }
 
 /*
@@ -126,8 +128,8 @@ static void list_subscribers(snd_seq_t *seq, const snd_seq_addr_t *addr)
 	snd_seq_query_subscribe_t *subs;
 	snd_seq_query_subscribe_alloca(&subs);
 	snd_seq_query_subscribe_set_root(subs, addr);
-	list_each_subs(seq, subs, SND_SEQ_QUERY_SUBS_READ, "Connecting To");
-	list_each_subs(seq, subs, SND_SEQ_QUERY_SUBS_WRITE, "Connected From");
+	list_each_subs(seq, subs, SND_SEQ_QUERY_SUBS_READ, _("Connecting To"));
+	list_each_subs(seq, subs, SND_SEQ_QUERY_SUBS_WRITE, _("Connected From"));
 }
 
 /*
@@ -163,10 +165,11 @@ static void print_port(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
 		       snd_seq_port_info_t *pinfo, int count)
 {
 	if (! count) {
-		printf("client %d: '%s' [type=%s]\n",
+		printf(_("client %d: '%s' [type=%s]\n"),
 		       snd_seq_client_info_get_client(cinfo),
 		       snd_seq_client_info_get_name(cinfo),
-		       (snd_seq_client_info_get_type(cinfo) == SND_SEQ_USER_CLIENT ? "user" : "kernel"));
+		       (snd_seq_client_info_get_type(cinfo) == SND_SEQ_USER_CLIENT ?
+			_("user") : _("kernel")));
 	}
 	printf("  %3d '%-16s'\n",
 	       snd_seq_port_info_get_port(pinfo),
@@ -275,6 +278,9 @@ int main(int argc, char **argv)
 	snd_seq_port_subscribe_t *subs;
 	snd_seq_addr_t sender, dest;
 
+	setlocale(LC_ALL, "");
+	textdomain(PACKAGE);
+
 	while ((c = getopt_long(argc, argv, "dior:t:elx", long_option, NULL)) != -1) {
 		switch (c) {
 		case 'd':
@@ -314,7 +320,7 @@ int main(int argc, char **argv)
 	}
 
 	if (snd_seq_open(&seq, "default", SND_SEQ_OPEN_DUPLEX, 0) < 0) {
-		fprintf(stderr, "can't open sequencer\n");
+		fprintf(stderr, _("can't open sequencer\n"));
 		return 1;
 	}
 	
@@ -342,26 +348,26 @@ int main(int argc, char **argv)
 
 	if ((client = snd_seq_client_id(seq)) < 0) {
 		snd_seq_close(seq);
-		fprintf(stderr, "can't get client id\n");
+		fprintf(stderr, _("can't get client id\n"));
 		return 1;
 	}
 
 	/* set client info */
 	if (snd_seq_set_client_name(seq, "ALSA Connector") < 0) {
 		snd_seq_close(seq);
-		fprintf(stderr, "can't set client info\n");
+		fprintf(stderr, _("can't set client info\n"));
 		return 1;
 	}
 
 	/* set subscription */
 	if (snd_seq_parse_address(seq, &sender, argv[optind]) < 0) {
 		snd_seq_close(seq);
-		fprintf(stderr, "invalid sender address %s\n", argv[optind]);
+		fprintf(stderr, _("invalid sender address %s\n"), argv[optind]);
 		return 1;
 	}
 	if (snd_seq_parse_address(seq, &dest, argv[optind + 1]) < 0) {
 		snd_seq_close(seq);
-		fprintf(stderr, "invalid destination address %s\n", argv[optind + 1]);
+		fprintf(stderr, _("invalid destination address %s\n"), argv[optind + 1]);
 		return 1;
 	}
 	snd_seq_port_subscribe_alloca(&subs);
@@ -375,23 +381,23 @@ int main(int argc, char **argv)
 	if (command == UNSUBSCRIBE) {
 		if (snd_seq_get_port_subscription(seq, subs) < 0) {
 			snd_seq_close(seq);
-			fprintf(stderr, "No subscription is found\n");
+			fprintf(stderr, _("No subscription is found\n"));
 			return 1;
 		}
 		if (snd_seq_unsubscribe_port(seq, subs) < 0) {
 			snd_seq_close(seq);
-			fprintf(stderr, "Disconnection failed (%s)\n", snd_strerror(errno));
+			fprintf(stderr, _("Disconnection failed (%s)\n"), snd_strerror(errno));
 			return 1;
 		}
 	} else {
 		if (snd_seq_get_port_subscription(seq, subs) == 0) {
 			snd_seq_close(seq);
-			fprintf(stderr, "Connection is already subscribed\n");
+			fprintf(stderr, _("Connection is already subscribed\n"));
 			return 1;
 		}
 		if (snd_seq_subscribe_port(seq, subs) < 0) {
 			snd_seq_close(seq);
-			fprintf(stderr, "Connection failed (%s)\n", snd_strerror(errno));
+			fprintf(stderr, _("Connection failed (%s)\n"), snd_strerror(errno));
 			return 1;
 		}
 	}

@@ -1,0 +1,4 @@
+aplay/aplay.c
+seq/aconnect/aconnect.c
+seq/aseqnet/aseqnet.c
+speaker-test/speaker-test.c

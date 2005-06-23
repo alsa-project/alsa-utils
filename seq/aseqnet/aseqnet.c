@@ -25,6 +25,8 @@
 #include <alsa/asoundlib.h>
 #include <getopt.h>
 #include <signal.h>
+#include "aconfig.h"
+#include "gettext.h"
 
 /*
  * prototypes
@@ -95,6 +97,9 @@ int main(int argc, char **argv)
 	int port = DEFAULT_PORT;
 	char *source = NULL, *dest = NULL;
 
+	setlocale(LC_ALL, "");
+	textdomain(PACKAGE);
+
 	while ((c = getopt_long(argc, argv, "p:s:d:vi", long_option, NULL)) != -1) {
 		switch (c) {
 		case 'p':
@@ -152,17 +157,17 @@ int main(int argc, char **argv)
  */
 static void usage(void)
 {
-	fprintf(stderr, "aseqnet - network client/server on ALSA sequencer\n");
-	fprintf(stderr, "  Copyright (C) 1999 Takashi Iwai\n");
-	fprintf(stderr, "usage:\n");
-	fprintf(stderr, "  server mode: aseqnet [-options]\n");
-	fprintf(stderr, "  client mode: aseqnet [-options] server_host\n");
-	fprintf(stderr, "options:\n");
-	fprintf(stderr, "  -p,--port # : sepcify TCP port (digit or service name)\n");
-	fprintf(stderr, "  -s,--source addr : read from given addr (client:port)\n");
-	fprintf(stderr, "  -d,--dest addr : write to given addr (client:port)\n");
-	fprintf(stderr, "  -v, --verbose : print verbose messages\n");
-	fprintf(stderr, "  -i, --info : print certain received events\n");
+	fprintf(stderr, _("aseqnet - network client/server on ALSA sequencer\n"));
+	fprintf(stderr, _("  Copyright (C) 1999 Takashi Iwai\n"));
+	fprintf(stderr, _("usage:\n"));
+	fprintf(stderr, _("  server mode: aseqnet [-options]\n"));
+	fprintf(stderr, _("  client mode: aseqnet [-options] server_host\n"));
+	fprintf(stderr, _("options:\n"));
+	fprintf(stderr, _("  -p,--port # : sepcify TCP port (digit or service name)\n"));
+	fprintf(stderr, _("  -s,--source addr : read from given addr (client:port)\n"));
+	fprintf(stderr, _("  -d,--dest addr : write to given addr (client:port)\n"));
+	fprintf(stderr, _("  -v, --verbose : print verbose messages\n"));
+	fprintf(stderr, _("  -i, --info : print certain received events\n"));
 }
 
 
@@ -176,7 +181,7 @@ static void init_buf(void)
 	writebuf = malloc(max_wrlen);
 	readbuf = malloc(max_rdlen);
 	if (writebuf == NULL || readbuf == NULL) {
-		fprintf(stderr, "can't malloc\n");
+		fprintf(stderr, _("can't malloc\n"));
 		exit(1);
 	}
 	memset(writebuf, 0, max_wrlen);
@@ -201,7 +206,7 @@ static void close_files(void)
 {
 	int i;
 	if (verbose)
-		fprintf(stderr, "closing files..\n");
+		fprintf(stderr, _("closing files..\n"));
 	for (i = 0; i < max_connection; i++) {
 		if (netfd[i] >= 0)
 			close(netfd[i]);
@@ -260,14 +265,14 @@ static void init_seq(char *source, char *dest)
 		exit(1);
 	}
 	if (verbose)
-		fprintf(stderr, "sequencer opened: %d:%d\n",
+		fprintf(stderr, _("sequencer opened: %d:%d\n"),
 			snd_seq_client_id(handle), seq_port);
 
 	/* explicit subscriptions */
 	if (source) {
 		/* read subscription */
 		if (snd_seq_parse_address(handle, &addr, source) < 0) {
-			fprintf(stderr, "invalid source address %s\n", source);
+			fprintf(stderr, _("invalid source address %s\n"), source);
 			exit(1);
 		}
 		if (snd_seq_connect_from(handle, seq_port, addr.client, addr.port)) {
@@ -278,7 +283,7 @@ static void init_seq(char *source, char *dest)
 	if (dest) {
 		/* write subscription */
 		if (snd_seq_parse_address(handle, &addr, dest) < 0) {
-			fprintf(stderr, "invalid destination address %s\n", dest);
+			fprintf(stderr, _("invalid destination address %s\n"), dest);
 			exit(1);
 		}
 		if (snd_seq_connect_to(handle, seq_port, addr.client, addr.port)) {
@@ -297,7 +302,7 @@ static int get_port(char *service)
 	struct servent *sp;
 
 	if ((sp = getservbyname(service, "tcp")) == NULL){
-		fprintf(stderr, "service '%s' is not found in /etc/services\n", service);
+		fprintf(stderr, _("service '%s' is not found in /etc/services\n"), service);
 		return -1;
 	}
 	return sp->s_port;
@@ -365,7 +370,7 @@ static void start_connection(void)
 			break;
 	}
 	if (i >= max_connection) {
-		fprintf(stderr, "too many connections!\n");
+		fprintf(stderr, _("too many connections!\n"));
 		exit(1);
 	}
 	memset(&addr, 0, sizeof(addr));
@@ -376,7 +381,7 @@ static void start_connection(void)
 		exit(1);
 	}
 	if (verbose)
-		fprintf(stderr, "accepted[%d]\n", netfd[i]);
+		fprintf(stderr, _("accepted[%d]\n"), netfd[i]);
 	cur_connected++;
 }
 
@@ -399,7 +404,7 @@ static void init_client(char *server, int port)
 		exit(1);
 	}
 	if ((host = gethostbyname(server)) == NULL){
-		fprintf(stderr,"can't get address %s\n", server);
+		fprintf(stderr, _("can't get address %s\n"), server);
 		exit(1);
 	}
 	addr.sin_port = htons(port);
@@ -410,7 +415,7 @@ static void init_client(char *server, int port)
 		exit(1);
 	}
 	if (verbose)
-		fprintf(stderr, "ok.. connected\n");
+		fprintf(stderr, _("ok.. connected\n"));
 	netfd[0] = fd;
 	cur_connected = 1;
 }
@@ -506,21 +511,21 @@ static void print_event(snd_seq_event_t *ev)
 {
 	switch (ev->type) {
 	case SND_SEQ_EVENT_CONTROLLER: 
-		printf("Channel %2d: Control event : %5d\n",
+		printf(_("Channel %2d: Control event : %5d\n"),
 			ev->data.control.channel, ev->data.control.value);
 		break;
 	case SND_SEQ_EVENT_PITCHBEND:
-		printf("Channel %2d: Pitchbender   : %5d\n", 
+		printf(_("Channel %2d: Pitchbender   : %5d\n"), 
 			ev->data.control.channel, ev->data.control.value);
 		break;
 	case SND_SEQ_EVENT_NOTEON:
-		printf("Channel %2d: Note On event : %5d\n",
+		printf(_("Channel %2d: Note On event : %5d\n"),
 			ev->data.control.channel, ev->data.note.note);
-		break;        
+		break;
 	case SND_SEQ_EVENT_NOTEOFF: 
-		printf("Channel %2d: Note Off event: %5d\n",         
-			ev->data.control.channel, ev->data.note.note);           
-		break;        
+		printf(_("Channel %2d: Note Off event: %5d\n"),
+		       ev->data.control.channel, ev->data.note.note);           
+		break;
 	}
 }
 
@@ -573,7 +578,7 @@ static int copy_remote_to_local(int fd)
 
 	if (count == 0) {
 		if (verbose)
-			fprintf(stderr, "disconnected\n");
+			fprintf(stderr, _("disconnected\n"));
 		return 1;
 	}
 

@@ -84,7 +84,7 @@ AC_PROG_GCC_TRADITIONAL
 SAVE_UTIL_VERSION
 
 AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amidi/Makefile amixer/Makefile \
-	  m4/Makefile \
+	  m4/Makefile po/Makefile.in \
 	  alsaconf/alsaconf alsaconf/Makefile \
 	  alsaconf/po/Makefile \
 	  aplay/Makefile include/Makefile iecset/Makefile utils/Makefile \

@@ -4,7 +4,7 @@ ALSAMIXER_DIR=alsamixer
 else
 ALSAMIXER_DIR=
 endif
-SUBDIRS= include alsactl alsaconf $(ALSAMIXER_DIR) amidi amixer aplay iecset seq speaker-test utils m4
+SUBDIRS= include alsactl alsaconf $(ALSAMIXER_DIR) amidi amixer aplay iecset seq speaker-test utils m4 po
 EXTRA_DIST=ChangeLog INSTALL TODO README configure cvscompile depcomp
 AUTOMAKE_OPTIONS=foreign
 ACLOCAL_AMFLAGS = -I m4

@@ -44,14 +44,14 @@
 #include <getopt.h>
 #include <inttypes.h>
 
-/* #include "aconfig.h" */
-
 #define ALSA_PCM_NEW_HW_PARAMS_API
 #define ALSA_PCM_NEW_SW_PARAMS_API
 #include <alsa/asoundlib.h>
 #include <sys/time.h>
 #include <math.h>
 #include "pink.h"
+#include "aconfig.h"
+#include "gettext.h"
 
 static char              *device      = "plughw:0,0";       /* playback device */
 static snd_pcm_format_t   format      = SND_PCM_FORMAT_S16; /* sample format */
@@ -68,23 +68,23 @@ static snd_output_t      *output      = NULL;
 static snd_pcm_uframes_t  buffer_size;
 static snd_pcm_uframes_t  period_size;
 static const char        *channel_name[] = {
-  "Front Left" ,
-  "Front Right" ,
-  "Rear Left" ,
-  "Rear Right" ,
-  "Center" ,
-  "LFE",
-  "Side Left",
-  "Side Right",
-  "8",
-  "9",
-  "10",
-  "11",
-  "12",
-  "13",
-  "14",
-  "15",
-  "16" 
+  N_("Front Left"),
+  N_("Front Right"),
+  N_("Rear Left"),
+  N_("Rear Right"),
+  N_("Center"),
+  N_("LFE"),
+  N_("Side Left"),
+  N_("Side Right"),
+  N_("8"),
+  N_("9"),
+  N_("10"),
+  N_("11"),
+  N_("12"),
+  N_("13"),
+  N_("14"),
+  N_("15"),
+  N_("16")
 };
 
 static const int	channels4[] = {
@@ -234,28 +234,28 @@ static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_
   /* choose all parameters */
   err = snd_pcm_hw_params_any(handle, params);
   if (err < 0) {
-    printf("Broken configuration for playback: no configurations available: %s\n", snd_strerror(err));
+    printf(_("Broken configuration for playback: no configurations available: %s\n"), snd_strerror(err));
     return err;
   }
 
   /* set the interleaved read/write format */
   err = snd_pcm_hw_params_set_access(handle, params, access);
   if (err < 0) {
-    printf("Access type not available for playback: %s\n", snd_strerror(err));
+    printf(_("Access type not available for playback: %s\n"), snd_strerror(err));
     return err;
   }
 
   /* set the sample format */
   err = snd_pcm_hw_params_set_format(handle, params, format);
   if (err < 0) {
-    printf("Sample format not available for playback: %s\n", snd_strerror(err));
+    printf(_("Sample format not available for playback: %s\n"), snd_strerror(err));
     return err;
   }
 
   /* set the count of channels */
   err = snd_pcm_hw_params_set_channels(handle, params, channels);
   if (err < 0) {
-    printf("Channels count (%i) not available for playbacks: %s\n", channels, snd_strerror(err));
+    printf(_("Channels count (%i) not available for playbacks: %s\n"), channels, snd_strerror(err));
     return err;
   }
 
@@ -263,16 +263,16 @@ static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_
   rrate = rate;
   err = snd_pcm_hw_params_set_rate(handle, params, rate, 0);
   if (err < 0) {
-    printf("Rate %iHz not available for playback: %s\n", rate, snd_strerror(err));
+    printf(_("Rate %iHz not available for playback: %s\n"), rate, snd_strerror(err));
     return err;
   }
 
   if (rrate != rate) {
-    printf("Rate doesn't match (requested %iHz, get %iHz, err %d)\n", rate, rrate, err);
+    printf(_("Rate doesn't match (requested %iHz, get %iHz, err %d)\n"), rate, rrate, err);
     return -EINVAL;
   }
 
-  printf("Rate set to %iHz (requested %iHz)\n", rrate, rate);
+  printf(_("Rate set to %iHz (requested %iHz)\n"), rrate, rate);
   /* set the buffer time */
   buffer_time_to_size = ( (snd_pcm_uframes_t)buffer_time * rate) / 1000000;
   err = snd_pcm_hw_params_get_buffer_size_min(params, &buffer_size_min);
@@ -281,10 +281,10 @@ static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_
   err = snd_pcm_hw_params_get_period_size_min(params, &period_size_min,&dir);
   dir=0;
   err = snd_pcm_hw_params_get_period_size_max(params, &period_size_max,&dir);
-  printf("Buffer size range from %lu to %lu\n",buffer_size_min, buffer_size_max);
-  printf("Period size range from %lu to %lu\n",period_size_min, period_size_max);
-  printf("Periods = %d\n", PERIODS);
-  printf("Buffer time size %lu\n",buffer_time_to_size);
+  printf(_("Buffer size range from %lu to %lu\n"),buffer_size_min, buffer_size_max);
+  printf(_("Period size range from %lu to %lu\n"),period_size_min, period_size_max);
+  printf(_("Periods = %d\n"), PERIODS);
+  printf(_("Buffer time size %lu\n"),buffer_time_to_size);
 
   buffer_size = buffer_time_to_size;
   //buffer_size=8096;
@@ -295,29 +295,29 @@ static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_
   period_size = buffer_size/PERIODS;
   buffer_size = period_size*PERIODS;
   //period_size = 510;
-  printf("To choose buffer_size = %lu\n",buffer_size);
-  printf("To choose period_size = %lu\n",period_size);
+  printf(_("To choose buffer_size = %lu\n"),buffer_size);
+  printf(_("To choose period_size = %lu\n"),period_size);
   dir=0;
   err = snd_pcm_hw_params_set_period_size_near(handle, params, &period_size, &dir);
   if (err < 0) {
-    printf("Unable to set period size %lu for playback: %s\n", period_size, snd_strerror(err));
+    printf(_("Unable to set period size %lu for playback: %s\n"), period_size, snd_strerror(err));
     return err;
   }
   dir=0;
   err = snd_pcm_hw_params_get_period_size(params, &period_size, &dir);
-  if (err < 0)  printf("Unable to get period size for playback: %s\n", snd_strerror(err));
+  if (err < 0)  printf(_("Unable to get period size for playback: %s\n"), snd_strerror(err));
                                                                                                                              
   dir=0;
   err = snd_pcm_hw_params_set_buffer_size_near(handle, params, &buffer_size);
   if (err < 0) {
-    printf("Unable to set buffer size %lu for playback: %s\n", buffer_size, snd_strerror(err));
+    printf(_("Unable to set buffer size %lu for playback: %s\n"), buffer_size, snd_strerror(err));
     return err;
   }
   err = snd_pcm_hw_params_get_buffer_size(params, &buffer_size);
-  printf("was set period_size = %lu\n",period_size);
-  printf("was set buffer_size = %lu\n",buffer_size);
+  printf(_("was set period_size = %lu\n"),period_size);
+  printf(_("was set buffer_size = %lu\n"),buffer_size);
   if (2*period_size > buffer_size) {
-    printf("buffer to small, could not use\n");
+    printf(_("buffer to small, could not use\n"));
     return err;
   }
 
@@ -325,7 +325,7 @@ static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_
   /* write the parameters to device */
   err = snd_pcm_hw_params(handle, params);
   if (err < 0) {
-    printf("Unable to set hw params for playback: %s\n", snd_strerror(err));
+    printf(_("Unable to set hw params for playback: %s\n"), snd_strerror(err));
     return err;
   }
 
@@ -338,35 +338,35 @@ static int set_swparams(snd_pcm_t *handle, snd_pcm_sw_params_t *swparams) {
   /* get the current swparams */
   err = snd_pcm_sw_params_current(handle, swparams);
   if (err < 0) {
-    printf("Unable to determine current swparams for playback: %s\n", snd_strerror(err));
+    printf(_("Unable to determine current swparams for playback: %s\n"), snd_strerror(err));
     return err;
   }
 
   /* start the transfer when a buffer is full */
   err = snd_pcm_sw_params_set_start_threshold(handle, swparams, buffer_size);
   if (err < 0) {
-    printf("Unable to set start threshold mode for playback: %s\n", snd_strerror(err));
+    printf(_("Unable to set start threshold mode for playback: %s\n"), snd_strerror(err));
     return err;
   }
 
   /* allow the transfer when at least period_size frames can be processed */
   err = snd_pcm_sw_params_set_avail_min(handle, swparams, period_size);
   if (err < 0) {
-    printf("Unable to set avail min for playback: %s\n", snd_strerror(err));
+    printf(_("Unable to set avail min for playback: %s\n"), snd_strerror(err));
     return err;
   }
 
   /* align all transfers to 1 sample */
   err = snd_pcm_sw_params_set_xfer_align(handle, swparams, 1);
   if (err < 0) {
-    printf("Unable to set transfer align for playback: %s\n", snd_strerror(err));
+    printf(_("Unable to set transfer align for playback: %s\n"), snd_strerror(err));
     return err;
   }
 
   /* write the parameters to the playback device */
   err = snd_pcm_sw_params(handle, swparams);
   if (err < 0) {
-    printf("Unable to set sw params for playback: %s\n", snd_strerror(err));
+    printf(_("Unable to set sw params for playback: %s\n"), snd_strerror(err));
     return err;
   }
 
@@ -381,7 +381,7 @@ static int xrun_recovery(snd_pcm_t *handle, int err) {
   if (err == -EPIPE) {	/* under-run */
     err = snd_pcm_prepare(handle);
     if (err < 0)
-      printf("Can't recovery from underrun, prepare failed: %s\n", snd_strerror(err));
+      printf(_("Can't recovery from underrun, prepare failed: %s\n"), snd_strerror(err));
     return 0;
   } 
   else if (err == -ESTRPIPE) {
@@ -392,7 +392,7 @@ static int xrun_recovery(snd_pcm_t *handle, int err) {
     if (err < 0) {
       err = snd_pcm_prepare(handle);
       if (err < 0)
-        printf("Can't recovery from suspend, prepare failed: %s\n", snd_strerror(err));
+        printf(_("Can't recovery from suspend, prepare failed: %s\n"), snd_strerror(err));
     }
 
     return 0;
@@ -428,9 +428,9 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
         continue;
 
       if (err < 0) {
-        printf("Write error: %d,%s\n", err, snd_strerror(err));
+        printf(_("Write error: %d,%s\n"), err, snd_strerror(err));
         if (xrun_recovery(handle, err) < 0) {
-          printf("xrun_recovery failed: %d,%s\n", err, snd_strerror(err));
+          printf(_("xrun_recovery failed: %d,%s\n"), err, snd_strerror(err));
 	  return -1;
         }
         break;	/* skip one period */
@@ -449,20 +449,20 @@ static void help(void)
   int k;
 
   printf(
-      "Usage: speaker-test [OPTION]... \n"
-      "-h,--help	help\n"
-      "-D,--device	playback device\n"
-      "-r,--rate	stream rate in Hz\n"
-      "-c,--channels	count of channels in stream\n"
-      "-f,--frequency	sine wave frequency in Hz\n"
-      "-F,--format	sample format\n"
-      "-b,--buffer	ring buffer size in us\n"
-      "-p,--period	period size in us\n"
-      "-t,--test	1=use pink noise, 2=use sine wave\n"
-      "-s,--speaker	single speaker test. Values 1=Left or 2=right\n"
-      "\n");
+	 _("Usage: speaker-test [OPTION]... \n"
+	   "-h,--help	help\n"
+	   "-D,--device	playback device\n"
+	   "-r,--rate	stream rate in Hz\n"
+	   "-c,--channels	count of channels in stream\n"
+	   "-f,--frequency	sine wave frequency in Hz\n"
+	   "-F,--format	sample format\n"
+	   "-b,--buffer	ring buffer size in us\n"
+	   "-p,--period	period size in us\n"
+	   "-t,--test	1=use pink noise, 2=use sine wave\n"
+	   "-s,--speaker	single speaker test. Values 1=Left or 2=right\n"
+	   "\n"));
 #if 1
-  printf("Recognized sample formats are:");
+  printf(_("Recognized sample formats are:"));
   for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
     const char *s = snd_pcm_format_name(k);
     if (s)
@@ -498,12 +498,15 @@ int main(int argc, char *argv[]) {
     {NULL,        0, NULL, 0  },
   };
 
+  setlocale(LC_ALL, "");
+  textdomain(PACKAGE);
+
   snd_pcm_hw_params_alloca(&hwparams);
   snd_pcm_sw_params_alloca(&swparams);
   
   morehelp = 0;
 
-  printf("\nspeaker-test %s\n\n",VERSION);
+  printf("\nspeaker-test %s\n\n", SPEAKER_TEST_VERSION);
   while (1) {
     int c;
     
@@ -555,12 +558,12 @@ int main(int argc, char *argv[]) {
       speaker = speaker < 1 ? 0 : speaker;
       speaker = speaker > channels ? 0 : speaker;
       if (speaker==0) {
-        printf("Invalid parameter for -s option.\n");
+        printf(_("Invalid parameter for -s option.\n"));
         exit(EXIT_FAILURE);
       }  
       break;
     default:
-      printf("Unknown option '%c'\n", c);
+      printf(_("Unknown option '%c'\n"), c);
       exit(EXIT_FAILURE);
       break;
     }
@@ -573,32 +576,32 @@ int main(int argc, char *argv[]) {
 
   err = snd_output_stdio_attach(&output, stdout, 0);
   if (err < 0) {
-    printf("Output failed: %s\n", snd_strerror(err));
+    printf(_("Output failed: %s\n"), snd_strerror(err));
     exit(EXIT_FAILURE);
   }
 
-  printf("Playback device is %s\n", device);
-  printf("Stream parameters are %iHz, %s, %i channels\n", rate, snd_pcm_format_name(format), channels);
+  printf(_("Playback device is %s\n"), device);
+  printf(_("Stream parameters are %iHz, %s, %i channels\n"), rate, snd_pcm_format_name(format), channels);
   if(test_type==1)
-    printf("Using 16 octaves of pink noise\n");
+    printf(_("Using 16 octaves of pink noise\n"));
   else
-    printf("Sine wave rate is %.4fHz\n", freq);
+    printf(_("Sine wave rate is %.4fHz\n"), freq);
 
 loop:
   while ((err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
-    printf("Playback open error: %d,%s\n", err,snd_strerror(err));
+    printf(_("Playback open error: %d,%s\n"), err,snd_strerror(err));
     sleep(1);
   }
 
   if ((err = set_hwparams(handle, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
-    printf("Setting of hwparams failed: %s\n", snd_strerror(err));
+    printf(_("Setting of hwparams failed: %s\n"), snd_strerror(err));
     snd_pcm_close(handle);
     goto loop;
     exit(EXIT_FAILURE);
   }
   //getchar();
   if ((err = set_swparams(handle, swparams)) < 0) {
-    printf("Setting of swparams failed: %s\n", snd_strerror(err));
+    printf(_("Setting of swparams failed: %s\n"), snd_strerror(err));
     snd_pcm_close(handle);
     goto loop;
     exit(EXIT_FAILURE);
@@ -608,7 +611,7 @@ loop:
   initialize_pink_noise( &pink, 16);
   
   if (frames == NULL) {
-    printf("No enough memory\n");
+    printf(_("No enough memory\n"));
     exit(EXIT_FAILURE);
   }
   if (speaker==0) {
@@ -626,16 +629,16 @@ loop:
 	if (channels == 8) {
 	    channel=channels8[chn];
 	}
-        printf(" %d - %s\n", channel, channel_name[channel]);
+        printf(" %d - %s\n", channel, gettext(channel_name[channel]));
 
         err = write_loop(handle, channel, ((rate*3)/period_size), frames);
         //err = write_loop(handle, 255, ((rate*3)/period_size), frames);
 
         if (err < 0) {
-          printf("Transfer failed: %s\n", snd_strerror(err));
+          printf(_("Transfer failed: %s\n"), snd_strerror(err));
           free(frames);
           snd_pcm_close(handle);
-	  printf("Pausing\n");
+	  printf(_("Pausing\n"));
 	  goto loop ;
 	  //pause();
 	  //printf("Done Pausing\n");
@@ -647,14 +650,14 @@ loop:
       time1 = (double)tv1.tv_sec + ((double)tv1.tv_usec / 1000000.0);
       time2 = (double)tv2.tv_sec + ((double)tv2.tv_usec / 1000000.0);
       time3 = time2 - time1;
-      printf("Time per period = %lf\n", time3 );
+      printf(_("Time per period = %lf\n"), time3 );
     }
   } else {
-    printf("  - %s\n", channel_name[speaker-1]);
+    printf("  - %s\n", gettext(channel_name[speaker-1]));
     err = write_loop(handle, speaker-1, ((rate*5)/period_size), frames);
 
     if (err < 0) {
-      printf("Transfer failed: %s\n", snd_strerror(err));
+      printf(_("Transfer failed: %s\n"), snd_strerror(err));
     }
   }
 
