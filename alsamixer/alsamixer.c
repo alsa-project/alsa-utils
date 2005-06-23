@@ -2228,8 +2228,9 @@ main (int    argc,
 	{
 	case '?':
 	case 'h':
-	  fprintf (stderr, "%s v%s\n", PRGNAME_UPPER, VERSION);
-	  fprintf (stderr, "Usage: %s [-h] [-c <card: 0...7>] [-D <mixer device>] [-g] [-s] [-V <view>] [-a <abst>]\n", PRGNAME);
+	  printf ("%s v%s\n", PRGNAME_UPPER, VERSION);
+	  printf ("Usage: %s [-h] [-c <card: 0...7>] [-D <mixer device>] [-g] [-s] [-V <view>] [-a <abst>]\n", PRGNAME);
+	  return 1;
 	case 'c':
 	  {
 	    int i = snd_card_get_index(optarg);

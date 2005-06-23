@@ -327,7 +327,7 @@ static void list_ports(void)
 
 static void help(const char *argv0)
 {
-	fprintf(stderr, "Usage: %s [options]\n"
+	printf("Usage: %s [options]\n"
 		"\nAvailable options:\n"
 		"  -h,--help                  this help\n"
 		"  -V,--version               show version\n"
@@ -338,7 +338,7 @@ static void help(const char *argv0)
 
 static void version(void)
 {
-	fputs("aseqdump version " SND_UTIL_VERSION_STR "\n", stderr);
+	puts("aseqdump version " SND_UTIL_VERSION_STR);
 }
 
 static void sighandler(int sig)

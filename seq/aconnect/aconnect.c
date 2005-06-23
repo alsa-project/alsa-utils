@@ -45,23 +45,23 @@ static void error_handler(const char *file, int line, const char *function, int 
 
 static void usage(void)
 {
-	fprintf(stderr, _("aconnect - ALSA sequencer connection manager\n"));
-	fprintf(stderr, _("Copyright (C) 1999-2000 Takashi Iwai\n"));
-	fprintf(stderr, _("Usage:\n"));
-	fprintf(stderr, _(" * Connection/disconnection between two ports\n"));
-	fprintf(stderr, _("   aconnect [-options] sender receiver\n"));
-	fprintf(stderr, _("     sender, receiver = client:port pair\n"));
-	fprintf(stderr, _("     -d,--disconnect     disconnect\n"));
-	fprintf(stderr, _("     -e,--exclusive      exclusive connection\n"));
-	fprintf(stderr, _("     -r,--real #         convert real-time-stamp on queue\n"));
-	fprintf(stderr, _("     -t,--tick #         convert tick-time-stamp on queue\n"));
-	fprintf(stderr, _(" * List connected ports (no subscription action)\n"));
-	fprintf(stderr, _("   aconnect -i|-o [-options]\n"));
-	fprintf(stderr, _("     -i,--input          list input (readable) ports\n"));
-	fprintf(stderr, _("     -o,--output         list output (writable) ports\n"));
-	fprintf(stderr, _("     -l,--list           list current connections of each port\n"));
-	fprintf(stderr, _(" * Remove all exported connections\n"));
-	fprintf(stderr, _("     -x, --removeall\n"));
+	printf(_("aconnect - ALSA sequencer connection manager\n"));
+	printf(_("Copyright (C) 1999-2000 Takashi Iwai\n"));
+	printf(_("Usage:\n"));
+	printf(_(" * Connection/disconnection between two ports\n"));
+	printf(_("   aconnect [-options] sender receiver\n"));
+	printf(_("     sender, receiver = client:port pair\n"));
+	printf(_("     -d,--disconnect     disconnect\n"));
+	printf(_("     -e,--exclusive      exclusive connection\n"));
+	printf(_("     -r,--real #         convert real-time-stamp on queue\n"));
+	printf(_("     -t,--tick #         convert tick-time-stamp on queue\n"));
+	printf(_(" * List connected ports (no subscription action)\n"));
+	printf(_("   aconnect -i|-o [-options]\n"));
+	printf(_("     -i,--input          list input (readable) ports\n"));
+	printf(_("     -o,--output         list output (writable) ports\n"));
+	printf(_("     -l,--list           list current connections of each port\n"));
+	printf(_(" * Remove all exported connections\n"));
+	printf(_("     -x, --removeall\n"));
 }
 
 /*

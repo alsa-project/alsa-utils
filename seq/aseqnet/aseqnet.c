@@ -157,17 +157,17 @@ int main(int argc, char **argv)
  */
 static void usage(void)
 {
-	fprintf(stderr, _("aseqnet - network client/server on ALSA sequencer\n"));
-	fprintf(stderr, _("  Copyright (C) 1999 Takashi Iwai\n"));
-	fprintf(stderr, _("usage:\n"));
-	fprintf(stderr, _("  server mode: aseqnet [-options]\n"));
-	fprintf(stderr, _("  client mode: aseqnet [-options] server_host\n"));
-	fprintf(stderr, _("options:\n"));
-	fprintf(stderr, _("  -p,--port # : sepcify TCP port (digit or service name)\n"));
-	fprintf(stderr, _("  -s,--source addr : read from given addr (client:port)\n"));
-	fprintf(stderr, _("  -d,--dest addr : write to given addr (client:port)\n"));
-	fprintf(stderr, _("  -v, --verbose : print verbose messages\n"));
-	fprintf(stderr, _("  -i, --info : print certain received events\n"));
+	printf(_("aseqnet - network client/server on ALSA sequencer\n"));
+	printf(_("  Copyright (C) 1999 Takashi Iwai\n"));
+	printf(_("usage:\n"));
+	printf(_("  server mode: aseqnet [-options]\n"));
+	printf(_("  client mode: aseqnet [-options] server_host\n"));
+	printf(_("options:\n"));
+	printf(_("  -p,--port # : sepcify TCP port (digit or service name)\n"));
+	printf(_("  -s,--source addr : read from given addr (client:port)\n"));
+	printf(_("  -d,--dest addr : write to given addr (client:port)\n"));
+	printf(_("  -v, --verbose : print verbose messages\n"));
+	printf(_("  -i, --info : print certain received events\n"));
 }
 
 

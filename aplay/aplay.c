@@ -146,7 +146,7 @@ struct fmt_capture {
 static void usage(char *command)
 {
 	snd_pcm_format_t k;
-	fprintf(stderr,
+	printf(
 _("Usage: %s [OPTION]... [FILE]...\n"
 "\n"
 "-h, --help              help\n"
@@ -174,17 +174,17 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "-v, --verbose           show PCM structure and setup (accumulative)\n"
 "-I, --separate-channels one file for each channel\n")
 		, command);
-	fprintf(stderr, _("Recognized sample formats are:"));
+	printf(_("Recognized sample formats are:"));
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
 		const char *s = snd_pcm_format_name(k);
 		if (s)
-			fprintf(stderr, " %s", s);
+			printf(" %s", s);
 	}
-	fprintf(stderr, _("\nSome of these may not be available on selected hardware\n"));
-	fprintf(stderr, _("The availabled format shortcuts are:\n"));
-	fprintf(stderr, _("-f cd (16 bit little endian, 44100, stereo)\n"));
-	fprintf(stderr, _("-f cdr (16 bit big endian, 44100, stereo)\n"));
-	fprintf(stderr, _("-f dat (16 bit little endian, 48000, stereo)\n"));
+	printf(_("\nSome of these may not be available on selected hardware\n"));
+	printf(_("The availabled format shortcuts are:\n"));
+	printf(_("-f cd (16 bit little endian, 44100, stereo)\n"));
+	printf(_("-f cdr (16 bit big endian, 44100, stereo)\n"));
+	printf(_("-f dat (16 bit little endian, 48000, stereo)\n"));
 }
 
 static void names_list(void)
@@ -219,8 +219,8 @@ static void device_list(void)
 		error(_("no soundcards found..."));
 		return;
 	}
-	fprintf(stderr, _("**** List of %s Hardware Devices ****\n"),
-		snd_pcm_stream_name(stream));
+	printf(_("**** List of %s Hardware Devices ****\n"),
+	       snd_pcm_stream_name(stream));
 	while (card >= 0) {
 		char name[32];
 		sprintf(name, "hw:%d", card);
@@ -248,20 +248,20 @@ static void device_list(void)
 					error("control digital audio info (%i): %s", card, snd_strerror(err));
 				continue;
 			}
-			fprintf(stderr, _("card %i: %s [%s], device %i: %s [%s]\n"),
+			printf(_("card %i: %s [%s], device %i: %s [%s]\n"),
 				card, snd_ctl_card_info_get_id(info), snd_ctl_card_info_get_name(info),
 				dev,
 				snd_pcm_info_get_id(pcminfo),
 				snd_pcm_info_get_name(pcminfo));
 			count = snd_pcm_info_get_subdevices_count(pcminfo);
-			fprintf(stderr, _("  Subdevices: %i/%i\n"),
+			printf( _("  Subdevices: %i/%i\n"),
 				snd_pcm_info_get_subdevices_avail(pcminfo), count);
 			for (idx = 0; idx < (int)count; idx++) {
 				snd_pcm_info_set_subdevice(pcminfo, idx);
 				if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
 					error("control digital audio playback info (%i): %s", card, snd_strerror(err));
 				} else {
-					fprintf(stderr, _("  Subdevice #%i: %s\n"),
+					printf(_("  Subdevice #%i: %s\n"),
 						idx, snd_pcm_info_get_subdevice_name(pcminfo));
 				}
 			}
@@ -284,19 +284,19 @@ static void pcm_list(void)
 		error("snd_config_update: %s", snd_strerror(err));
 		return;
 	}
-	err = snd_output_stdio_attach(&out, stderr, 0);
+	err = snd_output_stdio_attach(&out, stdout, 0);
 	assert(err >= 0);
 	err = snd_config_search(snd_config, "pcm", &conf);
 	if (err < 0)
 		return;
-	fprintf(stderr, _("PCM list:\n"));
+	printf(_("PCM list:\n"));
 	snd_config_save(conf, out);
 	snd_output_close(out);
 }
 
 static void version(void)
 {
-	fprintf(stderr, "%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@suse.cz>\n", command);
+	printf("%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@suse.cz>\n", command);
 }
 
 static void signal_handler(int sig)

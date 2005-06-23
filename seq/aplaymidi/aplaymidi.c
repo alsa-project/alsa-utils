@@ -802,7 +802,7 @@ static void list_ports(void)
 
 static void usage(const char *argv0)
 {
-	fprintf(stderr,
+	printf(
 		"Usage: %s -p client:port[,...] [-d delay] midifile ...\n"
 		"-h, --help                  this help\n"
 		"-V, --version               print current version\n"
@@ -814,7 +814,7 @@ static void usage(const char *argv0)
 
 static void version(void)
 {
-	fputs("aplaymidi version " SND_UTIL_VERSION_STR "\n", stderr);
+	puts("aplaymidi version " SND_UTIL_VERSION_STR);
 }
 
 int main(int argc, char *argv[])

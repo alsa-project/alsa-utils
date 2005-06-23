@@ -63,7 +63,7 @@ static void error(const char *format, ...)
 
 static void usage(void)
 {
-	fprintf(stderr,
+	printf(
 		"Usage: amidi options\n"
 		"\n"
 		"-h, --help             this help\n"
@@ -82,7 +82,7 @@ static void usage(void)
 
 static void version(void)
 {
-	fputs("amidi version " SND_UTIL_VERSION_STR "\n", stderr);
+	puts("amidi version " SND_UTIL_VERSION_STR);
 }
 
 static void *my_malloc(size_t size)
