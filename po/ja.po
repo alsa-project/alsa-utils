@@ -101,27 +101,27 @@ msgstr "認識されるサンプルフォーマット:"
 msgid ""
 "\n"
 "Some of these may not be available on selected hardware\n"
-msgstr "\nこれらのいくつかは指定のハードウェアで使用不可能な場合があります"
+msgstr "\nこれらのいくつかは指定のハードウェアで使用不可能な場合があります\n"
 
 #: aplay/aplay.c:184
 #, c-format
 msgid "The availabled format shortcuts are:\n"
-msgstr "可能なフォーマットの省略形:"
+msgstr "可能なフォーマットの省略形:\n"
 
 #: aplay/aplay.c:185
 #, c-format
 msgid "-f cd (16 bit little endian, 44100, stereo)\n"
-msgstr "-f cd (16 ビット、リトルエンディアン、44100、ステレオ)"
+msgstr "-f cd (16 ビット、リトルエンディアン、44100、ステレオ)\n"
 
 #: aplay/aplay.c:186
 #, c-format
 msgid "-f cdr (16 bit big endian, 44100, stereo)\n"
-msgstr "-f cdr (16 ビット、ビッグエンディアン、44100、ステレオ)"
+msgstr "-f cdr (16 ビット、ビッグエンディアン、44100、ステレオ)\n"
 
 #: aplay/aplay.c:187
 #, c-format
 msgid "-f dat (16 bit little endian, 48000, stereo)\n"
-msgstr "-f dat (16 ビット、リトルエンディアン、48000、ステレオ)"
+msgstr "-f dat (16 ビット、リトルエンディアン、48000、ステレオ)\n"
 
 #: aplay/aplay.c:197
 #, c-format
@@ -299,7 +299,7 @@ msgstr "警告: レートが不正確です (要求値 = %iHz, 使用値 = %iHz)
 #: aplay/aplay.c:911
 #, c-format
 msgid "         please, try the plug plugin (-Dplug:%s)\n"
-msgstr "        plug プラグイン (-Dplug:%s) を使用してください"
+msgstr "        plug プラグイン (-Dplug:%s) を使用してください\n"
 
 #: aplay/aplay.c:945
 msgid "Unable to install hw params:"
@@ -414,7 +414,7 @@ msgstr "読込エラー: %s"
 #: aplay/aplay.c:1302
 #, c-format
 msgid "readv error: %s"
-msgstr "読込(readv)エラー"
+msgstr "読込(readv)エラー: %s"
 
 #: aplay/aplay.c:1350
 msgid "can't allocate buffer for silence"
@@ -655,7 +655,7 @@ msgstr "接続に失敗 (%s)\n"
 #: seq/aseqnet/aseqnet.c:160
 #, c-format
 msgid "aseqnet - network client/server on ALSA sequencer\n"
-msgstr "aseqnet - ALSA sequencer 上のネットワーククライアント／サーバ"
+msgstr "aseqnet - ALSA sequencer 上のネットワーククライアント／サーバ\n"
 
 #: seq/aseqnet/aseqnet.c:161
 #, c-format
@@ -710,7 +710,7 @@ msgstr "  -i,--info : 受信イベントを表示する\n"
 #: seq/aseqnet/aseqnet.c:184
 #, c-format
 msgid "can't malloc\n"
-msgstr "malloc できません"
+msgstr "malloc できません\n"
 
 #: seq/aseqnet/aseqnet.c:209
 #, c-format
