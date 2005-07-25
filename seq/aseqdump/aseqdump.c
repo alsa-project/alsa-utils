@@ -237,7 +237,6 @@ static void dump_event(const snd_seq_event_t *ev)
 		printf("Queue timer skew          %d\n", ev->data.queue.queue);
 		break;
 	case SND_SEQ_EVENT_TUNE_REQUEST:
-		/* something's fishy here ... */
 		printf("Tune request\n");
 		break;
 	case SND_SEQ_EVENT_RESET:
