@@ -26,6 +26,10 @@ sbindir=@sbindir@
 version=@VERSION@
 USE_NLS=@USE_NLS@
 
+# Useful for debugging
+PROCFS="/proc"
+SYSFS="/sys"
+
 # i18n stuff
 if test "$USE_NLS" = "yes" && which gettext > /dev/null; then
   xecho() {
@@ -388,7 +392,7 @@ fi
 
     
 # MAIN
-if [ -d /proc/asound ]; then
+if [ -d $PROCFS/asound ]; then
   $rcalsasound stop >/dev/null 2>&1
   /sbin/rmmod dmasound dmasound_awacs 2>/dev/null
 fi
@@ -486,23 +490,31 @@ build_card_db () {
 # probe cards
 #
 probe_cards () {
-    test -r /proc/isapnp || /sbin/modprobe isapnp >/dev/null 2>&1
-    test -r /proc/isapnp || /sbin/modprobe isa-pnp >/dev/null 2>&1
-    if [ -r /proc/isapnp ]; then
-	cat /proc/isapnp >"$DUMP"
-    elif [ -d /sys/bus/pnp/devices/00:01.00 ]; then
+    found="0"
+    test -r $PROCFS/isapnp || /sbin/modprobe isapnp >/dev/null 2>&1
+    test -r $PROCFS/isapnp || /sbin/modprobe isa-pnp >/dev/null 2>&1
+    if [ -r $PROCFS/isapnp ]; then
+	cat $PROCFS/isapnp >"$DUMP"
+	found="1"
+    elif [ -r $SYSFS/bus/pnp/devices/0[0123]:01.00 ]; then
 	# use 2.6 kernel's sysfs output
 	# fake the isapnp dump
-	# unfortunately, there is no card name information!
-	( cd /sys/bus/pnp/devices
-	  for i in *:*.00; do
-	    id=`cat $i/id`
-	    echo "Card 0 '$id:ISAPnP $id' " >> "$DUMP"
+	index=0
+	for d1 in $SYSFS/devices/pnp* ; do
+	  for d2 in $d1/*:* ; do
+	    if [ -r $d2/card_id ]; then
+	      id=`cat $d2/card_id`
+	      name=`cat $d2/name`
+	      echo "Card $index '$id:$name' " >> "$DUMP"
+	      index=$[$index+1]
+	      found="1"
+	    fi
 	  done
-	)
-    else
-	echo -n >"$DUMP"
+	done
     fi
+    if [ "$found" = "0" ]; then
+      echo -n >"$DUMP"
+    fi 
     CARDID_DB=/var/tmp/alsaconf.cards
     if [ ! -r $CARDID_DB ]; then
         use_modinfo_db=1
@@ -554,7 +566,7 @@ BEGIN {
     #
     # PowerMac
     #
-    if grep -q MacRISC /proc/cpuinfo; then
+    if grep -q MacRISC $PROCFS/cpuinfo; then
 	/sbin/modprobe -a -l | grep 'snd-powermac' | \
 	while read i; do
 	    i=${i##*/}
@@ -726,20 +738,20 @@ If you have a big amplifier, lower your volumes or say no.
 #
 
 check_dma_avail () {
-    if [ -r /proc/dma ]; then
+    if [ -r $PROCFS/dma ]; then
 	list=""
 	for dma in $*; do
-	    grep -q '^ *'$dma': ' /proc/dma || list="$list $dma"
+	    grep -q '^ *'$dma': ' $PROCFS/dma || list="$list $dma"
 	done
 	echo $list
     fi
 }
 
 check_irq_avail () {
-    if [ -r /proc/interrupts ]; then
+    if [ -r $PROCFS/interrupts ]; then
 	list=""
 	for irq in $*; do
-	    grep -q '^ *'$irq': ' /proc/interrupts || list="$list $irq"
+	    grep -q '^ *'$irq': ' $PROCFS/interrupts || list="$list $irq"
 	done
 	echo $list
     fi
@@ -770,7 +782,7 @@ ac_try_load () {
     # kill the child process if still exists.
     kill -9 $pp > /dev/null 2>&1
     st=$?
-    ac_cardname=`head -n 1 /proc/asound/cards | sed -e 's/^[0-9].* - \(.*\)$/\1/'`
+    ac_cardname=`head -n 1 $PROCFS/asound/cards | sed -e 's/^[0-9].* - \(.*\)$/\1/'`
     /sbin/modprobe -r snd-$1 >/dev/null 2>&1
     if [ $st = 0 ]; then
 	# irq problem?
