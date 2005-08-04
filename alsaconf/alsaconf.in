@@ -50,7 +50,10 @@ xmsg() {
 }
 
 # Check for GNU/Linux distributions
-if [ -f /etc/SuSE-release -o -f /etc/UnitedLinux-release ]; then
+if [ -f /etc/SuSE-release ]; then
+  distribution="suse"
+  suse_version=$(grep 'VERSION = ' /etc/SuSE-release | sed -e s/'VERSION = '//)
+elif [ -f /etc/UnitedLinux-release ]; then
   distribution="suse"
 elif [ -f /etc/gentoo-release ]; then
   distribution="gentoo"
@@ -394,6 +397,7 @@ fi
 # MAIN
 if [ -d $PROCFS/asound ]; then
   $rcalsasound stop >/dev/null 2>&1
+  $rcalsasound unload >/dev/null 2>&1
   /sbin/rmmod dmasound dmasound_awacs 2>/dev/null
 fi
 
@@ -592,6 +596,43 @@ find_device_name () {
     fi
 }
 
+# get hwcfg file type from the given driver name
+get_hwcfg_type () {
+    while read dev driver; do
+	if [ "$driver" = "$1" ]; then
+	    case "$dev" in
+	    *:*)
+		echo bus-pci-`$lspci -d "$dev" | head -n 1 | sed -e 's/ .*$//'`
+		;;
+	    *)
+		echo $driver
+		;;
+	    esac
+	    break
+	fi
+    done
+}
+
+# clean up all hwcfg-* files containing ALSA modules
+# alsaconf sets up exclusively
+cleanup_hwcfg () {
+    for i in /etc/sysconfig/hardware/hwcfg-*; do
+	grep -q "MODULE='snd-" $i && rm -f $i
+    done
+}
+
+#
+# set up /etc/sysconfig/hardware/hwcfg-* stuff
+#
+setup_hwcfg () {
+    card=$1
+    cleanup_hwcfg
+    cfg=`echo "$devs_olist" | get_hwcfg_type $card`
+    echo "MODULE='$card'" > /etc/sysconfig/hardware/hwcfg-$cfg
+    echo "STARTMODE='auto'" >> /etc/sysconfig/hardware/hwcfg-$cfg
+}
+
+
 #
 # configure and try test sound
 #
@@ -683,6 +724,15 @@ BEGIN { in_sound=0; }
 	cp -f $TMP /var/lib/YaST/unique.inf
     fi
 
+    # set up /etc/sysconfig/hardware/*
+    if [ "$distribution" = "suse" ]; then
+	case "$suse_version" in
+	10.*)
+	    setup_hwcfg $CARD_DRIVER
+	    ;;
+	esac
+    fi
+
     farewell
     clear
     if [ "$distribution" = "gentoo" ]; then
@@ -693,7 +743,7 @@ BEGIN { in_sound=0; }
       update-modules
     fi
     echo Loading driver...
-    $rcalsasound start
+    $rcalsasound restart
     echo Setting default volumes...
     if [ -x $bindir/set_default_volume ]; then
 	$bindir/set_default_volume -f
@@ -1152,6 +1202,7 @@ fi
 probe_cards
 
 devs_found=()
+devs_olist=""
 
 if [ -s "$FOUND" ]; then
     while read dev card ; do
@@ -1162,7 +1213,9 @@ if [ -s "$FOUND" ]; then
 	fi
 	card=${card##snd-}
 	devs_found=("${devs_found[@]}" "$card" "$cardname")
+	devs_devs=("${devs_devs[@]}" "$card" "$dev")
     done <"$FOUND"
+    devs_olist=`cat $FOUND`
 fi
 if [ x$devs_found != x ]; then
     #
