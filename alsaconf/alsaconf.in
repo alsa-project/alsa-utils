@@ -95,10 +95,11 @@ usage() {
   -P|--listprobe list the supported legacy card modules
   -c|--config file
                  specify the module config file
+  -R|--resources list available DMA and IRQ resources with debug for legacy
   -h|--help      what you're reading"
 }
 
-OPTS=`getopt -o lmL:hp:Pu:g:d:rs:c: --long legacy,modinfo,log:,help,probe:,listprobe,uid:,gid:,devmode:,strict,sound:,config: -n alsaconf -- "$@"` || exit 1
+OPTS=`getopt -o lmL:hp:Pu:g:d:rs:c:R --long legacy,modinfo,log:,help,probe:,listprobe,uid:,gid:,devmode:,strict,sound:,config:,resources -n alsaconf -- "$@"` || exit 1
 eval set -- "$OPTS"
 
 do_legacy_only=0
@@ -110,6 +111,7 @@ legacy_probe_card=""
 LOGFILE=""
 TESTSOUND="@TESTSOUND@"
 try_all_combination=0
+resources="false"
 
 # legacy support
 LEGACY_CARDS="opl3sa2 cs4236 cs4232 cs4231 es18xx es1688 sb16 sb8"
@@ -140,10 +142,110 @@ while true ; do
 	alsa_uid=0; alsa_gid=17; alsa_mode=0660; shift;;
     -c|--config)
 	cfgfile="$2"; shift 2;;
+    -R|--resources)
+        resources="true"; shift;;
     --) shift ; break ;;
     *) usage ; exit 1 ;;
     esac
 done
+
+#
+# probe legacy ISA cards
+#
+
+check_dma_avail () {
+    list=""
+    if [ -d $SYSFS/bus/pnp/devices ]; then
+      for dma in $*; do
+        ok="true"
+        for i in $SYSFS/bus/pnp/devices/??:* ; do
+          if grep -q "state = active" $i/resources ; then
+            if grep -q '^dma '$dma'$' $i/resources; then
+              ok="false"
+            fi
+          fi
+        done
+        if [ -r $PROCFS/dma ]; then
+	  if grep -q '^ *'$dma': ' $PROCFS/dma ; then
+            ok="false"
+          fi
+	fi
+        if [ "$ok" = "true" ]; then
+          list="$list $dma"
+        fi
+      done
+    else
+      if [ -r $PROCFS/dma ]; then
+  	for dma in $*; do
+	    grep -q '^ *'$dma': ' $PROCFS/dma || list="$list $dma"
+	done
+      fi
+    fi
+    if [ ! -z "$list" ]; then
+      echo $list
+    fi
+}
+
+check_irq_avail () {
+    list=""
+    if [ -d $SYSFS/bus/pnp/devices ]; then
+      for irq in $*; do
+        ok="true"
+        for i in $SYSFS/bus/pnp/devices/??:* ; do
+          if grep -q "state = active" $i/resources ; then
+            if grep -q '^irq '$irq'$' $i/resources; then
+              ok="false"
+            fi
+          fi
+        done
+        if [ -r $PROCFS/interrupts ]; then
+	  if grep -q '^ *'$irq': ' $PROCFS/interrupts ; then
+            ok="false"
+          fi
+	fi
+        if [ "$ok" = "true" ]; then
+          list="$list $irq"
+        fi
+      done
+    else
+      if [ -r $PROCFS/interrupts ]; then
+	for irq in $*; do
+	    grep -q '^ *'$irq': ' $PROCFS/interrupts || list="$list $irq"
+	done
+      fi
+    fi
+    if [ ! -z "$list" ]; then
+      echo $list
+    fi
+}
+
+#
+#
+#
+
+if [ "$resources" = "true" ]; then
+  if [ -d $SYSFS/bus/pnp/devices ]; then
+    for i in $SYSFS/bus/pnp/devices/??:* ; do
+      if [ "$resources" = "true" ]; then
+        echo ">>>>> PnP file: $i/resources"
+        cat $i/resources
+      fi
+    done
+  fi
+  if [ -r $PROCFS/dma ]; then
+    echo ">>>>> Allocated dma channels:"
+    cat $PROCFS/dma
+  fi
+  if [ -r $PROCFS/interrupts ]; then
+    echo ">>>>> Allocated interrupt channels:"
+    cat $PROCFS/interrupts
+  fi
+  echo -n "Valid DMA channels: "
+  check_dma_avail 0 1 2 3 4 5 6 7
+  echo -n "Valid IRQ channels: "
+  check_irq_avail 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+  exit 0
+fi
 
 # Check for root privileges
 if [ `id -u` -ne 0 ]; then
@@ -781,30 +883,6 @@ If you have a big amplifier, lower your volumes or say no.
  Have a lot of fun!
 
 "
-}
-
-#
-# probe legacy ISA cards
-#
-
-check_dma_avail () {
-    if [ -r $PROCFS/dma ]; then
-	list=""
-	for dma in $*; do
-	    grep -q '^ *'$dma': ' $PROCFS/dma || list="$list $dma"
-	done
-	echo $list
-    fi
-}
-
-check_irq_avail () {
-    if [ -r $PROCFS/interrupts ]; then
-	list=""
-	for irq in $*; do
-	    grep -q '^ *'$irq': ' $PROCFS/interrupts || list="$list $irq"
-	done
-	echo $list
-    fi
 }
 
 # check playback
