@@ -288,7 +288,8 @@ static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_
 
   buffer_size = buffer_time_to_size;
   //buffer_size=8096;
-  buffer_size=15052;
+  //buffer_size=15052;
+  buffer_size=buffer_size_max;
   if (buffer_size_max < buffer_size) buffer_size = buffer_size_max;
   if (buffer_size_min > buffer_size) buffer_size = buffer_size_min;
   //buffer_size=0x800;
