@@ -602,10 +602,11 @@ probe_cards () {
     if [ -r $PROCFS/isapnp ]; then
 	cat $PROCFS/isapnp >"$DUMP"
 	found="1"
-    elif [ -r $SYSFS/bus/pnp/devices/0[0123]:01.00 ]; then
+    elif [ -d $SYSFS/bus/pnp/devices ]; then
 	# use 2.6 kernel's sysfs output
 	# fake the isapnp dump
 	index=0
+	bindex=0
 	for d1 in $SYSFS/devices/pnp* ; do
 	  for d2 in $d1/*:* ; do
 	    if [ -r $d2/card_id ]; then
@@ -614,6 +615,13 @@ probe_cards () {
 	      echo "Card $index '$id:$name' " >> "$DUMP"
 	      index=$[$index+1]
 	      found="1"
+	    else if [ -r $d2/id ]; then
+	      # FIXME: multiple id might be present (separated with new-line)
+	      id=`head -n 1 $d2/id`
+	      echo "BIOS $bindex '$id' " >> "$DUMP"
+	      bindex=$[$bindex+1]
+	      found="1"
+	    fi
 	    fi
 	  done
 	done
@@ -658,14 +666,21 @@ BEGIN {
 	gsub(/0x/, "");
 	gsub(/=/, ":");
 	x = sprintf ("'$lspci' -n 2>/dev/null| grep '"' 040.: '"' | grep %s", $2);
+	print x
 	if (system (x) == 0)
 		printf "%s %s\n", $2, driver >>"'"$FOUND"'"
 }
 /^[<literal space><literal tab>]*ISAPNP: /{
+	id2 = substr($0, index($0, "=")+1);
 	gsub(/=.*/, "");
 	x = sprintf ("grep '\''^Card [0-9] .%s:'\'' '"$DUMP"'", $2);
 	if (system (x) == 0)
 		printf "%s %s\n", $2, driver >>"'"$FOUND"'"
+	else if (index($2, "ffff") > 0) {
+		x = sprintf ("grep '\''^BIOS [0-9]* .%s.'\'' '"$DUMP"'", id2);
+		if (system (x) == 0)
+			printf "%s %s\n", id2, driver >>"'"$FOUND"'"
+	}
 }' < $CARDID_DB |\
     $DIALOG --gauge "$msg" 6 40 0
 
