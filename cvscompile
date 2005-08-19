@@ -4,7 +4,9 @@ if test -d ../alsa-lib/utils && ! test -r `aclocal --print-ac-dir`/alsa.m4; then
   alsa_m4_flags="-I ../alsa-lib/utils"
 fi
 aclocal $alsa_m4_flags $ACLOCAL_FLAGS
-gettextize -c -f
+cp configure.in configure.in.ok
+gettextize -c -f --no-changelog
+cp configure.in.ok configure.in
 autoheader
 automake --foreign --copy --add-missing
 touch depcomp		# for older automake
