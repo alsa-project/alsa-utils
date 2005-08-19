@@ -33,6 +33,7 @@ to compile CVS sources of alsa-utils package.
 For compilation you can use these commands:
 
 	aclocal
+	gettextize
 	autoheader
 	automake --foreign --copy --add-missing
 	autoconf
