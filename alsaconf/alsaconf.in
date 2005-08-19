@@ -666,7 +666,6 @@ BEGIN {
 	gsub(/0x/, "");
 	gsub(/=/, ":");
 	x = sprintf ("'$lspci' -n 2>/dev/null| grep '"' 040.: '"' | grep %s", $2);
-	print x
 	if (system (x) == 0)
 		printf "%s %s\n", $2, driver >>"'"$FOUND"'"
 }
