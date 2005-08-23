@@ -7,6 +7,7 @@ XGETTEXT_OPTIONS = -kxmsg -kxecho
 
 top_builddir = ../..
 
+srcdir = @srcdir@
 datadir = @datadir@
 exec_prefix = @exec_prefix@
 prefix = @prefix@
@@ -33,24 +34,26 @@ all-no:
 
 .SUFFIXES: .po .gmo .mo
 
-.po.mo:
+%.mo : $(srcdir)/%.po
 	$(MSGFMT) -c -o t-$@ $< && mv t-$@ $@
 
-.po.gmo:
-	@lang=`echo $* | sed -e 's,.*/,,'`; \
-	rm -f $${lang}.gmo && $(GMSGFMT) -c --statistics -o t-$${lang}.gmo $${lang}.po && mv t-$${lang}.gmo $${lang}.gmo
+%.gmo : $(srcdir)/%.po
+	@lang=`echo $(srcdir)/$* | sed -e 's,.*/,,'`; \
+	rm -f $${lang}.gmo && $(GMSGFMT) -c --statistics -o t-$${lang}.gmo $(srcdir)/$${lang}.po && mv t-$${lang}.gmo $${lang}.gmo
 
 $(DOMAIN).pot: $(GETTEXT_SRC)
 	$(XGETTEXT) -o$@ --default-domain=$(DOMAIN) \
 	  --add-comments=TRANSLATORS: --language=Shell \
 	  $(XGETTEXT_OPTIONS) $<
 
+check check_recursive:
+
 clean:
 	rm -f $(CATALOGS) $(POFILES:.po=.mo) $(DOMAIN).pot
 
 update-po: $(DOMAIN).pot
 	@for po in $(POFILES); do \
-	$(MSGMERGE_UPDATE) $$po $(DOMAIN).pot; \
+	$(MSGMERGE_UPDATE) $(srcdir)/$$po $(DOMAIN).pot; \
 	done
 
 install-data-no:

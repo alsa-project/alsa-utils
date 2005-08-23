@@ -17,7 +17,7 @@ install-man8:
 	  esac; \
 	  $(mkinstalldirs) $(DESTDIR)$(mandir)$$loc/man$$ext; \
 	  echo " $(INSTALL_DATA) $$i $(DESTDIR)$(mandir)$$loc/man$$ext/$$inst.$$ext"; \
-	  $(INSTALL_DATA) $$i $(DESTDIR)$(mandir)$$loc/man$$ext/$$inst.$$ext; \
+	  $(INSTALL_DATA) $(srcdir)/$$i $(DESTDIR)$(mandir)$$loc/man$$ext/$$inst.$$ext; \
 	done
 
 uninstall-man8:
