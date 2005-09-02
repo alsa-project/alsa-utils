@@ -4,7 +4,7 @@ arecord, aplay \- command-line sound recorder and player for ALSA
 soundcard driver
 .SH SYNOPSIS
 \fBarecord\fP [\fIflags\fP] [filename]
-.SH SYNOPSIS
+.br
 \fBaplay\fP [\fIflags\fP] [filename [filename]] ...
 
 .SH DESCRIPTION
@@ -16,14 +16,9 @@ multiple devices.
 supported soundfile formats, the sampling rate, bit depth, and so
 forth can be automatically determined from the soundfile header.
 
-.SH INVOKING
-
-[\fBarecord\fP | \fBaplay\fP ] [\fIflags\fP] filename
-.TP
 If filename is not specified, the standard output or input is used. The \fBaplay\fP utility accepts multiple filenames.
 
-
-.SS Options
+.SH OPTIONS
 .TP
 \fI\-h, \-\-help\fP
 Help: show syntax.

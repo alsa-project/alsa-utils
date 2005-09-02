@@ -7,7 +7,6 @@ amixer \- command-line mixer for ALSA soundcard driver
 \fBamixer\fP allows command-line control of the mixer for the ALSA
 soundcard driver.
 \fBamixer\fP supports multiple soundcards.
-.SH INVOKING
 
 \fBamixer\fR with no arguments will display the current mixer settings
 for the default soundcard and device. This is a good way to see a list
@@ -71,7 +70,7 @@ of control.
 Shows the card control contents. The identifier has same syntax as for
 the \fIcset\fP command.
 
-.SS Options
+.SH OPTIONS
 
 .TP
 [\fI\-c\fP card]
@@ -91,8 +90,7 @@ Help: show syntax.
 \fI\-q\fP
 Quiet mode. Do not show results of changes.
 
-.SS
-Example #1:
+.SH EXAMPLES
 
 .TP
 \fBamixer \-c 1 sset Line,0 80%,40% unmute cap\fR
@@ -100,15 +98,9 @@ will set the second soundcard's left line input volume to 80% and
 right line input to 40%, unmute it, and select it as a source for
 capture (recording).\fR
 
-.SS
-Example #2:
-
 .TP
 \fBamixer \-c 2 cset iface=MIXER,name='Line Playback Volume",index=1 40%\fR
 will set the third soundcard's second line playback volume(s) to 40%
-
-.SS
-Example #3:
 
 .TP
 \fBamixer \-c 2 cset numid=34 40%\fR
