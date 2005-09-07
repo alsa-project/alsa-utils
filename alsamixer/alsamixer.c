@@ -100,6 +100,7 @@
  *	automated updates after select() (i always missed that with OSS!).
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -2205,7 +2206,7 @@ static void
 mixer_signal_handler (int signal)
 {
   if (signal != SIGSEGV)
-    mixer_abort (ERR_SIGNAL, sys_siglist[signal], 0);
+    mixer_abort (ERR_SIGNAL, strsignal(signal), 0);
   else
     {
       fprintf (stderr, "\nSegmentation fault.\n");
