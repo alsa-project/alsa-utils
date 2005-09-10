@@ -985,6 +985,48 @@ mixer_update_cbar (int elem_index)
 	extra_info = tmp;
       }
     }
+    if (type != MIXER_ELEM_CAPTURE && snd_mixer_selem_has_playback_volume(elem)) {
+	long vdbleft, vdbright;
+	unsigned int length;
+	if (!snd_mixer_selem_get_playback_dB(elem, chn_left, &vdbleft)) {
+		if ((chn_right != SND_MIXER_SCHN_UNKNOWN) &&
+		     (!snd_mixer_selem_get_playback_dB(elem, chn_right, &vdbright))) {
+			float dbvol1, dbvol2;
+			dbvol1=(float)vdbleft/100;
+			dbvol2=(float)vdbright/100;
+    			snprintf(tmp, 48, " [dB gain=%3.2f, %3.2f]",dbvol1, dbvol2);
+		} else {
+			float dbvol1;
+			dbvol1=(float)vdbleft/100;
+    			snprintf(tmp, 48, " [dB gain=%3.2f]",dbvol1);
+		}
+		tmp[sizeof(tmp)-2] = 0;
+		length=strlen(tmp);
+		tmp[length+1]=0;
+		extra_info = tmp;
+	}
+    }
+    if (type == MIXER_ELEM_CAPTURE && snd_mixer_selem_has_capture_volume(elem)) {
+	long vdbleft, vdbright;
+	unsigned int length;
+	if (!snd_mixer_selem_get_capture_dB(elem, chn_left, &vdbleft)) {
+		if ((chn_right != SND_MIXER_SCHN_UNKNOWN) &&
+		     (!snd_mixer_selem_get_capture_dB(elem, chn_right, &vdbright))) {
+			float dbvol1, dbvol2;
+			dbvol1=(float)vdbleft/100;
+			dbvol2=(float)vdbright/100;
+    			snprintf(tmp, 48, " [dB gain=%3.2f, %3.2f]",dbvol1, dbvol2);
+		} else {
+			float dbvol1;
+			dbvol1=(float)vdbleft/100;
+    			snprintf(tmp, 48, " [dB gain=%3.2f]",dbvol1);
+		}
+		tmp[sizeof(tmp)-2] = 0;
+		length=strlen(tmp);
+		tmp[length+1]=0;
+		extra_info = tmp;
+	}
+    }
     display_item_info(elem_index, sid, extra_info);
   }
 
