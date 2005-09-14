@@ -426,6 +426,7 @@ set_mixers() {
     mixer DAC,1 90%
     # some notebooks use headphone instead of master
     mixer Headphone 75%
+    mixer 'Internal Speaker' 75%
     mixer Playback 100%
     # turn off digital switches
     amixer set "SB Live Analog/Digital Output Jack" off >/dev/null 2>&1
@@ -718,7 +719,13 @@ get_hwcfg_type () {
 	if [ "$driver" = "$1" ]; then
 	    case "$dev" in
 	    *:*)
-		echo bus-pci-`$lspci -d "$dev" | head -n 1 | sed -e 's/ .*$//'`
+		# FIXME: need to look around /sys/bus/pci/* (or use vpid-* ?)
+		devid=`$lspci -d "$dev" | head -n 1 | sed -e 's/ .*$//'`
+		case "$devid" in
+		*:*:*.*) ;;
+		*) devid="0000:$devid" ;;
+		esac
+		echo bus-pci-$devid
 		;;
 	    *)
 		echo $driver
