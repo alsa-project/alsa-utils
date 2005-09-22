@@ -569,7 +569,8 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 		}
 		printf("\n");
 		if (snd_mixer_selem_is_enumerated(elem)) {
-			int i, items, idx;
+			int i, items;
+			unsigned int idx;
 			char itemname[40];
 			items = snd_mixer_selem_get_enum_items(elem);
 			printf("  Items:");
@@ -1278,6 +1279,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 					   simple_skip_word(&ptr, "nocap") || simple_skip_word(&ptr, "norec")) {
 					/* nothing */
 				} else {
+					okflag &= ~1;
 				}
 			}
 			if ((dir & 2) && snd_mixer_selem_has_capture_channel(elem, chn)) {
@@ -1313,10 +1315,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 					   simple_skip_word(&ptr, "unmute") || simple_skip_word(&ptr, "on")) {
 					/* nothing */
 				} else {
-					error("Unknown capture setup '%s'..\n", ptr);
 					okflag &= ~2;
-					snd_mixer_close(handle);
-					return err;
 				}
 			}
 			if (okflag == 0) {
