@@ -1168,7 +1168,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 	unsigned int idx;
 	snd_mixer_selem_channel_id_t chn;
 	unsigned int channels = ~0U;
-	unsigned int dir = 3;
+	unsigned int dir = 3, okflag = 3;
 	long pmin, pmax, cmin, cmax;
 	snd_mixer_t *handle;
 	snd_mixer_elem_t *elem;
@@ -1278,9 +1278,6 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 					   simple_skip_word(&ptr, "nocap") || simple_skip_word(&ptr, "norec")) {
 					/* nothing */
 				} else {
-					error("Unknown playback setup '%s'..\n", ptr);
-					snd_mixer_close(handle);
-					return err;
 				}
 			}
 			if ((dir & 2) && snd_mixer_selem_has_capture_channel(elem, chn)) {
@@ -1317,9 +1314,18 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 					/* nothing */
 				} else {
 					error("Unknown capture setup '%s'..\n", ptr);
+					okflag &= ~2;
 					snd_mixer_close(handle);
 					return err;
 				}
+			}
+			if (okflag == 0) {
+				if (dir & 1)
+					error("Unknown playback setup '%s'..\n", ptr);
+				if (dir & 2)
+					error("Unknown capture setup '%s'..\n", ptr);
+				snd_mixer_close(handle);
+				return err;
 			}
 			if (!multi)
 				ptr = optr;
