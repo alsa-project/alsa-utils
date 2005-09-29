@@ -204,6 +204,8 @@ static int probe_pcm_card(int card, snd_ctl_t *ctl, snd_config_t *config)
 		"surround51:%i", "Front, Rear, Center and Woofer",
 		"surround71:%i", "Front, Rear, Side, Center and Woofer",
 		"spdif:%i", "S/PDIF (IEC958) Optical or Coaxial Wire",
+		"phoneline:%i", "Phone Line Interface",
+		"modem:%i", "Soft Modem",
 		NULL
 	};
 	
@@ -239,7 +241,8 @@ static int probe_pcm_card(int card, snd_ctl_t *ctl, snd_config_t *config)
 			class = snd_pcm_info_get_class(info2);
 		}
 		if (class != SND_PCM_CLASS_GENERIC &&
-		    class != SND_PCM_CLASS_MULTI)	/* skip this */
+		    class != SND_PCM_CLASS_MULTI &&
+		    class != SND_PCM_CLASS_MODEM )	/* skip this */
 			continue;
 		if (first) {
 			for (idx = 0; vnames1[idx] != NULL; idx += 2)
