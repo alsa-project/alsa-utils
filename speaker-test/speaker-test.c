@@ -117,28 +117,32 @@ static void generate_sine(uint8_t *frames, int channel, int count, double *_phas
   double max_phase = 1.0 / freq;
   double step = 1.0 / (double)rate;
   double res;
+  float fres;
   int    chn;
   int32_t  ires;
   int8_t *samp8 = (int8_t*) frames;
   int16_t *samp16 = (int16_t*) frames;
   int32_t *samp32 = (int32_t*) frames;
+  float   *samp_f = (float*) frames;
   int sample_size_bits = snd_pcm_format_width(format); 
 
   while (count-- > 0) {
     //res = sin((phase * 2 * M_PI) / max_phase - M_PI) * 32767;
     //res = sin((phase * 2 * M_PI) / max_phase - M_PI) * 32767;
-    res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0x03fffffff; /* Don't use MAX volume */
+    //res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0x03fffffff; /* Don't use MAX volume */
     //if (res > 0) res = 10000;
     //if (res < 0) res = -10000;
 
     /* printf("%e\n",res); */
-    ires = res;
+    //ires = res;
     //ires = ((16 - (count & 0xf)) <<24);
     //ires = 0;
 
     for(chn=0;chn<channels;chn++) {
       if (sample_size_bits == 8) {
         if (chn==channel) {
+          res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0x03fffffff; /* Don't use MAX volume */
+          ires = res;
 	  *samp8++ = ires >> 24;
 	  //*samp8++ = 0x12;
         } else {
@@ -146,14 +150,30 @@ static void generate_sine(uint8_t *frames, int channel, int count, double *_phas
         }
       } else if (sample_size_bits == 16) {
         if (chn==channel) {
+          res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0x03fffffff; /* Don't use MAX volume */
+          ires = res;
 	  *samp16++ = ires >>16;
 	  //*samp16++ = 0x1234;
         } else {
 	  //*samp16++ = (ires >>16)+1;
 	  *samp16++ = 0;
         }
-      } else if (sample_size_bits == 32) {
+      } else if ((sample_size_bits == 32) && (format == SND_PCM_FORMAT_FLOAT_LE)) {
         if (chn==channel) {
+          res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0.75 ; /* Don't use MAX volume */
+          fres = res;
+	  *samp_f++ = fres;
+	  //*samp32++ = 0xF2345678;
+	//printf("res=%lf, ires=%d 0x%x, samp32=0x%x\n",res,ires, ires, samp32[-1]);
+        } else {
+	  //*samp32++ = ires+0x10000;
+	  //*samp32++ = ires;
+	  *samp_f++ = 0.0;
+        }
+      } else if ((sample_size_bits == 32) && (format != SND_PCM_FORMAT_FLOAT_LE)) {
+        if (chn==channel) {
+          res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0x03fffffff; /* Don't use MAX volume */
+          ires = res;
 	  *samp32++ = ires;
 	  //*samp32++ = 0xF2345678;
 	//printf("res=%lf, ires=%d 0x%x, samp32=0x%x\n",res,ires, ires, samp32[-1]);
@@ -182,9 +202,11 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
   double   res;
   int      chn;
   int32_t  ires;
+  float    fres;
   int8_t  *samp8 = (int8_t*) frames;
   int16_t *samp16 = (int16_t*) frames;
   int32_t *samp32 = (int32_t*) frames;
+  float   *samp_f = (float*) frames;
   int sample_size_bits = snd_pcm_format_width(format); 
 
   while (count-- > 0) {
@@ -205,7 +227,15 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
         } else {
 	  *samp16++ = 0;
         }
-      } else if (sample_size_bits == 32) {
+      } else if ((sample_size_bits == 32) && (format == SND_PCM_FORMAT_FLOAT_LE)) {
+        if (chn==channel) {
+	  res = generate_pink_noise_sample(&pink) * 0.75; /* Don't use MAX volume */
+          fres = res;
+	  *samp_f++ = fres;
+        } else {
+	  *samp_f++ = 0.0;
+        }
+      } else if ((sample_size_bits == 32) && (format != SND_PCM_FORMAT_FLOAT_LE)) {
         if (chn==channel) {
 	  res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
 	  ires = res;
@@ -504,7 +534,7 @@ int main(int argc, char *argv[]) {
 
   snd_pcm_hw_params_alloca(&hwparams);
   snd_pcm_sw_params_alloca(&swparams);
-  
+ 
   morehelp = 0;
 
   printf("\nspeaker-test %s\n\n", SPEAKER_TEST_VERSION);
