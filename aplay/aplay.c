@@ -43,6 +43,7 @@
 #include <sys/uio.h>
 #include <sys/time.h>
 #include <sys/signal.h>
+#include <asm/byteorder.h>
 #include "aconfig.h"
 #include "gettext.h"
 #include "formats.h"
@@ -1099,8 +1100,10 @@ static void suspend(void)
 static void compute_max_peak(u_char *data, size_t count)
 {
 	signed int val, max, max_peak = 0, perc;
+	static	int	run = 0;
 	size_t ocount = count;
-	
+	int	format_little_endian = snd_pcm_format_little_endian(hwparams.format);	
+
 	switch (bits_per_sample) {
 	case 8: {
 		signed char *valp = (signed char *)data;
@@ -1116,12 +1119,39 @@ static void compute_max_peak(u_char *data, size_t count)
 	case 16: {
 		signed short *valp = (signed short *)data;
 		signed short mask = snd_pcm_format_silence_16(hwparams.format);
+		signed short sval;
+
 		count /= 2;
 		while (count-- > 0) {
-			val = *valp++ ^ mask;
-			val = abs(val);
+			if (format_little_endian)
+				sval = __le16_to_cpu(*valp);
+			else	sval = __be16_to_cpu(*valp);
+			sval = abs(sval) ^ mask;
+			if (max_peak < sval)
+				max_peak = sval;
+			valp++;
+		}
+		break;
+	}
+	case 24: {
+		unsigned char *valp = data;
+		signed int mask = snd_pcm_format_silence_32(hwparams.format);
+
+		count /= 3;
+		while (count-- > 0) {
+			if (format_little_endian) {
+				val = valp[0] | (valp[1]<<8) | (valp[2]<<16);
+			} else {
+				val = (valp[0]<<16) | (valp[1]<<8) | valp[2];
+			}
+			/* Correct signed bit in 32-bit value */
+			if (val & (1<<(bits_per_sample-1))) {
+				val |= 0xff<<24;	/* Negate upper bits too */
+			}
+			val = abs(val) ^ mask;
 			if (max_peak < val)
 				max_peak = val;
+			valp += 3;
 		}
 		break;
 	}
@@ -1130,20 +1160,27 @@ static void compute_max_peak(u_char *data, size_t count)
 		signed int mask = snd_pcm_format_silence_32(hwparams.format);
 		count /= 4;
 		while (count-- > 0) {
-			val = *valp++ ^ mask;
-			val = abs(val);
+			if (format_little_endian)
+				val = __le32_to_cpu(*valp);
+			else	val = __be32_to_cpu(*valp);
+			val = abs(val) ^ mask;
 			if (max_peak < val)
 				max_peak = val;
+			valp++;
 		}
 		break;
 	}
 	default:
-		break;
+		if (run == 0) {
+			fprintf(stderr, _("Unsupported bit size %d.\n"), bits_per_sample);
+			run = 1;
+		}
+		return;
 	}
 	max = 1 << (bits_per_sample-1);
 	if (max <= 0)
 		max = 0x7fffffff;
-	printf(_("Max peak (%li samples): %05i (0x%04x) "), (long)ocount, max_peak, max_peak);
+	printf(_("Max peak (%li samples): 0x%08x "), (long)ocount, max_peak);
 	if (bits_per_sample > 16)
 		perc = max_peak / (max / 100);
 	else
