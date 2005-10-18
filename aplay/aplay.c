@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'c':
-			rhwparams.channels = atoi(optarg);
+			rhwparams.channels = strtol(optarg, NULL, 0);
 			if (rhwparams.channels < 1 || rhwparams.channels > 32) {
 				error(_("value %i for channels is invalid"), rhwparams.channels);
 				return 1;
@@ -456,7 +456,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'r':
-			tmp = atoi(optarg);
+			tmp = strtol(optarg, NULL, 0);
 			if (tmp < 300)
 				tmp *= 1000;
 			rhwparams.rate = tmp;
@@ -466,35 +466,35 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'd':
-			timelimit = atoi(optarg);
+			timelimit = strtol(optarg, NULL, 0);
 			break;
 		case 's':
-			sleep_min = atoi(optarg);
+			sleep_min = strtol(optarg, NULL, 0);
 			break;
 		case 'N':
 			nonblock = 1;
 			open_mode |= SND_PCM_NONBLOCK;
 			break;
 		case 'F':
-			period_time = atoi(optarg);
+			period_time = strtol(optarg, NULL, 0);
 			break;
 		case 'B':
-			buffer_time = atoi(optarg);
+			buffer_time = strtol(optarg, NULL, 0);
 			break;
 		case OPT_PERIOD_SIZE:
-			period_frames = atoi(optarg);
+			period_frames = strtol(optarg, NULL, 0);
 			break;
 		case OPT_BUFFER_SIZE:
-			buffer_frames = atoi(optarg);
+			buffer_frames = strtol(optarg, NULL, 0);
 			break;
 		case 'A':
-			avail_min = atoi(optarg);
+			avail_min = strtol(optarg, NULL, 0);
 			break;
 		case 'R':
-			start_delay = atoi(optarg);
+			start_delay = strtol(optarg, NULL, 0);
 			break;
 		case 'T':
-			stop_delay = atoi(optarg);
+			stop_delay = strtol(optarg, NULL, 0);
 			break;
 		case 'v':
 			verbose++;
