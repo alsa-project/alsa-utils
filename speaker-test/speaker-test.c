@@ -43,6 +43,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <inttypes.h>
+#include <locale.h>
 
 #define ALSA_PCM_NEW_HW_PARAMS_API
 #define ALSA_PCM_NEW_SW_PARAMS_API

@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <stdarg.h>
+#include <locale.h>
 #include <sys/ioctl.h>
 #include <alsa/asoundlib.h>
 #include "aconfig.h"
