@@ -688,12 +688,50 @@ BEGIN {
     # PowerMac
     #
     if grep -q MacRISC $PROCFS/cpuinfo; then
-	/sbin/modprobe -a -l | grep 'snd-powermac' | \
+	MODDIR=/lib/modules/`uname -r`
+	find $MODDIR -name 'snd-powermac' -print | \
 	while read i; do
 	    i=${i##*/}
 	    i=${i%%.o}
 	    i=${i%%.ko}
 	    echo "PowerMac $i" >> $FOUND
+	done
+    fi
+
+    #
+    # Sparc
+    #
+    if grep -q Sparc $PROCFS/cpuinfo; then
+	test -r $PROCFS/openprom/name || /bin/mount -t openpromfs none $PROCFS/openprom >/dev/null 2>&1
+	# Check for an "audio" device
+	audio=
+	compat=
+	if test -r $PROCFS/openprom; then
+	    audio=`find $PROCFS/openprom -follow -type d -name "audio*" -print`
+	fi
+	if test -n "$audio"; then
+	    compat=`cat $audio/compatible`
+	    compat=${compat#\'}
+	    compat=${compat%\'}
+	    compat=${compat#SUNW,}
+	fi
+	# Go through all cards we have
+	MODDIR=/lib/modules/`uname -r`
+	find $MODDIR -name 'snd-sun-*' -print | \
+	while read i; do
+	    i=${i##*/}
+	    i=${i%%.o}
+	    i=${i%%.ko}
+	    sdev=`echo ${i#snd-sun-} | tr "[a-z]" "[A-Z]"`
+
+	    if test "$sdev" = "$compat"; then
+		echo "$sdev $i" >> $FOUND
+	    elif test -r $PROCFS/openprom; then
+		find $PROCFS/openprom -follow -type d -name "SUNW,${sdev}*" \
+		    -exec echo "$sdev $i" \; 2>/dev/null >> $FOUND
+	    else
+		echo "$sdev $i" >> $FOUND
+	    fi
 	done
     fi
 }
@@ -1305,7 +1343,8 @@ devs_olist=""
 
 if [ -s "$FOUND" ]; then
     while read dev card ; do
-	/sbin/modprobe -a -l | grep -q -E $card'\.(o|ko)' || continue
+	MODDIR=/lib/modules/`uname -r`
+	find $MODDIR -type f | grep -q -E $card'\.(o|ko)' || continue
 	cardname=`find_device_name $dev | cut -c 1-64`
 	if [ -z "$cardname" ]; then
 	    cardname="$card"
