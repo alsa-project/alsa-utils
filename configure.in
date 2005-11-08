@@ -81,6 +81,9 @@ AC_HEADER_TIME
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
 
+dnl Enable largefile support
+AC_SYS_LARGEFILE
+
 SAVE_UTIL_VERSION
 
 AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amidi/Makefile amixer/Makefile \
