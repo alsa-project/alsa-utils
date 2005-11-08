@@ -530,8 +530,10 @@ int main(int argc, char *argv[]) {
     {NULL,        0, NULL, 0  },
   };
 
+#ifdef ENABLE_NLS
   setlocale(LC_ALL, "");
   textdomain(PACKAGE);
+#endif
 
   snd_pcm_hw_params_alloca(&hwparams);
   snd_pcm_sw_params_alloca(&swparams);

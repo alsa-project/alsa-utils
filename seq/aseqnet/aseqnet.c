@@ -98,8 +98,10 @@ int main(int argc, char **argv)
 	int port = DEFAULT_PORT;
 	char *source = NULL, *dest = NULL;
 
+#ifdef ENABLE_NLS
 	setlocale(LC_ALL, "");
 	textdomain(PACKAGE);
+#endif
 
 	while ((c = getopt_long(argc, argv, "p:s:d:vi", long_option, NULL)) != -1) {
 		switch (c) {

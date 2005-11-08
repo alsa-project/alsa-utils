@@ -364,8 +364,10 @@ int main(int argc, char *argv[])
 	int do_names_list = 0, do_device_list = 0, do_pcm_list = 0;
 	snd_pcm_info_t *info;
 
+#ifdef ENABLE_NLS
 	setlocale(LC_ALL, "");
 	textdomain(PACKAGE);
+#endif
 
 	snd_pcm_info_alloca(&info);
 

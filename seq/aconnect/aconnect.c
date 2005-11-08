@@ -279,8 +279,10 @@ int main(int argc, char **argv)
 	snd_seq_port_subscribe_t *subs;
 	snd_seq_addr_t sender, dest;
 
+#ifdef ENABLE_NLS
 	setlocale(LC_ALL, "");
 	textdomain(PACKAGE);
+#endif
 
 	while ((c = getopt_long(argc, argv, "dior:t:elx", long_option, NULL)) != -1) {
 		switch (c) {
