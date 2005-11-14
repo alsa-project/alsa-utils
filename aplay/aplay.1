@@ -39,10 +39,12 @@ Select PCM by name
 Quiet mode. Suppress messages (not sound :))
 .TP
 \fI\-t, \-\-file\-type TYPE\fP
-File type (voc, wav, raw or au)
+File type (voc, wav, raw or au).
+If this parameter is omitted the WAVE format is used.
 .TP
 \fI\-c, \-\-channels=#\fP
-The number of channels
+The number of channels.
+The default is one channel.
 .TP
 \fI\-f \-\-format=FORMAT\fP
 Sample format
@@ -59,9 +61,10 @@ There are also two format shortcuts available:
 \-f cd (16 bit little endian, 44100, stereo [\-f S16_LE \-c2 \-r44100]
 \-f dat (16 bit little endian, 48000, stereo) [\-f S16_LE \-c2 \-r48000]
 .fi
+If no format is given U8 is used.
 .TP
 \fI\-r, \-\-rate=#<Hz>\fP
-Sampling rate in Hertz.
+Sampling rate in Hertz. The default rate is 8000 Hertz.
 .TP
 \fI\-d, \-\-duration=#\fP
 Interrupt after # seconds.
@@ -69,25 +72,31 @@ A value of zero means infinity.
 The default is zero, so if this option is omitted then the arecord process will run until it is killed.
 .TP
 \fI\-s, \-\-sleep\-min=#\fP
-Min ticks to sleep
+Min ticks to sleep. The default is not to sleep.
 .TP
 \fI\-M, \-\-mmap\fP            
-Mmap stream
+Use memory-mapped (mmap) I/O mode for the audio stream.
+If this option is not set, the read/write I/O mode will be used.
 .TP
 \fI\-N, \-\-nonblock\fP          
-Nonblocking mode
+Open the audio device in non-blocking mode. If the device is busy the program will exit immediatly.
+If this option is not set the program will block until the audio device is available again.
 .TP
 \fI\-F, \-\-period\-time=#\fP     
-Distance between interrupts is # microseconds
+Distance between interrupts is # microseconds.
+If no period time and no period size is given then a quarter of the buffer time is set.
 .TP
 \fI\-B, \-\-buffer\-time=#\fP     
 Buffer duration is # microseconds
+If no buffer time and no buffer size is given then the maximal allowed buffer time but not more than 500ms is set.
 .TP
 \fI\-\-period\-size=#\fP     
 Distance between interrupts is # frames
+If no period size and no period time is given then a quarter of the buffer size is set.
 .TP
 \fI\-\-buffer\-size=#\fP     
 Buffer duration is # frames
+If no buffer time and no buffer size is given then the maximal allowed buffer time but not more than 500ms is set.
 .TP
 \fI\-A, \-\-avail\-min=#\fP       
 Min available space for wakeup is # microseconds
