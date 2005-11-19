@@ -54,7 +54,7 @@
 #include "aconfig.h"
 #include "gettext.h"
 
-static char              *device      = "plughw:0,0";       /* playback device */
+static char              *device      = "default";       /* playback device */
 static snd_pcm_format_t   format      = SND_PCM_FORMAT_S16; /* sample format */
 static unsigned int       rate        = 48000;	            /* stream rate */
 static unsigned int       channels    = 1;	            /* count of channels */
