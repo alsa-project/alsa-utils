@@ -43,7 +43,10 @@
 #include <errno.h>
 #include <getopt.h>
 #include <inttypes.h>
+#include <ctype.h>
+#ifdef ENABLE_NLS
 #include <locale.h>
+#endif
 
 #define ALSA_PCM_NEW_HW_PARAMS_API
 #define ALSA_PCM_NEW_SW_PARAMS_API
@@ -54,6 +57,14 @@
 #include "aconfig.h"
 #include "gettext.h"
 
+enum {
+  TEST_PINK_NOISE = 1,
+  TEST_SINE,
+  TEST_WAV
+};
+
+#define MAX_CHANNELS	16
+
 static char              *device      = "default";       /* playback device */
 static snd_pcm_format_t   format      = SND_PCM_FORMAT_S16; /* sample format */
 static unsigned int       rate        = 48000;	            /* stream rate */
@@ -63,12 +74,15 @@ static unsigned int       buffer_time = 500000;	            /* ring buffer lengt
 static unsigned int       period_time = 100000;	            /* period time in us */
 #define PERIODS 4
 static double             freq        = 440;                /* sinusoidal wave frequency in Hz */
-static int                test_type   = 1;                  /* Test type. 1 = noise, 2 = sine wave */
+static int                test_type   = TEST_PINK_NOISE;    /* Test type. 1 = noise, 2 = sine wave */
 static pink_noise_t pink;
 static snd_output_t      *output      = NULL;
 static snd_pcm_uframes_t  buffer_size;
 static snd_pcm_uframes_t  period_size;
-static const char        *channel_name[] = {
+static const char *given_test_wav_file = NULL;
+static char *wav_file_dir = DATADIR;
+
+static const char        *channel_name[MAX_CHANNELS] = {
   N_("Front Left"),
   N_("Front Right"),
   N_("Rear Left"),
@@ -77,15 +91,14 @@ static const char        *channel_name[] = {
   N_("LFE"),
   N_("Side Left"),
   N_("Side Right"),
-  N_("8"),
-  N_("9"),
-  N_("10"),
-  N_("11"),
-  N_("12"),
-  N_("13"),
-  N_("14"),
-  N_("15"),
-  N_("16")
+  N_("Channel 9"),
+  N_("Channel 10"),
+  N_("Channel 11"),
+  N_("Channel 12"),
+  N_("Channel 13"),
+  N_("Channel 14"),
+  N_("Channel 15"),
+  N_("Channel 16")
 };
 
 static const int	channels4[] = {
@@ -434,43 +447,243 @@ static int xrun_recovery(snd_pcm_t *handle, int err) {
 }
 
 /*
+ * Handle WAV files
+ */
+
+static const char *wav_file[MAX_CHANNELS];
+static int wav_file_size[MAX_CHANNELS];
+
+struct wave_header {
+  struct {
+    uint32_t magic;
+    uint32_t length;
+    uint32_t type;
+  } hdr;
+  struct {
+    uint32_t type;
+    uint32_t length;
+  } chunk1;
+  struct {
+    uint16_t format;
+    uint16_t channels;
+    uint32_t rate;
+    uint32_t bytes_per_sec;
+    uint16_t sample_size;
+    uint16_t sample_bits;
+  } body;
+  struct {
+    uint32_t type;
+    uint32_t length;
+  } chunk;
+};
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define COMPOSE_ID(a,b,c,d)	((a) | ((b)<<8) | ((c)<<16) | ((d)<<24))
+#define LE_SHORT(v)		(v)
+#define LE_INT(v)		(v)
+#else
+#define COMPOSE_ID(a,b,c,d)	((d) | ((c)<<8) | ((b)<<16) | ((a)<<24))
+#define LE_SHORT(v)		bswap_16(v)
+#define LE_INT(v)		bswap_32(v)
+#endif
+
+#define WAV_RIFF		COMPOSE_ID('R','I','F','F')
+#define WAV_WAVE		COMPOSE_ID('W','A','V','E')
+#define WAV_FMT			COMPOSE_ID('f','m','t',' ')
+#define WAV_DATA		COMPOSE_ID('d','a','t','a')
+#define WAV_PCM_CODE		1
+
+static const char *search_for_file(const char *name)
+{
+  char *file;
+  if (*name == '/')
+    return strdup(name);
+  file = malloc(strlen(wav_file_dir) + strlen(name) + 2);
+  if (file)
+    sprintf(file, "%s/%s", wav_file_dir, name);
+  return file;
+}
+
+static int check_wav_file(int channel, const char *name)
+{
+  struct wave_header header;
+  int fd;
+
+  wav_file[channel] = search_for_file(name);
+  if (! wav_file[channel]) {
+    fprintf(stderr, "cannot allocate\n");
+    return -ENOMEM;
+  }
+
+  if ((fd = open(wav_file[channel], O_RDONLY)) < 0) {
+    fprintf(stderr, "Cannot open WAV file %s\n", wav_file[channel]);
+    return -EINVAL;
+  }
+  if (read(fd, &header, sizeof(header)) < (int)sizeof(header)) {
+    fprintf(stderr, "Invalid WAV file %s\n", wav_file[channel]);
+    goto error;
+  }
+  
+  if (header.hdr.magic != WAV_RIFF || header.hdr.type != WAV_WAVE) {
+    fprintf(stderr, "Not a WAV file: %s\n", wav_file[channel]);
+    goto error;
+  }
+  if (header.body.format != LE_SHORT(WAV_PCM_CODE)) {
+    fprintf(stderr, "Unsupported WAV format %d for %s\n",
+	    LE_SHORT(header.body.format), wav_file[channel]);
+    goto error;
+  }
+  if (header.body.channels != LE_SHORT(1)) {
+    fprintf(stderr, "%s is not a mono stream (%d channels)\n",
+	    wav_file[channel], LE_SHORT(header.body.channels)); 
+    goto error;
+  }
+  if (header.body.rate != LE_INT(rate)) {
+    fprintf(stderr, "Sample rate doesn't match (%d) for %s\n",
+	    LE_INT(header.body.rate), wav_file[channel]);
+    goto error;
+  }
+  if (header.body.sample_bits != LE_SHORT(16)) {
+    fprintf(stderr, "Unsupported sample format bits %d for %s\n",
+	    LE_SHORT(header.body.sample_bits), wav_file[channel]);
+    goto error;
+  }
+  if (header.chunk.type != WAV_DATA) {
+    fprintf(stderr, "Invalid WAV file %s\n", wav_file[channel]);
+    goto error;
+  }
+  wav_file_size[channel] = LE_INT(header.chunk.length);
+  close(fd);
+  return 0;
+
+ error:
+  close(fd);
+  return -EINVAL;
+}
+
+static int setup_wav_file(int chn)
+{
+  static const char *wavs[MAX_CHANNELS] = {
+    "Front_Left.wav",
+    "Front_Right.wav",
+    "Rear_Left.wav",
+    "Rear_Right.wav",
+    "Center.wav"
+    "LFE.wav",
+    "Side_Left.wav"
+    "Side_Right.wav"
+    "Channel_9.wav",
+    "Channel_10.wav"
+    "Channel_11.wav"
+    "Channel_12.wav"
+    "Channel_13.wav"
+    "Channel_14.wav"
+    "Channel_15.wav"
+    "Channel_16.wav"
+  };
+
+  if (given_test_wav_file)
+    return check_wav_file(chn, given_test_wav_file);
+  else
+    return check_wav_file(chn, wavs[chn]);
+}
+
+static int read_wav(uint16_t *buf, int channel, int offset, int bufsize)
+{
+  static FILE *wavfp = NULL;
+  int size;
+
+  if (! wav_file[channel]) {
+    fprintf(stderr, "Undefined channel %d\n", channel);
+    return -EINVAL;
+  }
+
+  if (offset >= wav_file_size[channel])
+   return 0; /* finished */
+
+  if (! offset) {
+    if (wavfp)
+      fclose(wavfp);
+    wavfp = fopen(wav_file[channel], "r");
+    if (! wavfp)
+      return -errno;
+    if (fseek(wavfp, sizeof(struct wave_header), SEEK_SET) < 0)
+      return -errno;
+  }
+  if (offset + bufsize > wav_file_size[channel])
+    bufsize = wav_file_size[channel] - offset;
+  bufsize /= channels;
+  for (size = 0; size < bufsize; size += 2) {
+    int chn;
+    for (chn = 0; chn < channels; chn++) {
+      if (chn == channel) {
+	if (fread(buf, 2, 1, wavfp) != 1)
+	  return size;
+      }
+      else
+	*buf = 0;
+      buf++;
+    }
+  }
+  return size;
+}
+
+
+/*
  *   Transfer method - write only
  */
 
+static int write_buffer(snd_pcm_t *handle, uint8_t *ptr, int cptr)
+{
+  int err;
+
+  while (cptr > 0) {
+
+    err = snd_pcm_writei(handle, ptr, cptr);
+
+    if (err == -EAGAIN)
+      continue;
+
+    if (err < 0) {
+      printf(_("Write error: %d,%s\n"), err, snd_strerror(err));
+      if (xrun_recovery(handle, err) < 0) {
+	printf(_("xrun_recovery failed: %d,%s\n"), err, snd_strerror(err));
+	return -1;
+      }
+      break;	/* skip one period */
+    }
+
+    ptr += snd_pcm_frames_to_bytes(handle, err);
+    cptr -= err;
+  }
+  return 0;
+}
+
 static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *frames) {
   double phase = 0;
-  uint8_t *ptr;
-  int    err, cptr, n;
-  int    bytes_per_frame=snd_pcm_frames_to_bytes(handle, 1);
+  int    err, n;
+
+  if (test_type == TEST_WAV) {
+    int bufsize = snd_pcm_frames_to_bytes(handle, period_size);
+    n = 0;
+    while ((err = read_wav((uint16_t *)frames, channel, n, bufsize)) > 0) {
+      n += err;
+      if ((err = write_buffer(handle, frames,
+			      snd_pcm_bytes_to_frames(handle, err * channels))) < 0)
+	break;
+    }
+    return err;
+  }
+    
 
   for(n = 0; n < periods; n++) {
-    if(test_type==1)
+    if (test_type == TEST_PINK_NOISE)
       generate_pink_noise(frames, channel, period_size);
     else
       generate_sine(frames, channel, period_size, &phase);
-      
-    ptr = frames;
-    cptr = period_size;
 
-    while (cptr > 0) {
-
-      err = snd_pcm_writei(handle, ptr, cptr);
-
-      if (err == -EAGAIN)
-        continue;
-
-      if (err < 0) {
-        printf(_("Write error: %d,%s\n"), err, snd_strerror(err));
-        if (xrun_recovery(handle, err) < 0) {
-          printf(_("xrun_recovery failed: %d,%s\n"), err, snd_strerror(err));
-	  return -1;
-        }
-        break;	/* skip one period */
-      }
-
-      ptr += (err * bytes_per_frame);
-      cptr -= err;
-    }
+    if ((err = write_buffer(handle, frames, period_size)) < 0)
+      return err;
   }
 
   return 0;
@@ -490,8 +703,10 @@ static void help(void)
 	   "-F,--format	sample format\n"
 	   "-b,--buffer	ring buffer size in us\n"
 	   "-p,--period	period size in us\n"
-	   "-t,--test	1=use pink noise, 2=use sine wave\n"
+	   "-t,--test	pink=use pink noise, sine=use sine wave, wav=WAV file\n"
 	   "-s,--speaker	single speaker test. Values 1=Left or 2=right\n"
+	   "-w,--wavfile	Use the given WAV file as a test sound\n"
+	   "-W,--wavdir	Specify the directory containing WAV files\n"
 	   "\n"));
 #if 1
   printf(_("Recognized sample formats are:"));
@@ -527,6 +742,8 @@ int main(int argc, char *argv[]) {
     {"period",    1, NULL, 'p'},
     {"test",      1, NULL, 't'},
     {"speaker",   1, NULL, 's'},
+    {"wavfile",   1, NULL, 'w'},
+    {"wavdir",    1, NULL, 'W'},
     {NULL,        0, NULL, 0  },
   };
 
@@ -544,7 +761,7 @@ int main(int argc, char *argv[]) {
   while (1) {
     int c;
     
-    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:t:s:", long_option, NULL)) < 0)
+    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:t:s:w:W:", long_option, NULL)) < 0)
       break;
     
     switch (c) {
@@ -583,9 +800,22 @@ int main(int argc, char *argv[]) {
       period_time = period_time > 1000000 ? 1000000 : period_time;
       break;
     case 't':
-      test_type = atoi(optarg);
-      test_type = test_type < 1 ? 1 : test_type;
-      test_type = test_type > 2 ? 2 : test_type;
+      if (*optarg == 'p')
+	test_type = TEST_PINK_NOISE;
+      else if (*optarg == 's')
+	test_type = TEST_SINE;
+      else if (*optarg == 'w')
+	test_type = TEST_WAV;
+      else if (isdigit(*optarg)) {
+	test_type = atoi(optarg);
+	if (test_type < TEST_PINK_NOISE || test_type > TEST_WAV) {
+	  fprintf(stderr, "Invalid test type %s\n", optarg);
+	  exit(1);
+	}
+      } else {
+	fprintf(stderr, "Invalid test type %s\n", optarg);
+	exit(1);
+      }
       break;
     case 's':
       speaker = atoi(optarg);
@@ -595,6 +825,12 @@ int main(int argc, char *argv[]) {
         printf(_("Invalid parameter for -s option.\n"));
         exit(EXIT_FAILURE);
       }  
+      break;
+    case 'w':
+      given_test_wav_file = optarg;
+      break;
+    case 'W':
+      wav_file_dir = optarg;
       break;
     default:
       printf(_("Unknown option '%c'\n"), c);
@@ -608,6 +844,9 @@ int main(int argc, char *argv[]) {
     exit(EXIT_SUCCESS);
   }
 
+  if (test_type == TEST_WAV)
+    format = SND_PCM_FORMAT_S16_LE; /* fixed format */
+
   err = snd_output_stdio_attach(&output, stdout, 0);
   if (err < 0) {
     printf(_("Output failed: %s\n"), snd_strerror(err));
@@ -616,11 +855,18 @@ int main(int argc, char *argv[]) {
 
   printf(_("Playback device is %s\n"), device);
   printf(_("Stream parameters are %iHz, %s, %i channels\n"), rate, snd_pcm_format_name(format), channels);
-  if(test_type==1)
+  switch (test_type) {
+  case TEST_PINK_NOISE:
     printf(_("Using 16 octaves of pink noise\n"));
-  else
+    break;
+  case TEST_SINE:
     printf(_("Sine wave rate is %.4fHz\n"), freq);
+    break;
+  case TEST_WAV:
+    printf(_("WAV file(s)\n"));
+    break;
 
+  }
 loop:
   while ((err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
     printf(_("Playback open error: %d,%s\n"), err,snd_strerror(err));
@@ -641,8 +887,9 @@ loop:
     exit(EXIT_FAILURE);
   }
 
-  frames = malloc((period_size * channels * snd_pcm_format_width(format)) / 8);
-  initialize_pink_noise( &pink, 16);
+  frames = malloc(snd_pcm_frames_to_bytes(handle, period_size));
+  if (test_type == TEST_PINK_NOISE)
+    initialize_pink_noise(&pink, 16);
   
   if (frames == NULL) {
     printf(_("No enough memory\n"));
@@ -650,6 +897,13 @@ loop:
   }
   if (speaker==0) {
     while (1) {
+
+      if (test_type == TEST_WAV) {
+	for (chn = 0; chn < channels; chn++) {
+	  if (setup_wav_file(chn) < 0)
+	    exit(EXIT_FAILURE);
+	}
+      }
 
       gettimeofday(&tv1, NULL);
       for(chn = 0; chn < channels; chn++) {
@@ -687,6 +941,11 @@ loop:
       printf(_("Time per period = %lf\n"), time3 );
     }
   } else {
+    if (test_type == TEST_WAV) {
+      if (setup_wav_file(speaker - 1) < 0)
+	exit(EXIT_FAILURE);
+    }
+
     printf("  - %s\n", gettext(channel_name[speaker-1]));
     err = write_loop(handle, speaker-1, ((rate*5)/period_size), frames);
 
