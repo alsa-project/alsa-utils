@@ -511,45 +511,45 @@ static int check_wav_file(int channel, const char *name)
 
   wav_file[channel] = search_for_file(name);
   if (! wav_file[channel]) {
-    fprintf(stderr, "cannot allocate\n");
+    fprintf(stderr, _("No enough memory\n"));
     return -ENOMEM;
   }
 
   if ((fd = open(wav_file[channel], O_RDONLY)) < 0) {
-    fprintf(stderr, "Cannot open WAV file %s\n", wav_file[channel]);
+    fprintf(stderr, _("Cannot open WAV file %s\n"), wav_file[channel]);
     return -EINVAL;
   }
   if (read(fd, &header, sizeof(header)) < (int)sizeof(header)) {
-    fprintf(stderr, "Invalid WAV file %s\n", wav_file[channel]);
+    fprintf(stderr, _("Invalid WAV file %s\n"), wav_file[channel]);
     goto error;
   }
   
   if (header.hdr.magic != WAV_RIFF || header.hdr.type != WAV_WAVE) {
-    fprintf(stderr, "Not a WAV file: %s\n", wav_file[channel]);
+    fprintf(stderr, _("Not a WAV file: %s\n"), wav_file[channel]);
     goto error;
   }
   if (header.body.format != LE_SHORT(WAV_PCM_CODE)) {
-    fprintf(stderr, "Unsupported WAV format %d for %s\n",
+    fprintf(stderr, _("Unsupported WAV format %d for %s\n"),
 	    LE_SHORT(header.body.format), wav_file[channel]);
     goto error;
   }
   if (header.body.channels != LE_SHORT(1)) {
-    fprintf(stderr, "%s is not a mono stream (%d channels)\n",
+    fprintf(stderr, _("%s is not a mono stream (%d channels)\n"),
 	    wav_file[channel], LE_SHORT(header.body.channels)); 
     goto error;
   }
   if (header.body.rate != LE_INT(rate)) {
-    fprintf(stderr, "Sample rate doesn't match (%d) for %s\n",
+    fprintf(stderr, _("Sample rate doesn't match (%d) for %s\n"),
 	    LE_INT(header.body.rate), wav_file[channel]);
     goto error;
   }
   if (header.body.sample_bits != LE_SHORT(16)) {
-    fprintf(stderr, "Unsupported sample format bits %d for %s\n",
+    fprintf(stderr, _("Unsupported sample format bits %d for %s\n"),
 	    LE_SHORT(header.body.sample_bits), wav_file[channel]);
     goto error;
   }
   if (header.chunk.type != WAV_DATA) {
-    fprintf(stderr, "Invalid WAV file %s\n", wav_file[channel]);
+    fprintf(stderr, _("Invalid WAV file %s\n"), wav_file[channel]);
     goto error;
   }
   wav_file_size[channel] = LE_INT(header.chunk.length);
@@ -594,7 +594,7 @@ static int read_wav(uint16_t *buf, int channel, int offset, int bufsize)
   int size;
 
   if (! wav_file[channel]) {
-    fprintf(stderr, "Undefined channel %d\n", channel);
+    fprintf(stderr, _("Undefined channel %d\n"), channel);
     return -EINVAL;
   }
 
