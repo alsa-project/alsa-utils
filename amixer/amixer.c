@@ -31,26 +31,17 @@
 #include <sys/poll.h>
 #include "amixer.h"
 
-#define HELPID_HELP             1000
-#define HELPID_CARD             1001
-#define HELPID_DEVICE		1002
-#define HELPID_QUIET		1003
-#define HELPID_INACTIVE		1004
-#define HELPID_DEBUG            1005
-#define HELPID_VERSION		1006
-#define HELPID_NOCHECK		1007
-#define HELPID_ABSTRACT		1008
-
 #define LEVEL_BASIC		(1<<0)
 #define LEVEL_INACTIVE		(1<<1)
 #define LEVEL_ID		(1<<2)
 
-int quiet = 0;
-int debugflag = 0;
-int no_check = 0;
-int smixer_level = 0;
-struct snd_mixer_selem_regopt smixer_options;
-char card[64] = "default";
+static int quiet = 0;
+static int debugflag = 0;
+static int no_check = 0;
+static int smixer_level = 0;
+static int ignore_error = 0;
+static struct snd_mixer_selem_regopt smixer_options;
+static char card[64] = "default";
 
 static void error(const char *fmt,...)
 {
@@ -65,7 +56,7 @@ static void error(const char *fmt,...)
 
 static int help(void)
 {
-	printf("Usage: amixer <options> command\n");
+	printf("Usage: amixer <options> [command]\n");
 	printf("\nAvailable options:\n");
 	printf("  -h,--help       this help\n");
 	printf("  -c,--card N     select the card\n");
@@ -76,6 +67,7 @@ static int help(void)
 	printf("  -q,--quiet      be quiet\n");
 	printf("  -i,--inactive   show also inactive controls\n");
 	printf("  -a,--abstract L select abstraction level (none or basic)\n");
+	printf("  -s,--stdin      Read and execute commands from stdin sequentially\n");
 	printf("\nAvailable commands:\n");
 	printf("  scontrols       show all mixer simple controls\n");
 	printf("  scontents	  show contents of all mixer simple controls (default command)\n");
@@ -963,10 +955,10 @@ static int parse_simple_id(const char *str, snd_mixer_selem_id_t *sid)
 	return 0;
 }
 
-static int cset(int argc, char *argv[], int roflag)
+static int cset(int argc, char *argv[], int roflag, int keep_handle)
 {
 	int err;
-	snd_ctl_t *handle;
+	static snd_ctl_t *handle = NULL;
 	snd_ctl_elem_info_t *info;
 	snd_ctl_elem_id_t *id;
 	snd_ctl_elem_value_t *control;
@@ -991,12 +983,15 @@ static int cset(int argc, char *argv[], int roflag)
 		show_control_id(id);
 		printf("\n");
 	}
-	if ((err = snd_ctl_open(&handle, card, 0)) < 0) {
+	if (handle == NULL &&
+	    (err = snd_ctl_open(&handle, card, 0)) < 0) {
 		error("Control %s open error: %s\n", card, snd_strerror(err));
 		return err;
 	}
 	snd_ctl_elem_info_set_id(info, id);
 	if ((err = snd_ctl_elem_info(handle, info)) < 0) {
+		if (ignore_error)
+			return 0;
 		error("Cannot find the given element from control %s\n", card);
 		return err;
 	}
@@ -1060,11 +1055,16 @@ static int cset(int argc, char *argv[], int roflag)
 				ptr++;
 		}
 		if ((err = snd_ctl_elem_write(handle, control)) < 0) {
+			if (ignore_error)
+				return 0;
 			error("Control %s element write error: %s\n", card, snd_strerror(err));
 			return err;
 		}
 	}
-	snd_ctl_close(handle);
+	if (! keep_handle) {
+		snd_ctl_close(handle);
+		handle = NULL;
+	}
 	if (!quiet) {
 		snd_hctl_t *hctl;
 		snd_hctl_elem_t *elem;
@@ -1163,7 +1163,7 @@ static int get_enum_item_index(snd_mixer_elem_t *elem, char **ptrp)
 	return -1;
 }
 
-static int sset(unsigned int argc, char *argv[], int roflag)
+static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 {
 	int err;
 	unsigned int idx;
@@ -1171,7 +1171,7 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 	unsigned int channels = ~0U;
 	unsigned int dir = 3, okflag = 3;
 	long pmin, pmax, cmin, cmax;
-	snd_mixer_t *handle;
+	static snd_mixer_t *handle = NULL;
 	snd_mixer_elem_t *elem;
 	snd_mixer_selem_id_t *sid;
 	snd_mixer_selem_id_alloca(&sid);
@@ -1188,30 +1188,38 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 		fprintf(stderr, "Specify what you want to set...\n");
 		return 1;
 	}
-	if ((err = snd_mixer_open(&handle, 0)) < 0) {
-		error("Mixer %s open error: %s\n", card, snd_strerror(err));
-		return err;
-	}
-	if (smixer_level == 0 && (err = snd_mixer_attach(handle, card)) < 0) {
-		error("Mixer attach %s error: %s", card, snd_strerror(err));
-		snd_mixer_close(handle);
-		return err;
-	}
-	if ((err = snd_mixer_selem_register(handle, smixer_level > 0 ? &smixer_options : NULL, NULL)) < 0) {
-		error("Mixer register error: %s", snd_strerror(err));
-		snd_mixer_close(handle);
-		return err;
-	}
-	err = snd_mixer_load(handle);
-	if (err < 0) {
-		error("Mixer %s load error: %s", card, snd_strerror(err));
-		snd_mixer_close(handle);
-		return err;
+	if (handle == NULL) {
+		if ((err = snd_mixer_open(&handle, 0)) < 0) {
+			error("Mixer %s open error: %s\n", card, snd_strerror(err));
+			return err;
+		}
+		if (smixer_level == 0 && (err = snd_mixer_attach(handle, card)) < 0) {
+			error("Mixer attach %s error: %s", card, snd_strerror(err));
+			snd_mixer_close(handle);
+			handle = NULL;
+			return err;
+		}
+		if ((err = snd_mixer_selem_register(handle, smixer_level > 0 ? &smixer_options : NULL, NULL)) < 0) {
+			error("Mixer register error: %s", snd_strerror(err));
+			snd_mixer_close(handle);
+			handle = NULL;
+			return err;
+		}
+		err = snd_mixer_load(handle);
+		if (err < 0) {
+			error("Mixer %s load error: %s", card, snd_strerror(err));
+			snd_mixer_close(handle);
+			handle = NULL;
+			return err;
+		}
 	}
 	elem = snd_mixer_find_selem(handle, sid);
 	if (!elem) {
+		if (ignore_error)
+			return 0;
 		error("Unable to find simple control '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
 		snd_mixer_close(handle);
+		handle = NULL;
 		return -ENOENT;
 	}
 	if (roflag)
@@ -1319,12 +1327,17 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 				}
 			}
 			if (okflag == 0) {
-				if (dir & 1)
-					error("Unknown playback setup '%s'..\n", ptr);
-				if (dir & 2)
-					error("Unknown capture setup '%s'..\n", ptr);
-				snd_mixer_close(handle);
-				return err;
+				if (debugflag) {
+					if (dir & 1)
+						error("Unknown playback setup '%s'..\n", ptr);
+					if (dir & 2)
+						error("Unknown capture setup '%s'..\n", ptr);
+				}
+				if (! keep_handle) {
+					snd_mixer_close(handle);
+					handle = NULL;
+				}
+				return 0;
 			}
 			if (!multi)
 				ptr = optr;
@@ -1336,7 +1349,10 @@ static int sset(unsigned int argc, char *argv[], int roflag)
 		printf("Simple mixer control '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
 		show_selem(handle, sid, "  ", 1);
 	}
-	snd_mixer_close(handle);
+	if (! keep_handle) {
+		snd_mixer_close(handle);
+		handle = NULL;
+	}
 	return 0;
 }
 
@@ -1522,20 +1538,93 @@ static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 	return 0;
 }
 
+/*
+ * split a line into tokens
+ * the content in the line buffer is modified
+ */
+static int split_line(char *buf, char **token, int max_token)
+{
+	char *dst;
+	int n, esc, quote;
+
+	for (n = 0; n < max_token; n++) {
+		while (isspace(*buf))
+			buf++;
+		if (! *buf || *buf == '\n')
+			return n;
+		/* skip comments */
+		if (*buf == '#' || *buf == '!')
+			return n;
+		esc = 0;
+		quote = 0;
+		token[n] = buf;
+		for (dst = buf; *buf && *buf != '\n'; buf++) {
+			if (esc)
+				esc = 0;
+			else if (isspace(*buf) && !quote) {
+				buf++;
+				break;
+			} else if (*buf == '\\') {
+				esc = 1;
+				continue;
+			} else if (*buf == '\'' || *buf == '"') {
+				if (! quote) {
+					quote = *buf;
+					continue;
+				} else if (*buf == quote) {
+					quote = 0;
+					continue;
+				}
+			}
+			*dst++ = *buf;
+		}
+		*dst = 0;
+	}
+	return n;
+}
+
+#define MAX_ARGS	32
+
+static int exec_stdin(void)
+{
+	int narg;
+	char buf[256], *args[MAX_ARGS];
+	int err = 0;
+
+	/* quiet = 1; */
+	ignore_error = 1;
+
+	while (fgets(buf, sizeof(buf), stdin)) {
+		narg = split_line(buf, args, MAX_ARGS);
+		if (narg > 0) {
+			if (!strcmp(args[0], "sset") || !strcmp(args[0], "set"))
+				err = sset(narg - 1, args + 1, 0, 1);
+			else if (!strcmp(args[0], "cset"))
+				err = cset(narg - 1, args + 1, 0, 1);
+			if (err < 0)
+				return 1;
+		}
+	}
+	return 0;
+}
+
+
 int main(int argc, char *argv[])
 {
 	int morehelp, level = 0;
-	struct option long_option[] =
+	int read_stdin = 0;
+	static struct option long_option[] =
 	{
-		{"help", 0, NULL, HELPID_HELP},
-		{"card", 1, NULL, HELPID_CARD},
-		{"device", 1, NULL, HELPID_DEVICE},
-		{"quiet", 0, NULL, HELPID_QUIET},
-		{"inactive", 0, NULL, HELPID_INACTIVE},
-		{"debug", 0, NULL, HELPID_DEBUG},
-		{"nocheck", 0, NULL, HELPID_NOCHECK},
-		{"version", 0, NULL, HELPID_VERSION},
-		{"abstract", 1, NULL, HELPID_ABSTRACT},
+		{"help", 0, NULL, 'h'},
+		{"card", 1, NULL, 'c'},
+		{"device", 1, NULL, 'D'},
+		{"quiet", 0, NULL, 'q'},
+		{"inactive", 0, NULL, 'i'},
+		{"debug", 0, NULL, 'd'},
+		{"nocheck", 0, NULL, 'n'},
+		{"version", 0, NULL, 'v'},
+		{"abstract", 1, NULL, 'a'},
+		{"stdin", 0, NULL, 's'},
 		{NULL, 0, NULL, 0},
 	};
 
@@ -1543,15 +1632,13 @@ int main(int argc, char *argv[])
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hc:D:qidnva:", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hc:D:qidnva:s", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
-		case HELPID_HELP:
 			help();
 			return 0;
 		case 'c':
-		case HELPID_CARD:
 			{
 				int i;
 				i = snd_card_get_index(optarg);
@@ -1564,32 +1651,25 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'D':
-		case HELPID_DEVICE:
 			strncpy(card, optarg, sizeof(card)-1);
 			card[sizeof(card)-1] = '\0';
 			break;
 		case 'q':
-		case HELPID_QUIET:
 			quiet = 1;
 			break;
 		case 'i':
-		case HELPID_INACTIVE:
 			level |= LEVEL_INACTIVE;
 			break;
 		case 'd':
-		case HELPID_DEBUG:
 			debugflag = 1;
 			break;
 		case 'n':
-		case HELPID_NOCHECK:
 			no_check = 1;
 			break;
 		case 'v':
-		case HELPID_VERSION:
 			printf("amixer version " SND_UTIL_VERSION_STR "\n");
 			return 1;
 		case 'a':
-		case HELPID_ABSTRACT:
 			smixer_level = 1;
 			memset(&smixer_options, 0, sizeof(smixer_options));
 			smixer_options.ver = 1;
@@ -1602,6 +1682,9 @@ int main(int argc, char *argv[])
 				morehelp++;
 			}
 			break;
+		case 's':
+			read_stdin = 1;
+			break;
 		default:
 			fprintf(stderr, "\07Invalid switch or option needs an argument.\n");
 			morehelp++;
@@ -1612,6 +1695,10 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	smixer_options.device = card;
+
+	if (read_stdin)
+		return exec_stdin();
+
 	if (argc - optind <= 0) {
 		return selems(LEVEL_BASIC | level) ? 1 : 0;
 	}
@@ -1628,13 +1715,13 @@ int main(int argc, char *argv[])
 	} else if (!strcmp(argv[optind], "scontents")) {
 		return selems(LEVEL_BASIC | level) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "sset") || !strcmp(argv[optind], "set")) {
-		return sset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 0) ? 1 : 0;
+		return sset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 0, 0) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "sget") || !strcmp(argv[optind], "get")) {
-		return sset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 1) ? 1 : 0;
+		return sset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 1, 0) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "cset")) {
-		return cset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 0) ? 1 : 0;
+		return cset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 0, 0) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "cget")) {
-		return cset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 1) ? 1 : 0;
+		return cset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 1, 0) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "events")) {
 		return events(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL);
 	} else if (!strcmp(argv[optind], "sevents")) {
