@@ -7,23 +7,23 @@ msgid ""
 msgstr ""
 "Project-Id-Version: alsaconf\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-12-29 15:55+0100\n"
-"PO-Revision-Date: 2004-12-29 16:44+0100\n"
+"POT-Creation-Date: 2005-12-02 12:37+0100\n"
+"PO-Revision-Date: 2005-12-02 12:39+0100\n"
 "Last-Translator: Takashi Iwai <tiwai@suse.de>\n"
 "Language-Team: Japanese <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../alsaconf.in:31
+#: ../alsaconf.in:36
 msgid "-s"
 msgstr ""
 
-#: ../alsaconf.in:72
+#: ../alsaconf.in:80
 msgid "ALSA configurator"
 msgstr "ALSA 設定ツール"
 
-#: ../alsaconf.in:74
+#: ../alsaconf.in:82
 msgid ""
 "usage: alsaconf [options]\n"
 "  -l|--legacy    check only legacy non-isapnp cards\n"
@@ -43,6 +43,7 @@ msgid ""
 "  -P|--listprobe list the supported legacy card modules\n"
 "  -c|--config file\n"
 "                 specify the module config file\n"
+"  -R|--resources list available DMA and IRQ resources with debug for legacy\n"
 "  -h|--help      what you're reading"
 msgstr ""
 "使用法: alsaconf [オプション]\n"
@@ -61,25 +62,26 @@ msgstr ""
 "  -P|--listprobe サポートされている旧式の(非isapnp)カードのモジュール一覧表示\n"
 "  -c|--config ファイル\n"
 "                 指定のモジュール設定ファイルを用いる\n"
+"  -R|--resources レガシーデバイスのデバッグ用: 可能な DMA と IRQ を表示する\n"
 "  -h|--help      今見ています"
 
-#: ../alsaconf.in:143
+#: ../alsaconf.in:252
 msgid "You must be root to use this script."
 msgstr "ルートのみ実行可能です"
 
-#: ../alsaconf.in:185
+#: ../alsaconf.in:294
 msgid "ERROR: The config file doesn't exist: "
 msgstr "エラー: 設定ファイルが存在しません: "
 
-#: ../alsaconf.in:227
+#: ../alsaconf.in:336
 msgid "Error, dialog or whiptail not found."
 msgstr "エラー: dialog または whiptail が見つかりません"
 
-#: ../alsaconf.in:233
+#: ../alsaconf.in:342
 msgid "Error, awk not found. Can't continue."
 msgstr "エラー: awk が見つかりません"
 
-#: ../alsaconf.in:328
+#: ../alsaconf.in:439
 msgid ""
 "\n"
 "                   ALSA  CONFIGURATOR\n"
@@ -106,7 +108,7 @@ msgstr ""
 "   ドライバを停止してください。\n"
 "   alsaconf の動作は 100%% 保証できません。"
 
-#: ../alsaconf.in:344
+#: ../alsaconf.in:455
 msgid ""
 "\n"
 "\n"
@@ -136,23 +138,23 @@ msgstr ""
 "    を用いて、音量を変更することが可能です。\n"
 "  "
 
-#: ../alsaconf.in:406 ../alsaconf.in:411 ../alsaconf.in:416 ../alsaconf.in:421
+#: ../alsaconf.in:518 ../alsaconf.in:523 ../alsaconf.in:528 ../alsaconf.in:533
 msgid "Can't create temp file, exiting..."
 msgstr "一時ファイルを作成できませんでした。中止します..."
 
-#: ../alsaconf.in:515
+#: ../alsaconf.in:643
 msgid "Building card database.."
 msgstr "カードデータベースを作成中..."
 
-#: ../alsaconf.in:519
+#: ../alsaconf.in:647
 msgid "No card database is found.."
 msgstr "カードが見つかりませんでした..."
 
-#: ../alsaconf.in:524
+#: ../alsaconf.in:652
 msgid "Searching sound cards"
 msgstr "サウンドカードを検索中"
 
-#: ../alsaconf.in:591
+#: ../alsaconf.in:806
 msgid ""
 "\n"
 "Configuring %s\n"
@@ -162,7 +164,7 @@ msgstr ""
 "%s を設定します\n"
 "%s (および %s) を変更しますか？"
 
-#: ../alsaconf.in:596
+#: ../alsaconf.in:811
 msgid ""
 "\n"
 "Configuring %s\n"
@@ -172,15 +174,15 @@ msgstr ""
 "%s を設定します\n"
 "%s を変更しますか？"
 
-#: ../alsaconf.in:676
+#: ../alsaconf.in:900
 msgid "Running modules-update..."
 msgstr "modules-update を実行中..."
 
-#: ../alsaconf.in:679
+#: ../alsaconf.in:903
 msgid "Running update-modules..."
 msgstr "update-modules を実行中..."
 
-#: ../alsaconf.in:691
+#: ../alsaconf.in:915
 msgid ""
 "\n"
 "       The mixer is set up now for for playing.\n"
@@ -200,11 +202,11 @@ msgstr ""
 "  を選択してください。スピーカーの音量をチェックして、\n"
 "  テスト音が聞こえるかどうか確認してください。\n"
 
-#: ../alsaconf.in:708
+#: ../alsaconf.in:932
 msgid "Saving the mixer setup used for this in /etc/asound.state."
 msgstr "ミキサーの設定を /etc/asound.state に保存します"
 
-#: ../alsaconf.in:712
+#: ../alsaconf.in:936
 msgid ""
 "\n"
 "===============================================================================\n"
@@ -222,17 +224,17 @@ msgstr ""
 " 音量の調整には、ミキサープログラムをご使用下さい。\n"
 "\n"
 
-#: ../alsaconf.in:1044
+#: ../alsaconf.in:1244
 msgid "WARNING"
 msgstr "注意"
 
-#: ../alsaconf.in:1045
+#: ../alsaconf.in:1245
 msgid ""
 "\n"
 "   Probing legacy ISA cards might make\n"
 "   your system unstable.\n"
 "\n"
-"        Are you sure to proceed?\n"
+"        Do you want to proceed?\n"
 "\n"
 msgstr ""
 "\n"
@@ -242,7 +244,7 @@ msgstr ""
 "  このまま続けますか？\n"
 "\n"
 
-#: ../alsaconf.in:1068
+#: ../alsaconf.in:1268
 msgid ""
 "No legacy drivers are available\n"
 "   for your machine"
@@ -250,11 +252,11 @@ msgstr ""
 "旧式の ISA カードは\n"
 "検出されませんでした"
 
-#: ../alsaconf.in:1073
+#: ../alsaconf.in:1273
 msgid "Driver Selection"
 msgstr "ドライバの選択"
 
-#: ../alsaconf.in:1074
+#: ../alsaconf.in:1274
 msgid ""
 "           Probing legacy ISA cards\n"
 "\n"
@@ -264,7 +266,7 @@ msgstr ""
 "\n"
 "    検出するドライバを選択してください:"
 
-#: ../alsaconf.in:1081
+#: ../alsaconf.in:1281
 msgid ""
 "\n"
 " Shall I try all possible DMA and IRQ combinations?\n"
@@ -276,27 +278,27 @@ msgstr ""
 " このオプションでは、まれな設定も検出されることが\n"
 " 可能ですが、より長い時間がかかります。"
 
-#: ../alsaconf.in:1091
+#: ../alsaconf.in:1291
 msgid "Probing legacy cards..   This may take a few minutes.."
 msgstr "旧式カードの検出中...  長時間がかかることがあります..."
 
-#: ../alsaconf.in:1092
+#: ../alsaconf.in:1292
 msgid "Probing: "
 msgstr "検出中: "
 
-#: ../alsaconf.in:1098
+#: ../alsaconf.in:1298
 msgid " : FOUND!!"
 msgstr " : 発見!!"
 
-#: ../alsaconf.in:1104
+#: ../alsaconf.in:1304
 msgid "Result"
 msgstr "結果"
 
-#: ../alsaconf.in:1105
+#: ../alsaconf.in:1305
 msgid "No legacy cards found"
 msgstr "旧式カードが見つかりませんでした"
 
-#: ../alsaconf.in:1160
+#: ../alsaconf.in:1364
 msgid ""
 "\n"
 " Looks like you having a Thinkpad 600E or 770 notebook.\n"
@@ -314,7 +316,7 @@ msgstr ""
 " snd-cs4236 ドライバを試用して、旧式の ISA 設定\n"
 " の検出を行いますか？"
 
-#: ../alsaconf.in:1174
+#: ../alsaconf.in:1378
 msgid ""
 "\n"
 " Looks like you having a Dell Dimension machine.\n"
@@ -332,11 +334,11 @@ msgstr ""
 " snd-cs4232 ドライバを試用して、旧式の ISA 設定\n"
 " の検出を行いますか？"
 
-#: ../alsaconf.in:1191
+#: ../alsaconf.in:1395
 msgid "Soundcard Selection"
 msgstr "サウンドカードの選択"
 
-#: ../alsaconf.in:1192
+#: ../alsaconf.in:1396
 msgid ""
 "\n"
 "         Following card(s) are found on your system.\n"
@@ -346,7 +348,7 @@ msgstr ""
 "        以下のカードがシステムから検出されました。\n"
 "        設定するカードを選択してください:\n"
 
-#: ../alsaconf.in:1205
+#: ../alsaconf.in:1409
 msgid ""
 "\n"
 "        No supported PnP or PCI card found.\n"

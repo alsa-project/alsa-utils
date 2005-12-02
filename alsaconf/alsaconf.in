@@ -1246,7 +1246,7 @@ ac_config_legacy () {
    Probing legacy ISA cards might make
    your system unstable.
 
-        Are you sure to proceed?
+        Do you want to proceed?
 
 ")
     $DIALOG --title "$title" --yesno "$msg" 10 50 || acex 0
