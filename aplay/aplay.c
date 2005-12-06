@@ -303,6 +303,8 @@ static void version(void)
 
 static void signal_handler(int sig)
 {
+	if (verbose==2)
+		putchar('\n');
 	if (!quiet_mode)
 		fprintf(stderr, _("Aborted by signal %s...\n"), strsignal(sig));
 	if (stream == SND_PCM_STREAM_CAPTURE) {
@@ -603,6 +605,8 @@ int main(int argc, char *argv[])
 		else
 			capturev(&argv[optind], argc - optind);
 	}
+	if (verbose==2)
+		putchar('\n');
 	snd_pcm_close(handle);
 	free(audiobuf);
 	snd_output_close(log);
@@ -1183,17 +1187,47 @@ static void compute_max_peak(u_char *data, size_t count)
 	max = 1 << (bits_per_sample-1);
 	if (max <= 0)
 		max = 0x7fffffff;
-	printf(_("Max peak (%li samples): 0x%08x "), (long)ocount, max_peak);
+
 	if (bits_per_sample > 16)
 		perc = max_peak / (max / 100);
 	else
 		perc = max_peak * 100 / max;
-	for (val = 0; val < 20; val++)
-		if (val <= perc / 5)
-			putc('#', stdout);
-		else
-			putc(' ', stdout);
-	printf(" %i%%\n", perc);
+
+	if(verbose<=2) {
+		static int maxperc=0;
+		static time_t t=0;
+		const time_t tt=time(NULL);
+		if(tt>t) {
+			t=tt;
+			maxperc=0;
+		}
+		if(perc>maxperc)
+			maxperc=perc;
+
+		putchar('\r');
+		for (val = 0; val <= perc / 2 && val < 50; val++)
+			putchar('#');
+		for (; val < maxperc / 2 && val < 50; val++)
+			putchar(' ');
+		putchar('+');
+		for (++val; val < 50; val++)
+			putchar(' ');
+
+		printf("| %02i%%", maxperc);
+		if (perc>99)
+			printf(_(" !clip  "));
+
+		fflush(stdout);
+	}
+	else if(verbose==3) {
+		printf(_("Max peak (%li samples): 0x%08x "), (long)ocount, max_peak);
+		for (val = 0; val < 20; val++)
+			if (val <= perc / 5)
+				putchar('#');
+			else
+				putchar(' ');
+		printf(" %i%%\n", perc);
+	}
 }
 
 /*
