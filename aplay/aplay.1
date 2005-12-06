@@ -10,7 +10,8 @@ soundcard driver
 .SH DESCRIPTION
 \fBarecord\fP is a command-line soundfile recorder for the ALSA soundcard
 driver. It supports several file formats and multiple soundcards with
-multiple devices. 
+multiple devices. If recording with interleaved mode samples the file is
+automatically split before the 2GB filesize.
 
 \fBaplay\fP is much the same, only it plays instead of recording. For
 supported soundfile formats, the sampling rate, bit depth, and so
