@@ -399,38 +399,35 @@ remove_ac_block() {
 #
 # set default mixer volumes
 #
-mixer() {
-  amixer set "$1" "$2" unmute >/dev/null 2>&1
-  amixer set "$1" unmute >/dev/null 2>&1
-}
-
 set_mixers() {
-    mixer Master 75%
-    mixer Front 75%
-    mixer PCM 90%
-    mixer Synth 90%
-    mixer CD 90%
-    # mute mic
-    amixer set Mic 0% mute >/dev/null 2>&1
-    # ESS 1969 chipset has 2 PCM channels
-    mixer PCM,1 90%
-    # Trident/YMFPCI/emu10k1
-    mixer Wave 100%
-    mixer Music 100%
-    mixer AC97 100%
-    # CS4237B chipset:
-    mixer 'Master Digital' 75%
-    # Envy24 chips with analog outs
-    mixer DAC 90%
-    mixer DAC,0 90%
-    mixer DAC,1 90%
-    # some notebooks use headphone instead of master
-    mixer Headphone 75%
-    mixer 'Internal Speaker' 75%
-    mixer Playback 100%
-    # turn off digital switches
-    amixer set "SB Live Analog/Digital Output Jack" off >/dev/null 2>&1
-    amixer set "Audigy Analog/Digital Output Jack" off >/dev/null 2>&1
+    amixer -s -q <<EOF
+set Master 75% unmute
+set 'Master Mono' 75% unmute
+set Front 75% unmute
+set PCM 90% unmute
+mixer Synth 90% unmute
+mixer CD 90% unmute
+# mute mic
+set Mic 0% mute
+# ESS 1969 chipset has 2 PCM channels
+set PCM,1 90% unmute
+# Trident/YMFPCI/emu10k1
+set Wave 100% unmute
+set Music 100% unmute
+set AC97 100% unmute
+# CS4237B chipset:
+set 'Master Digital' 75% unmute
+# Envy24 chips with analog outs
+set DAC 90% unmute
+set DAC,0 90% unmute
+set DAC,1 90% unmute
+# some notebooks use headphone instead of master
+set Headphone 75% unmute
+set Playback 100% unmute
+# turn off digital switches
+set "SB Live Analog/Digital Output Jack" off
+set "Audigy Analog/Digital Output Jack" off
+EOF
 }
 
 
