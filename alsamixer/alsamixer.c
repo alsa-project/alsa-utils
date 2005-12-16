@@ -538,13 +538,13 @@ mixer_convert_volume(snd_mixer_elem_t *elem,
 /* update enum list */
 static void update_enum_list(snd_mixer_elem_t *elem, int chn, int delta)
 {
-  int eidx;
+  unsigned int eidx;
   if (snd_mixer_selem_get_enum_item(elem, chn, &eidx) < 0)
     return;
   if (delta < 0) {
-    eidx--;
-    if (eidx < 0)
+    if (eidx == 0)
       return;
+    eidx--;
   } else {
     int items = snd_mixer_selem_get_enum_items(elem);
     if (items < 0)
@@ -800,7 +800,7 @@ static void display_enum_list(snd_mixer_elem_t *elem, int y, int x)
   
   cury = y - 4;
   for (ch = 0; ch < 2; ch++) {
-    int eidx, ofs;
+    unsigned int eidx, ofs;
     char tmp[9];
     err = snd_mixer_selem_get_enum_item(elem, ch, &eidx);
     if (err < 0)

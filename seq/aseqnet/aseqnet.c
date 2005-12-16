@@ -366,7 +366,7 @@ static void start_connection(void)
 {
 	struct sockaddr_in addr;
 	int i;
-	int addr_len;
+	socklen_t addr_len;
 
 	for (i = 0; i < max_connection; i++) {
 		if (netfd[i] < 0)

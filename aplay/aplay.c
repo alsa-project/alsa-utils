@@ -86,7 +86,7 @@ static snd_pcm_stream_t stream = SND_PCM_STREAM_PLAYBACK;
 static int mmap_flag = 0;
 static int interleaved = 1;
 static int nonblock = 0;
-static char *audiobuf = NULL;
+static u_char *audiobuf = NULL;
 static snd_pcm_uframes_t chunk_size = 0;
 static unsigned period_time = 0;
 static unsigned buffer_time = 0;
@@ -564,7 +564,7 @@ int main(int argc, char *argv[])
 	chunk_size = 1024;
 	hwparams = rhwparams;
 
-	audiobuf = (char *)malloc(1024);
+	audiobuf = (u_char *)malloc(1024);
 	if (audiobuf == NULL) {
 		error(_("not enough memory"));
 		return 1;
@@ -657,7 +657,7 @@ static int test_vocfile(void *buffer)
  * helper for test_wavefile
  */
 
-size_t test_wavefile_read(int fd, char *buffer, size_t *size, size_t reqsize, int line)
+size_t test_wavefile_read(int fd, u_char *buffer, size_t *size, size_t reqsize, int line)
 {
 	if (*size >= reqsize)
 		return *size;
@@ -682,10 +682,10 @@ size_t test_wavefile_read(int fd, char *buffer, size_t *size, size_t reqsize, in
  *                            == 0 if not
  * Value returned is bytes to be discarded.
  */
-static ssize_t test_wavefile(int fd, char *_buffer, size_t size)
+static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 {
 	WaveHeader *h = (WaveHeader *)_buffer;
-	char *buffer = NULL;
+	u_char *buffer = NULL;
 	size_t blimit = 0;
 	WaveFmtBody *f;
 	WaveChunkHeader *c;
@@ -1418,9 +1418,9 @@ static ssize_t voc_pcm_write(u_char *data, size_t count)
 static void voc_write_silence(unsigned x)
 {
 	unsigned l;
-	char *buf;
+	u_char *buf;
 
-	buf = (char *) malloc(chunk_bytes);
+	buf = (u_char *) malloc(chunk_bytes);
 	if (buf == NULL) {
 		error(_("can't allocate buffer for silence"));
 		return;		/* not fatal error */
