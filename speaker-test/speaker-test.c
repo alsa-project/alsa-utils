@@ -57,6 +57,7 @@
 #include "pink.h"
 #include "aconfig.h"
 #include "gettext.h"
+#include "version.h"
 
 enum {
   TEST_PINK_NOISE = 1,
@@ -758,7 +759,7 @@ int main(int argc, char *argv[]) {
  
   morehelp = 0;
 
-  printf("\nspeaker-test %s\n\n", SPEAKER_TEST_VERSION);
+  printf("\nspeaker-test %s\n\n", SND_UTIL_VERSION_STR);
   while (1) {
     int c;
     

@@ -1,5 +1,4 @@
-SPEAKER_TEST_VERSION = 0.0.8
-INCLUDES = -I$(top_srcdir)/include -DSPEAKER_TEST_VERSION=\"$(SPEAKER_TEST_VERSION)\"
+INCLUDES = -I$(top_srcdir)/include
 SUBDIRS= samples
 LDADD = $(LIBINTL)
 
