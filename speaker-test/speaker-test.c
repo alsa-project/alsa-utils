@@ -706,7 +706,8 @@ static void help(void)
 	   "-b,--buffer	ring buffer size in us\n"
 	   "-p,--period	period size in us\n"
 	   "-t,--test	pink=use pink noise, sine=use sine wave, wav=WAV file\n"
-	   "-s,--speaker	single speaker test. Values 1=Left or 2=right\n"
+	   "-n,--nloops	specify number of loops to test, 0 = infinite\n"
+	   "-s,--speaker	single speaker test. Values 1=Left, 2=right, etc\n"
 	   "-w,--wavfile	Use the given WAV file as a test sound\n"
 	   "-W,--wavdir	Specify the directory containing WAV files\n"
 	   "\n"));
@@ -731,6 +732,7 @@ int main(int argc, char *argv[]) {
   uint8_t              *frames;
   int                   chn;
   double		time1,time2,time3;
+  unsigned int		n, nloops;
   struct   timeval	tv1,tv2;
 
   struct option         long_option[] = {
@@ -743,6 +745,7 @@ int main(int argc, char *argv[]) {
     {"buffer",    1, NULL, 'b'},
     {"period",    1, NULL, 'p'},
     {"test",      1, NULL, 't'},
+    {"nloops",    1, NULL, 'l'},
     {"speaker",   1, NULL, 's'},
     {"wavfile",   1, NULL, 'w'},
     {"wavdir",    1, NULL, 'W'},
@@ -757,13 +760,14 @@ int main(int argc, char *argv[]) {
   snd_pcm_hw_params_alloca(&hwparams);
   snd_pcm_sw_params_alloca(&swparams);
  
+  nloops = 0;
   morehelp = 0;
 
   printf("\nspeaker-test %s\n\n", SND_UTIL_VERSION_STR);
   while (1) {
     int c;
     
-    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:t:s:w:W:", long_option, NULL)) < 0)
+    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:t:l:s:w:W:", long_option, NULL)) < 0)
       break;
     
     switch (c) {
@@ -818,6 +822,9 @@ int main(int argc, char *argv[]) {
 	fprintf(stderr, "Invalid test type %s\n", optarg);
 	exit(1);
       }
+      break;
+    case 'l':
+      nloops = atoi(optarg);
       break;
     case 's':
       speaker = atoi(optarg);
@@ -898,14 +905,15 @@ loop:
     exit(EXIT_FAILURE);
   }
   if (speaker==0) {
-    while (1) {
 
-      if (test_type == TEST_WAV) {
-	for (chn = 0; chn < channels; chn++) {
-	  if (setup_wav_file(chn) < 0)
-	    exit(EXIT_FAILURE);
-	}
+    if (test_type == TEST_WAV) {
+      for (chn = 0; chn < channels; chn++) {
+	if (setup_wav_file(chn) < 0)
+	  exit(EXIT_FAILURE);
       }
+    }
+
+    for (n = 0; ! nloops || n < nloops; n++) {
 
       gettimeofday(&tv1, NULL);
       for(chn = 0; chn < channels; chn++) {
