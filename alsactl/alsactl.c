@@ -51,8 +51,6 @@ static void help(void)
 	printf("                  to configuration file\n");
 	printf("  restore<card #> load current driver setup for one or each soundcards\n");
 	printf("                  from configuration file\n");
-	printf("  power [card #] [state]\n");
-	printf("                  get/set power state for one or each soundcards\n");
 }
 
 int main(int argc, char *argv[])
@@ -115,8 +113,6 @@ int main(int argc, char *argv[])
 		if (!strcmp(cfgfile, SYS_ASOUNDRC))
 			cfgfile = SYS_ASOUNDNAMES;
 		res = generate_names(cfgfile);
-	} else if (!strcmp(argv[optind], "power")) {
-		res = power((const char **)argv + optind + 1, argc - optind - 1);
 	} else {
 		fprintf(stderr, "alsactl: Unknown command '%s'...\n", 
 			argv[optind]);
