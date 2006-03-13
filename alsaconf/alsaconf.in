@@ -71,7 +71,7 @@ fi
 
 for prog in lspci lsmod; do
 	for path in /sbin /usr/sbin /bin /usr/bin;do
-		[[ -x $path/$prog ]] && eval $prog=$path/$prog
+		test -x $path/$prog && eval $prog=$path/$prog
 	done
 done
 unset prog path
