@@ -663,7 +663,7 @@ BEGIN {
 /^[<literal space><literal tab>]*PCI: /{
 	gsub(/0x/, "");
 	gsub(/=/, ":");
-	x = sprintf ("'$lspci' -n 2>/dev/null| grep '"' 040.: '"' | grep %s", $2);
+	x = sprintf ("'$lspci' -n 2>/dev/null| grep '"' 04..: '"' | grep %s", $2);
 	if (system (x) == 0)
 		printf "%s %s\n", $2, driver >>"'"$FOUND"'"
 }
@@ -738,7 +738,7 @@ BEGIN {
 #
 find_device_name () {
     if expr "$1" : '[0-9a-f][0-9a-f][0-9a-f][0-9a-f]:[0-9a-f][0-9a-f][0-9a-f][0-9a-f]' >/dev/null; then
-	$lspci -d $1 2>/dev/null| sed -e 's/^.*:..\.. Multimedia audio controller: //g'
+	$lspci -d $1 2>/dev/null| sed -e 's/^.*:..\.. [^:]*: //g'
 	return
     elif expr "$1" : '[A-Z@][A-Z@][A-Z@][0-9a-f][0-9a-f][0-9a-f][0-9a-f]' >/dev/null; then
 	cardname=`grep '^Card [0-9]\+ .'$1':' $DUMP | head -n 1 | sed -e 's/^Card [0-9]\+ '\''.*:\(.*\)'\'' .*$/\1/'`
