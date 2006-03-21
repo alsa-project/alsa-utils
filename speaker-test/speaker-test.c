@@ -570,7 +570,7 @@ static int setup_wav_file(int chn)
     "Front_Right.wav",
     "Rear_Left.wav",
     "Rear_Right.wav",
-    "Front_Center.wav"
+    "Front_Center.wav",
     "Rear_Center.wav", /* FIXME: should be "Bass" or so */
     "Side_Left.wav"
     "Side_Right.wav"
