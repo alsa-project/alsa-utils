@@ -39,8 +39,20 @@ sine wave of \fIFREQ\fP Hz
 Print usage help
 
 .TP
+\fB\-b\fP | \fB\-\-buffer\fP \fITIME\fP
+Use buffer size of \fITIME\fP microseconds.
+When 0 is given, use the maximal buffer size.
+The default value is 0.
+
+.TP
 \fB\-p\fP | \fB\-\-period\fP \fITIME\fP
-period size of \fITIME\fP microseconds
+Use period size of \fITIME\fP microseconds.
+When 0 is given, the periods given by \fB\-P\fP option is used.
+The default value is 0.
+
+.TP
+\fB\-P\fP | \fB\-\-nperiods\fP \fPERIODS\fP
+Use number of periods.  The default value is 4.
 
 .TP
 \fB\-r\fP | \fB\-\-rate\fP \fIRATE\fP

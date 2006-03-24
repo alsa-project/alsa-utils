@@ -72,13 +72,12 @@ static snd_pcm_format_t   format      = SND_PCM_FORMAT_S16; /* sample format */
 static unsigned int       rate        = 48000;	            /* stream rate */
 static unsigned int       channels    = 1;	            /* count of channels */
 static unsigned int       speaker     = 0;	            /* count of channels */
-static unsigned int       buffer_time = 500000;	            /* ring buffer length in us */
-static unsigned int       period_time = 100000;	            /* period time in us */
-#define PERIODS 4
+static unsigned int       buffer_time = 0;	            /* ring buffer length in us */
+static unsigned int       period_time = 0;	            /* period time in us */
+static unsigned int       nperiods    = 4;                  /* number of periods */
 static double             freq        = 440;                /* sinusoidal wave frequency in Hz */
 static int                test_type   = TEST_PINK_NOISE;    /* Test type. 1 = noise, 2 = sine wave */
 static pink_noise_t pink;
-static snd_output_t      *output      = NULL;
 static snd_pcm_uframes_t  buffer_size;
 static snd_pcm_uframes_t  period_size;
 static const char *given_test_wav_file = NULL;
@@ -268,14 +267,11 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
 
 static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_access_t access) {
   unsigned int rrate;
-  int          err, dir;
+  int          err;
   snd_pcm_uframes_t     period_size_min;
   snd_pcm_uframes_t     period_size_max;
   snd_pcm_uframes_t     buffer_size_min;
   snd_pcm_uframes_t     buffer_size_max;
-  snd_pcm_uframes_t     buffer_time_to_size;
-
-
 
   /* choose all parameters */
   err = snd_pcm_hw_params_any(handle, params);
@@ -320,54 +316,57 @@ static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_
 
   printf(_("Rate set to %iHz (requested %iHz)\n"), rrate, rate);
   /* set the buffer time */
-  buffer_time_to_size = ( (snd_pcm_uframes_t)buffer_time * rate) / 1000000;
   err = snd_pcm_hw_params_get_buffer_size_min(params, &buffer_size_min);
   err = snd_pcm_hw_params_get_buffer_size_max(params, &buffer_size_max);
-  dir=0;
-  err = snd_pcm_hw_params_get_period_size_min(params, &period_size_min,&dir);
-  dir=0;
-  err = snd_pcm_hw_params_get_period_size_max(params, &period_size_max,&dir);
+  err = snd_pcm_hw_params_get_period_size_min(params, &period_size_min, NULL);
+  err = snd_pcm_hw_params_get_period_size_max(params, &period_size_max, NULL);
   printf(_("Buffer size range from %lu to %lu\n"),buffer_size_min, buffer_size_max);
   printf(_("Period size range from %lu to %lu\n"),period_size_min, period_size_max);
-  printf(_("Periods = %d\n"), PERIODS);
-  printf(_("Buffer time size %lu\n"),buffer_time_to_size);
-
-  buffer_size = buffer_time_to_size;
-  //buffer_size=8096;
-  //buffer_size=15052;
-  buffer_size=buffer_size_max;
-  if (buffer_size_max < buffer_size) buffer_size = buffer_size_max;
-  if (buffer_size_min > buffer_size) buffer_size = buffer_size_min;
-  //buffer_size=0x800;
-  period_size = buffer_size/PERIODS;
-  buffer_size = period_size*PERIODS;
-  //period_size = 510;
-  printf(_("To choose buffer_size = %lu\n"),buffer_size);
-  printf(_("To choose period_size = %lu\n"),period_size);
-  dir=0;
-  err = snd_pcm_hw_params_set_period_size_near(handle, params, &period_size, &dir);
-  if (err < 0) {
-    printf(_("Unable to set period size %lu for playback: %s\n"), period_size, snd_strerror(err));
-    return err;
+  if (period_time > 0) {
+    printf(_("Requested period time %u us\n"), period_time);
+    err = snd_pcm_hw_params_set_period_time_near(handle, params, &period_time, NULL);
+    if (err < 0) {
+      printf(_("Unable to set period time %u us for playback: %s\n"),
+	     period_time, snd_strerror(err));
+      return err;
+    }
   }
-  dir=0;
-  err = snd_pcm_hw_params_get_period_size(params, &period_size, &dir);
-  if (err < 0)  printf(_("Unable to get period size for playback: %s\n"), snd_strerror(err));
-                                                                                                                             
-  dir=0;
-  err = snd_pcm_hw_params_set_buffer_size_near(handle, params, &buffer_size);
-  if (err < 0) {
-    printf(_("Unable to set buffer size %lu for playback: %s\n"), buffer_size, snd_strerror(err));
-    return err;
+  if (buffer_time > 0) {
+    printf(_("Requested buffer time %u us\n"), buffer_time);
+    err = snd_pcm_hw_params_set_buffer_time_near(handle, params, &buffer_time, NULL);
+    if (err < 0) {
+      printf(_("Unable to set buffer time %u us for playback: %s\n"),
+	     buffer_time, snd_strerror(err));
+      return err;
+    }
   }
-  err = snd_pcm_hw_params_get_buffer_size(params, &buffer_size);
+  if (! buffer_time && ! period_time) {
+    buffer_size = buffer_size_max;
+    printf(_("Using max buffer size %lu\n"), buffer_size);
+    err = snd_pcm_hw_params_set_buffer_size_near(handle, params, &buffer_size);
+    if (err < 0) {
+      printf(_("Unable to set buffer size %lu for playback: %s\n"),
+	     buffer_size, snd_strerror(err));
+      return err;
+    }
+  }
+  if (! buffer_time || ! period_time) {
+    printf(_("Periods = %u\n"), nperiods);
+    err = snd_pcm_hw_params_set_periods_near(handle, params, &nperiods, NULL);
+    if (err < 0) {
+      printf(_("Unable to set nperiods %u for playback: %s\n"),
+	     nperiods, snd_strerror(err));
+      return err;
+    }
+  }
+  snd_pcm_hw_params_get_buffer_size(params, &buffer_size);
+  snd_pcm_hw_params_get_period_size(params, &period_size, NULL);
   printf(_("was set period_size = %lu\n"),period_size);
   printf(_("was set buffer_size = %lu\n"),buffer_size);
   if (2*period_size > buffer_size) {
     printf(_("buffer to small, could not use\n"));
     return err;
   }
-
 
   /* write the parameters to device */
   err = snd_pcm_hw_params(handle, params);
@@ -665,6 +664,7 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
   double phase = 0;
   int    err, n;
 
+  snd_pcm_prepare(handle);
   if (test_type == TEST_WAV) {
     int bufsize = snd_pcm_frames_to_bytes(handle, period_size);
     n = 0;
@@ -674,6 +674,7 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
 			      snd_pcm_bytes_to_frames(handle, err * channels))) < 0)
 	break;
     }
+    snd_pcm_drain(handle);
     return err;
   }
     
@@ -687,7 +688,7 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
     if ((err = write_buffer(handle, frames, period_size)) < 0)
       return err;
   }
-
+  snd_pcm_drain(handle);
   return 0;
 }
 
@@ -705,6 +706,7 @@ static void help(void)
 	   "-F,--format	sample format\n"
 	   "-b,--buffer	ring buffer size in us\n"
 	   "-p,--period	period size in us\n"
+	   "-P,--nperiods	number of periods\n"
 	   "-t,--test	pink=use pink noise, sine=use sine wave, wav=WAV file\n"
 	   "-n,--nloops	specify number of loops to test, 0 = infinite\n"
 	   "-s,--speaker	single speaker test. Values 1=Left, 2=right, etc\n"
@@ -744,6 +746,7 @@ int main(int argc, char *argv[]) {
     {"format",    1, NULL, 'F'},
     {"buffer",    1, NULL, 'b'},
     {"period",    1, NULL, 'p'},
+    {"nperiods",  1, NULL, 'P'},
     {"test",      1, NULL, 't'},
     {"nloops",    1, NULL, 'l'},
     {"speaker",   1, NULL, 's'},
@@ -767,7 +770,7 @@ int main(int argc, char *argv[]) {
   while (1) {
     int c;
     
-    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:t:l:s:w:W:", long_option, NULL)) < 0)
+    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:P:t:l:s:w:W:", long_option, NULL)) < 0)
       break;
     
     switch (c) {
@@ -797,13 +800,18 @@ int main(int argc, char *argv[]) {
       break;
     case 'b':
       buffer_time = atoi(optarg);
-      buffer_time = buffer_time < 1000 ? 1000 : buffer_time;
       buffer_time = buffer_time > 1000000 ? 1000000 : buffer_time;
       break;
     case 'p':
       period_time = atoi(optarg);
-      period_time = period_time < 1000 ? 1000 : period_time;
       period_time = period_time > 1000000 ? 1000000 : period_time;
+      break;
+    case 'P':
+      nperiods = atoi(optarg);
+      if (nperiods < 2 || nperiods > 1024) {
+	fprintf(stderr, _("Invalid number of periods %d\n"), nperiods);
+	exit(1);
+      }
       break;
     case 't':
       if (*optarg == 'p')
@@ -815,11 +823,11 @@ int main(int argc, char *argv[]) {
       else if (isdigit(*optarg)) {
 	test_type = atoi(optarg);
 	if (test_type < TEST_PINK_NOISE || test_type > TEST_WAV) {
-	  fprintf(stderr, "Invalid test type %s\n", optarg);
+	  fprintf(stderr, _("Invalid test type %s\n"), optarg);
 	  exit(1);
 	}
       } else {
-	fprintf(stderr, "Invalid test type %s\n", optarg);
+	fprintf(stderr, _("Invalid test type %s\n"), optarg);
 	exit(1);
       }
       break;
@@ -855,12 +863,6 @@ int main(int argc, char *argv[]) {
 
   if (test_type == TEST_WAV)
     format = SND_PCM_FORMAT_S16_LE; /* fixed format */
-
-  err = snd_output_stdio_attach(&output, stdout, 0);
-  if (err < 0) {
-    printf(_("Output failed: %s\n"), snd_strerror(err));
-    exit(EXIT_FAILURE);
-  }
 
   printf(_("Playback device is %s\n"), device);
   printf(_("Stream parameters are %iHz, %s, %i channels\n"), rate, snd_pcm_format_name(format), channels);
