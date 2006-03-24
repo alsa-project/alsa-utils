@@ -571,15 +571,15 @@ static int setup_wav_file(int chn)
     "Rear_Right.wav",
     "Front_Center.wav",
     "Rear_Center.wav", /* FIXME: should be "Bass" or so */
-    "Side_Left.wav"
-    "Side_Right.wav"
+    "Side_Left.wav",
+    "Side_Right.wav",
     "Channel_9.wav",
-    "Channel_10.wav"
-    "Channel_11.wav"
-    "Channel_12.wav"
-    "Channel_13.wav"
-    "Channel_14.wav"
-    "Channel_15.wav"
+    "Channel_10.wav",
+    "Channel_11.wav",
+    "Channel_12.wav",
+    "Channel_13.wav",
+    "Channel_14.wav",
+    "Channel_15.wav",
     "Channel_16.wav"
   };
 
