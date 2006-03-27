@@ -708,7 +708,7 @@ static void help(void)
 	   "-p,--period	period size in us\n"
 	   "-P,--nperiods	number of periods\n"
 	   "-t,--test	pink=use pink noise, sine=use sine wave, wav=WAV file\n"
-	   "-n,--nloops	specify number of loops to test, 0 = infinite\n"
+	   "-l,--nloops	specify number of loops to test, 0 = infinite\n"
 	   "-s,--speaker	single speaker test. Values 1=Left, 2=right, etc\n"
 	   "-w,--wavfile	Use the given WAV file as a test sound\n"
 	   "-W,--wavdir	Specify the directory containing WAV files\n"
