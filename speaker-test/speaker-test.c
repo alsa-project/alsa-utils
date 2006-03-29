@@ -878,7 +878,7 @@ int main(int argc, char *argv[]) {
     break;
 
   }
-loop:
+
   while ((err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
     printf(_("Playback open error: %d,%s\n"), err,snd_strerror(err));
     sleep(1);
@@ -887,14 +887,11 @@ loop:
   if ((err = set_hwparams(handle, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
     printf(_("Setting of hwparams failed: %s\n"), snd_strerror(err));
     snd_pcm_close(handle);
-    goto loop;
     exit(EXIT_FAILURE);
   }
-  //getchar();
   if ((err = set_swparams(handle, swparams)) < 0) {
     printf(_("Setting of swparams failed: %s\n"), snd_strerror(err));
     snd_pcm_close(handle);
-    goto loop;
     exit(EXIT_FAILURE);
   }
 
@@ -932,18 +929,12 @@ loop:
         printf(" %d - %s\n", channel, gettext(channel_name[channel]));
 
         err = write_loop(handle, channel, ((rate*3)/period_size), frames);
-        //err = write_loop(handle, 255, ((rate*3)/period_size), frames);
 
         if (err < 0) {
           printf(_("Transfer failed: %s\n"), snd_strerror(err));
           free(frames);
           snd_pcm_close(handle);
-	  printf(_("Pausing\n"));
-	  goto loop ;
-	  //pause();
-	  //printf("Done Pausing\n");
           exit(EXIT_SUCCESS);
-	  goto loop ;
         }
       }
       gettimeofday(&tv2, NULL);
