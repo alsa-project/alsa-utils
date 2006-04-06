@@ -660,11 +660,11 @@ static int write_buffer(snd_pcm_t *handle, uint8_t *ptr, int cptr)
   return 0;
 }
 
-static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *frames) {
+static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *frames)
+{
   double phase = 0;
   int    err, n;
 
-  snd_pcm_prepare(handle);
   if (test_type == TEST_WAV) {
     int bufsize = snd_pcm_frames_to_bytes(handle, period_size);
     n = 0;
@@ -674,7 +674,10 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
 			      snd_pcm_bytes_to_frames(handle, err * channels))) < 0)
 	break;
     }
-    snd_pcm_drain(handle);
+    if (buffer_size > n) {
+      snd_pcm_drain(handle);
+      snd_pcm_prepare(handle);
+    }
     return err;
   }
     
@@ -688,7 +691,10 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
     if ((err = write_buffer(handle, frames, period_size)) < 0)
       return err;
   }
-  snd_pcm_drain(handle);
+  if (buffer_size > n * period_size) {
+    snd_pcm_drain(handle);
+    snd_pcm_prepare(handle);
+  }
   return 0;
 }
 

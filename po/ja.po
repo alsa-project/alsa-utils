@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: alsa-utils 1.0.9a\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-03-24 00:31+0100\n"
+"POT-Creation-Date: 2006-04-06 19:13+0200\n"
 "PO-Revision-Date: 2006-03-24 00:39+0100\n"
 "Last-Translator: Takashi Iwai <tiwai@suse.de>\n"
 "Language-Team: Japanese\n"
@@ -91,7 +91,7 @@ msgstr ""
 "-v, --verbose           PCM の設定を表示 (複数指定可能)\n"
 "-I, --separate-channels 各チャネルに一つのファイルを用いる\n"
 
-#: aplay/aplay.c:180 speaker-test/speaker-test.c:718
+#: aplay/aplay.c:180 speaker-test/speaker-test.c:723
 #, c-format
 msgid "Recognized sample formats are:"
 msgstr "認識されるサンプルフォーマット:"
@@ -791,266 +791,266 @@ msgstr "チャネル %2d: ノートオフ   : %5d\n"
 msgid "disconnected\n"
 msgstr "切り離し\n"
 
-#: speaker-test/speaker-test.c:88
+#: speaker-test/speaker-test.c:87
 msgid "Front Left"
 msgstr ""
 
-#: speaker-test/speaker-test.c:89
+#: speaker-test/speaker-test.c:88
 msgid "Front Right"
 msgstr ""
 
-#: speaker-test/speaker-test.c:90
+#: speaker-test/speaker-test.c:89
 msgid "Rear Left"
 msgstr ""
 
-#: speaker-test/speaker-test.c:91
+#: speaker-test/speaker-test.c:90
 msgid "Rear Right"
 msgstr ""
 
-#: speaker-test/speaker-test.c:92
+#: speaker-test/speaker-test.c:91
 msgid "Center"
 msgstr ""
 
-#: speaker-test/speaker-test.c:93
+#: speaker-test/speaker-test.c:92
 msgid "LFE"
 msgstr ""
 
-#: speaker-test/speaker-test.c:94
+#: speaker-test/speaker-test.c:93
 msgid "Side Left"
 msgstr ""
 
-#: speaker-test/speaker-test.c:95
+#: speaker-test/speaker-test.c:94
 msgid "Side Right"
 msgstr ""
 
-#: speaker-test/speaker-test.c:96
+#: speaker-test/speaker-test.c:95
 msgid "Channel 9"
 msgstr ""
 
-#: speaker-test/speaker-test.c:97
+#: speaker-test/speaker-test.c:96
 msgid "Channel 10"
 msgstr ""
 
-#: speaker-test/speaker-test.c:98
+#: speaker-test/speaker-test.c:97
 msgid "Channel 11"
 msgstr ""
 
-#: speaker-test/speaker-test.c:99
+#: speaker-test/speaker-test.c:98
 msgid "Channel 12"
 msgstr ""
 
-#: speaker-test/speaker-test.c:100
+#: speaker-test/speaker-test.c:99
 msgid "Channel 13"
 msgstr ""
 
-#: speaker-test/speaker-test.c:101
+#: speaker-test/speaker-test.c:100
 msgid "Channel 14"
 msgstr ""
 
-#: speaker-test/speaker-test.c:102
+#: speaker-test/speaker-test.c:101
 msgid "Channel 15"
 msgstr ""
 
-#: speaker-test/speaker-test.c:103
+#: speaker-test/speaker-test.c:102
 msgid "Channel 16"
 msgstr ""
 
-#: speaker-test/speaker-test.c:280
+#: speaker-test/speaker-test.c:279
 #, c-format
 msgid "Broken configuration for playback: no configurations available: %s\n"
 msgstr "再生用に設定できません: 設定がみつかりません: %s\n"
 
-#: speaker-test/speaker-test.c:287
+#: speaker-test/speaker-test.c:286
 #, c-format
 msgid "Access type not available for playback: %s\n"
 msgstr "アクセスタイプが不正です: %s\n"
 
-#: speaker-test/speaker-test.c:294
+#: speaker-test/speaker-test.c:293
 #, c-format
 msgid "Sample format not available for playback: %s\n"
 msgstr "指定のサンプルフォーマットを使用できません: %s\n"
 
-#: speaker-test/speaker-test.c:301
+#: speaker-test/speaker-test.c:300
 #, c-format
 msgid "Channels count (%i) not available for playbacks: %s\n"
 msgstr "チャネル数 (%i) を使用できません: %s\n"
 
-#: speaker-test/speaker-test.c:309
+#: speaker-test/speaker-test.c:308
 #, c-format
 msgid "Rate %iHz not available for playback: %s\n"
 msgstr "レート %iHz を使用できません: %s\n"
 
-#: speaker-test/speaker-test.c:314
+#: speaker-test/speaker-test.c:313
 #, c-format
 msgid "Rate doesn't match (requested %iHz, get %iHz, err %d)\n"
 msgstr "設定レートが一致しません< (要求値 %iHz, 取得値 %iHz, エラー %d)\n"
 
-#: speaker-test/speaker-test.c:318
+#: speaker-test/speaker-test.c:317
 #, c-format
 msgid "Rate set to %iHz (requested %iHz)\n"
 msgstr "レート %iHz (要求値 %iHz)\n"
 
-#: speaker-test/speaker-test.c:324
+#: speaker-test/speaker-test.c:323
 #, c-format
 msgid "Buffer size range from %lu to %lu\n"
 msgstr "バッファサイズ範囲 %lu 〜 %lu\n"
 
-#: speaker-test/speaker-test.c:325
+#: speaker-test/speaker-test.c:324
 #, c-format
 msgid "Period size range from %lu to %lu\n"
 msgstr "ピリオドサイズ範囲 %lu 〜 %lu\n"
 
-#: speaker-test/speaker-test.c:327
+#: speaker-test/speaker-test.c:326
 #, c-format
 msgid "Requested period time %u us\n"
 msgstr "要求されたピリオド長 %u us\n"
 
-#: speaker-test/speaker-test.c:330
+#: speaker-test/speaker-test.c:329
 #, c-format
 msgid "Unable to set period time %u us for playback: %s\n"
 msgstr "ピリオド長 %u us を設定できません: %s\n"
 
-#: speaker-test/speaker-test.c:336
+#: speaker-test/speaker-test.c:335
 #, c-format
 msgid "Requested buffer time %u us\n"
 msgstr "要求されたバッファ長 %u us\n"
 
-#: speaker-test/speaker-test.c:339
+#: speaker-test/speaker-test.c:338
 #, c-format
 msgid "Unable to set buffer time %u us for playback: %s\n"
 msgstr "バッファ長 %u us を設定できません: %s\n"
 
-#: speaker-test/speaker-test.c:346
+#: speaker-test/speaker-test.c:345
 #, c-format
 msgid "Using max buffer size %lu\n"
 msgstr "最大バッファサイズ %lu を使用\n"
 
-#: speaker-test/speaker-test.c:349
+#: speaker-test/speaker-test.c:348
 #, c-format
 msgid "Unable to set buffer size %lu for playback: %s\n"
 msgstr "バッファサイズ %lu を設定できません: %s\n"
 
-#: speaker-test/speaker-test.c:355
+#: speaker-test/speaker-test.c:354
 #, c-format
 msgid "Periods = %u\n"
 msgstr "ピリオド数 = %u\n"
 
-#: speaker-test/speaker-test.c:358
+#: speaker-test/speaker-test.c:357
 #, c-format
 msgid "Unable to set nperiods %u for playback: %s\n"
 msgstr "ピリオド数 %u を設定できません: %s\n"
 
-#: speaker-test/speaker-test.c:365
+#: speaker-test/speaker-test.c:364
 #, c-format
 msgid "was set period_size = %lu\n"
 msgstr "period_size = %lu で設定\n"
 
-#: speaker-test/speaker-test.c:366
+#: speaker-test/speaker-test.c:365
 #, c-format
 msgid "was set buffer_size = %lu\n"
 msgstr "buffer_size = %lu で設定\n"
 
-#: speaker-test/speaker-test.c:368
+#: speaker-test/speaker-test.c:367
 #, c-format
 msgid "buffer to small, could not use\n"
 msgstr "バッファが小さすぎます\n"
 
-#: speaker-test/speaker-test.c:375
+#: speaker-test/speaker-test.c:374
 #, c-format
 msgid "Unable to set hw params for playback: %s\n"
 msgstr "hw params を設定できません: %s\n"
 
-#: speaker-test/speaker-test.c:388
+#: speaker-test/speaker-test.c:387
 #, c-format
 msgid "Unable to determine current swparams for playback: %s\n"
 msgstr "現在の swparams を取得できません: %s\n"
 
-#: speaker-test/speaker-test.c:395
+#: speaker-test/speaker-test.c:394
 #, c-format
 msgid "Unable to set start threshold mode for playback: %s\n"
 msgstr "start_threshold モードを設定できません: %s\n"
 
-#: speaker-test/speaker-test.c:402
+#: speaker-test/speaker-test.c:401
 #, c-format
 msgid "Unable to set avail min for playback: %s\n"
 msgstr "avail_min を設定できません: %s\n"
 
-#: speaker-test/speaker-test.c:409
+#: speaker-test/speaker-test.c:408
 #, c-format
 msgid "Unable to set transfer align for playback: %s\n"
 msgstr "転送 align を設定できません: %s\n"
 
-#: speaker-test/speaker-test.c:416
+#: speaker-test/speaker-test.c:415
 #, c-format
 msgid "Unable to set sw params for playback: %s\n"
 msgstr "再生用の sw params を設定できません: %s\n"
 
-#: speaker-test/speaker-test.c:431
+#: speaker-test/speaker-test.c:430
 #, c-format
 msgid "Can't recovery from underrun, prepare failed: %s\n"
 msgstr "アンダーランから復帰失敗: %s\n"
 
-#: speaker-test/speaker-test.c:442
+#: speaker-test/speaker-test.c:441
 #, c-format
 msgid "Can't recovery from suspend, prepare failed: %s\n"
 msgstr "サスペンドから復帰失敗: %s\n"
 
-#: speaker-test/speaker-test.c:516 speaker-test/speaker-test.c:913
+#: speaker-test/speaker-test.c:515 speaker-test/speaker-test.c:909
 #, c-format
 msgid "No enough memory\n"
 msgstr "メモリが足りません\n"
 
-#: speaker-test/speaker-test.c:521
+#: speaker-test/speaker-test.c:520
 #, c-format
 msgid "Cannot open WAV file %s\n"
 msgstr "WAVファイルがオープンできません: %s\n"
 
-#: speaker-test/speaker-test.c:525 speaker-test/speaker-test.c:554
+#: speaker-test/speaker-test.c:524 speaker-test/speaker-test.c:553
 #, c-format
 msgid "Invalid WAV file %s\n"
 msgstr "不正なWAVファイルです: %s\n"
 
-#: speaker-test/speaker-test.c:530
+#: speaker-test/speaker-test.c:529
 #, c-format
 msgid "Not a WAV file: %s\n"
 msgstr "WAVファイルではありません: %s\n"
 
-#: speaker-test/speaker-test.c:534
+#: speaker-test/speaker-test.c:533
 #, c-format
 msgid "Unsupported WAV format %d for %s\n"
 msgstr "未サポートのWAVフォーマット %d: %s\n"
 
-#: speaker-test/speaker-test.c:539
+#: speaker-test/speaker-test.c:538
 #, c-format
 msgid "%s is not a mono stream (%d channels)\n"
 msgstr "%s はモノストリームではありません (%d チャネル)\n"
 
-#: speaker-test/speaker-test.c:544
+#: speaker-test/speaker-test.c:543
 #, c-format
 msgid "Sample rate doesn't match (%d) for %s\n"
 msgstr "サンプルレートが不一致です(%d): %s\n"
 
-#: speaker-test/speaker-test.c:549
+#: speaker-test/speaker-test.c:548
 #, c-format
 msgid "Unsupported sample format bits %d for %s\n"
 msgstr "未サポートのサンプルフォーマットビット %d: %s\n"
 
-#: speaker-test/speaker-test.c:599
+#: speaker-test/speaker-test.c:598
 #, c-format
 msgid "Undefined channel %d\n"
 msgstr "未定義のチャネル %d\n"
 
-#: speaker-test/speaker-test.c:650
+#: speaker-test/speaker-test.c:649
 #, c-format
 msgid "Write error: %d,%s\n"
 msgstr "書込エラー: %d,%s\n"
 
-#: speaker-test/speaker-test.c:652
+#: speaker-test/speaker-test.c:651
 #, c-format
 msgid "xrun_recovery failed: %d,%s\n"
 msgstr "xrun_recovery 失敗: %d,%s\n"
 
-#: speaker-test/speaker-test.c:701
+#: speaker-test/speaker-test.c:706
 #, c-format
 msgid ""
 "Usage: speaker-test [OPTION]... \n"
@@ -1080,89 +1080,86 @@ msgstr ""
 "-b,--buffer          リングバッファサイズ (μs)\n"
 "-p,--period          ピリオドサイズ (μs)\n"
 "-P,--nperiods        ピリオド数\n"
-"-t,--test            pink=ピンクノイズを使用, sine=正弦波を使用, wav=WAVファイル再生\n"
+"-t,--test            pink=ピンクノイズを使用, sine=正弦波を使用, wav=WAVファ"
+"イル再生\n"
 "-l,--nloops          繰り返しテスト数, 0 = 無制限\n"
 "-s,--speaker         単一スピーカーテスト  1=左 または 2=右\n"
 "-w,--wavfile         指定のWAVファイルをテスト音源として使用\n"
 "-W,--wavdir          WAVファイルのあるディレクトリを指定\n"
 "\n"
 
-#: speaker-test/speaker-test.c:813
+#: speaker-test/speaker-test.c:818
 #, c-format
 msgid "Invalid number of periods %d\n"
 msgstr "不正なピリオド数 %d\n"
 
-#: speaker-test/speaker-test.c:827 speaker-test/speaker-test.c:831
+#: speaker-test/speaker-test.c:832 speaker-test/speaker-test.c:836
 #, c-format
 msgid "Invalid test type %s\n"
 msgstr "不正なテストタイプ %s\n"
 
-#: speaker-test/speaker-test.c:843
+#: speaker-test/speaker-test.c:848
 #, c-format
 msgid "Invalid parameter for -s option.\n"
 msgstr "-s オプションの値が不正です\n"
 
-#: speaker-test/speaker-test.c:854
+#: speaker-test/speaker-test.c:859
 #, c-format
 msgid "Unknown option '%c'\n"
 msgstr "未知のオプション '%c'\n"
 
-#: speaker-test/speaker-test.c:870
-#, c-format
-msgid "Output failed: %s\n"
-msgstr "出力失敗: %s\n"
-
-#: speaker-test/speaker-test.c:874
+#: speaker-test/speaker-test.c:873
 #, c-format
 msgid "Playback device is %s\n"
 msgstr "再生デバイス: %s\n"
 
-#: speaker-test/speaker-test.c:875
+#: speaker-test/speaker-test.c:874
 #, c-format
 msgid "Stream parameters are %iHz, %s, %i channels\n"
 msgstr "ストリームパラメータ: %iHz, %s, %i チャネル\n"
 
-#: speaker-test/speaker-test.c:878
+#: speaker-test/speaker-test.c:877
 #, c-format
 msgid "Using 16 octaves of pink noise\n"
 msgstr "16 オクターブのピンクノイズを使用\n"
 
-#: speaker-test/speaker-test.c:881
+#: speaker-test/speaker-test.c:880
 #, c-format
 msgid "Sine wave rate is %.4fHz\n"
 msgstr "正弦波レート: %.4fHz\n"
 
-#: speaker-test/speaker-test.c:884
+#: speaker-test/speaker-test.c:883
 #, c-format
 msgid "WAV file(s)\n"
 msgstr "WAV ファイル\n"
 
-#: speaker-test/speaker-test.c:890
+#: speaker-test/speaker-test.c:889
 #, c-format
 msgid "Playback open error: %d,%s\n"
 msgstr "再生オープンエラー: %d,%s\n"
 
-#: speaker-test/speaker-test.c:895
+#: speaker-test/speaker-test.c:894
 #, c-format
 msgid "Setting of hwparams failed: %s\n"
 msgstr "hwparams の設定に失敗: %s\n"
 
-#: speaker-test/speaker-test.c:902
+#: speaker-test/speaker-test.c:899
 #, c-format
 msgid "Setting of swparams failed: %s\n"
 msgstr "swparams の設定に失敗: %s\n"
 
-#: speaker-test/speaker-test.c:945 speaker-test/speaker-test.c:972
+#: speaker-test/speaker-test.c:940 speaker-test/speaker-test.c:962
 #, c-format
 msgid "Transfer failed: %s\n"
 msgstr "転送に失敗しました: %s\n"
 
-#: speaker-test/speaker-test.c:948
-#, c-format
-msgid "Pausing\n"
-msgstr "停止中\n"
-
-#: speaker-test/speaker-test.c:960
+#: speaker-test/speaker-test.c:950
 #, c-format
 msgid "Time per period = %lf\n"
 msgstr "ピリオド時間 = %lf\n"
+
+#~ msgid "Output failed: %s\n"
+#~ msgstr "出力失敗: %s\n"
+
+#~ msgid "Pausing\n"
+#~ msgstr "停止中\n"
