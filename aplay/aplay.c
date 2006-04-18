@@ -916,8 +916,15 @@ static void set_params(void)
 	assert(err >= 0);
 	if ((float)rate * 1.05 < hwparams.rate || (float)rate * 0.95 > hwparams.rate) {
 		if (!quiet_mode) {
+			char plugex[64];
 			fprintf(stderr, _("Warning: rate is not accurate (requested = %iHz, got = %iHz)\n"), rate, hwparams.rate);
-			fprintf(stderr, _("         please, try the plug plugin (-Dplug:%s)\n"), snd_pcm_name(handle));
+			if (strchr(snd_pcm_name(handle), ':'))
+				*plugex = 0;
+			else
+				snprintf(plugex, sizeof(plugex), "(-Dplug:%s)",
+					 snd_pcm_name(handle));
+			fprintf(stderr, _("         please, try the plug plugin %s\n"),
+				plugex);
 		}
 	}
 	rate = hwparams.rate;
