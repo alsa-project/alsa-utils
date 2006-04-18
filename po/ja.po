@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: alsa-utils 1.0.9a\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-04-06 19:13+0200\n"
-"PO-Revision-Date: 2006-03-24 00:39+0100\n"
+"POT-Creation-Date: 2006-04-18 15:51+0200\n"
+"PO-Revision-Date: 2006-04-18 15:51+0200\n"
 "Last-Translator: Takashi Iwai <tiwai@suse.de>\n"
 "Language-Team: Japanese\n"
 "MIME-Version: 1.0\n"
@@ -208,7 +208,7 @@ msgstr ""
 msgid "nonblock setting error: %s"
 msgstr ""
 
-#: aplay/aplay.c:569 aplay/aplay.c:675 aplay/aplay.c:1018
+#: aplay/aplay.c:569 aplay/aplay.c:675 aplay/aplay.c:1025
 msgid "not enough memory"
 msgstr "メモリが足りません"
 
@@ -274,8 +274,8 @@ msgstr "警告: フォーマットは MU_LAW に変更されます\n"
 msgid "Warning: format is changed to S16_BE\n"
 msgstr "警告: フォーマットは S16_BE に変更されます\n"
 
-#: aplay/aplay.c:859 aplay/aplay.c:1487 aplay/aplay.c:1494 aplay/aplay.c:2014
-#: aplay/aplay.c:2026
+#: aplay/aplay.c:859 aplay/aplay.c:1494 aplay/aplay.c:1501 aplay/aplay.c:2021
+#: aplay/aplay.c:2033
 msgid "read error"
 msgstr "リードエラー"
 
@@ -295,222 +295,222 @@ msgstr "サンプルフォーマットが使用不可能"
 msgid "Channels count non available"
 msgstr "チャネル数が使用不可能"
 
-#: aplay/aplay.c:919
+#: aplay/aplay.c:920
 #, c-format
 msgid "Warning: rate is not accurate (requested = %iHz, got = %iHz)\n"
 msgstr "警告: レートが不正確です (要求値 = %iHz, 使用値 = %iHz)\n"
 
-#: aplay/aplay.c:920
+#: aplay/aplay.c:926
 #, c-format
-msgid "         please, try the plug plugin (-Dplug:%s)\n"
-msgstr "        plug プラグイン (-Dplug:%s) を使用してください\n"
+msgid "         please, try the plug plugin %s\n"
+msgstr "        plug プラグイン%s を使用してください\n"
 
-#: aplay/aplay.c:954
+#: aplay/aplay.c:961
 msgid "Unable to install hw params:"
 msgstr "hw params のインストールに失敗しました:"
 
-#: aplay/aplay.c:961
+#: aplay/aplay.c:968
 #, c-format
 msgid "Can't use period equal to buffer size (%lu == %lu)"
 msgstr "period と buffer サイズには同じ値を使用できません (%lu == %lu)"
 
-#: aplay/aplay.c:968
+#: aplay/aplay.c:975
 msgid "Unable to obtain xfer align\n"
 msgstr "xfer align 値を得ることができません\n"
 
-#: aplay/aplay.c:1005
+#: aplay/aplay.c:1012
 msgid "unable to install sw params:"
 msgstr "sw params のインストールに失敗しました:"
 
-#: aplay/aplay.c:1044
+#: aplay/aplay.c:1051
 #, c-format
 msgid "status error: %s"
 msgstr "ステータスエラー: %s"
 
-#: aplay/aplay.c:1052
+#: aplay/aplay.c:1059
 #, c-format
 msgid "%s!!! (at least %.3f ms long)\n"
 msgstr "%s!!! (少なくとも %.3f ms)\n"
 
-#: aplay/aplay.c:1053
+#: aplay/aplay.c:1060
 msgid "underrun"
 msgstr "アンダーラン"
 
-#: aplay/aplay.c:1053
+#: aplay/aplay.c:1060
 msgid "overrun"
 msgstr "オーバーラン"
 
-#: aplay/aplay.c:1056
+#: aplay/aplay.c:1063
 #, c-format
 msgid "Status:\n"
 msgstr "ステータス:\n"
 
-#: aplay/aplay.c:1060
+#: aplay/aplay.c:1067
 #, c-format
 msgid "xrun: prepare error: %s"
 msgstr ""
 
-#: aplay/aplay.c:1066
+#: aplay/aplay.c:1073
 #, c-format
 msgid "Status(DRAINING):\n"
 msgstr "ステータス(DRAINING):\n"
 
-#: aplay/aplay.c:1070
+#: aplay/aplay.c:1077
 #, c-format
 msgid "capture stream format change? attempting recover...\n"
 msgstr "録音ストリームのフォーマットが変更？ 修復を試みます...\n"
 
-#: aplay/aplay.c:1072
+#: aplay/aplay.c:1079
 #, c-format
 msgid "xrun(DRAINING): prepare error: %s"
 msgstr ""
 
-#: aplay/aplay.c:1079
+#: aplay/aplay.c:1086
 #, c-format
 msgid "Status(R/W):\n"
 msgstr "ステータス(R/W):\n"
 
-#: aplay/aplay.c:1082
+#: aplay/aplay.c:1089
 #, c-format
 msgid "read/write error, state = %s"
 msgstr "読み書きエラー, ステータス = %s"
 
-#: aplay/aplay.c:1092
+#: aplay/aplay.c:1099
 #, c-format
 msgid "Suspended. Trying resume. "
 msgstr "サスペンド中です。レジュームします。"
 
-#: aplay/aplay.c:1097
+#: aplay/aplay.c:1104
 #, c-format
 msgid "Failed. Restarting stream. "
 msgstr "失敗しました。ストリームを再スタートします。"
 
-#: aplay/aplay.c:1099
+#: aplay/aplay.c:1106
 #, c-format
 msgid "suspend: prepare error: %s"
 msgstr "サスペンド: prepare エラー: %s"
 
-#: aplay/aplay.c:1104
+#: aplay/aplay.c:1111
 #, c-format
 msgid "Done.\n"
 msgstr "終了\n"
 
-#: aplay/aplay.c:1183
+#: aplay/aplay.c:1190
 #, c-format
 msgid "Unsupported bit size %d.\n"
 msgstr ""
 
-#: aplay/aplay.c:1219
+#: aplay/aplay.c:1226
 #, c-format
 msgid " !clip  "
 msgstr ""
 
-#: aplay/aplay.c:1224
+#: aplay/aplay.c:1231
 #, c-format
 msgid "Max peak (%li samples): 0x%08x "
 msgstr "最大ピーク (%li サンプル): 0x%08x "
 
-#: aplay/aplay.c:1257
+#: aplay/aplay.c:1264
 #, c-format
 msgid "write error: %s"
 msgstr "書込エラー: %s"
 
-#: aplay/aplay.c:1299
+#: aplay/aplay.c:1306
 #, c-format
 msgid "writev error: %s"
 msgstr "書込(writev)エラー: %s"
 
-#: aplay/aplay.c:1338
+#: aplay/aplay.c:1345
 #, c-format
 msgid "read error: %s"
 msgstr "読込エラー: %s"
 
-#: aplay/aplay.c:1377
+#: aplay/aplay.c:1384
 #, c-format
 msgid "readv error: %s"
 msgstr "読込(readv)エラー: %s"
 
-#: aplay/aplay.c:1425
+#: aplay/aplay.c:1432
 msgid "can't allocate buffer for silence"
 msgstr "サイレンス用のバッファの取得に失敗しました"
 
-#: aplay/aplay.c:1434 aplay/aplay.c:1662 aplay/aplay.c:1667 aplay/aplay.c:1714
-#: aplay/aplay.c:1723 aplay/aplay.c:1730 aplay/aplay.c:1740 aplay/aplay.c:1746
-#: aplay/aplay.c:1814 aplay/aplay.c:1844 aplay/aplay.c:1858
+#: aplay/aplay.c:1441 aplay/aplay.c:1669 aplay/aplay.c:1674 aplay/aplay.c:1721
+#: aplay/aplay.c:1730 aplay/aplay.c:1737 aplay/aplay.c:1747 aplay/aplay.c:1753
+#: aplay/aplay.c:1821 aplay/aplay.c:1851 aplay/aplay.c:1865
 msgid "write error"
 msgstr "書込エラー"
 
-#: aplay/aplay.c:1448
+#: aplay/aplay.c:1455
 #, c-format
 msgid "voc_pcm_flush - silence error"
 msgstr ""
 
-#: aplay/aplay.c:1454
+#: aplay/aplay.c:1461
 msgid "voc_pcm_flush error"
 msgstr ""
 
-#: aplay/aplay.c:1478
+#: aplay/aplay.c:1485
 msgid "malloc error"
 msgstr "malloc エラー"
 
-#: aplay/aplay.c:1482
+#: aplay/aplay.c:1489
 #, c-format
 msgid "Playing Creative Labs Channel file '%s'...\n"
 msgstr "Creative Labs Channel ファイル '%s' を演奏中...\n"
 
-#: aplay/aplay.c:1550 aplay/aplay.c:1642
+#: aplay/aplay.c:1557 aplay/aplay.c:1649
 msgid "can't play packed .voc files"
 msgstr "packed .voc ファイルは演奏できません"
 
-#: aplay/aplay.c:1602
+#: aplay/aplay.c:1609
 #, c-format
 msgid "can't play loops; %s isn't seekable\n"
 msgstr "ループ演奏できません。%s はシーク不可能です\n"
 
-#: aplay/aplay.c:1651
+#: aplay/aplay.c:1658
 #, c-format
 msgid "unknown blocktype %d. terminate."
 msgstr "未知のブロックタイプ %d: 終了します。"
 
-#: aplay/aplay.c:1781
+#: aplay/aplay.c:1788
 #, c-format
 msgid "Wave doesn't support %s format..."
 msgstr "WAVE は %s フォーマットをサポートしません..."
 
-#: aplay/aplay.c:1838
+#: aplay/aplay.c:1845
 #, c-format
 msgid "Sparc Audio doesn't support %s format..."
 msgstr "Sparc オーディオは %s フォーマットをサポートしません..."
 
-#: aplay/aplay.c:1923
+#: aplay/aplay.c:1930
 msgid "Playing"
 msgstr "再生中"
 
-#: aplay/aplay.c:1923
+#: aplay/aplay.c:1930
 msgid "Recording"
 msgstr "録音中"
 
-#: aplay/aplay.c:1927
+#: aplay/aplay.c:1934
 #, c-format
 msgid "Rate %d Hz, "
 msgstr "レート %d Hz, "
 
-#: aplay/aplay.c:1929
+#: aplay/aplay.c:1936
 #, c-format
 msgid "Mono"
 msgstr "モノラル"
 
-#: aplay/aplay.c:1931
+#: aplay/aplay.c:1938
 #, c-format
 msgid "Stereo"
 msgstr "ステレオ"
 
-#: aplay/aplay.c:1933
+#: aplay/aplay.c:1940
 #, c-format
 msgid "Channels %i"
 msgstr "チャネル数 %i"
 
-#: aplay/aplay.c:2280 aplay/aplay.c:2333
+#: aplay/aplay.c:2287 aplay/aplay.c:2340
 #, c-format
 msgid "You need to specify %d files"
 msgstr "%d 個のファイルを指定してください"
