@@ -2165,13 +2165,15 @@ static void capture(char *name_)
 			   2) all requested samples/bytes have been captured (cur>0)
 			   3) filesize threshold was reached (fdcount<wrthreshold)
 			*/
-		} while (file_type == FORMAT_RAW && !timelimit && cur>0 && fdcount<fmt_rec_table[file_type].max_filesize);
+		} while (file_type == FORMAT_RAW && !timelimit && cur>0 &&
+			 fdcount<fmt_rec_table[file_type].max_filesize);
 
 		/* finish sample container */
 		fmt_rec_table[file_type].end(fd);
 
 		/* repeat the loop when format is raw without timelimit or filesize threshold was reached */
-	} while((file_type == FORMAT_RAW && !timelimit) || fdcount>=fmt_rec_table[file_type].max_filesize);
+	} while((file_type == FORMAT_RAW && !timelimit) ||
+		fdcount < fmt_rec_table[file_type].max_filesize);
 }
 
 void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t count, int rtype, char **names)
