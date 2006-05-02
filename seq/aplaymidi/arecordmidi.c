@@ -659,6 +659,10 @@ static void list_ports(void)
 		snd_seq_port_info_set_client(pinfo, client);
 		snd_seq_port_info_set_port(pinfo, -1);
 		while (snd_seq_query_next_port(seq, pinfo) >= 0) {
+			/* port must understand MIDI messages */
+			if (!(snd_seq_port_info_get_type(pinfo)
+			      & SND_SEQ_PORT_TYPE_MIDI_GENERIC))
+				continue;
 			/* we need both READ and SUBS_READ */
 			if ((snd_seq_port_info_get_capability(pinfo)
 			     & (SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ))
