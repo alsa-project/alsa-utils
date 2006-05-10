@@ -127,9 +127,9 @@ struct fmt_capture {
 	long long max_filesize;
 } fmt_rec_table[] = {
 	{	NULL,		end_raw,	N_("raw data"),		LLONG_MAX },
-	{	begin_voc,	end_voc,	N_("VOC"),		16000000 },
+	{	begin_voc,	end_voc,	N_("VOC"),		16000000LL },
 	/* FIXME: can WAV handle exactly 2GB or less than it? */
-	{	begin_wave,	end_wave,	N_("WAVE"),		2147483648 },
+	{	begin_wave,	end_wave,	N_("WAVE"),		2147483648LL },
 	{	begin_au,	end_au,		N_("Sparc Audio"),	LLONG_MAX }
 };
 
