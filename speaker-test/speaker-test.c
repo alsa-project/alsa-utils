@@ -342,6 +342,8 @@ static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_
   }
   if (! buffer_time && ! period_time) {
     buffer_size = buffer_size_max;
+    if (! period_time)
+      buffer_size = (buffer_size / nperiods) * nperiods;
     printf(_("Using max buffer size %lu\n"), buffer_size);
     err = snd_pcm_hw_params_set_buffer_size_near(handle, params, &buffer_size);
     if (err < 0) {
