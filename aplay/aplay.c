@@ -126,7 +126,7 @@ struct fmt_capture {
 	char *what;
 	long long max_filesize;
 } fmt_rec_table[] = {
-	{	NULL,		end_raw,	N_("raw data"),		LLONG_MAX },
+	{	NULL,		NULL,		N_("raw data"),		LLONG_MAX },
 	{	begin_voc,	end_voc,	N_("VOC"),		16000000LL },
 	/* FIXME: can WAV handle exactly 2GB or less than it? */
 	{	begin_wave,	end_wave,	N_("WAVE"),		2147483648LL },
@@ -1883,12 +1883,6 @@ static void end_voc(int fd)
 		close(fd);
 }
 
-static void end_raw(int fd)
-{                              /* REALLY only close output */
-       if (fd != 1)
-               close(fd);
-}
-
 static void end_wave(int fd)
 {				/* only close output */
 	WaveChunkHeader cd;
@@ -2054,26 +2048,62 @@ static void playback(char *name)
 		close(fd);
 }
 
-static void capture(char *name_)
+static int new_capture_file(char *name, char *namebuf, size_t namelen,
+			    int filecount)
+{
+	/* get a copy of the original filename */
+	char *s;
+	char buf[PATH_MAX+1];
+
+	strncpy(buf, name, sizeof(buf));
+
+	/* separate extension from filename */
+	s = buf + strlen(buf);
+	while (s > buf && *s != '.' && *s != '/')
+		--s;
+	if (*s == '.')
+		*s++ = 0;
+	else if (*s == '/')
+		s = buf + strlen(buf);
+
+	/* upon first jump to this if block rename the first file */
+	if (filecount == 1) {
+		if (*s)
+			snprintf(namebuf, namelen, "%s-01.%s", buf, s);
+		else
+			snprintf(namebuf, namelen, "%s-01", buf);
+		remove(namebuf);
+		rename(name, namebuf);
+		filecount = 2;
+	}
+
+	/* name of the current file */
+	if (*s)
+		snprintf(namebuf, namelen, "%s-%02i.%s", buf, filecount, s);
+	else
+		snprintf(namebuf, namelen, "%s-%02i", buf, filecount);
+
+	return filecount;
+}
+
+static void capture(char *orig_name)
 {
 	int tostdout=0;		/* boolean which describes output stream */
 	int filecount=0;	/* number of files written */
-	char *name=name_;	/* current filename */
+	char *name = orig_name;	/* current filename */
 	char namebuf[PATH_MAX+1];
-	off64_t cur;		/* number of bytes to capture */
+	off64_t count, rest;		/* number of bytes to capture */
 
 	/* get number of bytes to capture */
-	pbrec_count = calc_count();
+	count = calc_count();
+	if (count == 0)
+		count = LLONG_MAX;
 	/* WAVE-file should be even (I'm not sure), but wasting one byte
 	   isn't a problem (this can only be in 8 bit mono) */
-	if (pbrec_count < LLONG_MAX)
-		pbrec_count += pbrec_count % 2;
+	if (count < LLONG_MAX)
+		count += count % 2;
 	else
-		pbrec_count -= pbrec_count % 2;
-	if (pbrec_count == 0)
-		pbrec_count -= 2;
-
-	cur = pbrec_count;
+		count -= count % 2;
 
 	/* display verbose output to console */
 	header(file_type, name);
@@ -2086,95 +2116,63 @@ static void capture(char *name_)
 		fd = fileno(stdout);
 		name = "stdout";
 		tostdout=1;
-		fdcount = 0;
 	}
 
 	do {
 		/* open a file to write */
 		if(!tostdout) {
-
 			/* upon the second file we start the numbering scheme */
-			if(filecount)
-			{
-				/* get a copy of the original filename */
-				char *s;
-				char buf[PATH_MAX+1];
-				strncpy(buf, name_, sizeof(buf));
-
-				/* separate extension from filename */
-				s=buf+strlen(buf);
-				while(s>buf && *s!='.' && *s!='/')
-					--s;
-				if(*s=='.')
-					*s++=0;
-				else if(*s=='/')
-					s=buf+strlen(buf);
-
-				/* upon first jump to this if block rename the first file */
-				if(filecount==1) {
-					if(*s)
-						snprintf(namebuf, sizeof(namebuf), "%s-01.%s", buf, s);
-					else
-						snprintf(namebuf, sizeof(namebuf), "%s-01", buf);
-					remove(namebuf);
-					rename(name, namebuf);
-					filecount=2;
-				}
-
-				/* name of the current file */
-				if(*s)
-					snprintf(namebuf, sizeof(namebuf), "%s-%02i.%s", buf, filecount, s);
-				else
-					snprintf(namebuf, sizeof(namebuf), "%s-%02i", buf, filecount);
-				name=namebuf;
-
+			if (filecount) {
+				filecount = new_capture_file(orig_name, namebuf,
+							     sizeof(namebuf),
+							     filecount);
+				name = namebuf;
 			}
-
+			
 			/* open a new file */
 			remove(name);
 			if ((fd = open64(name, O_WRONLY | O_CREAT, 0644)) == -1) {
 				perror(name);
 				exit(EXIT_FAILURE);
 			}
-			fdcount = 0;
 			filecount++;
 		}
 
+		rest = count;
+		if (rest > fmt_rec_table[file_type].max_filesize)
+			rest = fmt_rec_table[file_type].max_filesize;
+
 		/* setup sample header */
 		if (fmt_rec_table[file_type].start)
-			fmt_rec_table[file_type].start(fd, pbrec_count);
+			fmt_rec_table[file_type].start(fd, rest);
 
 		/* capture */
-		do {
-			ssize_t r=0;
-			for (; cur > 0 && fdcount<fmt_rec_table[file_type].max_filesize; cur -= r) {
-				ssize_t err;
-				size_t c = (cur <= chunk_bytes) ? cur : chunk_bytes;
-				c = c * 8 / bits_per_frame;
-				if ((size_t)(r = pcm_read(audiobuf, c)) != c)
-					break;
-				r = r * bits_per_frame / 8;
-				if ((err = write(fd, audiobuf, r)) != r) {
-					perror(name);
-					exit(EXIT_FAILURE);
-				}
-				if (err > 0)
-					fdcount += err;
+		while (rest > 0) {
+			ssize_t err;
+			size_t c = (rest <= (off_t)chunk_bytes) ?
+				(size_t)rest : chunk_bytes;
+			c = c * 8 / bits_per_frame;
+			if ((size_t)(err = pcm_read(audiobuf, c)) != c)
+				break;
+			c = err * bits_per_frame / 8;
+			if ((err = write(fd, audiobuf, c)) != c) {
+				perror(name);
+				exit(EXIT_FAILURE);
 			}
-			/* exit conditions:
-			   1) format_raw and a timelimit
-			   2) all requested samples/bytes have been captured (cur>0)
-			   3) filesize threshold was reached (fdcount<wrthreshold)
-			*/
-		} while (file_type == FORMAT_RAW && !timelimit && cur>0 &&
-			 fdcount<fmt_rec_table[file_type].max_filesize);
+			if (err > 0) {
+				count -= err;
+				rest -= err;
+			}
+		}
 
 		/* finish sample container */
-		fmt_rec_table[file_type].end(fd);
+		if (fmt_rec_table[file_type].end)
+			fmt_rec_table[file_type].end(fd);
 
-		/* repeat the loop when format is raw without timelimit or filesize threshold was reached */
-	} while((file_type == FORMAT_RAW && !timelimit) ||
-		fdcount < fmt_rec_table[file_type].max_filesize);
+		/* repeat the loop when format is raw without timelimit or
+		 * requested counts of data are recorded
+		 */
+	} while ((file_type == FORMAT_RAW && !timelimit) || count > 0);
 }
 
 void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t count, int rtype, char **names)
