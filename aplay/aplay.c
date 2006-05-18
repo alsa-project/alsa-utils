@@ -116,7 +116,6 @@ static void begin_voc(int fd, size_t count);
 static void end_voc(int fd);
 static void begin_wave(int fd, size_t count);
 static void end_wave(int fd);
-static void end_raw(int fd);
 static void begin_au(int fd, size_t count);
 static void end_au(int fd);
 
@@ -310,7 +309,8 @@ static void signal_handler(int sig)
 	if (!quiet_mode)
 		fprintf(stderr, _("Aborted by signal %s...\n"), strsignal(sig));
 	if (stream == SND_PCM_STREAM_CAPTURE) {
-		fmt_rec_table[file_type].end(fd);
+		if (fmt_rec_table[file_type].end)
+			fmt_rec_table[file_type].end(fd);
 		stream = -1;
 	}
 	if (fd > 1) {
@@ -1924,7 +1924,7 @@ static void header(int rtype, char *name)
 		fprintf(stderr, "%s %s '%s' : ",
 			(stream == SND_PCM_STREAM_PLAYBACK) ? _("Playing") : _("Recording"),
 			gettext(fmt_rec_table[rtype].what),
-			name);
+			name ? name : "stdin");
 		fprintf(stderr, "%s, ", snd_pcm_format_description(hwparams.format));
 		fprintf(stderr, _("Rate %d Hz, "), hwparams.rate);
 		if (hwparams.channels == 1)
@@ -2116,6 +2116,8 @@ static void capture(char *orig_name)
 		fd = fileno(stdout);
 		name = "stdout";
 		tostdout=1;
+		if (count > fmt_rec_table[file_type].max_filesize)
+			count = fmt_rec_table[file_type].max_filesize;
 	}
 
 	do {
@@ -2147,26 +2149,24 @@ static void capture(char *orig_name)
 			fmt_rec_table[file_type].start(fd, rest);
 
 		/* capture */
+		fdcount = 0;
 		while (rest > 0) {
-			ssize_t err;
-			size_t c = (rest <= (off_t)chunk_bytes) ?
+			size_t c = (rest <= (off64_t)chunk_bytes) ?
 				(size_t)rest : chunk_bytes;
-			c = c * 8 / bits_per_frame;
-			if ((size_t)(err = pcm_read(audiobuf, c)) != c)
+			size_t f = c * 8 / bits_per_frame;
+			if (pcm_read(audiobuf, f) != f)
 				break;
-			c = err * bits_per_frame / 8;
-			if ((err = write(fd, audiobuf, c)) != c) {
+			if (write(fd, audiobuf, c) != c) {
 				perror(name);
 				exit(EXIT_FAILURE);
 			}
-			if (err > 0) {
-				count -= err;
-				rest -= err;
-			}
+			count -= c;
+			rest -= c;
+			fdcount += c;
 		}
 
 		/* finish sample container */
-		if (fmt_rec_table[file_type].end)
+		if (fmt_rec_table[file_type].end && !tostdout)
 			fmt_rec_table[file_type].end(fd);
 
 		/* repeat the loop when format is raw without timelimit or
