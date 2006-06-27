@@ -180,7 +180,8 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 			       in ? 'I' : ' ', out ? 'O' : ' ',
 			       card, device, name);
 		} else
-			printf("      hw:%d,%d    %s (%d subdevices)\n",
+			printf("%c%c  hw:%d,%d    %s (%d subdevices)\n",
+			       in ? 'I' : ' ', out ? 'O' : ' ',
 			       card, device, name, subs);
 	} else {
 		sub = 0;
