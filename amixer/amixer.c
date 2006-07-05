@@ -154,6 +154,9 @@ static const char *control_access(snd_ctl_elem_info_t *info)
 	*res++ = snd_ctl_elem_info_is_inactive(info) ? 'i' : '-';
 	*res++ = snd_ctl_elem_info_is_volatile(info) ? 'v' : '-';
 	*res++ = snd_ctl_elem_info_is_locked(info) ? 'l' : '-';
+	*res++ = snd_ctl_elem_info_is_tlv_readable(info) ? 'R' : '-';
+	*res++ = snd_ctl_elem_info_is_tlv_writable(info) ? 'W' : '-';
+	*res++ = snd_ctl_elem_info_is_tlv_commandable(info) ? 'C' : '-';
 	*res++ = '\0';
 	return result;
 }
@@ -378,12 +381,80 @@ static void show_control_id(snd_ctl_elem_id_t *id)
 		printf(",subdevice=%i", subdevice);
 }
 
+static void print_spaces(unsigned int spaces)
+{
+	while (spaces-- > 0)
+		putc(' ', stdout);
+}
+
+static void print_dB(int dB)
+{
+	printf("%i.%02idB", dB / 100, dB % 100);
+}
+
+static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_size)
+{
+	unsigned int type = tlv[0];
+	unsigned int size;
+	unsigned int idx = 0;
+	
+	if (tlv_size < 2 * sizeof(unsigned int)) {
+		printf("TLV size error!\n");
+		return;
+	}
+	print_spaces(spaces);
+	printf("| ");
+	type = tlv[idx++];
+	size = tlv[idx++];
+	tlv_size -= 2 * sizeof(unsigned int);
+	if (size > tlv_size) {
+		printf("TLV size error (%i, %i, %i)!\n", type, size, tlv_size);
+		return;
+	}
+	switch (type) {
+	case SND_CTL_TLVT_CONTAINER:
+		size += sizeof(unsigned int) -1;
+		size /= sizeof(unsigned int);
+		while (idx < size) {
+			if (tlv[idx+1] > (size - idx) * sizeof(unsigned int)) {
+				printf("TLV size error in compound!\n");
+				return;
+			}
+			decode_tlv(spaces + 2, tlv + idx, tlv[idx+1]);
+			idx += 2 + (tlv[1] + sizeof(unsigned int) - 1) / sizeof(unsigned int);
+		}
+		break;
+	case SND_CTL_TLVT_DB_SCALE:
+		printf("dBscale-");
+		if (size != 2 * sizeof(unsigned int)) {
+			while (size > 0) {
+				printf("0x%x", tlv[idx++]);
+				size -= sizeof(unsigned int);
+			}
+		} else {
+			printf("min=");
+			print_dB(tlv[2]);
+			printf(",step=");
+			print_dB(tlv[3] & 0xffff);
+			printf(",mute=%i", (tlv[3] >> 16) & 1);
+		}
+		break;
+	default:
+		printf("unk-%i-", type);
+		while (size > 0) {
+			printf("0x%x", tlv[idx++]);
+			size -= sizeof(unsigned int);
+		}
+		break;
+	}
+	putc('\n', stdout);
+}
+
 static int show_control(const char *space, snd_hctl_elem_t *elem,
 			int level)
 {
 	int err;
-	unsigned int item, idx;
-	unsigned int count;
+	unsigned int item, idx, count, *tlv;
 	snd_ctl_elem_type_t type;
 	snd_ctl_elem_id_t *id;
 	snd_ctl_elem_info_t *info;
@@ -465,7 +536,18 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 			}
 		}
 		printf("\n");
+		if (!snd_ctl_elem_info_is_tlv_readable(info))
+			goto __skip_tlv;
+		tlv = malloc(4096);
+		if ((err = snd_hctl_elem_tlv_read(elem, tlv, 4096)) < 0) {
+			error("Control %s element TLV read error: %s\n", card, snd_strerror(err));
+			free(tlv);
+			return err;
+		}
+		decode_tlv(strlen(space), tlv, 4096);
+		free(tlv);
 	}
+      __skip_tlv:
 	return 0;
 }
 

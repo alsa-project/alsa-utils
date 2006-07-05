@@ -27,7 +27,7 @@ AC_PROG_CC
 dnl AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AM_PATH_ALSA(1.0.9)
+AM_PATH_ALSA(1.0.12)
 
 AC_ARG_ENABLE(alsamixer,
      [  --disable-alsamixer     Disable alsamixer compilation],
