@@ -389,7 +389,7 @@ static void print_spaces(unsigned int spaces)
 
 static void print_dB(int dB)
 {
-	printf("%i.%02idB", dB / 100, dB % 100);
+	printf("%i.%02idB", dB / 100, (dB < 0 ? -dB : dB) % 100);
 }
 
 static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_size)
