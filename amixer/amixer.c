@@ -387,9 +387,9 @@ static void print_spaces(unsigned int spaces)
 		putc(' ', stdout);
 }
 
-static void print_dB(int dB)
+static void print_dB(long dB)
 {
-	printf("%i.%02idB", dB / 100, (dB < 0 ? -dB : dB) % 100);
+	printf("%li.%02lidB", dB / 100, (dB < 0 ? -dB : dB) % 100);
 }
 
 static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_size)
@@ -594,6 +594,7 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 	long pvol, cvol;
 	int psw, csw;
 	int pmono, cmono, mono_ok = 0;
+	long db;
 	snd_mixer_elem_t *elem;
 	
 	elem = snd_mixer_find_selem(handle, id);
@@ -740,6 +741,11 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 			if (snd_mixer_selem_has_common_volume(elem)) {
 				snd_mixer_selem_get_playback_volume(elem, SND_MIXER_SCHN_MONO, &pvol);
 				printf(" %s", get_percent(pvol, pmin, pmax));
+				if (!snd_mixer_selem_get_playback_dB(elem, SND_MIXER_SCHN_MONO, &db)) {
+					printf(" [");
+					print_dB(db);
+					printf("]");
+				}
 			}
 			if (snd_mixer_selem_has_common_switch(elem)) {
 				snd_mixer_selem_get_playback_switch(elem, SND_MIXER_SCHN_MONO, &psw);
@@ -758,6 +764,11 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 					title = 1;
 					snd_mixer_selem_get_playback_volume(elem, SND_MIXER_SCHN_MONO, &pvol);
 					printf(" %s", get_percent(pvol, pmin, pmax));
+					if (!snd_mixer_selem_get_playback_dB(elem, SND_MIXER_SCHN_MONO, &db)) {
+						printf(" [");
+						print_dB(db);
+						printf("]");
+					}
 				}
 			}
 			if (!snd_mixer_selem_has_common_switch(elem)) {
@@ -781,6 +792,11 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 					title = 1;
 					snd_mixer_selem_get_capture_volume(elem, SND_MIXER_SCHN_MONO, &cvol);
 					printf(" %s", get_percent(cvol, cmin, cmax));
+					if (!snd_mixer_selem_get_capture_dB(elem, SND_MIXER_SCHN_MONO, &db)) {
+						printf(" [");
+						print_dB(db);
+						printf("]");
+					}
 				}
 			}
 			if (!snd_mixer_selem_has_common_switch(elem)) {
@@ -803,6 +819,11 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 				if (!pmono && !cmono && snd_mixer_selem_has_common_volume(elem)) {
 					snd_mixer_selem_get_playback_volume(elem, chn, &pvol);
 					printf(" %s", get_percent(pvol, pmin, pmax));
+					if (!snd_mixer_selem_get_playback_dB(elem, chn, &db)) {
+						printf(" [");
+						print_dB(db);
+						printf("]");
+					}
 				}
 				if (!pmono && !cmono && snd_mixer_selem_has_common_switch(elem)) {
 					snd_mixer_selem_get_playback_switch(elem, chn, &psw);
@@ -816,6 +837,11 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 							title = 1;
 							snd_mixer_selem_get_playback_volume(elem, chn, &pvol);
 							printf(" %s", get_percent(pvol, pmin, pmax));
+							if (!snd_mixer_selem_get_playback_dB(elem, chn, &db)) {
+								printf(" [");
+								print_dB(db);
+								printf("]");
+							}
 						}
 					}
 					if (!snd_mixer_selem_has_common_switch(elem)) {
@@ -835,6 +861,11 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 							title = 1;
 							snd_mixer_selem_get_capture_volume(elem, chn, &cvol);
 							printf(" %s", get_percent(cvol, cmin, cmax));
+							if (!snd_mixer_selem_get_capture_dB(elem, chn, &db)) {
+								printf(" [");
+								print_dB(db);
+								printf("]");
+							}
 						}
 					}
 					if (!snd_mixer_selem_has_common_switch(elem)) {

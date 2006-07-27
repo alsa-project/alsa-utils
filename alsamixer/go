@@ -2,7 +2,7 @@
 
 #DBG="gdb --args"
 
-ALSA_MIXER_SIMPLE_MODULES="$HOME/alsa/alsa-lib/src/mixer/simple/.libs" \
-ALSA_MIXER_SIMPLE="$HOME/alsa/alsa-lib/src/conf/smixer.conf" \
-LD_PRELOAD="$HOME/alsa/alsa-lib/src/.libs/libasound.so" \
+ALSA_MIXER_SIMPLE_MODULES="$HOME/hg/alsa-lib/src/mixer/simple/.libs" \
+ALSA_MIXER_SIMPLE="$HOME/hg/alsa-lib/src/conf/smixer.conf" \
+LD_PRELOAD="$HOME/hg/alsa-lib/src/.libs/libasound.so" \
 exec $DBG ./alsamixer "$@"
