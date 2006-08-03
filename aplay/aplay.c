@@ -918,8 +918,9 @@ static void set_params(void)
 	if ((float)rate * 1.05 < hwparams.rate || (float)rate * 0.95 > hwparams.rate) {
 		if (!quiet_mode) {
 			char plugex[64];
+			const char *pcmname = snd_pcm_name(handle);
 			fprintf(stderr, _("Warning: rate is not accurate (requested = %iHz, got = %iHz)\n"), rate, hwparams.rate);
-			if (strchr(snd_pcm_name(handle), ':'))
+			if (! pcmname || strchr(snd_pcm_name(handle), ':'))
 				*plugex = 0;
 			else
 				snprintf(plugex, sizeof(plugex), "(-Dplug:%s)",
