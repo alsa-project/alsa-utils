@@ -1922,10 +1922,12 @@ static void end_au(int fd)
 static void header(int rtype, char *name)
 {
 	if (!quiet_mode) {
+		if (! name)
+			name = (stream == SND_PCM_STREAM_PLAYBACK) ? "stdout" : "stdin";
 		fprintf(stderr, "%s %s '%s' : ",
 			(stream == SND_PCM_STREAM_PLAYBACK) ? _("Playing") : _("Recording"),
 			gettext(fmt_rec_table[rtype].what),
-			name ? name : "stdin");
+			name);
 		fprintf(stderr, "%s, ", snd_pcm_format_description(hwparams.format));
 		fprintf(stderr, _("Rate %d Hz, "), hwparams.rate);
 		if (hwparams.channels == 1)
