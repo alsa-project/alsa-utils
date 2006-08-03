@@ -309,8 +309,10 @@ static void signal_handler(int sig)
 	if (!quiet_mode)
 		fprintf(stderr, _("Aborted by signal %s...\n"), strsignal(sig));
 	if (stream == SND_PCM_STREAM_CAPTURE) {
-		if (fmt_rec_table[file_type].end)
+		if (fmt_rec_table[file_type].end) {
 			fmt_rec_table[file_type].end(fd);
+			fd = -1;
+		}
 		stream = -1;
 	}
 	if (fd > 1) {
@@ -2169,8 +2171,10 @@ static void capture(char *orig_name)
 		}
 
 		/* finish sample container */
-		if (fmt_rec_table[file_type].end && !tostdout)
+		if (fmt_rec_table[file_type].end && !tostdout) {
 			fmt_rec_table[file_type].end(fd);
+			fd = -1;
+		}
 
 		/* repeat the loop when format is raw without timelimit or
 		 * requested counts of data are recorded
