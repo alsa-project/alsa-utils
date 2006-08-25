@@ -33,13 +33,22 @@ Shows a complete list of simple mixer controls with their contents.
 .TP
 \fIset\fP or \fIsset\fP <\fISCONTROL\fP> <\fIPARAMETER\fP> ...
 Sets the simple mixer control contents. The parameter can be the volume
-either as a percentage from 0% to 100% or an exact hardware value.
-The parameters \fIcap, nocap, mute, unmute, toggle\fP are used to
-change capture (recording) and muting for the group specified.
-The parameters \fIfront, rear, center, woofer\fP are used to specify
-channels to be changed. When plus(+) or minus(\-) letter is appended after
+either as a percentage from 0% to 100% with \fI%\fP suffix,
+a dB gain with \fIdB\fP suffix (like -12.5dB), or an exact hardware value.
+The dB gain can be used only for the mixer elements with available
+dB information.
+When plus(+) or minus(\-) letter is appended after
 volume value, the volume is incremented or decremented from the current
 value, respectively.
+
+The parameters \fIcap, nocap, mute, unmute, toggle\fP are used to
+change capture (recording) and muting for the group specified.
+
+The optional modifiers can be put as extra parameters to specify
+the stream direction or channels to apply.
+The modifiers \fIplayback\fP and \fIcapture\fP specify the stream,
+and the modifiers \fIfront, rear, center, woofer\fP are used to specify
+channels to be changed. 
 
 A simple mixer control must be specified. Only one device can be controlled
 at a time.
@@ -106,6 +115,16 @@ Quiet mode. Do not show results of changes.
 will set the second soundcard's left line input volume to 80% and
 right line input to 40%, unmute it, and select it as a source for
 capture (recording).\fR
+
+.TP
+\fBamixer \-c 1 \-\- sset Master playback -20dB\fR
+will set the master volume of the second card to -20dB.  If the master
+has multiple channels, all channels are set to the same value.
+
+.TP
+\fBamixer \-c 1 set PCM 2dB+\fR
+will increase the PCM volume of the second card with 2dB.  When both
+playback and capture volumes exist, this is applied to both volumes.
 
 .TP
 \fBamixer \-c 2 cset iface=MIXER,name='Line Playback Volume",index=1 40%\fR

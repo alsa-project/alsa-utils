@@ -161,17 +161,8 @@ static const char *control_access(snd_ctl_elem_info_t *info)
 	return result;
 }
 
-static int check_range(int val, int min, int max)
-{
-	if (no_check)
-		return val;
-	if (val < min)
-		return min;
-	if (val > max)
-		return max;
-	return val;
-}
-
+#define check_range(val, min, max) \
+	(no_check ? (val) : ((val < min) ? (min) : (val > max) ? (max) : (val))) 
 #if 0
 static int convert_range(int val, int omin, int omax, int nmin, int nmax)
 {
@@ -210,17 +201,8 @@ static int convert_prange(int val, int min, int max)
 
 /* Function to convert from percentage to volume. val = percentage */
 
-static int convert_prange1(int val, int min, int max)
-{
-	int range = max - min;
-	int tmp;
-
-	if (range == 0)
-		return 0;
-
-	tmp = rint((double)range * ((double)val*.01)) + min;
-	return tmp;
-}
+#define convert_prange1(val, min, max) \
+	ceil((val) * ((max) - (min)) * 0.01 + (min))
 
 static const char *get_percent(int val, int min, int max)
 {
@@ -247,90 +229,167 @@ static const char *get_percent1(int val, int min, int max, int min_dB, int max_d
 
 static long get_integer(char **ptr, long min, long max)
 {
-	int tmp, tmp1, tmp2;
+	long val = min;
+	char *p = *ptr, *s;
 
-	if (**ptr == ':')
-		(*ptr)++;
-	if (**ptr == '\0' || (!isdigit(**ptr) && **ptr != '-'))
-		return min;
-	tmp = strtol(*ptr, ptr, 10);
-	tmp1 = tmp;
-	tmp2 = 0;
-	if (**ptr == '.') {
-		(*ptr)++;
-		tmp2 = strtol(*ptr, ptr, 10);
+	if (*p == ':')
+		p++;
+	if (*p == '\0' || (!isdigit(*p) && *p != '-'))
+		goto out;
+
+	s = p;
+	val = strtol(s, &p, 10);
+	if (*p == '.') {
+		p++;
+		strtol(p, &p, 10);
 	}
-	if (**ptr == '%') {
-		tmp1 = convert_prange1(tmp, min, max);
-		(*ptr)++;
+	if (*p == '%') {
+		val = (long)convert_prange1(strtod(s, NULL), min, max);
+		p++;
 	}
-	tmp1 = check_range(tmp1, min, max);
-	if (**ptr == ',')
-		(*ptr)++;
-	return tmp1;
+	val = check_range(val, min, max);
+	if (*p == ',')
+		p++;
+ out:
+	*ptr = p;
+	return val;
 }
 
 static long get_integer64(char **ptr, long long min, long long max)
 {
-	long long tmp, tmp1, tmp2;
+	long long val = min;
+	char *p = *ptr, *s;
 
-	if (**ptr == ':')
-		(*ptr)++;
-	if (**ptr == '\0' || (!isdigit(**ptr) && **ptr != '-'))
-		return min;
-	tmp = strtol(*ptr, ptr, 10);
-	tmp1 = tmp;
-	tmp2 = 0;
-	if (**ptr == '.') {
-		(*ptr)++;
-		tmp2 = strtol(*ptr, ptr, 10);
+	if (*p == ':')
+		p++;
+	if (*p == '\0' || (!isdigit(*p) && *p != '-'))
+		goto out;
+
+	s = p;
+	val = strtol(s, &p, 10);
+	if (*p == '.') {
+		p++;
+		strtol(p, &p, 10);
 	}
-	if (**ptr == '%') {
-		tmp1 = convert_prange1(tmp, min, max);
-		(*ptr)++;
+	if (*p == '%') {
+		val = (long long)convert_prange1(strtod(s, NULL), min, max);
+		p++;
 	}
-	tmp1 = check_range(tmp1, min, max);
-	if (**ptr == ',')
-		(*ptr)++;
-	return tmp1;
+	val = check_range(val, min, max);
+	if (*p == ',')
+		p++;
+ out:
+	*ptr = p;
+	return val;
 }
 
-static int get_volume_simple(char **ptr, int min, int max, int orig)
-{
-	int tmp, tmp1, tmp2;
+struct volume_ops {
+	int (*get_range)(snd_mixer_elem_t *elem, long *min, long *max);
+	int (*get)(snd_mixer_elem_t *elem, snd_mixer_selem_channel_id_t c,
+		   long *value);
+	int (*set)(snd_mixer_elem_t *elem, snd_mixer_selem_channel_id_t c,
+		   long value);
+};
+	
+enum { VOL_RAW, VOL_DB };
 
-	if (**ptr == ':')
-		(*ptr)++;
-	if (**ptr == '\0' || (!isdigit(**ptr) && **ptr != '-'))
-		return min;
-	tmp = atoi(*ptr);
-	if (**ptr == '-')
-		(*ptr)++;
-	while (isdigit(**ptr))
-		(*ptr)++;
-	tmp1 = tmp;
-	tmp2 = 0;
-	if (**ptr == '.') {
-		(*ptr)++;
-		tmp2 = atoi(*ptr);
-		while (isdigit(**ptr))
-			(*ptr)++;
+struct volume_ops_set {
+	int (*has_volume)(snd_mixer_elem_t *elem);
+	struct volume_ops v[2];
+};
+
+static int set_playback_dB(snd_mixer_elem_t *elem,
+			   snd_mixer_selem_channel_id_t c, long value)
+{
+	return snd_mixer_selem_set_playback_dB(elem, c, value, 0);
+}
+
+static int set_capture_dB(snd_mixer_elem_t *elem,
+			  snd_mixer_selem_channel_id_t c, long value)
+{
+	return snd_mixer_selem_set_capture_dB(elem, c, value, 0);
+}
+
+static struct volume_ops_set vol_ops[2] = {
+	{
+		.has_volume = snd_mixer_selem_has_playback_volume,
+		.v = {{ snd_mixer_selem_get_playback_volume_range,
+			snd_mixer_selem_get_playback_volume,
+			snd_mixer_selem_set_playback_volume },
+		      { snd_mixer_selem_get_playback_dB_range,
+			snd_mixer_selem_get_playback_dB,
+			set_playback_dB }},
+	},
+	{
+		.has_volume = snd_mixer_selem_has_capture_volume,
+		.v = {{ snd_mixer_selem_get_capture_volume_range,
+			snd_mixer_selem_get_capture_volume,
+			snd_mixer_selem_set_capture_volume },
+		      { snd_mixer_selem_get_capture_dB_range,
+			snd_mixer_selem_get_capture_dB,
+			set_capture_dB }},
+	},
+};
+
+static int set_volume_simple(snd_mixer_elem_t *elem,
+			     snd_mixer_selem_channel_id_t chn,
+			     char **ptr, int dir)
+{
+	long val, orig, pmin, pmax;
+	char *p = *ptr, *s;
+	int invalid = 0, vol_type = VOL_RAW;
+
+	if (! vol_ops[dir].has_volume(elem))
+		invalid = 1;
+
+	if (*p == ':')
+		p++;
+	if (*p == '\0' || (!isdigit(*p) && *p != '-'))
+		goto skip;
+
+	if (! invalid &&
+	    vol_ops[dir].v[VOL_RAW].get_range(elem, &pmin, &pmax) < 0)
+		invalid = 1;
+
+	s = p;
+	val = strtol(s, &p, 10);
+	if (*p == '.') {
+		p++;
+		strtol(p, &p, 10);
 	}
-	if (**ptr == '%') {
-		tmp1 = convert_prange1(tmp, min, max);
-		(*ptr)++;
+	if (*p == '%') {
+		if (! invalid)
+			val = (long)convert_prange1(strtod(s, NULL), pmin, pmax);
+		p++;
+	} else if (p[0] == 'd' && p[1] == 'B') {
+		if (! invalid) {
+			val = (long)(strtod(s, NULL) * 100.0);
+			vol_type = VOL_DB;
+			if (vol_ops[dir].v[vol_type].get_range(elem, &pmin, &pmax) < 0)
+				invalid = 1;
+		}
+		p += 2;
 	}
-	if (**ptr == '+') {
-		tmp1 = orig + tmp1;
-		(*ptr)++;
-	} else if (**ptr == '-') {
-		tmp1 = orig - tmp1;
-		(*ptr)++;
+	if (*p == '+' || *p == '-') {
+		if (! invalid) {
+			if (vol_ops[dir].v[vol_type].get(elem, chn, &orig) < 0)
+				invalid = 1;
+			if (*p == '+')
+				val = orig + val;
+			else
+				val = orig - val;
+		}
+		p++;
 	}
-	tmp1 = check_range(tmp1, min, max);
-	if (**ptr == ',')
-		(*ptr)++;
-	return tmp1;
+	if (! invalid) {
+		val = check_range(val, pmin, pmax);
+		vol_ops[dir].v[vol_type].set(elem, chn, val);
+	}
+ skip:
+	if (*p == ',')
+		p++;
+	*ptr = p;
+	return 0;
 }
 
 static int get_bool_simple(char **ptr, char *str, int invert, int orig)
@@ -1283,7 +1342,6 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 	snd_mixer_selem_channel_id_t chn;
 	unsigned int channels = ~0U;
 	unsigned int dir = 3, okflag = 3;
-	long pmin, pmax, cmin, cmax;
 	static snd_mixer_t *handle = NULL;
 	snd_mixer_elem_t *elem;
 	snd_mixer_selem_id_t *sid;
@@ -1337,8 +1395,6 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 	}
 	if (roflag)
 		goto __skip_write;
-	snd_mixer_selem_get_playback_volume_range(elem, &pmin, &pmax);
-	snd_mixer_selem_get_capture_volume_range(elem, &cmin, &cmax);
 	for (idx = 1; idx < argc; idx++) {
 		char *ptr = argv[idx], *optr;
 		int multi, firstchn = 1;
@@ -1353,7 +1409,6 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 		for (chn = 0; chn <= SND_MIXER_SCHN_LAST; chn++) {
 			char *sptr = NULL;
 			int ival;
-			long lval;
 
 			if (!(channels & (1 << chn)))
 				continue;
@@ -1390,12 +1445,7 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 					}
 					simple_skip_word(&ptr, "toggle");
 				} else if (isdigit(*ptr) || *ptr == '-' || *ptr == '+') {
-					if (snd_mixer_selem_has_playback_volume(elem)) {
-						snd_mixer_selem_get_playback_volume(elem, chn, &lval);
-						snd_mixer_selem_set_playback_volume(elem, chn, get_volume_simple(&ptr, pmin, pmax, lval));
-					} else {
-						get_volume_simple(&ptr, 0, 100, 0);
-					}
+					set_volume_simple(elem, chn, &ptr, 0);
 				} else if (simple_skip_word(&ptr, "cap") || simple_skip_word(&ptr, "rec") ||
 					   simple_skip_word(&ptr, "nocap") || simple_skip_word(&ptr, "norec")) {
 					/* nothing */
@@ -1426,12 +1476,7 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 					}
 					simple_skip_word(&ptr, "toggle");
 				} else if (isdigit(*ptr) || *ptr == '-' || *ptr == '+') {
-					if (snd_mixer_selem_has_capture_volume(elem)) {
-						snd_mixer_selem_get_capture_volume(elem, chn, &lval);
-						snd_mixer_selem_set_capture_volume(elem, chn, get_volume_simple(&ptr, cmin, cmax, lval));
-					} else {
-						get_volume_simple(&ptr, 0, 100, 0);
-					}
+					set_volume_simple(elem, chn, &ptr, 1);
 				} else if (simple_skip_word(&ptr, "mute") || simple_skip_word(&ptr, "off") ||
 					   simple_skip_word(&ptr, "unmute") || simple_skip_word(&ptr, "on")) {
 					/* nothing */
