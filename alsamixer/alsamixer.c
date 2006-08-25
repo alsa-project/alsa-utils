@@ -895,6 +895,18 @@ static void draw_capture_switch(int x, int y, int elem_index, int swl, int swr)
   mvaddch (y - 1, x + 6, swr ? 'R' : ' ');
 }
 
+#ifndef SND_CTL_TLV_DB_GAIN_MUTE
+#define SND_CTL_TLV_DB_GAIN_MUTE	-9999999
+#endif
+
+static void dB_value(char *s, long val)
+{
+	if (val <= SND_CTL_TLV_DB_GAIN_MUTE)
+		strcpy(s, "mute");
+	else
+		snprintf(s, 10, "%3.2f", (float)val / 100);
+}
+			
 static void
 mixer_update_cbar (int elem_index)
 {
@@ -989,16 +1001,14 @@ mixer_update_cbar (int elem_index)
 	long vdbleft, vdbright;
 	unsigned int length;
 	if (!snd_mixer_selem_get_playback_dB(elem, chn_left, &vdbleft)) {
+		char tmpl[10], tmpr[10];
+		dB_value(tmpl, vdbleft);
 		if ((chn_right != SND_MIXER_SCHN_UNKNOWN) &&
 		     (!snd_mixer_selem_get_playback_dB(elem, chn_right, &vdbright))) {
-			float dbvol1, dbvol2;
-			dbvol1=(float)vdbleft/100;
-			dbvol2=(float)vdbright/100;
-    			snprintf(tmp, 48, " [dB gain=%3.2f, %3.2f]",dbvol1, dbvol2);
+			dB_value(tmpr, vdbright);
+			snprintf(tmp, 48, " [dB gain=%s, %s]", tmpl, tmpr);
 		} else {
-			float dbvol1;
-			dbvol1=(float)vdbleft/100;
-    			snprintf(tmp, 48, " [dB gain=%3.2f]",dbvol1);
+			snprintf(tmp, 48, " [dB gain=%s]", tmpl);
 		}
 		tmp[sizeof(tmp)-2] = 0;
 		length=strlen(tmp);
@@ -1010,16 +1020,14 @@ mixer_update_cbar (int elem_index)
 	long vdbleft, vdbright;
 	unsigned int length;
 	if (!snd_mixer_selem_get_capture_dB(elem, chn_left, &vdbleft)) {
+		char tmpl[10], tmpr[10];
+		dB_value(tmpl, vdbleft);
 		if ((chn_right != SND_MIXER_SCHN_UNKNOWN) &&
 		     (!snd_mixer_selem_get_capture_dB(elem, chn_right, &vdbright))) {
-			float dbvol1, dbvol2;
-			dbvol1=(float)vdbleft/100;
-			dbvol2=(float)vdbright/100;
-    			snprintf(tmp, 48, " [dB gain=%3.2f, %3.2f]",dbvol1, dbvol2);
+			dB_value(tmpr, vdbright);
+			snprintf(tmp, 48, " [dB gain=%s, %s]", tmpl, tmpr);
 		} else {
-			float dbvol1;
-			dbvol1=(float)vdbleft/100;
-    			snprintf(tmp, 48, " [dB gain=%3.2f]",dbvol1);
+			snprintf(tmp, 48, " [dB gain=%s]", tmpl);
 		}
 		tmp[sizeof(tmp)-2] = 0;
 		length=strlen(tmp);
