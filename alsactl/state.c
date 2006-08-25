@@ -128,6 +128,66 @@ static int snd_config_compound_add(snd_config_t *father, const char *id, int joi
 	return 0;
 }
 
+#define MAX_USER_TLV_SIZE	64
+
+static char *tlv_to_str(unsigned int *tlv)
+{
+	int i, len = tlv[1] / 4 + 2;
+	char *s, *p;
+
+	if (len >= MAX_USER_TLV_SIZE)
+		return NULL;
+	s = malloc(len * 8 + 1);
+	if (! s)
+		return NULL;
+	p = s;
+	for (i = 0; i < len; i++) {
+		sprintf(p, "%08x", tlv[i]);
+		p += 8;
+	}
+	return s;
+}
+
+static int hextodigit(int c)
+{
+	if (c >= '0' && c <= '9')
+		c -= '0';
+	else if (c >= 'a' && c <= 'f')
+		c = c - 'a' + 10;
+	else if (c >= 'A' && c <= 'F')
+		c = c - 'A' + 10;
+	else
+		return -1;
+	return c;
+}
+
+static unsigned int *str_to_tlv(const char *s)
+{
+	int i, j, c, len;
+	unsigned int *tlv;
+			
+	len = strlen(s);
+	if (len % 8) /* aligned to 4 bytes (= 8 letters) */
+		return NULL;
+	len /= 8;
+	if (len > MAX_USER_TLV_SIZE)
+		return NULL;
+	tlv = malloc(sizeof(int) * len);
+	if (! tlv)
+		return NULL;
+	for (i = 0; i < len; i++) {
+		tlv[i] = 0;
+		for (j = 0; j < 8; j++) {
+			if ((c = hextodigit(*s++)) < 0) {
+				free(tlv);
+				return NULL;
+			}
+			tlv[i] = (tlv[i] << 4) | c;
+		}
+	}
+	return tlv;
+}
+
 static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *top)
 {
 	snd_ctl_elem_value_t *ctl;
@@ -225,6 +285,23 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 			error("snd_config_string_add: %s", snd_strerror(err));
 			return err;
 		}
+		if (snd_ctl_elem_info_is_tlv_readable(info) &&
+		    snd_ctl_elem_info_is_tlv_writable(info)) {
+			unsigned int tlv[MAX_USER_TLV_SIZE];
+			err = snd_ctl_elem_tlv_read(handle, id, tlv, sizeof(tlv));
+			if (err >= 0) {
+				char *s = tlv_to_str(tlv);
+				if (s) {
+					err = snd_config_string_add(comment, "tlv", s);
+					if (err < 0) {
+						error("snd_config_string_add: %s", snd_strerror(err));
+						return err;
+					}
+					free(s);
+				}
+			}
+		}
+		    
 		break;
 	}
 	case SND_CTL_ELEM_TYPE_INTEGER64:
@@ -660,10 +737,12 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 	snd_ctl_elem_type_t ctype;
 	unsigned int count;
 	int err;
+	unsigned int *tlv;
 
 	imin = imax = istep = 0;
 	count = 0;
 	ctype = SND_CTL_ELEM_TYPE_NONE;
+	tlv = NULL;
 	snd_config_for_each(i, next, conf) {
 		snd_config_t *n = snd_config_iterator_entry(i);
 		const char *id, *type;
@@ -708,6 +787,16 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 			count = v;
 			continue;
 		}
+		if (strcmp(id, "tlv") == 0) {
+			const char *s;
+			if ((err = snd_config_get_string(n, &s)) < 0)
+				return -EINVAL;
+			if (tlv)
+				free(tlv);
+			if ((tlv = str_to_tlv(s)) == NULL)
+				return -EINVAL;
+			continue;
+		}
 	}
 
 	snd_ctl_elem_id_alloca(&id);
@@ -719,6 +808,12 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 		if (imin > imax || istep > imax - imin)
 			return -EINVAL;
 		err = snd_ctl_elem_add_integer(handle, id, count, imin, imax, istep);
+		if (err < 0)
+			goto error;
+		if (tlv) {
+			fprintf(stderr, "XXX write TLV...\n");
+			snd_ctl_elem_tlv_write(handle, id, tlv);
+		}
 		break;
 	case SND_CTL_ELEM_TYPE_BOOLEAN:
 		err = snd_ctl_elem_add_boolean(handle, id, count);
@@ -731,6 +826,8 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 		break;
 	}
 
+ error:
+	free(tlv);
 	if (err < 0)
 		return err;
 	return snd_ctl_elem_info(handle, info);
@@ -968,13 +1065,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 			}
 			while (*buf) {
 				int c = *buf++;
-				if (c >= '0' && c <= '9')
-					c -= '0';
-				else if (c >= 'a' && c <= 'f')
-					c = c - 'a' + 10;
-				else if (c >= 'A' && c <= 'F')
-					c = c - 'A' + 10;
-				else {
+				if ((c = hextodigit(c)) < 0) {
 					error("bad control.%d.value contents\n", numid);
 					return -EINVAL;
 				}
