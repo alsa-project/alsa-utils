@@ -498,6 +498,22 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 			printf(",mute=%i", (tlv[3] >> 16) & 1);
 		}
 		break;
+#ifdef SND_CTL_TLVT_DB_LINEAR
+	case SND_CTL_TLVT_DB_LINEAR:
+		printf("dBlinear-");
+		if (size != 2 * sizeof(unsigned int)) {
+			while (size > 0) {
+				printf("0x%x", tlv[idx++]);
+				size -= sizeof(unsigned int);
+			}
+		} else {
+			printf("min=");
+			print_dB(tlv[2]);
+			printf(",max=");
+			print_dB(tlv[3]);
+		}
+		break;
+#endif
 	default:
 		printf("unk-%i-", type);
 		while (size > 0) {
