@@ -1239,6 +1239,7 @@ static void compute_max_peak(u_char *data, size_t count)
 			else
 				putchar(' ');
 		printf(" %i%%\n", perc);
+		fflush(stdout);
 	}
 }
 
