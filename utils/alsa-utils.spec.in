@@ -11,13 +11,17 @@ Source: ftp://ftp.alsa-project.org/pub/utils/alsa-utils-%{ver}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 URL: http://www.alsa-project.org
 Requires: alsa-lib ncurses
-BuildRequires: alsa-lib-devel ncurses-devel
+BuildRequires: alsa-lib-devel ncurses-devel gettext
 
 %description
 
 Advanced Linux Sound Architecture (ALSA) - Utils
 
 %changelog
+* Sun Oct  1 2006 Jaroslav Kysela <perex@suse.cz>
+- add gettext to BuildRequires
+- add more files (see alsa bug#2139)
+
 * Tue Nov 25 2003 Ronny V. Vindenes <sublett@amigascne.org>
 - include all manpages
 
@@ -64,3 +68,9 @@ make
 %{_prefix}/sbin/*
 %{_prefix}/bin/*
 %{_mandir}/man?/*
+%{_mandir}/fr/man?/*
+%{_prefix}/share/alsa/speaker-test/*
+%{_prefix}/share/locale/ja/LC_MESSAGES/*
+%{_prefix}/share/locale/ru/LC_MESSAGES/*
+%{_prefix}/share/man/fr/man8/alsaconf.8.gz
+%{_prefix}/share/sounds/alsa/*
