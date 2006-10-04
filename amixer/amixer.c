@@ -337,7 +337,7 @@ static int set_volume_simple(snd_mixer_elem_t *elem,
 {
 	long val, orig, pmin, pmax;
 	char *p = *ptr, *s;
-	int invalid = 0, vol_type = VOL_RAW;
+	int invalid = 0, err = 0, vol_type = VOL_RAW;
 
 	if (! vol_ops[dir].has_volume(elem))
 		invalid = 1;
@@ -383,13 +383,13 @@ static int set_volume_simple(snd_mixer_elem_t *elem,
 	}
 	if (! invalid) {
 		val = check_range(val, pmin, pmax);
-		vol_ops[dir].v[vol_type].set(elem, chn, val);
+		err = vol_ops[dir].v[vol_type].set(elem, chn, val);
 	}
  skip:
 	if (*p == ',')
 		p++;
 	*ptr = p;
-	return 0;
+	return err ? err : (invalid ? -ENOENT : 0);
 }
 
 static int get_bool_simple(char **ptr, char *str, int invert, int orig)
@@ -1181,6 +1181,10 @@ static int cset(int argc, char *argv[], int roflag, int keep_handle)
 		if (ignore_error)
 			return 0;
 		error("Cannot find the given element from control %s\n", card);
+		if (! keep_handle) {
+			snd_ctl_close(handle);
+			handle = NULL;
+		}
 		return err;
 	}
 	snd_ctl_elem_info_get_id(info, id);	/* FIXME: Remove it when hctl find works ok !!! */
@@ -1243,10 +1247,13 @@ static int cset(int argc, char *argv[], int roflag, int keep_handle)
 				ptr++;
 		}
 		if ((err = snd_ctl_elem_write(handle, control)) < 0) {
-			if (ignore_error)
-				return 0;
-			error("Control %s element write error: %s\n", card, snd_strerror(err));
-			return err;
+			if (!ignore_error)
+				error("Control %s element write error: %s\n", card, snd_strerror(err));
+			if (!keep_handle) {
+				snd_ctl_close(handle);
+				handle = NULL;
+			}
+			return ignore_error ? 0 : err;
 		}
 	}
 	if (! keep_handle) {
@@ -1353,7 +1360,7 @@ static int get_enum_item_index(snd_mixer_elem_t *elem, char **ptrp)
 
 static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 {
-	int err;
+	int err, check_flag;
 	unsigned int idx;
 	snd_mixer_selem_channel_id_t chn;
 	unsigned int channels = ~0U;
@@ -1411,6 +1418,7 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 	}
 	if (roflag)
 		goto __skip_write;
+	check_flag = 0;
 	for (idx = 1; idx < argc; idx++) {
 		char *ptr = argv[idx], *optr;
 		int multi, firstchn = 1;
@@ -1431,10 +1439,12 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 			/* enum control */
 			if (snd_mixer_selem_is_enumerated(elem)) {
 				int idx = get_enum_item_index(elem, &ptr);
-				if (idx < 0)
+				if (idx < 0) {
 					break;
-				else
-					snd_mixer_selem_set_enum_item(elem, chn, idx);
+				} else {
+					if (snd_mixer_selem_set_enum_item(elem, chn, idx) >= 0)
+						check_flag = 1;
+				}
 				if (!multi)
 					ptr = optr;
 				continue;
@@ -1444,24 +1454,30 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 				sptr = ptr;
 				if (!strncmp(ptr, "mute", 4) && snd_mixer_selem_has_playback_switch(elem)) {
 					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
-					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "mute", 1, ival));
+					if (snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "mute", 1, ival)) >= 0)
+						check_flag = 1;
 				} else if (!strncmp(ptr, "off", 3) && snd_mixer_selem_has_playback_switch(elem)) {
 					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
-					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "off", 1, ival));
+					if (snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "off", 1, ival)) >= 0)
+						check_flag = 1;
 				} else if (!strncmp(ptr, "unmute", 6) && snd_mixer_selem_has_playback_switch(elem)) {
 					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
-					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "unmute", 0, ival));
+					if (snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "unmute", 0, ival)) >= 0)
+						check_flag = 1;
 				} else if (!strncmp(ptr, "on", 2) && snd_mixer_selem_has_playback_switch(elem)) {
 					snd_mixer_selem_get_playback_switch(elem, chn, &ival);
-					snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "on", 0, ival));
+					if (snd_mixer_selem_set_playback_switch(elem, chn, get_bool_simple(&ptr, "on", 0, ival)) >= 0)
+						check_flag = 1;
 				} else if (!strncmp(ptr, "toggle", 6) && snd_mixer_selem_has_playback_switch(elem)) {
 					if (firstchn || !snd_mixer_selem_has_playback_switch_joined(elem)) {
 						snd_mixer_selem_get_playback_switch(elem, chn, &ival);
-						snd_mixer_selem_set_playback_switch(elem, chn, (ival ? 1 : 0) ^ 1);
+						if (snd_mixer_selem_set_playback_switch(elem, chn, (ival ? 1 : 0) ^ 1) >= 0)
+							check_flag = 1;
 					}
 					simple_skip_word(&ptr, "toggle");
 				} else if (isdigit(*ptr) || *ptr == '-' || *ptr == '+') {
-					set_volume_simple(elem, chn, &ptr, 0);
+					if (set_volume_simple(elem, chn, &ptr, 0) >= 0)
+						check_flag = 1;
 				} else if (simple_skip_word(&ptr, "cap") || simple_skip_word(&ptr, "rec") ||
 					   simple_skip_word(&ptr, "nocap") || simple_skip_word(&ptr, "norec")) {
 					/* nothing */
@@ -1475,24 +1491,30 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 				sptr = ptr;
 				if (!strncmp(ptr, "cap", 3) && snd_mixer_selem_has_capture_switch(elem)) {
 					snd_mixer_selem_get_capture_switch(elem, chn, &ival);
-					snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "cap", 0, ival));
+					if (snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "cap", 0, ival)) >= 0)
+						check_flag = 1;
 				} else if (!strncmp(ptr, "rec", 3) && snd_mixer_selem_has_capture_switch(elem)) {
 					snd_mixer_selem_get_capture_switch(elem, chn, &ival);
-					snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "rec", 0, ival));
+					if (snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "rec", 0, ival)) >= 0)
+						check_flag = 1;
 				} else if (!strncmp(ptr, "nocap", 5) && snd_mixer_selem_has_capture_switch(elem)) {
 					snd_mixer_selem_get_capture_switch(elem, chn, &ival);
-					snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "nocap", 1, ival));
+					if (snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "nocap", 1, ival)) >= 0)
+						check_flag = 1;
 				} else if (!strncmp(ptr, "norec", 5) && snd_mixer_selem_has_capture_switch(elem)) {
 					snd_mixer_selem_get_capture_switch(elem, chn, &ival);
-					snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "norec", 1, ival));
+					if (snd_mixer_selem_set_capture_switch(elem, chn, get_bool_simple(&ptr, "norec", 1, ival)) >= 0)
+						check_flag = 1;
 				} else if (!strncmp(ptr, "toggle", 6) && snd_mixer_selem_has_capture_switch(elem)) {
 					if (firstchn || !snd_mixer_selem_has_capture_switch_joined(elem)) {
 						snd_mixer_selem_get_capture_switch(elem, chn, &ival);
-						snd_mixer_selem_set_capture_switch(elem, chn, (ival ? 1 : 0) ^ 1);
+						if (snd_mixer_selem_set_capture_switch(elem, chn, (ival ? 1 : 0) ^ 1) >= 0)
+							check_flag = 1;
 					}
 					simple_skip_word(&ptr, "toggle");
 				} else if (isdigit(*ptr) || *ptr == '-' || *ptr == '+') {
-					set_volume_simple(elem, chn, &ptr, 1);
+					if (set_volume_simple(elem, chn, &ptr, 1) >= 0)
+						check_flag = 1;
 				} else if (simple_skip_word(&ptr, "mute") || simple_skip_word(&ptr, "off") ||
 					   simple_skip_word(&ptr, "unmute") || simple_skip_word(&ptr, "on")) {
 					/* nothing */
@@ -1503,9 +1525,9 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 			if (okflag == 0) {
 				if (debugflag) {
 					if (dir & 1)
-						error("Unknown playback setup '%s'..\n", ptr);
+						error("Unknown playback setup '%s'..", ptr);
 					if (dir & 2)
-						error("Unknown capture setup '%s'..\n", ptr);
+						error("Unknown capture setup '%s'..", ptr);
 				}
 				if (! keep_handle) {
 					snd_mixer_close(handle);
@@ -1517,7 +1539,15 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 				ptr = optr;
 			firstchn = 0;
 		}
-	} 
+	}
+	if (!check_flag) {
+		error("Invalid command!");
+		if (! keep_handle) {
+			snd_mixer_close(handle);
+			handle = NULL;
+		}
+		return 1;
+	}
       __skip_write:
 	if (!quiet) {
 		printf("Simple mixer control '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
