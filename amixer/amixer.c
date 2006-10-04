@@ -1849,7 +1849,7 @@ int main(int argc, char *argv[])
 				if (i >= 0 && i < 32)
 					sprintf(card, "hw:%i", i);
 				else {
-					fprintf(stderr, "\07Invalid card number.\n");
+					fprintf(stderr, "Invalid card number.\n");
 					morehelp++;
 				}
 			}
@@ -1890,7 +1890,7 @@ int main(int argc, char *argv[])
 			read_stdin = 1;
 			break;
 		default:
-			fprintf(stderr, "\07Invalid switch or option needs an argument.\n");
+			fprintf(stderr, "Invalid switch or option needs an argument.\n");
 			morehelp++;
 		}
 	}
