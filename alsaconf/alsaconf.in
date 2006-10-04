@@ -911,8 +911,10 @@ BEGIN { in_sound=0; }
       xecho "Running update-modules..."
       update-modules
     fi
-    echo Loading driver...
-    $rcalsasound restart
+    if [ -x $rcalsasound ] ; then
+      echo Loading driver...
+      $rcalsasound restart
+    fi
     echo Setting default volumes...
     if [ -x $bindir/set_default_volume ]; then
 	$bindir/set_default_volume -f
