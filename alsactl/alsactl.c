@@ -119,5 +119,5 @@ int main(int argc, char *argv[])
 		res = -ENODEV;
 	}
 
-	return res < 0 ? EXIT_FAILURE : EXIT_SUCCESS;
+	return res < 0 ? res : 0;
 }

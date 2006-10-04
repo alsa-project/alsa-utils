@@ -1194,7 +1194,6 @@ static int set_controls(int card, snd_config_t *top)
 				id = tmpid;
 		}
 		if (err < 0) {
-			err = 0;
 			fprintf(stderr, "No state is present for card %s\n", id);
 			goto _close;
 		}
