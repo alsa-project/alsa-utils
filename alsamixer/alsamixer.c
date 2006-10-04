@@ -601,7 +601,7 @@ mixer_write_cbar (int elem_index)
     if (type != MIXER_ELEM_CAPTURE)
       joined = snd_mixer_selem_has_playback_volume_joined(elem);
     else
-	joined = snd_mixer_selem_has_capture_volume_joined(elem);
+      joined = snd_mixer_selem_has_capture_volume_joined(elem);
     mono |= joined;
     if (mixer_volume_absolute != -1) {
       vbalance = vright = vleft = mixer_convert_volume(elem, mixer_volume_absolute, type);
