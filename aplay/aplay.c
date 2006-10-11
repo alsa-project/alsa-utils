@@ -280,18 +280,23 @@ static void device_list(void)
 
 static void pcm_list(void)
 {
-	char **hints, **n, *delim;
+	char **hints, **n, *delim, *filter;
 
 	if (snd_device_name_hint(-1, SND_CTL_ELEM_IFACE_PCM, &hints) < 0)
 		return;
 	n = hints;
+	filter = stream == SND_PCM_STREAM_CAPTURE ? "{Playback}" : "{Capture}";
 	while (*n != NULL) {
 		delim = strchr(*n, '|');
-		if (delim)
+		if (delim) {
 			*delim = '\0';
+			if (strstr(delim + 1, filter) != NULL)
+				goto __end;
+		}
 		printf("%s\n", *n);
 		if (delim)
 			printf("    %s\n", delim + 1);
+	      __end:
 		n++;
 	}
 	snd_device_name_free_hint(hints);
