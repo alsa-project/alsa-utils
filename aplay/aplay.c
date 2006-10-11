@@ -280,21 +280,21 @@ static void device_list(void)
 
 static void pcm_list(void)
 {
-	snd_config_t *conf;
-	snd_output_t *out;
-	int err = snd_config_update();
-	if (err < 0) {
-		error("snd_config_update: %s", snd_strerror(err));
+	char **hints, **n, *delim;
+
+	if (snd_device_name_hint(-1, SND_CTL_ELEM_IFACE_PCM, &hints) < 0)
 		return;
+	n = hints;
+	while (*n != NULL) {
+		delim = strchr(*n, '|');
+		if (delim)
+			*delim = '\0';
+		printf("%s\n", *n);
+		if (delim)
+			printf("    %s\n", delim + 1);
+		n++;
 	}
-	err = snd_output_stdio_attach(&out, stdout, 0);
-	assert(err >= 0);
-	err = snd_config_search(snd_config, "pcm", &conf);
-	if (err < 0)
-		return;
-	printf(_("PCM list:\n"));
-	snd_config_save(conf, out);
-	snd_output_close(out);
+	snd_device_name_free_hint(hints);
 }
 
 static void version(void)
