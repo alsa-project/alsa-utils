@@ -155,7 +155,7 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "-h, --help              help\n"
 "    --version           print current version\n"
 "-l, --list-devices      list all soundcards and digital audio devices\n"
-"-L, --list-pcms         list all PCMs defined\n"
+"-L, --list-pcms         list device names\n"
 "-D, --device=NAME       select PCM by name\n"
 "-q, --quiet             quiet mode\n"
 "-t, --file-type TYPE    file type (voc, wav, raw or au)\n"
@@ -188,24 +188,6 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 	printf(_("-f cd (16 bit little endian, 44100, stereo)\n"));
 	printf(_("-f cdr (16 bit big endian, 44100, stereo)\n"));
 	printf(_("-f dat (16 bit little endian, 48000, stereo)\n"));
-}
-
-static void names_list(void)
-{
-	int err;
-	snd_devname_t *list, *item;
-
-	err = snd_names_list("pcm", &list);
-	if (err < 0) {
-		error(_("snd_names_list error: %s"), snd_strerror(err));
-		return;
-	}
-	item = list;
-	while (item) {
-		printf("%s [%s]\n", item->name, item->comment);
-		item = item->next;
-	}
-	snd_names_list_free(list);
 }
 
 static void device_list(void)
@@ -381,7 +363,7 @@ int main(int argc, char *argv[])
 	};
 	char *pcm_name = "default";
 	int tmp, err, c;
-	int do_names_list = 0, do_device_list = 0, do_pcm_list = 0;
+	int do_device_list = 0, do_pcm_list = 0;
 	snd_pcm_info_t *info;
 
 #ifdef ENABLE_NLS
@@ -422,9 +404,6 @@ int main(int argc, char *argv[])
 		case OPT_VERSION:
 			version();
 			return 0;
-		case 'n':
-			do_names_list = 1;
-			break;
 		case 'l':
 			do_device_list = 1;
 			break;
@@ -545,18 +524,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (do_names_list) {
-		names_list();
-		return 0;
-	} else if (do_device_list) {
+	if (do_device_list) {
 		if (do_pcm_list) pcm_list();
 		device_list();
-		snd_config_update_free_global();
-		return 0;
+		goto __end;
 	} else if (do_pcm_list) {
 		pcm_list();
-		snd_config_update_free_global();
-		return 0;
+		goto __end;
 	}
 
 	err = snd_pcm_open(&handle, pcm_name, stream, open_mode);
@@ -627,6 +601,7 @@ int main(int argc, char *argv[])
 		putchar('\n');
 	snd_pcm_close(handle);
 	free(audiobuf);
+      __end:
 	snd_output_close(log);
 	snd_config_update_free_global();
 	return EXIT_SUCCESS;
