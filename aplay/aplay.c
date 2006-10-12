@@ -294,8 +294,17 @@ static void pcm_list(void)
 				goto __end;
 		}
 		printf("%s\n", *n);
-		if (delim)
-			printf("    %s\n", delim + 1);
+		if (delim++) {
+			printf("    ");
+			while (*delim) {
+				if (*delim == '\n')
+					printf("\n    ");
+				else
+					putchar(*delim);
+				delim++;
+			}
+			putchar('\n');
+		}
 	      __end:
 		n++;
 	}
