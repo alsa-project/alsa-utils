@@ -714,7 +714,11 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 					printf(" cswitch-exclusive");
 			}
 		}
-		if (snd_mixer_selem_is_enumerated(elem)) {
+		if (snd_mixer_selem_is_enum_playback(elem)) {
+			printf(" penum");
+		} else if (snd_mixer_selem_is_enum_capture(elem)) {
+			printf(" cenum");
+		} else if (snd_mixer_selem_is_enumerated(elem)) {
 			printf(" enum");
 		}
 		printf("\n");
