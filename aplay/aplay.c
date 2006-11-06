@@ -264,7 +264,7 @@ static void pcm_list(void)
 {
 	char **hints, **n, *delim, *filter;
 
-	if (snd_device_name_hint(-1, SND_CTL_ELEM_IFACE_PCM, &hints) < 0)
+	if (snd_device_name_hint(-1, "pcm", &hints) < 0)
 		return;
 	n = hints;
 	filter = stream == SND_PCM_STREAM_CAPTURE ? "{Playback}" : "{Capture}";
