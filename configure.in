@@ -5,7 +5,7 @@ AC_PREFIX_DEFAULT(/usr)
 AM_INIT_AUTOMAKE(alsa-utils, 1.0.13)
 
 AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.14])
+AM_GNU_GETTEXT_VERSION([0.15])
 
 dnl Checks for programs.
 
@@ -70,7 +70,7 @@ test "x$prefix" = xNONE && prefix=$ac_default_prefix
 eval dir="$datadir"
 case "$dir" in
 /*) ;;
-*) dir="$PWD/$dir"
+*) dir="$prefix/share"
 esac
 
 dir="$dir/sounds/alsa"
