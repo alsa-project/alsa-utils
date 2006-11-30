@@ -274,9 +274,9 @@ static void pcm_list(void)
 		name = snd_device_name_get_hint(*n, "NAME");
 		descr = snd_device_name_get_hint(*n, "DESC");
 		io = snd_device_name_get_hint(*n, "IOID");
-		printf("%s\n", name);
 		if (io != NULL && strcmp(io, filter) == 0)
 			goto __end;
+		printf("%s\n", name);
 		if ((descr1 = descr) != NULL) {
 			printf("    ");
 			while (*descr1) {
