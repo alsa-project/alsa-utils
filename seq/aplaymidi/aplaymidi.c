@@ -1,7 +1,7 @@
 /*
  * aplaymidi.c - play Standard MIDI Files to sequencer port(s)
  *
- * Copyright (c) 2004 Clemens Ladisch <clemens@ladisch.de>
+ * Copyright (c) 2004-2006 Clemens Ladisch <clemens@ladisch.de>
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -30,6 +30,8 @@
 #include <alsa/asoundlib.h>
 #include "aconfig.h"
 #include "version.h"
+
+#define MIDI_BYTES_PER_SEC 3125
 
 /*
  * A MIDI event after being parsed/loaded from the file.
@@ -601,6 +603,37 @@ static void cleanup_file_data(void)
 	tracks = NULL;
 }
 
+static void handle_big_sysex(snd_seq_event_t *ev)
+{
+	unsigned int length;
+	ssize_t event_size;
+	int err;
+
+	length = ev->data.ext.len;
+	if (length > MIDI_BYTES_PER_SEC)
+		ev->data.ext.len = MIDI_BYTES_PER_SEC;
+	event_size = snd_seq_event_length(ev);
+	if (event_size + 1 > snd_seq_get_output_buffer_size(seq)) {
+		err = snd_seq_drain_output(seq);
+		check_snd("drain output", err);
+		err = snd_seq_set_output_buffer_size(seq, event_size + 1);
+		check_snd("set output buffer size", err);
+	}
+	while (length > MIDI_BYTES_PER_SEC) {
+		err = snd_seq_event_output(seq, ev);
+		check_snd("output event", err);
+		err = snd_seq_drain_output(seq);
+		check_snd("drain output", err);
+		err = snd_seq_sync_output_queue(seq);
+		check_snd("sync output", err);
+		if (sleep(1))
+			fatal("aborted");
+		ev->data.ext.ptr += MIDI_BYTES_PER_SEC;
+		length -= MIDI_BYTES_PER_SEC;
+	}
+	ev->data.ext.len = length;
+}
+
 static void play_midi(void)
 {
 	snd_seq_event_t ev;
@@ -684,6 +717,7 @@ static void play_midi(void)
 		case SND_SEQ_EVENT_SYSEX:
 			snd_seq_ev_set_variable(&ev, event->data.length,
 						event->sysex);
+			handle_big_sysex(&ev);
 			break;
 		case SND_SEQ_EVENT_TEMPO:
 			snd_seq_ev_set_fixed(&ev);
