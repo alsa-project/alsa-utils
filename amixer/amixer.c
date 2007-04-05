@@ -534,6 +534,7 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 	snd_ctl_elem_id_t *id;
 	snd_ctl_elem_info_t *info;
 	snd_ctl_elem_value_t *control;
+	snd_aes_iec958_t iec958;
 	snd_ctl_elem_id_alloca(&id);
 	snd_ctl_elem_info_alloca(&info);
 	snd_ctl_elem_value_alloca(&control);
@@ -604,6 +605,12 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 				break;
 			case SND_CTL_ELEM_TYPE_BYTES:
 				printf("0x%02x", snd_ctl_elem_value_get_byte(control, idx));
+				break;
+			case SND_CTL_ELEM_TYPE_IEC958:
+				snd_ctl_elem_value_get_iec958(control, &iec958);
+				printf("[AES0=0x%02x AES1=0x%02x AES2=0x%02x AES3=0x%02x]",
+				       iec958.status[0], iec958.status[1],
+				       iec958.status[2], iec958.status[3]);
 				break;
 			default:
 				printf("?");
