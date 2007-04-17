@@ -584,7 +584,7 @@ int main(int argc, char *argv[])
 	else
 		outputp = NULL;
 
-	if ((err = snd_rawmidi_open(inputp, outputp, port_name, 0)) < 0) {
+	if ((err = snd_rawmidi_open(inputp, outputp, port_name, SND_RAWMIDI_NONBLOCK)) < 0) {
 		error("cannot open port \"%s\": %s", port_name, snd_strerror(err));
 		goto _exit2;
 	}
@@ -592,10 +592,15 @@ int main(int argc, char *argv[])
 	if (inputp)
 		snd_rawmidi_read(input, NULL, 0); /* trigger reading */
 
-	if (send_data &&
-	    ((err = snd_rawmidi_write(output, send_data, send_data_length))) < 0) {
-		error("cannot send data: %s", snd_strerror(err));
-		goto _exit;
+	if (send_data) {
+		if ((err = snd_rawmidi_nonblock(output, 0)) < 0) {
+			error("cannot set blocking mode: %s", snd_strerror(err));
+			goto _exit;
+		}
+		if ((err = snd_rawmidi_write(output, send_data, send_data_length)) < 0) {
+			error("cannot send data: %s", snd_strerror(err));
+			goto _exit;
+		}
 	}
 
 	if (inputp) {
@@ -604,7 +609,6 @@ int main(int argc, char *argv[])
 		struct pollfd *pfds;
 
 		timeout *= 1000;
-		snd_rawmidi_nonblock(input, 1);
 		npfds = snd_rawmidi_poll_descriptors_count(input);
 		pfds = alloca(npfds * sizeof(struct pollfd));
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
