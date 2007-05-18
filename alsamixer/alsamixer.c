@@ -1787,8 +1787,15 @@ __again:
     }
 
     if ( (mixer_view == VIEW_CAPTURE) || (mixer_view == VIEW_CHANNELS) ) {
-      if (snd_mixer_selem_has_capture_volume(elem) ||
-	  (nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem))) {
+      int do_add = 0;
+      if (snd_mixer_selem_has_capture_volume(elem) &&
+	  (mixer_view == VIEW_CAPTURE || !snd_mixer_selem_has_common_volume(elem)))
+	do_add = 1;
+      if (!do_add &&
+	  (nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem)) &&
+	  (mixer_view == VIEW_CAPTURE || !snd_mixer_selem_has_common_switch(elem)))
+	do_add = 1;
+      if (do_add) {
         mixer_grpidx[elem_index] = idx;
         mixer_type[elem_index] = MIXER_ELEM_CAPTURE;
         if (nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem))
