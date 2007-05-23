@@ -1311,6 +1311,9 @@ int load_state(const char *file, const char *cardname)
 			error("snd_config_load error: %s", snd_strerror(err));
 			return err;
 		}
+	} else {
+		error("Cannot open %s for reading: %s", file, snd_strerror(err));
+		return err;
 	}
 
 	if (!cardname) {
