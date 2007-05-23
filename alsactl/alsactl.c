@@ -51,6 +51,8 @@ static void help(void)
 	printf("                   to configuration file\n");
 	printf("  restore <card #> load current driver setup for one or each soundcards\n");
 	printf("                   from configuration file\n");
+	printf("  names   <card #> dump information about all the known present (sub-)devices\n");
+	printf("                   into configuration file (DEPRECATED)\n");
 }
 
 int main(int argc, char *argv[])
