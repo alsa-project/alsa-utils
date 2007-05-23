@@ -1277,7 +1277,7 @@ int save_state(const char *file, const char *cardname)
 	else
 		err = snd_output_stdio_open(&out, file, "w");
 	if (err < 0) {
-		error("Cannot open %s for writing", file);
+		error("Cannot open %s for writing: %s", file, snd_strerror(err));
 		return -errno;
 	}
 	err = snd_config_save(config, out);
