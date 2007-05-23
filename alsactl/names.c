@@ -535,7 +535,7 @@ int generate_names(const char *cfgfile)
 			err = snd_output_stdio_open(&out, cfgfile, "w+");
 		}
 		if (err < 0) {
-			error("Cannot open %s for writing", cfgfile);
+			error("Cannot open %s for writing: %s", cfgfile, snd_strerror(err));
 			return -errno;
 		}
 		err = snd_config_save(config, out);
