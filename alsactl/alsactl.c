@@ -41,16 +41,16 @@ static void help(void)
 {
 	printf("Usage: alsactl <options> command\n");
 	printf("\nAvailable options:\n");
-	printf("  -h,--help       this help\n");
-	printf("  -f,--file #     configuration file (default " SYS_ASOUNDRC " or " SYS_ASOUNDNAMES ")\n");
-	printf("  -F,--force      try to restore the matching controls as much as possible\n");
-	printf("  -d,--debug      debug mode\n");
-	printf("  -v,--version    print version of this program\n");
+	printf("  -h,--help        this help\n");
+	printf("  -f,--file #      configuration file (default " SYS_ASOUNDRC " or " SYS_ASOUNDNAMES ")\n");
+	printf("  -F,--force       try to restore the matching controls as much as possible\n");
+	printf("  -d,--debug       debug mode\n");
+	printf("  -v,--version     print version of this program\n");
 	printf("\nAvailable commands:\n");
-	printf("  store <card #>  save current driver setup for one or each soundcards\n");
-	printf("                  to configuration file\n");
-	printf("  restore<card #> load current driver setup for one or each soundcards\n");
-	printf("                  from configuration file\n");
+	printf("  store   <card #> save current driver setup for one or each soundcards\n");
+	printf("                   to configuration file\n");
+	printf("  restore <card #> load current driver setup for one or each soundcards\n");
+	printf("                   from configuration file\n");
 }
 
 int main(int argc, char *argv[])
