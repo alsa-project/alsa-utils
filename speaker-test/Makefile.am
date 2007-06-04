@@ -1,6 +1,6 @@
 INCLUDES = -I$(top_srcdir)/include
 SUBDIRS= samples
-LDADD = $(LIBINTL)
+LDADD = $(LIBINTL) -lm
 
 bin_PROGRAMS = speaker-test
 speaker_test_SOURCES = speaker-test.c pink.c
