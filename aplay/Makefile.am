@@ -1,5 +1,5 @@
 INCLUDES = -I$(top_srcdir)/include
-LDADD = -lasound $(LIBINTL)
+LDADD = $(LIBINTL)
 
 # debug flags
 #LDFLAGS = -static
