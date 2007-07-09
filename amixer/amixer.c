@@ -1369,67 +1369,35 @@ static int get_enum_item_index(snd_mixer_elem_t *elem, char **ptrp)
 	return -1;
 }
 
-static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
+static int sset_enum(snd_mixer_elem_t *elem, unsigned int argc, char **argv)
 {
-	int err, check_flag;
-	unsigned int idx;
-	snd_mixer_selem_channel_id_t chn;
+	unsigned int idx, chn = 0;
+	int check_flag = -1;
+
+	for (idx = 1; idx < argc; idx++) {
+		char *ptr = argv[idx];
+		while (*ptr) {
+			int ival = get_enum_item_index(elem, &ptr);
+			if (ival < 0)
+				return check_flag;
+			if (snd_mixer_selem_set_enum_item(elem, chn, ival) >= 0)
+				check_flag = 1;
+			/* skip separators */
+			while (*ptr == ',' || isspace(*ptr))
+				ptr++;
+		}
+	}
+	return check_flag;
+}
+
+static int sset_channels(snd_mixer_elem_t *elem, unsigned int argc, char **argv)
+{
 	unsigned int channels = ~0U;
 	unsigned int dir = 3, okflag = 3;
-	static snd_mixer_t *handle = NULL;
-	snd_mixer_elem_t *elem;
-	snd_mixer_selem_id_t *sid;
-	snd_mixer_selem_id_alloca(&sid);
+	unsigned int idx;
+	snd_mixer_selem_channel_id_t chn;
+	int check_flag = -1;
 
-	if (argc < 1) {
-		fprintf(stderr, "Specify a scontrol identifier: 'name',index\n");
-		return 1;
-	}
-	if (parse_simple_id(argv[0], sid)) {
-		fprintf(stderr, "Wrong scontrol identifier: %s\n", argv[0]);
-		return 1;
-	}
-	if (!roflag && argc < 2) {
-		fprintf(stderr, "Specify what you want to set...\n");
-		return 1;
-	}
-	if (handle == NULL) {
-		if ((err = snd_mixer_open(&handle, 0)) < 0) {
-			error("Mixer %s open error: %s\n", card, snd_strerror(err));
-			return err;
-		}
-		if (smixer_level == 0 && (err = snd_mixer_attach(handle, card)) < 0) {
-			error("Mixer attach %s error: %s", card, snd_strerror(err));
-			snd_mixer_close(handle);
-			handle = NULL;
-			return err;
-		}
-		if ((err = snd_mixer_selem_register(handle, smixer_level > 0 ? &smixer_options : NULL, NULL)) < 0) {
-			error("Mixer register error: %s", snd_strerror(err));
-			snd_mixer_close(handle);
-			handle = NULL;
-			return err;
-		}
-		err = snd_mixer_load(handle);
-		if (err < 0) {
-			error("Mixer %s load error: %s", card, snd_strerror(err));
-			snd_mixer_close(handle);
-			handle = NULL;
-			return err;
-		}
-	}
-	elem = snd_mixer_find_selem(handle, sid);
-	if (!elem) {
-		if (ignore_error)
-			return 0;
-		error("Unable to find simple control '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
-		snd_mixer_close(handle);
-		handle = NULL;
-		return -ENOENT;
-	}
-	if (roflag)
-		goto __skip_write;
-	check_flag = 0;
 	for (idx = 1; idx < argc; idx++) {
 		char *ptr = argv[idx], *optr;
 		int multi, firstchn = 1;
@@ -1447,19 +1415,6 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 
 			if (!(channels & (1 << chn)))
 				continue;
-			/* enum control */
-			if (snd_mixer_selem_is_enumerated(elem)) {
-				int idx = get_enum_item_index(elem, &ptr);
-				if (idx < 0) {
-					break;
-				} else {
-					if (snd_mixer_selem_set_enum_item(elem, chn, idx) >= 0)
-						check_flag = 1;
-				}
-				if (!multi)
-					ptr = optr;
-				continue;
-			}
 
 			if ((dir & 1) && snd_mixer_selem_has_playback_channel(elem, chn)) {
 				sptr = ptr;
@@ -1540,35 +1495,94 @@ static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
 					if (dir & 2)
 						error("Unknown capture setup '%s'..", ptr);
 				}
-				if (! keep_handle) {
-					snd_mixer_close(handle);
-					handle = NULL;
-				}
-				return 0;
+				return 0; /* just skip it */
 			}
 			if (!multi)
 				ptr = optr;
 			firstchn = 0;
 		}
 	}
-	if (!check_flag) {
-		error("Invalid command!");
-		if (! keep_handle) {
-			snd_mixer_close(handle);
-			handle = NULL;
-		}
+	return check_flag;
+}
+
+static int sset(unsigned int argc, char *argv[], int roflag, int keep_handle)
+{
+	int err = 0;
+	static snd_mixer_t *handle = NULL;
+	snd_mixer_elem_t *elem;
+	snd_mixer_selem_id_t *sid;
+	snd_mixer_selem_id_alloca(&sid);
+
+	if (argc < 1) {
+		fprintf(stderr, "Specify a scontrol identifier: 'name',index\n");
 		return 1;
 	}
-      __skip_write:
+	if (parse_simple_id(argv[0], sid)) {
+		fprintf(stderr, "Wrong scontrol identifier: %s\n", argv[0]);
+		return 1;
+	}
+	if (!roflag && argc < 2) {
+		fprintf(stderr, "Specify what you want to set...\n");
+		return 1;
+	}
+	if (handle == NULL) {
+		if ((err = snd_mixer_open(&handle, 0)) < 0) {
+			error("Mixer %s open error: %s\n", card, snd_strerror(err));
+			return err;
+		}
+		if (smixer_level == 0 && (err = snd_mixer_attach(handle, card)) < 0) {
+			error("Mixer attach %s error: %s", card, snd_strerror(err));
+			snd_mixer_close(handle);
+			handle = NULL;
+			return err;
+		}
+		if ((err = snd_mixer_selem_register(handle, smixer_level > 0 ? &smixer_options : NULL, NULL)) < 0) {
+			error("Mixer register error: %s", snd_strerror(err));
+			snd_mixer_close(handle);
+			handle = NULL;
+			return err;
+		}
+		err = snd_mixer_load(handle);
+		if (err < 0) {
+			error("Mixer %s load error: %s", card, snd_strerror(err));
+			snd_mixer_close(handle);
+			handle = NULL;
+			return err;
+		}
+	}
+	elem = snd_mixer_find_selem(handle, sid);
+	if (!elem) {
+		if (ignore_error)
+			return 0;
+		error("Unable to find simple control '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
+		snd_mixer_close(handle);
+		handle = NULL;
+		return -ENOENT;
+	}
+	if (!roflag) {
+		/* enum control */
+		if (snd_mixer_selem_is_enumerated(elem))
+			err = sset_enum(elem, argc, argv);
+		else
+			err = sset_channels(elem, argc, argv);
+
+		if (!err)
+			goto done;
+		if (err < 0) {
+			error("Invalid command!");
+			goto done;
+		}
+	}
 	if (!quiet) {
 		printf("Simple mixer control '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
 		show_selem(handle, sid, "  ", 1);
 	}
+ done:
 	if (! keep_handle) {
 		snd_mixer_close(handle);
 		handle = NULL;
 	}
-	return 0;
+	return err < 0 ? 1 : 0;
 }
 
 static void events_info(snd_hctl_elem_t *helem)
