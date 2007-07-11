@@ -1,8 +1,10 @@
 #!/bin/bash
 
-#DBG="gdb --args"
+#GDB="gdb --args"
+GDB=""
 
-ALSA_MIXER_SIMPLE_MODULES="$HOME/hg/alsa-lib/src/mixer/simple/.libs" \
+ALSA_MIXER_SIMPLE_MODULES="$HOME/hg/alsa-lib/modules/mixer/simple/.libs" \
 ALSA_MIXER_SIMPLE="$HOME/hg/alsa-lib/src/conf/smixer.conf" \
+ALSA_MIXER_SIMPLE_MPYTHON="$HOME/hg/alsa-lib/modules/mixer/simple/python/main.py" \
 LD_PRELOAD="$HOME/hg/alsa-lib/src/.libs/libasound.so" \
-exec $DBG ./alsamixer "$@"
+$GDB ./alsamixer "$@"
