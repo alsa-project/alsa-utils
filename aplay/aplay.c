@@ -1215,10 +1215,10 @@ static void compute_max_peak(u_char *data, size_t count)
 		putchar('\r');
 		for (val = 0; val <= perc / 2 && val < 50; val++)
 			putchar('#');
-		for (; val < maxperc / 2 && val < 50; val++)
+		for (; val <= maxperc / 2 && val < 50; val++)
 			putchar(' ');
 		putchar('+');
-		for (++val; val < 50; val++)
+		for (++val; val <= 50; val++)
 			putchar(' ');
 
 		printf("| %02i%%", maxperc);
