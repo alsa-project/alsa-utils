@@ -322,7 +322,7 @@ static void signal_handler(int sig)
 		close(fd);
 		fd = -1;
 	}
-	if (handle) {
+	if (handle && sig != SIGABRT) {
 		snd_pcm_close(handle);
 		handle = NULL;
 	}
