@@ -896,7 +896,7 @@ BEGIN { in_sound=0; }
     # set up /etc/sysconfig/hardware/*
     if [ "$distribution" = "suse" ]; then
 	case "$suse_version" in
-	10.*|10)
+	10.[012]*|10)
 	    setup_hwcfg $CARD_DRIVER
 	    ;;
 	esac
