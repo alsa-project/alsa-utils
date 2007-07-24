@@ -1372,7 +1372,7 @@ static int get_enum_item_index(snd_mixer_elem_t *elem, char **ptrp)
 static int sset_enum(snd_mixer_elem_t *elem, unsigned int argc, char **argv)
 {
 	unsigned int idx, chn = 0;
-	int check_flag = -1;
+	int check_flag = ignore_error ? 0 : -1;
 
 	for (idx = 1; idx < argc; idx++) {
 		char *ptr = argv[idx];
@@ -1396,7 +1396,7 @@ static int sset_channels(snd_mixer_elem_t *elem, unsigned int argc, char **argv)
 	unsigned int dir = 3, okflag = 3;
 	unsigned int idx;
 	snd_mixer_selem_channel_id_t chn;
-	int check_flag = -1;
+	int check_flag = ignore_error ? 0 : -1;
 
 	for (idx = 1; idx < argc; idx++) {
 		char *ptr = argv[idx], *optr;
