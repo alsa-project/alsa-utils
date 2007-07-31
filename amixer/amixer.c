@@ -1154,6 +1154,34 @@ static int parse_simple_id(const char *str, snd_mixer_selem_id_t *sid)
 	return 0;
 }
 
+static int get_ctl_enum_item_index(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
+				   char **ptrp)
+{
+	char *ptr = *ptrp;
+	int items, i, len;
+	const char *name;
+	
+	items = snd_ctl_elem_info_get_items(info);
+	if (items <= 0)
+		return -1;
+
+	for (i = 0; i < items; i++) {
+		snd_ctl_elem_info_set_item(info, i);
+		if (snd_ctl_elem_info(handle, info) < 0)
+			return -1;
+		name = snd_ctl_elem_info_get_item_name(info);
+		len = strlen(name);
+		if (! strncmp(name, ptr, len)) {
+			if (! ptr[len] || ptr[len] == ',' || ptr[len] == '\n') {
+				ptr += len;
+				*ptrp = ptr;
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
 static int cset(int argc, char *argv[], int roflag, int keep_handle)
 {
 	int err;
@@ -1242,7 +1270,9 @@ static int cset(int argc, char *argv[], int roflag, int keep_handle)
 				snd_ctl_elem_value_set_integer64(control, idx, tmp);
 				break;
 			case SND_CTL_ELEM_TYPE_ENUMERATED:
-				tmp = get_integer(&ptr, 0, snd_ctl_elem_info_get_items(info) - 1);
+				tmp = get_ctl_enum_item_index(handle, info, &ptr);
+				if (tmp < 0)
+					tmp = get_integer(&ptr, 0, snd_ctl_elem_info_get_items(info) - 1);
 				snd_ctl_elem_value_set_enumerated(control, idx, tmp);
 				break;
 			case SND_CTL_ELEM_TYPE_BYTES:
