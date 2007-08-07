@@ -37,6 +37,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
+#include <time.h>
 #include <locale.h>
 #include <alsa/asoundlib.h>
 #include <assert.h>
