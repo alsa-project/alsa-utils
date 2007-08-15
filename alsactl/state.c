@@ -810,10 +810,8 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 		err = snd_ctl_elem_add_integer(handle, id, count, imin, imax, istep);
 		if (err < 0)
 			goto error;
-		if (tlv) {
-			fprintf(stderr, "XXX write TLV...\n");
+		if (tlv)
 			snd_ctl_elem_tlv_write(handle, id, tlv);
-		}
 		break;
 	case SND_CTL_ELEM_TYPE_BOOLEAN:
 		err = snd_ctl_elem_add_boolean(handle, id, count);
