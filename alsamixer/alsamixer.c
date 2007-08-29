@@ -210,7 +210,7 @@ enum {
   MIXER_ELEM_FRONT, MIXER_ELEM_REAR,
   MIXER_ELEM_CENTER, MIXER_ELEM_WOOFER,
   MIXER_ELEM_CAPTURE,
-  MIXER_ELEM_ENUM,
+  MIXER_ELEM_ENUM, MIXER_ELEM_CAPTURE_ENUM,
   MIXER_ELEM_END
 };
 
@@ -702,7 +702,7 @@ mixer_write_cbar (int elem_index)
 
   /* enum list
    */
-  if (type == MIXER_ELEM_ENUM) {
+  if (type == MIXER_ELEM_ENUM || type == MIXER_ELEM_CAPTURE_ENUM) {
     if (mixer_volume_delta[MIXER_CHN_LEFT])
       update_enum_list(elem, MIXER_CHN_LEFT, mixer_volume_delta[MIXER_CHN_LEFT]);
     if (mixer_volume_delta[MIXER_CHN_RIGHT])
@@ -983,7 +983,7 @@ mixer_update_cbar (int elem_index)
 	snd_mixer_selem_get_playback_switch(elem, chn_right, &swr);
       extra_info = !swl && !swr ? " [Off]" : "";
     }
-    if (type == MIXER_ELEM_ENUM) {
+    if (type == MIXER_ELEM_ENUM || type == MIXER_ELEM_CAPTURE_ENUM) {
       /* FIXME: should show the item names of secondary and later channels... */
       unsigned int eidx, length;
       tmp[0]=' ';
@@ -1049,7 +1049,7 @@ mixer_update_cbar (int elem_index)
   y--;
   
   /* enum list? */
-  if (type == MIXER_ELEM_ENUM) {
+  if (type == MIXER_ELEM_ENUM || type == MIXER_ELEM_CAPTURE_ENUM) {
     display_enum_list(elem, y, x);
     return; /* no more to display */
   } 
@@ -1752,7 +1752,7 @@ __again:
     if (elem == NULL)
       CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
     if ( (mixer_view == VIEW_PLAYBACK) || (mixer_view == VIEW_CHANNELS) ) {
-      for (i = 0; i < MIXER_ELEM_CAPTURE; i++) {
+      for (i = MIXER_ELEM_FRONT; i <= MIXER_ELEM_WOOFER; i++) {
         int ok;
         for (j = ok = 0; j < 2; j++) {
 	  if (mixer_changed_state)
@@ -1764,6 +1764,9 @@ __again:
 	  sid = (snd_mixer_selem_id_t *)(((char *)mixer_sid) + snd_mixer_selem_id_sizeof() * idx);
 	  mixer_grpidx[elem_index] = idx;
 	  if (snd_mixer_selem_is_enumerated(elem)) {
+	    if (mixer_view == VIEW_PLAYBACK &&
+		snd_mixer_selem_is_enum_capture(elem))
+	      continue;
 	    mixer_type[elem_index] = MIXER_ELEM_ENUM;
 	  } else {
 	    mixer_type[elem_index] = i;
@@ -1795,15 +1798,23 @@ __again:
 	  (nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem)) &&
 	  (mixer_view == VIEW_CAPTURE || !snd_mixer_selem_has_common_switch(elem)))
 	do_add = 1;
+      if (!do_add &&
+	  mixer_view == VIEW_CAPTURE && snd_mixer_selem_is_enum_capture(elem))
+	do_add = 1;
+
       if (do_add) {
         mixer_grpidx[elem_index] = idx;
-        mixer_type[elem_index] = MIXER_ELEM_CAPTURE;
-        if (nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem))
-	  mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SWITCH;
-        if (nelems_added)
-	  mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SUFFIX;
-        if (snd_mixer_selem_has_capture_volume(elem))
-	  mixer_type[elem_index] |= MIXER_ELEM_HAS_VOLUME;
+	if (snd_mixer_selem_is_enum_capture(elem))
+	  mixer_type[elem_index] = MIXER_ELEM_CAPTURE_ENUM;
+	else {
+	  mixer_type[elem_index] = MIXER_ELEM_CAPTURE;
+	  if (nelems_added == 0 && snd_mixer_selem_has_capture_switch(elem))
+	    mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SWITCH;
+	  if (nelems_added)
+	    mixer_type[elem_index] |= MIXER_ELEM_CAPTURE_SUFFIX;
+	  if (snd_mixer_selem_has_capture_volume(elem))
+	    mixer_type[elem_index] |= MIXER_ELEM_HAS_VOLUME;
+	}
         elem_index++;
         if (elem_index >= mixer_n_elems)
 	  break;
