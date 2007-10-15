@@ -6,7 +6,7 @@
  *      SPARC AUDIO .AU-files
  *      Raw Data
  *
- *  Copyright (c) by Jaroslav Kysela <perex@suse.cz>
+ *  Copyright (c) by Jaroslav Kysela <perex@perex.cz>
  *  Based on vplay program by Michael Beck
  *
  *
@@ -303,7 +303,7 @@ static void pcm_list(void)
 
 static void version(void)
 {
-	printf("%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@suse.cz>\n", command);
+	printf("%s: version " SND_UTIL_VERSION_STR " by Jaroslav Kysela <perex@perex.cz>\n", command);
 }
 
 static void signal_handler(int sig)

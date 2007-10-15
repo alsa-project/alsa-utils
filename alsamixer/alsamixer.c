@@ -1,5 +1,5 @@
 /* AlsaMixer - Commandline mixer for the ALSA project Copyright (C) 1998,
- * 1999 Tim Janik <timj@gtk.org> and Jaroslav Kysela <perex@suse.cz>
+ * 1999 Tim Janik <timj@gtk.org> and Jaroslav Kysela <perex@perex.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,11 +18,11 @@
  *
  * ChangeLog:
  *
- * Wed Feb 14 13:08:17 CET 2001   Jaroslav Kysela <perex@suse.cz>
+ * Wed Feb 14 13:08:17 CET 2001   Jaroslav Kysela <perex@perex.cz>
  *
  *      * ported to the latest mixer 0.9.x API (function based)
  *
- * Fri Jun 23 14:10:00 MEST 2000  Jaroslav Kysela <perex@suse.cz>
+ * Fri Jun 23 14:10:00 MEST 2000  Jaroslav Kysela <perex@perex.cz>
  *
  *      * ported to new mixer 0.9.x API (simple control)
  *      * improved error handling (mixer_abort)
@@ -31,7 +31,7 @@
  *
  *	* a group is split into front, rear, center and woofer elements.
  *
- * Mon Jan  3 23:33:42 MET 2000  Jaroslav Kysela <perex@suse.cz>
+ * Mon Jan  3 23:33:42 MET 2000  Jaroslav Kysela <perex@perex.cz>
  *
  *      * version 1.00
  *
@@ -277,7 +277,7 @@ static char     *mixer_help_text =
  " Left    move (scroll) to the left next channel\n"
  "\n"
  "Alsamixer has been written and is Copyrighted in 1998, 1999 by\n"
- "Tim Janik <timj@gtk.org> and Jaroslav Kysela <perex@suse.cz>.\n"
+ "Tim Janik <timj@gtk.org> and Jaroslav Kysela <perex@perex.cz>.\n"
  );
 
 

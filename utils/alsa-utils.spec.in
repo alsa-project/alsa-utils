@@ -18,7 +18,7 @@ BuildRequires: alsa-lib-devel ncurses-devel gettext
 Advanced Linux Sound Architecture (ALSA) - Utils
 
 %changelog
-* Sun Oct  1 2006 Jaroslav Kysela <perex@suse.cz>
+* Sun Oct  1 2006 Jaroslav Kysela <perex@perex.cz>
 - add gettext to BuildRequires
 - add more files (see alsa bug#2139)
 
@@ -32,7 +32,7 @@ Advanced Linux Sound Architecture (ALSA) - Utils
 - use standard rpm macros for build & install section
 - updated dependencies
 
-* Tue Nov 20 2001 Jaroslav Kysela <perex@suse.cz>
+* Tue Nov 20 2001 Jaroslav Kysela <perex@perex.cz>
 
 - changed BuildRoot from /tmp to /var/tmp
 - _prefix and _mandir macros are used for configure and mkdir
