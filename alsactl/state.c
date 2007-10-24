@@ -188,6 +188,46 @@ static unsigned int *str_to_tlv(const char *s)
 	return tlv;
 }
 
+/*
+ * add the TLV string and dB ranges to comment fields
+ */
+static int add_tlv_comments(snd_ctl_t *handle, snd_ctl_elem_id_t *id,
+			    snd_ctl_elem_info_t *info, snd_config_t *comment)
+{
+	unsigned int tlv[MAX_USER_TLV_SIZE];
+	unsigned int *db;
+	long dbmin, dbmax;
+	int err;
+
+	if (snd_ctl_elem_tlv_read(handle, id, tlv, sizeof(tlv)) < 0)
+		return 0; /* ignore error */
+
+	if (snd_ctl_elem_info_is_tlv_writable(info)) {
+		char *s = tlv_to_str(tlv);
+		if (s) {
+			err = snd_config_string_add(comment, "tlv", s);
+			if (err < 0) {
+				error("snd_config_string_add: %s", snd_strerror(err));
+				return err;
+			}
+			free(s);
+		}
+	}
+
+	err = snd_tlv_parse_dB_info(tlv, sizeof(tlv), &db);
+	if (err <= 0)
+		return 0;
+
+	snd_tlv_get_dB_range(db, snd_ctl_elem_info_get_min(info),
+			     snd_ctl_elem_info_get_max(info),
+			     &dbmin, &dbmax);
+	if (err < 0)
+		return err;
+	snd_config_integer_add(comment, "dbmin", dbmin);
+	snd_config_integer_add(comment, "dbmax", dbmax);
+	return 0;
+}
+
 static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *top)
 {
 	snd_ctl_elem_value_t *ctl;
@@ -285,8 +325,12 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 			error("snd_config_string_add: %s", snd_strerror(err));
 			return err;
 		}
-		if (snd_ctl_elem_info_is_tlv_readable(info) &&
-		    snd_ctl_elem_info_is_tlv_writable(info)) {
+		if (snd_ctl_elem_info_is_tlv_readable(info)) {
+			err = add_tlv_comments(handle, id, info, comment);
+			if (err < 0)
+				return err;
+		}
+		if (snd_ctl_elem_info_is_tlv_readable(info)) {
 			unsigned int tlv[MAX_USER_TLV_SIZE];
 			err = snd_ctl_elem_tlv_read(handle, id, tlv, sizeof(tlv));
 			if (err >= 0) {
@@ -765,6 +809,56 @@ static int is_user_control(snd_config_t *conf)
 	return 0;
 }
 
+/*
+ * get the item type from the given comment config
+ */
+static int get_comment_type(snd_config_t *n)
+{
+	const char *type;
+
+	if (snd_config_get_string(n, &type) < 0)
+		return -EINVAL;
+	if (strcmp(type, "BOOLEAN") == 0)
+		return SND_CTL_ELEM_TYPE_BOOLEAN;
+	else if (strcmp(type, "INTEGER") == 0)
+		return SND_CTL_ELEM_TYPE_INTEGER;
+	else if (strcmp(type, "ENUMERATED") == 0)
+		return SND_CTL_ELEM_TYPE_ENUMERATED;
+	else if (strcmp(type, "INTEGER64") == 0)
+		return SND_CTL_ELEM_TYPE_INTEGER;
+	else if (strcmp(type, "IEC958") == 0)
+		return SND_CTL_ELEM_TYPE_IEC958;
+	else
+		return -EINVAL;
+}
+
+/*
+ * get the value range from the given comment config
+ */
+static int get_comment_range(snd_config_t *n, int ctype,
+			     long *imin, long *imax, long *istep)
+{
+	const char *s;
+	int err;
+
+	if (snd_config_get_string(n, &s) < 0)
+		return -EINVAL;
+	switch (ctype) {
+	case SND_CTL_ELEM_TYPE_INTEGER:
+		err = sscanf(s, "%li - %li (step %li)", imin, imax, istep);
+		if (err != 3) {
+			istep = 0;
+			err = sscanf(s, "%li - %li", imin, imax);
+			if (err != 2)
+				return -EINVAL;
+		}
+		break;
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+
 static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_config_t *conf)
 {
 	snd_ctl_elem_id_t *id;
@@ -781,39 +875,20 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 	tlv = NULL;
 	snd_config_for_each(i, next, conf) {
 		snd_config_t *n = snd_config_iterator_entry(i);
-		const char *id, *type;
+		const char *id;
 		if (snd_config_get_id(n, &id) < 0)
 			continue;
 		if (strcmp(id, "type") == 0) {
-			if ((err = snd_config_get_string(n, &type)) < 0)
-				return -EINVAL;
-			if (strcmp(type, "BOOLEAN") == 0)
-				ctype = SND_CTL_ELEM_TYPE_BOOLEAN;
-			else if (strcmp(type, "INTEGER") == 0)
-				ctype = SND_CTL_ELEM_TYPE_INTEGER;
-			else if (strcmp(type, "IEC958") == 0)
-				ctype = SND_CTL_ELEM_TYPE_IEC958;
-			else
-				return -EINVAL;
+			err = get_comment_type(n);
+			if (err < 0)
+				return err;
+			ctype = err;
 			continue;
 		}
 		if (strcmp(id, "range") == 0) {
-			const char *s;
-			if ((err = snd_config_get_string(n, &s)) < 0)
-				return -EINVAL;
-			switch (ctype) {
-			case SND_CTL_ELEM_TYPE_INTEGER:
-				err = sscanf(s, "%li - %li (step %li)", &imin, &imax, &istep);
-				if (err != 3) {
-					istep = 0;
-					err = sscanf(s, "%li - %li", &imin, &imax);
-					if (err != 2)
-						return -EINVAL;
-				}
-				break;
-			default:
-				return -EINVAL;
-			}
+			err = get_comment_range(n, ctype, &imin, &imax, &istep);
+			if (err < 0)
+				return err;
 			continue;
 		}
 		if (strcmp(id, "count") == 0) {
@@ -865,6 +940,137 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 	if (err < 0)
 		return err;
 	return snd_ctl_elem_info(handle, info);
+}
+
+/*
+ * look for a config node with the given item name
+ */
+static snd_config_t *search_comment_item(snd_config_t *conf, const char *name)
+{
+	snd_config_iterator_t i, next;
+	snd_config_for_each(i, next, conf) {
+		snd_config_t *n = snd_config_iterator_entry(i);
+		const char *id;
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+		if (strcmp(id, name) == 0)
+			return n;
+	}
+	return NULL;
+}
+
+/*
+ * check whether the config item has the same of compatible type
+ */
+static int check_comment_type(snd_config_t *conf, int type)
+{
+	snd_config_t *n = search_comment_item(conf, "type");
+	int ctype;
+
+	if (!n)
+		return 0; /* not defined */
+	ctype = get_comment_type(n);
+	if (ctype == type)
+		return 0;
+	if ((ctype == SND_CTL_ELEM_TYPE_BOOLEAN ||
+	     ctype == SND_CTL_ELEM_TYPE_INTEGER ||
+	     ctype == SND_CTL_ELEM_TYPE_INTEGER64 ||
+	     ctype == SND_CTL_ELEM_TYPE_ENUMERATED) &&
+	    (type == SND_CTL_ELEM_TYPE_BOOLEAN ||
+	     type == SND_CTL_ELEM_TYPE_INTEGER ||
+	     type == SND_CTL_ELEM_TYPE_INTEGER64 ||
+	     type == SND_CTL_ELEM_TYPE_ENUMERATED))
+		return 0; /* OK, compatible */
+	return -EINVAL;
+}
+
+/*
+ * convert from an old value to a new value with the same dB level
+ */
+static int convert_to_new_db(snd_config_t *value, long omin, long omax,
+			     long nmin, long nmax,
+			     long odbmin, long odbmax,
+			     long ndbmin, long ndbmax)
+{
+	long val;
+	if (config_integer(value, &val) < 0)
+		return -EINVAL;
+	if (val < omin || val > omax)
+		return -EINVAL;
+	val = ((val - omin) * (odbmax - odbmin)) / (omax - omin) + odbmin;
+	if (val < ndbmin)
+		val = ndbmin;
+	else if (val > ndbmax)
+		val = ndbmax;
+	val = ((val - ndbmin) * (nmax - nmin)) / (ndbmax - ndbmin) + nmin;
+	return snd_config_set_integer(value, val);
+}
+
+/*
+ * compare the current value range with the old range in comments.
+ * also, if dB information is available, try to compare them.
+ * if any change occurs, try to keep the same dB level.
+ */
+static int check_comment_range(snd_ctl_t *handle, snd_config_t *conf,
+			       snd_ctl_elem_info_t *info, snd_config_t *value)
+{
+	snd_config_t *n;
+	long omin, omax, ostep;
+	long nmin, nmax;
+	long odbmin, odbmax;
+	long ndbmin, ndbmax;
+	snd_ctl_elem_id_t *id;
+
+	n = search_comment_item(conf, "range");
+	if (!n)
+		return 0;
+	if (get_comment_range(n, SND_CTL_ELEM_TYPE_INTEGER,
+			      &omin, &omax, &ostep) < 0)
+		return 0;
+	nmin = snd_ctl_elem_info_get_min(info);
+	nmax = snd_ctl_elem_info_get_max(info);
+	if (omin != nmin && omax != nmax) {
+		/* Hey, the range mismatches */
+		if (!force_restore)
+			return -EINVAL;
+	}
+	if (omin >= omax || nmin >= nmax)
+		return 0; /* invalid values */
+
+	n = search_comment_item(conf, "dbmin");
+	if (!n)
+		return 0;
+	if (config_integer(n, &odbmin) < 0)
+		return 0;
+	n = search_comment_item(conf, "dbmax");
+	if (!n)
+		return 0;
+	if (config_integer(n, &odbmax) < 0)
+		return 0;
+	if (odbmin >= odbmax)
+		return 0; /* invalid values */
+	snd_ctl_elem_id_alloca(&id);
+	snd_ctl_elem_info_get_id(info, id);
+	if (snd_ctl_get_dB_range(handle, id, &ndbmin, &ndbmax) < 0)
+		return 0;
+	if (ndbmin >= ndbmax)
+		return 0; /* invalid values */
+	if (omin == nmin && omax == nmax &&
+	    odbmin == ndbmin && odbmax == ndbmax)
+		return 0; /* OK, identical one */
+
+	/* Let's guess the current value from dB range */
+	if (snd_config_get_type(value) == SND_CONFIG_TYPE_COMPOUND) {
+		snd_config_iterator_t i, next;
+		snd_config_for_each(i, next, value) {
+			snd_config_t *n = snd_config_iterator_entry(i);
+			convert_to_new_db(n, omin, omax, nmin, nmax,
+					  odbmin, odbmax, ndbmin, ndbmax);
+		}
+	} else
+		convert_to_new_db(value, omin, omax, nmin, nmax,
+				  odbmin, odbmax, ndbmin, ndbmax);
+	return 0;
 }
 
 static int restore_config_value(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
@@ -1104,14 +1310,17 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		return -ENOENT;
 	}
 
-#if 0
 	if (comment) {
-		check_comment_type(comment, type);
-		if (type == SND_CTL_ELEM_TYPE_INTEGER ||
-		    type == SND_CTL_ELEM_TYPE_INTEGER64)
-			check_comment_range(comment, info);
+		if (check_comment_type(comment, type) < 0)
+			error("incompatible field type for control #%d", numid);
+		if (type == SND_CTL_ELEM_TYPE_INTEGER) {
+			if (check_comment_range(handle, comment, info, value) < 0) {
+				error("value range mismatch for control #%d",
+				      numid);
+				return -EINVAL;
+			}
+		}
 	}
-#endif
 
 	if (!snd_ctl_elem_info_is_writable(info))
 		return 0;
