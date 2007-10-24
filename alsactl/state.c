@@ -651,6 +651,7 @@ static int config_bool(snd_config_t *n)
 	const char *str;
 	long val;
 	long long lval;
+
 	switch (snd_config_get_type(n)) {
 	case SND_CONFIG_TYPE_INTEGER:
 		snd_config_get_integer(n, &val);
@@ -665,6 +666,11 @@ static int config_bool(snd_config_t *n)
 	case SND_CONFIG_TYPE_STRING:
 		snd_config_get_string(n, &str);
 		break;
+	case SND_CONFIG_TYPE_COMPOUND:
+		if (!force_restore)
+			return -1;
+		n = snd_config_iterator_entry(snd_config_iterator_first(n));
+		return config_bool(n);
 	default:
 		return -1;
 	}
@@ -682,6 +688,7 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 	long val;
 	long long lval;
 	unsigned int idx, items;
+
 	switch (snd_config_get_type(n)) {
 	case SND_CONFIG_TYPE_INTEGER:
 		snd_config_get_integer(n, &val);
@@ -692,6 +699,11 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 	case SND_CONFIG_TYPE_STRING:
 		snd_config_get_string(n, &str);
 		break;
+	case SND_CONFIG_TYPE_COMPOUND:
+		if (!force_restore)
+			return -1;
+		n = snd_config_iterator_entry(snd_config_iterator_first(n));
+		return config_enumerated(n, handle, info);
 	default:
 		return -1;
 	}
@@ -708,6 +720,30 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 			return idx;
 	}
 	return -1;
+}
+
+static int config_integer(snd_config_t *n, long *val)
+{
+	int err = snd_config_get_integer(n, val);
+	if (err < 0 && force_restore) {
+		if (snd_config_get_type(n) != SND_CONFIG_TYPE_COMPOUND)
+			return err;
+		n = snd_config_iterator_entry(snd_config_iterator_first(n));
+		return config_integer(n, val);
+	}
+	return err;
+}
+
+static int config_integer64(snd_config_t *n, long long *val)
+{
+	int err = snd_config_get_integer64(n, val);
+	if (err < 0 && force_restore) {
+		if (snd_config_get_type(n) != SND_CONFIG_TYPE_COMPOUND)
+			return err;
+		n = snd_config_iterator_entry(snd_config_iterator_first(n));
+		return config_integer64(n, val);
+	}
+	return err;
 }
 
 static int is_user_control(snd_config_t *conf)
@@ -831,6 +867,82 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 	return snd_ctl_elem_info(handle, info);
 }
 
+static int restore_config_value(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
+				snd_ctl_elem_iface_t type,
+				snd_config_t *value,
+				snd_ctl_elem_value_t *ctl, int idx)
+{
+	long val;
+	long long lval;
+	int err;
+
+	switch (type) {
+	case SND_CTL_ELEM_TYPE_BOOLEAN:
+		val = config_bool(value);
+		if (val >= 0) {
+			snd_ctl_elem_value_set_boolean(ctl, idx, val);
+			return 1;
+		}
+		break;
+	case SND_CTL_ELEM_TYPE_INTEGER:
+		err = config_integer(value, &val);
+		if (err == 0) {
+			snd_ctl_elem_value_set_integer(ctl, idx, val);
+			return 1;
+		}
+		break;
+	case SND_CTL_ELEM_TYPE_INTEGER64:
+		err = config_integer64(value, &lval);
+		if (err == 0) {
+			snd_ctl_elem_value_set_integer64(ctl, idx, lval);
+			return 1;
+		}
+		break;
+	case SND_CTL_ELEM_TYPE_ENUMERATED:
+		val = config_enumerated(value, handle, info);
+		if (val >= 0) {
+			snd_ctl_elem_value_set_enumerated(ctl, idx, val);
+			return 1;
+		}
+		break;
+	case SND_CTL_ELEM_TYPE_BYTES:
+	case SND_CTL_ELEM_TYPE_IEC958:
+		break;
+	default:
+		error("Unknow control type: %d", type);
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static int restore_config_value2(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
+				 snd_ctl_elem_iface_t type,
+				 snd_config_t *value,
+				 snd_ctl_elem_value_t *ctl, int idx,
+				 unsigned int numid)
+{
+	int err = restore_config_value(handle, info, type, value, ctl, idx);
+	long val;
+
+	if (err != 0)
+		return err;
+	switch (type) {
+	case SND_CTL_ELEM_TYPE_BYTES:
+	case SND_CTL_ELEM_TYPE_IEC958:
+		err = snd_config_get_integer(value, &val);
+		if (err < 0 || val < 0 || val > 255) {
+			error("bad control.%d.value.%d content", numid, idx);
+			return force_restore ? 0 : -EINVAL;
+		}
+		snd_ctl_elem_value_set_byte(ctl, idx, val);
+		return 1;
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
 static int set_control(snd_ctl_t *handle, snd_config_t *control)
 {
 	snd_ctl_elem_value_t *ctl;
@@ -852,8 +964,6 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	long index = -1;
 	snd_config_t *value = NULL;
 	snd_config_t *comment = NULL;
-	long val;
-	long long lval;
 	unsigned int idx;
 	int err;
 	char *set;
@@ -1008,42 +1118,11 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	snd_ctl_elem_value_set_numid(ctl, numid1);
 
 	if (count == 1) {
-		switch (type) {
-		case SND_CTL_ELEM_TYPE_BOOLEAN:
-			val = config_bool(value);
-			if (val >= 0) {
-				snd_ctl_elem_value_set_boolean(ctl, 0, val);
-				goto _ok;
-			}
-			break;
-		case SND_CTL_ELEM_TYPE_INTEGER:
-			err = snd_config_get_integer(value, &val);
-			if (err == 0) {
-				snd_ctl_elem_value_set_integer(ctl, 0, val);
-				goto _ok;
-			}
-			break;
-		case SND_CTL_ELEM_TYPE_INTEGER64:
-			err = snd_config_get_integer64(value, &lval);
-			if (err == 0) {
-				snd_ctl_elem_value_set_integer64(ctl, 0, lval);
-				goto _ok;
-			}
-			break;
-		case SND_CTL_ELEM_TYPE_ENUMERATED:
-			val = config_enumerated(value, handle, info);
-			if (val >= 0) {
-				snd_ctl_elem_value_set_enumerated(ctl, 0, val);
-				goto _ok;
-			}
-			break;
-		case SND_CTL_ELEM_TYPE_BYTES:
-		case SND_CTL_ELEM_TYPE_IEC958:
-			break;
-		default:
-			error("Unknow control type: %d", type);
-			return -EINVAL;
-		}
+		err = restore_config_value(handle, info, type, value, ctl, 0);
+		if (err < 0)
+			return err;
+		if (err > 0)
+			goto _ok;
 	}
 	switch (type) {
 	case SND_CTL_ELEM_TYPE_BYTES:
@@ -1080,8 +1159,17 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		break;
 	}
 	if (snd_config_get_type(value) != SND_CONFIG_TYPE_COMPOUND) {
-		error("bad control.%d.value type", numid);
-		return -EINVAL;
+		if (!force_restore) {
+			error("bad control.%d.value type", numid);
+			return -EINVAL;
+		}
+		for (idx = 0; idx < count; ++idx) {
+			err = restore_config_value2(handle, info, type, value,
+						    ctl, idx, numid);
+			if (err < 0)
+				return err;
+		}
+		goto _ok;
 	}
 
 	set = (char*) alloca(count);
@@ -1095,59 +1183,22 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		if (idx < 0 || idx >= count || 
 		    set[idx]) {
 			error("bad control.%d.value index", numid);
-			return -EINVAL;
+			if (!force_restore)
+				return -EINVAL;
+			continue;
 		}
-		switch (type) {
-		case SND_CTL_ELEM_TYPE_BOOLEAN:
-			val = config_bool(n);
-			if (val < 0) {
-				error("bad control.%d.value.%d content", numid, idx);
-				return -EINVAL;
-			}
-			snd_ctl_elem_value_set_boolean(ctl, idx, val);
-			break;
-		case SND_CTL_ELEM_TYPE_INTEGER:
-			err = snd_config_get_integer(n, &val);
-			if (err < 0) {
-				error("bad control.%d.value.%d content", numid, idx);
-				return -EINVAL;
-			}
-			snd_ctl_elem_value_set_integer(ctl, idx, val);
-			break;
-		case SND_CTL_ELEM_TYPE_INTEGER64:
-			err = snd_config_get_integer64(n, &lval);
-			if (err < 0) {
-				error("bad control.%d.value.%d content", numid, idx);
-				return -EINVAL;
-			}
-			snd_ctl_elem_value_set_integer64(ctl, idx, lval);
-			break;
-		case SND_CTL_ELEM_TYPE_ENUMERATED:
-			val = config_enumerated(n, handle, info);
-			if (val < 0) {
-				error("bad control.%d.value.%d content", numid, idx);
-				return -EINVAL;
-			}
-			snd_ctl_elem_value_set_enumerated(ctl, idx, val);
-			break;
-		case SND_CTL_ELEM_TYPE_BYTES:
-		case SND_CTL_ELEM_TYPE_IEC958:
-			err = snd_config_get_integer(n, &val);
-			if (err < 0 || val < 0 || val > 255) {
-				error("bad control.%d.value.%d content", numid, idx);
-				return -EINVAL;
-			}
-			snd_ctl_elem_value_set_byte(ctl, idx, val);
-			break;
-		default:
-			break;
-		}
-		set[idx] = 1;
+		err = restore_config_value2(handle, info, type, value,
+					    ctl, idx, numid);
+		if (err < 0)
+			return err;
+		if (err > 0)
+			set[idx] = 1;
 	}
 	for (idx = 0; idx < count; ++idx) {
 		if (!set[idx]) {
 			error("control.%d.value.%d is not specified", numid, idx);
-			return -EINVAL;
+			if (!force_restore)
+				return -EINVAL;
 		}
 	}
 
