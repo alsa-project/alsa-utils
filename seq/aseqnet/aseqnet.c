@@ -26,6 +26,7 @@
 #include <alsa/asoundlib.h>
 #include <getopt.h>
 #include <signal.h>
+#include <assert.h>
 #include "aconfig.h"
 #include "gettext.h"
 
