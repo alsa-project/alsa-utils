@@ -684,6 +684,9 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
   }
     
 
+  if (periods <= 0)
+    periods = 1;
+
   for(n = 0; n < periods; n++) {
     if (test_type == TEST_PINK_NOISE)
       generate_pink_noise(frames, channel, period_size);
