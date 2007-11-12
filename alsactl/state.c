@@ -330,22 +330,6 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 			if (err < 0)
 				return err;
 		}
-		if (snd_ctl_elem_info_is_tlv_readable(info)) {
-			unsigned int tlv[MAX_USER_TLV_SIZE];
-			err = snd_ctl_elem_tlv_read(handle, id, tlv, sizeof(tlv));
-			if (err >= 0) {
-				char *s = tlv_to_str(tlv);
-				if (s) {
-					err = snd_config_string_add(comment, "tlv", s);
-					if (err < 0) {
-						error("snd_config_string_add: %s", snd_strerror(err));
-						return err;
-					}
-					free(s);
-				}
-			}
-		}
-		    
 		break;
 	}
 	case SND_CTL_ELEM_TYPE_INTEGER64:
