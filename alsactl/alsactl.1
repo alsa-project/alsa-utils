@@ -41,7 +41,12 @@ Select the configuration file to use. The default is /etc/asound.state or
 .TP
 \fI\-F, \-\-force\fP
 Used with restore command.  Try to restore the matching control elements
-as much as possible.
+as much as possible.  This option is set as default now.
+
+.TP
+\fI\-P, \-\-pedantic\fP
+Used with restore command.  Don't restore mismatching control elements.
+This option was the old default behavior.
 
 .TP
 \fI\-d, \-\-debug\fP

@@ -34,7 +34,7 @@
 #define SYS_ASOUNDNAMES "/etc/asound.names"
 
 int debugflag = 0;
-int force_restore = 0;
+int force_restore = 1;
 char *command;
 
 static void help(void)
@@ -44,6 +44,8 @@ static void help(void)
 	printf("  -h,--help        this help\n");
 	printf("  -f,--file #      configuration file (default " SYS_ASOUNDRC " or " SYS_ASOUNDNAMES ")\n");
 	printf("  -F,--force       try to restore the matching controls as much as possible\n");
+	printf("                   (default mode)\n");
+	printf("  -P,--pedantic    don't restore mismatching controls (old default)\n");
 	printf("  -d,--debug       debug mode\n");
 	printf("  -v,--version     print version of this program\n");
 	printf("\nAvailable commands:\n");
@@ -62,6 +64,7 @@ int main(int argc, char *argv[])
 		{"help", 0, NULL, 'h'},
 		{"file", 1, NULL, 'f'},
 		{"force", 0, NULL, 'F'},
+		{"pedantic", 0, NULL, 'P'},
 		{"debug", 0, NULL, 'd'},
 		{"version", 0, NULL, 'v'},
 		{NULL, 0, NULL, 0},
@@ -84,6 +87,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'F':
 			force_restore = 1;
+			break;
+		case 'P':
+			force_restore = 0;
 			break;
 		case 'd':
 			debugflag = 1;
