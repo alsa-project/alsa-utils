@@ -1380,7 +1380,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 				return -EINVAL;
 			continue;
 		}
-		err = restore_config_value2(handle, info, type, value,
+		err = restore_config_value2(handle, info, type, n,
 					    ctl, idx, numid);
 		if (err < 0)
 			return err;
