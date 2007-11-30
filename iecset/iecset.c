@@ -308,7 +308,7 @@ int main(int argc, char **argv)
 			break;
 		case 'c':
 			i = atoi(optarg);
-			if (i < 0 || i >= 7) {
+			if (i < 0 || i >= 32) {
 				fprintf(stderr, "invalid card index %d\n", i);
 				return 1;
 			}
