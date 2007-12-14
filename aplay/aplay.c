@@ -1462,7 +1462,9 @@ static void voc_pcm_flush(void)
 		if (pcm_write(audiobuf, b) != (ssize_t)b)
 			error(_("voc_pcm_flush error"));
 	}
+	snd_pcm_nonblock(handle, 0);
 	snd_pcm_drain(handle);
+	snd_pcm_nonblock(handle, nonblock);
 }
 
 static void voc_play(int fd, int ofs, char *name)
@@ -1988,7 +1990,9 @@ void playback_go(int fd, size_t loaded, off64_t count, int rtype, char *name)
 		written += r;
 		l = 0;
 	}
+	snd_pcm_nonblock(handle, 0);
 	snd_pcm_drain(handle);
+	snd_pcm_nonblock(handle, nonblock);
 }
 
 
@@ -2227,7 +2231,9 @@ void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t count,
 		r = r * bits_per_frame / 8;
 		count -= r;
 	}
+	snd_pcm_nonblock(handle, 0);
 	snd_pcm_drain(handle);
+	snd_pcm_nonblock(handle, nonblock);
 }
 
 void capturev_go(int* fds, unsigned int channels, off64_t count, int rtype, char **names)
