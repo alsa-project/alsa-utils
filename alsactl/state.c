@@ -250,7 +250,8 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		return err;
 	}
 
-	if (!snd_ctl_elem_info_is_readable(info))
+	if (snd_ctl_elem_info_is_inactive(info) ||
+				!snd_ctl_elem_info_is_readable(info))
 		return 0;
 	snd_ctl_elem_value_set_id(ctl, id);
 	err = snd_ctl_elem_read(handle, ctl);
@@ -1306,7 +1307,8 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		}
 	}
 
-	if (!snd_ctl_elem_info_is_writable(info))
+	if (snd_ctl_elem_info_is_inactive(info) ||
+				!snd_ctl_elem_info_is_writable(info))
 		return 0;
 	snd_ctl_elem_value_set_numid(ctl, numid1);
 
