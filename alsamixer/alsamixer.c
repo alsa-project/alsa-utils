@@ -209,6 +209,7 @@ static struct snd_mixer_selem_regopt mixer_options;
 enum {
   MIXER_ELEM_FRONT, MIXER_ELEM_REAR,
   MIXER_ELEM_CENTER, MIXER_ELEM_WOOFER,
+  MIXER_ELEM_SIDE,
   MIXER_ELEM_CAPTURE,
   MIXER_ELEM_ENUM, MIXER_ELEM_CAPTURE_ENUM,
   MIXER_ELEM_END
@@ -226,6 +227,7 @@ static snd_mixer_selem_channel_id_t mixer_elem_chn[][2] = {
   { SND_MIXER_SCHN_REAR_LEFT, SND_MIXER_SCHN_REAR_RIGHT },
   { SND_MIXER_SCHN_FRONT_CENTER, SND_MIXER_SCHN_UNKNOWN },
   { SND_MIXER_SCHN_WOOFER, SND_MIXER_SCHN_UNKNOWN },
+  { SND_MIXER_SCHN_SIDE_LEFT, SND_MIXER_SCHN_SIDE_RIGHT },
   { SND_MIXER_SCHN_FRONT_LEFT, SND_MIXER_SCHN_FRONT_RIGHT },
 };
 
@@ -1752,7 +1754,7 @@ __again:
     if (elem == NULL)
       CHECK_ABORT (ERR_FCN, "snd_mixer_find_selem()", -EINVAL);
     if ( (mixer_view == VIEW_PLAYBACK) || (mixer_view == VIEW_CHANNELS) ) {
-      for (i = MIXER_ELEM_FRONT; i <= MIXER_ELEM_WOOFER; i++) {
+      for (i = MIXER_ELEM_FRONT; i <= MIXER_ELEM_SIDE; i++) {
         int ok;
         for (j = ok = 0; j < 2; j++) {
 	  if (mixer_changed_state)
