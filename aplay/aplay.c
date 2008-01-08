@@ -863,7 +863,6 @@ static void set_params(void)
 	snd_pcm_uframes_t buffer_size;
 	int err;
 	size_t n;
-	snd_pcm_uframes_t xfer_align;
 	unsigned int rate;
 	snd_pcm_uframes_t start_threshold, stop_threshold;
 	snd_pcm_hw_params_alloca(&params);
@@ -965,11 +964,6 @@ static void set_params(void)
 		exit(EXIT_FAILURE);
 	}
 	snd_pcm_sw_params_current(handle, swparams);
-	err = snd_pcm_sw_params_get_xfer_align(swparams, &xfer_align);
-	if (err < 0) {
-		error(_("Unable to obtain xfer align\n"));
-		exit(EXIT_FAILURE);
-	}
 	if (avail_min < 0)
 		n = chunk_size;
 	else
@@ -977,7 +971,7 @@ static void set_params(void)
 	err = snd_pcm_sw_params_set_avail_min(handle, swparams, n);
 
 	/* round up to closest transfer boundary */
-	n = (buffer_size / xfer_align) * xfer_align;
+	n = buffer_size;
 	if (start_delay <= 0) {
 		start_threshold = n + (double) rate * start_delay / 1000000;
 	} else
@@ -993,9 +987,6 @@ static void set_params(void)
 	else
 		stop_threshold = (double) rate * stop_delay / 1000000;
 	err = snd_pcm_sw_params_set_stop_threshold(handle, swparams, stop_threshold);
-	assert(err >= 0);
-
-	err = snd_pcm_sw_params_set_xfer_align(handle, swparams, xfer_align);
 	assert(err >= 0);
 
 	if (snd_pcm_sw_params(handle, swparams) < 0) {
