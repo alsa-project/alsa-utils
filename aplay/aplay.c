@@ -81,7 +81,6 @@ static struct {
 static int timelimit = 0;
 static int quiet_mode = 0;
 static int file_type = FORMAT_DEFAULT;
-static unsigned int sleep_min = 0;
 static int open_mode = 0;
 static snd_pcm_stream_t stream = SND_PCM_STREAM_PLAYBACK;
 static int mmap_flag = 0;
@@ -164,7 +163,6 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "-f, --format=FORMAT     sample format (case insensitive)\n"
 "-r, --rate=#            sample rate\n"
 "-d, --duration=#        interrupt after # seconds\n"
-"-s, --sleep-min=#       min ticks to sleep\n"
 "-M, --mmap              mmap stream\n"
 "-N, --nonblock          nonblocking mode\n"
 "-F, --period-time=#     distance between interrupts is # microseconds\n"
@@ -339,7 +337,7 @@ enum {
 int main(int argc, char *argv[])
 {
 	int option_index;
-	char *short_options = "hnlLD:qt:c:f:r:d:s:MNF:A:R:T:B:vIPC";
+	char *short_options = "hnlLD:qt:c:f:r:d:MNF:A:R:T:B:vIPC";
 	static struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"version", 0, 0, OPT_VERSION},
@@ -353,7 +351,6 @@ int main(int argc, char *argv[])
 		{"format", 1, 0, 'f'},
 		{"rate", 1, 0, 'r'},
 		{"duration", 1, 0 ,'d'},
-		{"sleep-min", 1, 0, 's'},
 		{"mmap", 0, 0, 'M'},
 		{"nonblock", 0, 0, 'N'},
 		{"period-time", 1, 0, 'F'},
@@ -477,9 +474,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'd':
 			timelimit = strtol(optarg, NULL, 0);
-			break;
-		case 's':
-			sleep_min = strtol(optarg, NULL, 0);
 			break;
 		case 'N':
 			nonblock = 1;
@@ -976,11 +970,6 @@ static void set_params(void)
 		error(_("Unable to obtain xfer align\n"));
 		exit(EXIT_FAILURE);
 	}
-	if (sleep_min)
-		xfer_align = 1;
-	err = snd_pcm_sw_params_set_sleep_min(handle, swparams,
-					      sleep_min);
-	assert(err >= 0);
 	if (avail_min < 0)
 		n = chunk_size;
 	else
@@ -1249,8 +1238,7 @@ static ssize_t pcm_write(u_char *data, size_t count)
 	ssize_t r;
 	ssize_t result = 0;
 
-	if (sleep_min == 0 &&
-	    count < chunk_size) {
+	if (count < chunk_size) {
 		snd_pcm_format_set_silence(hwparams.format, data + count * bits_per_frame / 8, (chunk_size - count) * hwparams.channels);
 		count = chunk_size;
 	}
@@ -1282,8 +1270,7 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
 	ssize_t r;
 	size_t result = 0;
 
-	if (sleep_min == 0 &&
-	    count != chunk_size) {
+	if (count != chunk_size) {
 		unsigned int channel;
 		size_t offset = count;
 		size_t remaining = chunk_size - count;
@@ -1330,8 +1317,7 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 	size_t result = 0;
 	size_t count = rcount;
 
-	if (sleep_min == 0 &&
-	    count != chunk_size) {
+	if (count != chunk_size) {
 		count = chunk_size;
 	}
 
@@ -1364,8 +1350,7 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 	size_t result = 0;
 	size_t count = rcount;
 
-	if (sleep_min == 0 &&
-	    count != chunk_size) {
+	if (count != chunk_size) {
 		count = chunk_size;
 	}
 
@@ -1452,13 +1437,9 @@ static void voc_pcm_flush(void)
 {
 	if (buffer_pos > 0) {
 		size_t b;
-		if (sleep_min == 0) {
-			if (snd_pcm_format_set_silence(hwparams.format, audiobuf + buffer_pos, chunk_bytes - buffer_pos * 8 / bits_per_sample) < 0)
-				fprintf(stderr, _("voc_pcm_flush - silence error"));
-			b = chunk_size;
-		} else {
-			b = buffer_pos * 8 / bits_per_frame;
-		}
+		if (snd_pcm_format_set_silence(hwparams.format, audiobuf + buffer_pos, chunk_bytes - buffer_pos * 8 / bits_per_sample) < 0)
+			fprintf(stderr, _("voc_pcm_flush - silence error"));
+		b = chunk_size;
 		if (pcm_write(audiobuf, b) != (ssize_t)b)
 			error(_("voc_pcm_flush error"));
 	}
@@ -1981,7 +1962,7 @@ void playback_go(int fd, size_t loaded, off64_t count, int rtype, char *name)
 			if (r == 0)
 				break;
 			l += r;
-		} while (sleep_min == 0 && (size_t)l < chunk_bytes);
+		} while ((size_t)l < chunk_bytes);
 		l = l * 8 / bits_per_frame;
 		r = pcm_write(audiobuf, l);
 		if (r != l)
@@ -2223,7 +2204,7 @@ void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t count,
 			if (r == 0)
 				break;
 			c += r;
-		} while (sleep_min == 0 && c < expected);
+		} while (c < expected);
 		c = c * 8 / bits_per_sample;
 		r = pcm_writev(bufs, channels, c);
 		if ((size_t)r != c)
