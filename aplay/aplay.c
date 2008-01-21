@@ -174,7 +174,11 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "                        (relative to buffer size if <= 0)\n"
 "-T, --stop-delay=#      delay for automatic PCM stop is # microseconds from xrun\n"
 "-v, --verbose           show PCM structure and setup (accumulative)\n"
-"-I, --separate-channels one file for each channel\n")
+"-I, --separate-channels one file for each channel\n"
+"    --disable-resample  disable automatic rate resample\n"
+"    --disable-channels  disable automatic channel conversions\n"
+"    --disable-format    disable automatic format conversions\n"
+"    --disable-softvol   disable software volume control (softvol)\n")
 		, command);
 	printf(_("Recognized sample formats are:"));
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
@@ -331,7 +335,11 @@ static void signal_handler(int sig)
 enum {
 	OPT_VERSION = 1,
 	OPT_PERIOD_SIZE,
-	OPT_BUFFER_SIZE
+	OPT_BUFFER_SIZE,
+	OPT_DISABLE_RESAMPLE,
+	OPT_DISABLE_CHANNELS,
+	OPT_DISABLE_FORMAT,
+	OPT_DISABLE_SOFTVOL
 };
 
 int main(int argc, char *argv[])
@@ -364,6 +372,10 @@ int main(int argc, char *argv[])
 		{"separate-channels", 0, 0, 'I'},
 		{"playback", 0, 0, 'P'},
 		{"capture", 0, 0, 'C'},
+		{"disable-resample", 0, 0, OPT_DISABLE_RESAMPLE},
+		{"disable-channels", 0, 0, OPT_DISABLE_CHANNELS},
+		{"disable-format", 0, 0, OPT_DISABLE_FORMAT},
+		{"disable-softvol", 0, 0, OPT_DISABLE_SOFTVOL},
 		{0, 0, 0, 0}
 	};
 	char *pcm_name = "default";
@@ -519,6 +531,18 @@ int main(int argc, char *argv[])
 			start_delay = 1;
 			if (file_type == FORMAT_DEFAULT)
 				file_type = FORMAT_WAVE;
+			break;
+		case OPT_DISABLE_RESAMPLE:
+			open_mode |= SND_PCM_NO_AUTO_RESAMPLE;
+			break;
+		case OPT_DISABLE_CHANNELS:
+			open_mode |= SND_PCM_NO_AUTO_CHANNELS;
+			break;
+		case OPT_DISABLE_FORMAT:
+			open_mode |= SND_PCM_NO_AUTO_FORMAT;
+			break;
+		case OPT_DISABLE_SOFTVOL:
+			open_mode |= SND_PCM_NO_SOFTVOL;
 			break;
 		default:
 			fprintf(stderr, _("Try `%s --help' for more information.\n"), command);
