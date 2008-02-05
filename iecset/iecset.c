@@ -286,6 +286,7 @@ int main(int argc, char **argv)
 {
 	const char *dev = "default";
 	const char *spdif_str = SND_CTL_NAME_IEC958("", PLAYBACK, DEFAULT);
+	int spdif_index = -1;
 	snd_ctl_t *ctl;
 	snd_ctl_elem_list_t *clist;
 	snd_ctl_elem_id_t *cid;
@@ -301,7 +302,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < IDX_LAST; i++)
 		parms[i] = -1; /* not set */
 
-	while ((c = getopt(argc, argv, "D:c:xhi")) != -1) {
+	while ((c = getopt(argc, argv, "D:c:n:xhi")) != -1) {
 		switch (c) {
 		case 'D':
 			dev = optarg;
@@ -314,6 +315,9 @@ int main(int argc, char **argv)
 			}
 			sprintf(tmpname, "hw:%d", i);
 			dev = tmpname;
+			break;
+		case 'n':
+			spdif_index = atoi(optarg);
 			break;
 		case 'x':
 			dumphex = 1;
@@ -349,10 +353,13 @@ int main(int argc, char **argv)
 	controls = snd_ctl_elem_list_get_used(clist);
 	for (cidx = 0; cidx < controls; cidx++) {
 		if (!strcmp(snd_ctl_elem_list_get_name(clist, cidx), spdif_str))
-			break;
+			if (spdif_index < 0 ||
+			    snd_ctl_elem_list_get_index(clist, cidx) == spdif_index)
+				break;
 	}
 	if (cidx >= controls) {
-		fprintf(stderr, "control \"%s\" not found\n", spdif_str);
+		fprintf(stderr, "control \"%s\" (index %d) not found\n",
+			spdif_str, spdif_index);
 		return 1;
 	}
 
