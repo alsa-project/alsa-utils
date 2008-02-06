@@ -64,7 +64,11 @@ typedef struct voc_ext_block {
 #define WAV_WAVE		COMPOSE_ID('W','A','V','E')
 #define WAV_FMT			COMPOSE_ID('f','m','t',' ')
 #define WAV_DATA		COMPOSE_ID('d','a','t','a')
-#define WAV_PCM_CODE		1
+
+/* WAVE fmt block constants from Microsoft mmreg.h header */
+#define WAV_FMT_PCM             0x0001
+#define WAV_FMT_IEEE_FLOAT      0x0003
+#define WAV_FMT_DOLBY_AC3_SPDIF 0x0092
 
 /* it's in chunks like .voc and AMIGA iff, but my source say there
    are in only in this combination, so I combined them in one header;

@@ -745,8 +745,9 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 	check_wavefile_space(buffer, len, blimit);
 	test_wavefile_read(fd, buffer, &size, len, __LINE__);
 	f = (WaveFmtBody*) buffer;
-	if (LE_SHORT(f->format) != WAV_PCM_CODE) {
-		error(_("can't play not PCM-coded WAVE-files"));
+        if (LE_SHORT(f->format) != WAV_FMT_PCM &&
+            LE_SHORT(f->format) != WAV_FMT_IEEE_FLOAT) {
+                error(_("can't play WAVE-file format 0x%04x which is not PCM or FLOAT encoded"), LE_SHORT(f->format));
 		exit(EXIT_FAILURE);
 	}
 	if (LE_SHORT(f->modus) < 1) {
@@ -788,7 +789,10 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 		}
 		break;
 	case 32:
-		hwparams.format = SND_PCM_FORMAT_S32_LE;
+                if (LE_SHORT(f->format) == WAV_FMT_PCM)
+                        hwparams.format = SND_PCM_FORMAT_S32_LE;
+                else if (LE_SHORT(f->format) == WAV_FMT_IEEE_FLOAT)
+                        hwparams.format = SND_PCM_FORMAT_FLOAT_LE;
 		break;
 	default:
 		error(_(" can't play WAVE-files with sample %d bits wide"),
@@ -1778,6 +1782,7 @@ static void begin_wave(int fd, size_t cnt)
 		bits = 16;
 		break;
 	case SND_PCM_FORMAT_S32_LE:
+        case SND_PCM_FORMAT_FLOAT_LE:
 		bits = 32;
 		break;
 	case SND_PCM_FORMAT_S24_LE:
@@ -1796,7 +1801,10 @@ static void begin_wave(int fd, size_t cnt)
 	cf.type = WAV_FMT;
 	cf.length = LE_INT(16);
 
-	f.format = LE_SHORT(WAV_PCM_CODE);
+        if (hwparams.format == SND_PCM_FORMAT_FLOAT_LE)
+                f.format = LE_SHORT(WAV_FMT_IEEE_FLOAT);
+        else
+                f.format = LE_SHORT(WAV_FMT_PCM);
 	f.modus = LE_SHORT(hwparams.channels);
 	f.sample_fq = LE_INT(hwparams.rate);
 #if 0
