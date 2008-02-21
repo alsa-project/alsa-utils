@@ -857,7 +857,7 @@ int main(int argc, char *argv[])
 	pfds = alloca(sizeof(*pfds) * npfds);
 	for (;;) {
 		snd_seq_poll_descriptors(seq, pfds, npfds, POLLIN);
-		if (poll(pfds, npfds, 69) < 0)
+		if (poll(pfds, npfds, -1) < 0)
 			break;
 		do {
 			snd_seq_event_t *event;
