@@ -428,6 +428,7 @@ int main(int argc, char *argv[])
 			if (event)
 				dump_event(event);
 		} while (err > 0);
+		fflush(stdout);
 		if (stop)
 			break;
 	}
