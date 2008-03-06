@@ -745,16 +745,29 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 	check_wavefile_space(buffer, len, blimit);
 	test_wavefile_read(fd, buffer, &size, len, __LINE__);
 	f = (WaveFmtBody*) buffer;
+	if (LE_SHORT(f->format) == WAV_FMT_EXTENSIBLE) {
+		WaveFmtExtensibleBody *fe = (WaveFmtExtensibleBody*)buffer;
+		if (len < sizeof(WaveFmtExtensibleBody)) {
+			error(_("unknown length of extensible 'fmt ' chunk (read %u, should be %u at least)"),
+					len, (u_int)sizeof(WaveFmtExtensibleBody));
+			exit(EXIT_FAILURE);
+		}
+		if (memcmp(fe->guid_tag, WAV_GUID_TAG, 14) != 0) {
+			error(_("wrong format tag in extensible 'fmt ' chunk"));
+			exit(EXIT_FAILURE);
+		}
+		f->format = fe->guid_format;
+	}
         if (LE_SHORT(f->format) != WAV_FMT_PCM &&
             LE_SHORT(f->format) != WAV_FMT_IEEE_FLOAT) {
                 error(_("can't play WAVE-file format 0x%04x which is not PCM or FLOAT encoded"), LE_SHORT(f->format));
 		exit(EXIT_FAILURE);
 	}
-	if (LE_SHORT(f->modus) < 1) {
-		error(_("can't play WAVE-files with %d tracks"), LE_SHORT(f->modus));
+	if (LE_SHORT(f->channels) < 1) {
+		error(_("can't play WAVE-files with %d tracks"), LE_SHORT(f->channels));
 		exit(EXIT_FAILURE);
 	}
-	hwparams.channels = LE_SHORT(f->modus);
+	hwparams.channels = LE_SHORT(f->channels);
 	switch (LE_SHORT(f->bit_p_spl)) {
 	case 8:
 		if (hwparams.format != DEFAULT_FORMAT &&
@@ -1805,7 +1818,7 @@ static void begin_wave(int fd, size_t cnt)
                 f.format = LE_SHORT(WAV_FMT_IEEE_FLOAT);
         else
                 f.format = LE_SHORT(WAV_FMT_PCM);
-	f.modus = LE_SHORT(hwparams.channels);
+	f.channels = LE_SHORT(hwparams.channels);
 	f.sample_fq = LE_INT(hwparams.rate);
 #if 0
 	tmp2 = (samplesize == 8) ? 1 : 2;
