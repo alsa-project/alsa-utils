@@ -71,6 +71,12 @@ static snd_pcm_sframes_t (*writei_func)(snd_pcm_t *handle, const void *buffer, s
 static snd_pcm_sframes_t (*readn_func)(snd_pcm_t *handle, void **bufs, snd_pcm_uframes_t size);
 static snd_pcm_sframes_t (*writen_func)(snd_pcm_t *handle, void **bufs, snd_pcm_uframes_t size);
 
+enum {
+	VUMETER_NONE,
+	VUMETER_MONO,
+	VUMETER_STEREO
+};
+
 static char *command;
 static snd_pcm_t *handle;
 static struct {
@@ -96,6 +102,7 @@ static int avail_min = -1;
 static int start_delay = 0;
 static int stop_delay = 0;
 static int verbose = 0;
+static int vumeter = VUMETER_NONE;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t chunk_bytes;
@@ -174,6 +181,7 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "                        (relative to buffer size if <= 0)\n"
 "-T, --stop-delay=#      delay for automatic PCM stop is # microseconds from xrun\n"
 "-v, --verbose           show PCM structure and setup (accumulative)\n"
+"-V, --vumeter=TYPE      enable VU meter (TYPE: mono or stereo)\n"
 "-I, --separate-channels one file for each channel\n"
 "    --disable-resample  disable automatic rate resample\n"
 "    --disable-channels  disable automatic channel conversions\n"
@@ -345,7 +353,7 @@ enum {
 int main(int argc, char *argv[])
 {
 	int option_index;
-	char *short_options = "hnlLD:qt:c:f:r:d:MNF:A:R:T:B:vIPC";
+	char *short_options = "hnlLD:qt:c:f:r:d:MNF:A:R:T:B:vV:IPC";
 	static struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"version", 0, 0, OPT_VERSION},
@@ -369,6 +377,7 @@ int main(int argc, char *argv[])
 		{"buffer-time", 1, 0, 'B'},
 		{"buffer-size", 1, 0, OPT_BUFFER_SIZE},
 		{"verbose", 0, 0, 'v'},
+		{"vumeter", 1, 0, 'V'},
 		{"separate-channels", 0, 0, 'I'},
 		{"playback", 0, 0, 'P'},
 		{"capture", 0, 0, 'C'},
@@ -514,6 +523,16 @@ int main(int argc, char *argv[])
 			break;
 		case 'v':
 			verbose++;
+			if (verbose > 1 && !vumeter)
+				vumeter = VUMETER_MONO;
+			break;
+		case 'V':
+			if (*optarg == 's')
+				vumeter = VUMETER_STEREO;
+			else if (*optarg == 'm')
+				vumeter = VUMETER_MONO;
+			else
+				vumeter = VUMETER_NONE;
 			break;
 		case 'M':
 			mmap_flag = 1;
@@ -1048,6 +1067,12 @@ static void set_params(void)
 		exit(EXIT_FAILURE);
 	}
 	// fprintf(stderr, "real chunk_size = %i, frags = %i, total = %i\n", chunk_size, setup.buf.block.frags, setup.buf.block.frags * chunk_size);
+
+	/* stereo VU-meter isn't always available... */
+	if (vumeter == VUMETER_STEREO) {
+		if (hwparams.channels != 2 || !interleaved || verbose > 2)
+			vumeter = VUMETER_MONO;
+	}
 }
 
 #ifndef timersub
@@ -1133,23 +1158,101 @@ static void suspend(void)
 		fprintf(stderr, _("Done.\n"));
 }
 
+static void print_vu_meter_mono(int perc, int maxperc)
+{
+	const int bar_length = 50;
+	char line[80];
+	int val;
+
+	for (val = 0; val <= perc * bar_length / 100 && val < bar_length; val++)
+		line[val] = '#';
+	for (; val <= maxperc * bar_length / 100 && val < bar_length; val++)
+		line[val] = ' ';
+	line[val] = '+';
+	for (++val; val <= bar_length; val++)
+		line[val] = ' ';
+	if (maxperc > 99)
+		sprintf(line + val, "| MAX");
+	else
+		sprintf(line + val, "| %02i%%", maxperc);
+	fputs(line, stdout);
+	if (perc > 100)
+		printf(_(" !clip  "));
+}
+
+static void print_vu_meter_stereo(int *perc, int *maxperc)
+{
+	const int bar_length = 35;
+	char line[80];
+	int c;
+
+	memset(line, ' ', sizeof(line) - 1);
+	line[bar_length + 3] = '|';
+
+	for (c = 0; c < 2; c++) {
+		int p = perc[c] * bar_length / 100;
+		char tmp[4];
+		if (p > bar_length)
+			p = bar_length;
+		if (c)
+			memset(line + bar_length + 6 + 1, '#', p);
+		else
+			memset(line + bar_length - p - 1, '#', p);
+		p = maxperc[c] * bar_length / 100;
+		if (p > bar_length)
+			p = bar_length;
+		if (c)
+			line[bar_length + 6 + 1 + p] = '+';
+		else
+			line[bar_length - p - 1] = '+';
+		if (maxperc[c] > 99)
+			sprintf(tmp, "MAX");
+		else
+			sprintf(tmp, "%02d%%", maxperc[c]);
+		if (c)
+			memcpy(line + bar_length + 3 + 1, tmp, 3);
+		else
+			memcpy(line + bar_length, tmp, 3);
+	}
+	line[bar_length * 2 + 6 + 2] = 0;
+	fputs(line, stdout);
+}
+
+static void print_vu_meter(signed int *perc, signed int *maxperc)
+{
+	if (vumeter == VUMETER_STEREO)
+		print_vu_meter_stereo(perc, maxperc);
+	else
+		print_vu_meter_mono(*perc, *maxperc);
+}
+
 /* peak handler */
 static void compute_max_peak(u_char *data, size_t count)
 {
-	signed int val, max, max_peak = 0, perc;
+	signed int val, max, perc[2], max_peak[2];
 	static	int	run = 0;
 	size_t ocount = count;
 	int	format_little_endian = snd_pcm_format_little_endian(hwparams.format);	
+	int ichans, c;
 
+	if (vumeter == VUMETER_STEREO)
+		ichans = 2;
+	else
+		ichans = 1;
+
+	memset(max_peak, 0, sizeof(max_peak));
 	switch (bits_per_sample) {
 	case 8: {
 		signed char *valp = (signed char *)data;
 		signed char mask = snd_pcm_format_silence(hwparams.format);
+		c = 0;
 		while (count-- > 0) {
 			val = *valp++ ^ mask;
 			val = abs(val);
-			if (max_peak < val)
-				max_peak = val;
+			if (max_peak[c] < val)
+				max_peak[c] = val;
+			if (vumeter == VUMETER_STEREO)
+				c = !c;
 		}
 		break;
 	}
@@ -1159,14 +1262,18 @@ static void compute_max_peak(u_char *data, size_t count)
 		signed short sval;
 
 		count /= 2;
+		c = 0;
 		while (count-- > 0) {
 			if (format_little_endian)
 				sval = __le16_to_cpu(*valp);
-			else	sval = __be16_to_cpu(*valp);
+			else
+				sval = __be16_to_cpu(*valp);
 			sval = abs(sval) ^ mask;
-			if (max_peak < sval)
-				max_peak = sval;
+			if (max_peak[c] < sval)
+				max_peak[c] = sval;
 			valp++;
+			if (vumeter == VUMETER_STEREO)
+				c = !c;
 		}
 		break;
 	}
@@ -1175,6 +1282,7 @@ static void compute_max_peak(u_char *data, size_t count)
 		signed int mask = snd_pcm_format_silence_32(hwparams.format);
 
 		count /= 3;
+		c = 0;
 		while (count-- > 0) {
 			if (format_little_endian) {
 				val = valp[0] | (valp[1]<<8) | (valp[2]<<16);
@@ -1186,24 +1294,31 @@ static void compute_max_peak(u_char *data, size_t count)
 				val |= 0xff<<24;	/* Negate upper bits too */
 			}
 			val = abs(val) ^ mask;
-			if (max_peak < val)
-				max_peak = val;
+			if (max_peak[c] < val)
+				max_peak[c] = val;
 			valp += 3;
+			if (vumeter == VUMETER_STEREO)
+				c = !c;
 		}
 		break;
 	}
 	case 32: {
 		signed int *valp = (signed int *)data;
 		signed int mask = snd_pcm_format_silence_32(hwparams.format);
+
 		count /= 4;
+		c = 0;
 		while (count-- > 0) {
 			if (format_little_endian)
 				val = __le32_to_cpu(*valp);
-			else	val = __be32_to_cpu(*valp);
+			else
+				val = __be32_to_cpu(*valp);
 			val = abs(val) ^ mask;
-			if (max_peak < val)
-				max_peak = val;
+			if (max_peak[c] < val)
+				max_peak[c] = val;
 			valp++;
+			if (vumeter == VUMETER_STEREO)
+				c = !c;
 		}
 		break;
 	}
@@ -1218,45 +1333,38 @@ static void compute_max_peak(u_char *data, size_t count)
 	if (max <= 0)
 		max = 0x7fffffff;
 
-	if (bits_per_sample > 16)
-		perc = max_peak / (max / 100);
-	else
-		perc = max_peak * 100 / max;
+	for (c = 0; c < ichans; c++) {
+		if (bits_per_sample > 16)
+			perc[c] = max_peak[c] / (max / 100);
+		else
+			perc[c] = max_peak[c] * 100 / max;
+	}
 
-	if(verbose<=2) {
-		static int maxperc=0;
+	if (interleaved && verbose <= 2) {
+		static int maxperc[2];
 		static time_t t=0;
 		const time_t tt=time(NULL);
 		if(tt>t) {
 			t=tt;
-			maxperc=0;
+			maxperc[0] = 0;
+			maxperc[1] = 0;
 		}
-		if(perc>maxperc)
-			maxperc=perc;
+		for (c = 0; c < ichans; c++)
+			if (perc[c] > maxperc[c])
+				maxperc[c] = perc[c];
 
 		putchar('\r');
-		for (val = 0; val <= perc / 2 && val < 50; val++)
-			putchar('#');
-		for (; val <= maxperc / 2 && val < 50; val++)
-			putchar(' ');
-		putchar('+');
-		for (++val; val <= 50; val++)
-			putchar(' ');
-
-		printf("| %02i%%", maxperc);
-		if (perc>99)
-			printf(_(" !clip  "));
-
+		print_vu_meter(perc, maxperc);
 		fflush(stdout);
 	}
 	else if(verbose==3) {
-		printf(_("Max peak (%li samples): 0x%08x "), (long)ocount, max_peak);
+		printf(_("Max peak (%li samples): 0x%08x "), (long)ocount, max_peak[0]);
 		for (val = 0; val < 20; val++)
-			if (val <= perc / 5)
+			if (val <= perc[0] / 5)
 				putchar('#');
 			else
 				putchar(' ');
-		printf(" %i%%\n", perc);
+		printf(" %i%%\n", perc[0]);
 		fflush(stdout);
 	}
 }
@@ -1287,7 +1395,7 @@ static ssize_t pcm_write(u_char *data, size_t count)
 			exit(EXIT_FAILURE);
 		}
 		if (r > 0) {
-			if (verbose > 1)
+			if (vumeter)
 				compute_max_peak(data, r * hwparams.channels);
 			result += r;
 			count -= r;
@@ -1328,7 +1436,7 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
 			exit(EXIT_FAILURE);
 		}
 		if (r > 0) {
-			if (verbose > 1) {
+			if (vumeter) {
 				for (channel = 0; channel < channels; channel++)
 					compute_max_peak(data[channel], r);
 			}
@@ -1366,7 +1474,7 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 			exit(EXIT_FAILURE);
 		}
 		if (r > 0) {
-			if (verbose > 1)
+			if (vumeter)
 				compute_max_peak(data, r * hwparams.channels);
 			result += r;
 			count -= r;
@@ -1404,7 +1512,7 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 			exit(EXIT_FAILURE);
 		}
 		if (r > 0) {
-			if (verbose > 1) {
+			if (vumeter) {
 				for (channel = 0; channel < channels; channel++)
 					compute_max_peak(data[channel], r);
 			}
