@@ -1324,7 +1324,7 @@ static void compute_max_peak(u_char *data, size_t count)
 	}
 	default:
 		if (run == 0) {
-			fprintf(stderr, _("Unsupported bit size %d.\n"), bits_per_sample);
+			fprintf(stderr, _("Unsupported bit size %d.\n"), (int)bits_per_sample);
 			run = 1;
 		}
 		return;
