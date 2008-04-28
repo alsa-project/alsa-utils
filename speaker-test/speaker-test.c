@@ -259,7 +259,8 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
 
   while (count-- > 0) {
     for(chn=0;chn<channels;chn++) {
-      if (sample_size_bits == 8) {
+      switch (format) {
+      case SND_PCM_FORMAT_S8:
         if (chn==channel) {
 	  res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
 	  ires = res;
@@ -267,35 +268,64 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
         } else {
 	  *samp8++ = 0;
         }
-      } else if (sample_size_bits == 16) {
+        break;
+      case SND_PCM_FORMAT_S16_LE:
         if (chn==channel) {
 	  res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
 	  ires = res;
-	  *samp16++ = ires >>16;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+          *samp16++ = ires >> 16;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+          *samp16++ = bswap_16(ires >> 16);
+#endif
         } else {
 	  *samp16++ = 0;
         }
-      } else if ((sample_size_bits == 32) && (format == SND_PCM_FORMAT_FLOAT_LE)) {
+        break;
+      case SND_PCM_FORMAT_S16_BE:
         if (chn==channel) {
-	  res = generate_pink_noise_sample(&pink) * 0.75; /* Don't use MAX volume */
-          fres = res;
-	  *samp_f++ = fres;
+          res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
+          ires = res;
+#if __BYTE_ORDER == __BIG_ENDIAN
+          *samp16++ = ires >> 16;
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+          *samp16++ = bswap_16(ires >> 16);
+#endif
         } else {
-	  *samp_f++ = 0.0;
+          *samp16++ = 0;
         }
-      } else if ((sample_size_bits == 32) && (format != SND_PCM_FORMAT_FLOAT_LE)) {
+        break;
+      case SND_PCM_FORMAT_S32_LE:
+        if (chn==channel) {
+          res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
+          ires = res;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+          *samp32++ = ires;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+          *samp32++ = bswap_32(ires);
+#endif
+        } else {
+          *samp32++ = 0;
+        }
+        break;
+      case SND_PCM_FORMAT_S32_BE:
         if (chn==channel) {
 	  res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
 	  ires = res;
+#if __BYTE_ORDER == __BIG_ENDIAN
 	  *samp32++ = ires;
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+          *samp32++ = bswap_32(ires);
+#endif
         } else {
 	  *samp32++ = 0;
         }
+        break;
+      default:
+        ;
       }
     }
-
   }
-     
 }
 
 static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_access_t access) {
