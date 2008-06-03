@@ -5,7 +5,7 @@ else
 ALSAMIXER_DIR=
 endif
 SUBDIRS= include alsactl alsaconf $(ALSAMIXER_DIR) amidi amixer aplay iecset seq speaker-test utils m4 po
-EXTRA_DIST= config.rpath mkinstalldirs ChangeLog INSTALL TODO README configure hgcompile depcomp
+EXTRA_DIST= config.rpath mkinstalldirs ChangeLog INSTALL TODO README configure gitcompile depcomp
 AUTOMAKE_OPTIONS=foreign
 ACLOCAL_AMFLAGS = -I m4
 
