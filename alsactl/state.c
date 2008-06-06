@@ -31,6 +31,9 @@
 #include "alsactl.h"
 
 
+#define ARRAY_SIZE(a) (sizeof (a) / sizeof (a)[0])
+
+
 char *id_str(snd_ctl_elem_id_t *id)
 {
 	static char str[128];
@@ -799,22 +802,23 @@ static int is_user_control(snd_config_t *conf)
  */
 static int get_comment_type(snd_config_t *n)
 {
+	static const snd_ctl_elem_type_t types[] = {
+		SND_CTL_ELEM_TYPE_BOOLEAN,
+		SND_CTL_ELEM_TYPE_INTEGER,
+		SND_CTL_ELEM_TYPE_ENUMERATED,
+		SND_CTL_ELEM_TYPE_BYTES,
+		SND_CTL_ELEM_TYPE_IEC958,
+		SND_CTL_ELEM_TYPE_INTEGER64,
+	};
 	const char *type;
+	unsigned int i;
 
 	if (snd_config_get_string(n, &type) < 0)
 		return -EINVAL;
-	if (strcmp(type, "BOOLEAN") == 0)
-		return SND_CTL_ELEM_TYPE_BOOLEAN;
-	else if (strcmp(type, "INTEGER") == 0)
-		return SND_CTL_ELEM_TYPE_INTEGER;
-	else if (strcmp(type, "ENUMERATED") == 0)
-		return SND_CTL_ELEM_TYPE_ENUMERATED;
-	else if (strcmp(type, "INTEGER64") == 0)
-		return SND_CTL_ELEM_TYPE_INTEGER;
-	else if (strcmp(type, "IEC958") == 0)
-		return SND_CTL_ELEM_TYPE_IEC958;
-	else
-		return -EINVAL;
+	for (i = 0; i < ARRAY_SIZE(types); ++i)
+		if (strcmp(type, snd_ctl_elem_type_name(types[i])) == 0)
+			return types[i];
+	return -EINVAL;
 }
 
 /*
