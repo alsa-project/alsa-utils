@@ -31,7 +31,7 @@ PROCFS="/proc"
 SYSFS="/sys"
 
 # i18n stuff
-if test "$USE_NLS" = "yes" && which gettext > /dev/null; then
+if test "$USE_NLS" = "yes" && type -p gettext > /dev/null; then
   xecho() {
     gettext -s "$*"
   }
@@ -316,10 +316,10 @@ fi
 fi
 
 # Check for dialog, whiptail, gdialog, awk, ... ?
-if which dialog > /dev/null; then
+if type -p dialog > /dev/null; then
     DIALOG=dialog
 else
-  if which whiptail > /dev/null; then
+  if type -p whiptail > /dev/null; then
     whiptail_wrapper() {
       X1="$1"
       X2="$2"
@@ -337,7 +337,7 @@ else
     exit 1
   fi
 fi
-if which awk > /dev/null; then :
+if type -p awk > /dev/null; then :
 else
   xecho "Error, awk not found. Can't continue."
   exit 1
