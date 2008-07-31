@@ -602,8 +602,10 @@ static int elemid_set(struct space *space, const char *attr, const char *value)
 	}
 	if (strncasecmp(attr, "value", 5) == 0) {
 		err = check_id_changed(space, 1);
-		if (err < 0)
+		if (err < 0) {
+			Perror(space, "control element not found");
 			return err;
+		}
 		err = set_ctl_value(space, value);
 		if (err < 0) {
 			space->ctl_id_changed |= 2;
@@ -1184,8 +1186,9 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 				goto invalid;
 			}
 			if (op == KEY_OP_ASSIGN) {
+				strlcpy(result, value, sizeof(result));
+				apply_format(space, result, sizeof(result));
 				dbg("ctl assign: '%s' '%s'", value, attr);
-				apply_format(result, value, sizeof(result));
 				err = elemid_set(space, attr, result);
 				if (space->program_result) {
 					free(space->program_result);
@@ -1193,8 +1196,10 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 				}
 				snprintf(string, sizeof(string), "%i", err);
 				space->program_result = strdup(string);
-				if (err < 0 || space->program_result == NULL)
+				if (err < 0 || space->program_result == NULL) {
+					err = 0;
 					break;
+				}
 			} else if (op == KEY_OP_MATCH || op == KEY_OP_NOMATCH) {
 				dbg("ctl match: '%s' '%s'", value, attr);
 				temp = (char *)elemid_get(space, attr);

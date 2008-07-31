@@ -3,8 +3,12 @@
 CARDINFO{mixername}=="Realtek ALC880", \
   CARDINFO{components}=="*HDA:10ec0880 HDA:11c13026*", \
   GOTO="Acer Travelmate 8100"
-ERROR="Unknown hardware: \"$cardinfo{mixername}\" \"$cardinfo{components}\"\n"
-ERROR="Hardware is left uninitialized"
+CARDINFO{mixername}=="Analog Devices AD1984", \
+  ATTR{subsystem_vendor}=="0x17aa", ATTR{subsystem_device}=="0x20ac", \
+  GOTO="Lenovo T61"
+
+ERROR="Unknown hardware: \"$cardinfo{mixername}\" \"$cardinfo{components}\" \"$attr{subsystem_vendor}" \"$attr{subsystem_device}\"\n"
+ERROR="Hardware is left uninitialized\n"
 EXIT="99"
 
 LABEL="Acer Travelmate 8100"
@@ -17,5 +21,17 @@ CTL{name}="PCM Playback Volume", CTL{value}="150,150"
 # capture
 CTL{name}="Input Source", CTL{value}="0"
 CTL{name}="Capture Volume", CTL{value}="65,65"
+CTL{name}="Capture Switch", CTL{value}="on,on"
+EXIT="0"
+
+LABEL="Lenovo T61"
+# playback
+CTL{reset}="mixer"
+CTL{name}="Headphone Playback Switch", CTL{value}="on,on"
+CTL{name}="PCM Playback Volume", CTL{value}="150,550"
+# capture (Internal Mic)
+CTL{name}="Input Source", CTL{value}="1"
+CTL{name}="Internal Mic Boost", CTL{value}="1"
+CTL{name}="Capture Volume", CTL{value}="45,45"
 CTL{name}="Capture Switch", CTL{value}="on,on"
 EXIT="0"
