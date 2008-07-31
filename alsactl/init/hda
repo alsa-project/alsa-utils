@@ -1,7 +1,7 @@
 # Configuration for HDA Intel driver (High Definition Audio - Azalia)
 
 CARDINFO{mixername}=="Realtek ALC880", \
-  CARDINFO{components}=="*HDA:10ec0880 HDA:11c13026*", \
+  ATTR{subsystem_vendor}=="0x1025", ATTR{subsystem_device}=="0x0070", \
   GOTO="Acer Travelmate 8100"
 CARDINFO{mixername}=="Analog Devices AD1984", \
   ATTR{subsystem_vendor}=="0x17aa", ATTR{subsystem_device}=="0x20ac", \
