@@ -20,14 +20,17 @@ ABOUT-NLS
 *.ok
 *.gmo
 *.o
+*~
 .deps
 
 alsactl/alsactl
+alsactl/alsactl_init.7
 alsaconf/alsaconf
 alsamixer/alsamixer
 amidi/amidi
 amixer/amixer
 aplay/aplay
+aplay/arecord.1
 iecset/iecset
 seq/aconnect/aconnect
 seq/aplaymidi/aplaymidi

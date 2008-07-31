@@ -1,0 +1,16 @@
+# This is toplevel configuration for for 'alsactl init'.
+# See 'man alsactl_init' for syntax.
+
+# set root device directory in sysfs for soundcard for ATTR{} command
+SYSFS_DEVICE="/class/sound/controlC$cardinfo{card}/device"
+
+# test for extra commands
+ENV{CMD}=="help", INCLUDE="help", GOTO="00main_end"
+ENV{CMD}=="info", INCLUDE="info", GOTO="00main_end"
+ENV{CMD}=="test", INCLUDE="test", GOTO="00main_end"
+ENV{CMD}=="*", ERROR="Unknown command '$env{CMD}'\n", GOTO="00main_end"
+
+# include files with real configuration
+CARDINFO{driver}=="HDA-Intel", INCLUDE="hda", GOTO="00main_end"
+CARDINFO{driver}=="Test", INCLUDE="test", GOTO="00main_end"
+LABEL="00main_end"

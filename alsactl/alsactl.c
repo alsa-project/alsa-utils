@@ -40,19 +40,25 @@ char *command;
 static void help(void)
 {
 	printf("Usage: alsactl <options> command\n");
-	printf("\nAvailable options:\n");
+	printf("\nAvailable global options:\n");
 	printf("  -h,--help        this help\n");
+	printf("  -d,--debug       debug mode\n");
+	printf("  -v,--version     print version of this program\n");
+	printf("\nAvailable state options:\n");
 	printf("  -f,--file #      configuration file (default " SYS_ASOUNDRC " or " SYS_ASOUNDNAMES ")\n");
 	printf("  -F,--force       try to restore the matching controls as much as possible\n");
 	printf("                   (default mode)\n");
 	printf("  -P,--pedantic    don't restore mismatching controls (old default)\n");
-	printf("  -d,--debug       debug mode\n");
-	printf("  -v,--version     print version of this program\n");
+	printf("\nAvailable init options:\n");
+	printf("  -E,--env #=#	   set environment variable for init phase (NAME=VALUE)\n");
+	printf("  -i,--initfile #  main configuation file for init phase (default " DATADIR "/init/00main)\n");
+	printf("\n");
 	printf("\nAvailable commands:\n");
 	printf("  store   <card #> save current driver setup for one or each soundcards\n");
 	printf("                   to configuration file\n");
 	printf("  restore <card #> load current driver setup for one or each soundcards\n");
 	printf("                   from configuration file\n");
+	printf("  init	  <card #> initialize driver to a default state\n");
 	printf("  names   <card #> dump information about all the known present (sub-)devices\n");
 	printf("                   into configuration file (DEPRECATED)\n");
 }
@@ -63,6 +69,8 @@ int main(int argc, char *argv[])
 	{
 		{"help", 0, NULL, 'h'},
 		{"file", 1, NULL, 'f'},
+		{"env", 1, NULL, 'E'},
+		{"initfile", 1, NULL, 'i'},
 		{"force", 0, NULL, 'F'},
 		{"pedantic", 0, NULL, 'P'},
 		{"debug", 0, NULL, 'd'},
@@ -70,13 +78,14 @@ int main(int argc, char *argv[])
 		{NULL, 0, NULL, 0},
 	};
 	char *cfgfile = SYS_ASOUNDRC;
+	char *initfile = DATADIR "/init/00main";
 	int res;
 
 	command = argv[0];
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hf:Fdv", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hdvf:FE:i:", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
@@ -87,6 +96,15 @@ int main(int argc, char *argv[])
 			break;
 		case 'F':
 			force_restore = 1;
+			break;
+		case 'E':
+			if (putenv(optarg)) {
+				fprintf(stderr, "environment string '%s' is wrong\n", optarg);
+				return EXIT_FAILURE;
+			}
+			break;
+		case 'i':
+			initfile = optarg;
 			break;
 		case 'P':
 			force_restore = 0;
@@ -111,8 +129,11 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	if (!strcmp(argv[optind], "store")) {
-		res =  save_state(cfgfile,
+	if (!strcmp(argv[optind], "init")) {
+		res = init(initfile,
+			argc - optind > 1 ? argv[optind + 1] : NULL);
+	} else if (!strcmp(argv[optind], "store")) {
+		res = save_state(cfgfile,
 		   argc - optind > 1 ? argv[optind + 1] : NULL);
 	} else if (!strcmp(argv[optind], "restore")) {
 		res = load_state(cfgfile, 

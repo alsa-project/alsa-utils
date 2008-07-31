@@ -151,19 +151,6 @@ static char *tlv_to_str(unsigned int *tlv)
 	return s;
 }
 
-static int hextodigit(int c)
-{
-	if (c >= '0' && c <= '9')
-		c -= '0';
-	else if (c >= 'a' && c <= 'f')
-		c = c - 'a' + 10;
-	else if (c >= 'A' && c <= 'F')
-		c = c - 'A' + 10;
-	else
-		return -1;
-	return c;
-}
-
 static unsigned int *str_to_tlv(const char *s)
 {
 	int i, j, c, len;
