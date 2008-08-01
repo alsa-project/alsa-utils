@@ -58,7 +58,7 @@ static struct cmdtbl cmds[] = {
 	{ "aud", IDX_NOAUDIO, CMD_BOOL_INV,
 	  "audio (common)\n\ton = audio mode, off = non-audio mode" },
 	{ "rat", IDX_RATE, CMD_INT,
-	  "rate (common)\n\tsample rate in Hz" },
+	  "rate (common)\n\tsample rate in Hz (0 = not indicated)" },
 	{ "emp", IDX_EMP, CMD_INT,
 	  "emphasis (common)\n\t0 = none, 1 = 50/15us, 2 = CCITT" },
 	{ "loc", IDX_UNLOCK, CMD_BOOL_INV,
@@ -194,14 +194,38 @@ static int update_iec958_status(snd_aes_iec958_t *iec958, int *parms)
 		} else {
 			iec958->status[3] &= ~IEC958_AES3_CON_FS;
 			switch (parms[IDX_RATE]) {
+			case 22050:
+				iec958->status[3] |= IEC958_AES3_CON_FS_22050;
+				break;
+			case 24000:
+				iec958->status[3] |= IEC958_AES3_CON_FS_24000;
+				break;
+			case 32000:
+				iec958->status[3] |= IEC958_AES3_CON_FS_32000;
+				break;
 			case 44100:
 				iec958->status[3] |= IEC958_AES3_CON_FS_44100;
 				break;
 			case 48000:
 				iec958->status[3] |= IEC958_AES3_CON_FS_48000;
 				break;
-			case 32000:
-				iec958->status[3] |= IEC958_AES3_CON_FS_32000;
+			case 88200:
+				iec958->status[3] |= IEC958_AES3_CON_FS_88200;;
+				break;
+			case 96000:
+				iec958->status[3] |= IEC958_AES3_CON_FS_96000;
+				break;
+			case 176400:
+				iec958->status[3] |= IEC958_AES3_CON_FS_176400;
+				break;
+			case 192000:
+				iec958->status[3] |= IEC958_AES3_CON_FS_192000;
+				break;
+			case 768000:
+				iec958->status[3] |= IEC958_AES3_CON_FS_768000;
+				break;
+			default:
+				iec958->status[3] |= IEC958_AES3_CON_FS_NOTID;
 				break;
 			}
 		}

@@ -26,17 +26,39 @@ struct category_str {
 };
 
 static struct category_str con_category[] = {
-	{ IEC958_AES1_CON_DAT, "DAT" },
-	{ IEC958_AES1_CON_VCR, "VCR" },
-	{ IEC958_AES1_CON_MICROPHONE, "microphone" },
-	{ IEC958_AES1_CON_SYNTHESIZER, "synthesizer" },
-	{ IEC958_AES1_CON_RATE_CONVERTER, "rate converter" },
-	{ IEC958_AES1_CON_MIXER, "mixer" },
-	{ IEC958_AES1_CON_SAMPLER, "sampler" },
-	{ IEC958_AES1_CON_PCM_CODER, "PCM coder" },
+	{ IEC958_AES1_CON_GENERAL, "general" },
+
 	{ IEC958_AES1_CON_IEC908_CD, "CD" },
 	{ IEC958_AES1_CON_NON_IEC908_CD, "non-IEC908 CD" },
-	{ IEC958_AES1_CON_GENERAL, "general" },
+	{ IEC958_AES1_CON_MINI_DISC, "Mini-Disc" },
+	{ IEC958_AES1_CON_DVD, "DVD" },
+
+	{ IEC958_AES1_CON_PCM_CODER, "PCM coder" },
+	{ IEC958_AES1_CON_MIXER, "digital signal mixer" },
+	{ IEC958_AES1_CON_RATE_CONVERTER, "rate converter" },
+	{ IEC958_AES1_CON_SAMPLER, "sampler" },
+	{ IEC958_AES1_CON_DSP, "digital sound processor" },
+
+	{ IEC958_AES1_CON_DAT, "DAT" },
+	{ IEC958_AES1_CON_VCR, "VCR" },
+	{ IEC958_AES1_CON_DCC, "DCC" },
+	{ IEC958_AES1_CON_MAGNETIC_DISC, "magnetic disc" },
+
+	{ IEC958_AES1_CON_DAB_JAPAN, "digital audio broadcast (Japan)" },
+	{ IEC958_AES1_CON_DAB_EUROPE, "digital audio broadcast (Europe)" },
+	{ IEC958_AES1_CON_DAB_USA, "digital audio broadcast (USA)" },
+	{ IEC958_AES1_CON_SOFTWARE, "software delivery" },
+
+	{ IEC958_AES1_CON_SYNTHESIZER, "synthesizer" },
+	{ IEC958_AES1_CON_MICROPHONE, "microphone" },
+
+	{ IEC958_AES1_CON_ADC, "ADC without copyright information" },
+
+	{ IEC958_AES1_CON_ADC_COPYRIGHT, "ADC with copyright information" },
+
+	{ IEC958_AES1_CON_SOLIDMEM_DIGITAL_RECORDER_PLAYER, "flash memory recorder/player" },
+
+	{ IEC958_AES1_CON_EXPERIMENTAL, "experimental" },
 };
 
 
@@ -57,14 +79,38 @@ void dump_iec958(snd_aes_iec958_t *iec)
 		}
 		printf("Rate: ");
 		switch (iec->status[3] & IEC958_AES3_CON_FS) {
+		case IEC958_AES3_CON_FS_22050:
+			printf("22050 Hz\n");
+			break;
+		case IEC958_AES3_CON_FS_24000:
+			printf("24000 Hz\n");
+			break;
+		case IEC958_AES3_CON_FS_32000:
+			printf("32000 Hz\n");
+			break;
 		case IEC958_AES3_CON_FS_44100:
 			printf("44100 Hz\n");
 			break;
 		case IEC958_AES3_CON_FS_48000:
 			printf("48000 Hz\n");
 			break;
-		case IEC958_AES3_CON_FS_32000:
-			printf("32000 Hz\n");
+		case IEC958_AES3_CON_FS_88200:
+			printf("88200 Hz\n");
+			break;
+		case IEC958_AES3_CON_FS_96000:
+			printf("96000 Hz\n");
+			break;
+		case IEC958_AES3_CON_FS_176400:
+			printf("176400 Hz\n");
+			break;
+		case IEC958_AES3_CON_FS_192000:
+			printf("192000 Hz\n");
+			break;
+		case IEC958_AES3_CON_FS_768000:
+			printf("768000 Hz\n");
+			break;
+		case IEC958_AES3_CON_FS_NOTID:
+			printf("not indicated\n");
 			break;
 		default:
 			printf("unknown\n");
