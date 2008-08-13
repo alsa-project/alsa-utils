@@ -1,3 +1,5 @@
+SUBDIRS = init
+
 sbin_PROGRAMS=alsactl
 man_MANS=alsactl.1 alsactl_init.7
 EXTRA_DIST=alsactl.1 alsactl_init.xml

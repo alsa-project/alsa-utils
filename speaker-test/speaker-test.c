@@ -81,7 +81,7 @@ static pink_noise_t pink;
 static snd_pcm_uframes_t  buffer_size;
 static snd_pcm_uframes_t  period_size;
 static const char *given_test_wav_file = NULL;
-static char *wav_file_dir = DATADIR;
+static char *wav_file_dir = SOUNDSDIR;
 
 static const char        *channel_name[MAX_CHANNELS] = {
   N_("Front Left"),

@@ -93,8 +93,11 @@ case "$dir" in
 *) dir="$prefix/share"
 esac
 
-dir="$dir/sounds/alsa"
-AC_DEFINE_UNQUOTED(DATADIR, "$dir", [directory containing sample data])
+soundsdir="$dir/sounds/alsa"
+AC_DEFINE_UNQUOTED(SOUNDSDIR, "$soundsdir", [directory containing sample data])
+
+mydatadir="$dir/alsa"
+AC_DEFINE_UNQUOTED(DATADIR, "$mydatadir", [directory containing alsa configuration])
 
 AC_ARG_WITH(testsound,
   [  --with-testsound=file        give the path of test sound file for alsaconf],
@@ -117,7 +120,8 @@ AC_SYS_LARGEFILE
 
 SAVE_UTIL_VERSION
 
-AC_OUTPUT(Makefile alsactl/Makefile alsamixer/Makefile amidi/Makefile amixer/Makefile \
+AC_OUTPUT(Makefile alsactl/Makefile alsactl/init/Makefile \
+	  alsamixer/Makefile amidi/Makefile amixer/Makefile \
 	  m4/Makefile po/Makefile.in \
 	  alsaconf/alsaconf alsaconf/Makefile \
 	  alsaconf/po/Makefile \
