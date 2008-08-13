@@ -257,7 +257,7 @@
             </varlistentry>
 
             <varlistentry>
-              <term><option>SYSFS_DEVICE</option></term>
+              <term><option>CONFIG{sysfs_device}</option></term>
               <listitem>
                 <para>The relative path to sysfs subsystem specifying
                 the root directory of a soundcard device. Usually,
@@ -271,7 +271,7 @@
               <listitem>
                 <para>Match sysfs attribute values of the soundcard device.
                 The relative path to sysfs tree must be defined by
-		SYSFS_DEVICE key. Trailing whitespace in the attribute
+		CONFIG{sysfs_device} key. Trailing whitespace in the attribute
 		values is ignored, if the specified match value does
 		not contain trailing whitespace itself. Depending on
 		the type of operator, this key is also used to set
@@ -392,6 +392,16 @@
             </varlistentry>
 
             <varlistentry>
+              <term><option>RESULT</option></term>
+              <listitem>
+                <para>Set RESULT variable. Note that PROGRAM also sets
+                this variable, but setting this variable manually
+                might be useful to change code execution order (included
+                files).</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
               <term><option>LABEL</option></term>
               <listitem>
                 <para>Named label where a GOTO can jump to.</para>
@@ -406,7 +416,21 @@
             </varlistentry>
 
             <varlistentry>
-              <term><option>SYSFS_DEVICE</option></term>
+              <term><option>INCLUDE</option></term>
+              <listitem>
+                <para>Include specified filename or all files in specified directory</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>ACCESS</option></term>
+              <listitem>
+                <para>Check if specified file or directory exists</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>CONFIG{sysfs_device}</option></term>
               <listitem>
                 <para>The relative path to sysfs subsystem specifying
                 the root directory of a soundcard device. Usually,
@@ -432,15 +456,19 @@
             <varlistentry>
               <term><option>EXIT</option></term>
               <listitem>
-                <para>Exit immediately and set program exit code to value (should be integer).</para>
+                <para>Exit immediately and set program exit code to value
+                (should be integer). If value is "return" string,
+                parser leaves current included file and returns to parent
+                configuration file.</para>
               </listitem>
             </varlistentry>
 
           </variablelist>
 
-          <para>The <option>PROGRAM</option>, <option>CTL{value}</option>,
+          <para>The <option>PROGRAM</option>, <option>RESULT</option>,
+          <option>CTL{value}</option>,
 	  <option>PRINT</option>, <option>ERROR</option>,
-	  <option>EXIT</option>, <option>SYSFS_DEVICE</option>
+	  <option>EXIT</option>, <option>CONFIG{}</option>
 	  fields support simple printf-like string substitutions.
           It allows the use of the complete environment set by earlier matching
           rules. For all other fields, substitutions are applied while the individual rule is

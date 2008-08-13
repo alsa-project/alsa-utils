@@ -2,7 +2,7 @@
 # See 'man alsactl_init' for syntax.
 
 # set root device directory in sysfs for soundcard for ATTR{} command
-SYSFS_DEVICE="/class/sound/controlC$cardinfo{card}/device"
+CONFIG{sysfs_device}="/class/sound/controlC$cardinfo{card}/device"
 
 # test for extra commands
 ENV{CMD}=="help", INCLUDE="help", GOTO="00main_end"
@@ -11,6 +11,33 @@ ENV{CMD}=="test", INCLUDE="test", GOTO="00main_end"
 ENV{CMD}=="*", ERROR="Unknown command '$env{CMD}'\n", GOTO="00main_end"
 
 # include files with real configuration
-CARDINFO{driver}=="HDA-Intel", INCLUDE="hda", GOTO="00main_end"
-CARDINFO{driver}=="Test", INCLUDE="test", GOTO="00main_end"
+#
+# steps are:
+#   1) look for preinit subdirectory and parse all files in it
+#   2) if RESULT=="skip", skip ALSA standard configuration files
+#   3) do ALSA standard configuration
+#   4) look for postinit subdirectory and parse all files in it
+#   5) if RESULT!="true", print an error message and return with exit code 99
+#   6) return with exit code 0 (success)
+#
+
+RESULT="unknown"
+ACCESS=="preinit", INCLUDE="preinit"
+RESULT=="skip", GOTO="init_end"
+
+# real ALSA configuration database
+CARDINFO{driver}=="HDA-Intel", INCLUDE="hda", GOTO="init_end"
+CARDINFO{driver}=="Test", INCLUDE="test", GOTO="init_end"
+
+LABEL="init_end"
+ACCESS=="postinit", INCLUDE="postinit"
+RESULT=="true", GOTO="00_mainend"
+ERROR="Unknown hardware: \"$cardinfo{driver}\" \"$cardinfo{mixername}\" \"$cardinfo{components}\" \"$attr{subsystem_vendor}\" \"$attr{subsystem_device}\"\n"
+ERROR="Hardware is left uninitialized\n"
+EXIT="99"
+
+#
+# label identifying end of main file
+#
+
 LABEL="00main_end"

@@ -34,6 +34,8 @@
 #include <sys/un.h>
 #include <sys/wait.h>
 #include <sys/select.h>
+#include <sys/types.h>
+#include <dirent.h>
 #include <alsa/asoundlib.h>
 #include "aconfig.h"
 #include "alsactl.h"
@@ -41,6 +43,7 @@
 
 #define PATH_SIZE	512
 #define NAME_SIZE	128
+#define EJUSTRETURN	0x7fffffff
 
 enum key_op {
 	KEY_OP_UNSET,
@@ -946,7 +949,7 @@ found:
 				const char *value = NULL;
 				size_t size;
 
-				pair = value_find(space, "SYSFS_DEVICE");
+				pair = value_find(space, "sysfs_device");
 				if (pair == NULL)
 					break;
 				value = sysfs_attr_get_value(pair->value, attr);
@@ -1215,7 +1218,17 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 			if (op == KEY_OP_MATCH || op == KEY_OP_NOMATCH) {
 				if (!do_match(key, op, value, space->program_result))
 					break;
-			} else {
+			} else if (op == KEY_OP_ASSIGN) {
+				if (space->program_result) {
+					free(space->program_result);
+					space->program_result = NULL;
+				}
+				strlcpy(string, value, sizeof(string));
+				apply_format(space, string, sizeof(string));
+				space->program_result = strdup(string);
+				if (space->program_result == NULL)
+					break;
+ 			} else {
 				Perror(space, "invalid RESULT operation");
 				goto invalid;
 			}
@@ -1274,7 +1287,7 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 				goto invalid;
 			}
 			if (op == KEY_OP_MATCH || op == KEY_OP_NOMATCH) {
-				pair = value_find(space, "SYSFS_DEVICE");
+				pair = value_find(space, "sysfs_device");
 				if (pair == NULL)
 					break;
 				dbg("sysfs_attr: '%s' '%s'", pair->value, attr);
@@ -1319,6 +1332,8 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 		if (strcasecmp(key, "INCLUDE") == 0) {
 			char *rootdir, *go_to;
 			const char *filename;
+			struct dirent *dirent;
+			DIR *dir;
 			int linenum;
 			if (op != KEY_OP_ASSIGN) {
 				Perror(space, "invalid INCLUDE operation");
@@ -1335,16 +1350,41 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 			go_to = space->go_to;
 			filename = space->filename;
 			linenum = space->linenum;
-			space->go_to = NULL;
-			space->rootdir = new_root_dir(string);
-			if (space->rootdir) {
-				err = parse(space, string);
-				free(space->rootdir);
-			} else
-				err = -ENOMEM;
-			if (space->go_to) {
-				Perror(space, "unterminated GOTO '%s'", space->go_to);
-				free(space->go_to);
+			dir = opendir(string);
+			if (dir) {
+				count = strlen(string);
+				while ((dirent = readdir(dir)) != NULL) {
+					if (strcmp(dirent->d_name, ".") == 0 ||
+					    strcmp(dirent->d_name, "..") == 0)
+						continue;
+					string[count] = '\0';
+					strlcat(string, "/", sizeof(string));
+					strlcat(string, dirent->d_name, sizeof(string));
+					space->go_to = NULL;
+					space->rootdir = new_root_dir(string);
+					if (space->rootdir) {
+						err = parse(space, string);
+						free(space->rootdir);
+					} else
+						err = -ENOMEM;
+					if (space->go_to) {
+						Perror(space, "unterminated GOTO '%s'", space->go_to);
+						free(space->go_to);
+					}
+				}
+				closedir(dir);
+			} else {
+				space->go_to = NULL;
+				space->rootdir = new_root_dir(string);
+				if (space->rootdir) {
+					err = parse(space, string);
+					free(space->rootdir);
+				} else
+					err = -ENOMEM;
+				if (space->go_to) {
+					Perror(space, "unterminated GOTO '%s'", space->go_to);
+					free(space->go_to);
+				}
 			}
 			space->go_to = go_to;
 			space->rootdir = rootdir;
@@ -1354,31 +1394,82 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 				break;
 			continue;
 		}
+		if (strncasecmp(key, "ACCESS", 6) == 0) {
+			if (op == KEY_OP_MATCH || op == KEY_OP_NOMATCH) {
+				if (value[0] != '/') {
+					strlcpy(string, space->rootdir, sizeof(string));
+					strlcat(string, "/", sizeof(string));
+					strlcat(string, value, sizeof(string));
+				} else {
+					strlcat(string, value, sizeof(string));
+				}
+				count = access(string, F_OK);
+				dbg("access(%s) = %i", value, count);
+				if (op == KEY_OP_MATCH && count != 0)
+					break;
+				if (op == KEY_OP_NOMATCH && count == 0)
+					break;
+			} else {
+				Perror(space, "invalid ACCESS operation");
+				goto invalid;
+			}
+			continue;
+		}
 		if (strncasecmp(key, "PRINT", 5) == 0) {
+			if (op != KEY_OP_ASSIGN) {
+				Perror(space, "invalid PRINT operation");
+				goto invalid;
+			}
 			strlcpy(string, value, sizeof(string));
 			apply_format(space, string, sizeof(string));
 			fwrite(string, strlen(string), 1, stdout);
 			continue;
 		}
 		if (strncasecmp(key, "ERROR", 5) == 0) {
+			if (op != KEY_OP_ASSIGN) {
+				Perror(space, "invalid ERROR operation");
+				goto invalid;
+			}
 			strlcpy(string, value, sizeof(string));
 			apply_format(space, string, sizeof(string));
 			fwrite(string, strlen(string), 1, stderr);
 			continue;
 		}
 		if (strncasecmp(key, "EXIT", 4) == 0) {
+			if (op != KEY_OP_ASSIGN) {
+				Perror(space, "invalid EXIT operation");
+				goto invalid;
+			}
 			strlcpy(string, value, sizeof(string));
 			apply_format(space, string, sizeof(string));
+			if (strcmp(string, "return") == 0)
+				return -EJUSTRETURN;
 			space->exit_code = strtol(string, NULL, 0);
 			space->quit = 1;
 			break;
 		}
-		if (strncasecmp(key, "SYSFS_DEVICE", 12) == 0) {
-			strlcpy(string, value, sizeof(string));
-			apply_format(space, string, sizeof(string));
-			err = value_set(space, key, string);
-			dbg("SYSFS_DEVICE='%s'", string);
-			break;
+		if (strncasecmp(key, "CONFIG{", 7) == 0) {
+			attr = get_key_attribute(space, key + 6, string, sizeof(string));
+			if (attr == NULL) {
+				Perror(space, "error parsing CONFIG attribute");
+				goto invalid;
+			}
+			strlcpy(result, value, sizeof(result));
+			apply_format(space, result, sizeof(result));
+			if (op == KEY_OP_ASSIGN) {
+				err = value_set(space, attr, result);
+				dbg("CONFIG{%s}='%s'", attr, result);
+				break;
+			} else if (op == KEY_OP_MATCH || op == KEY_OP_NOMATCH) {
+				pair = value_find(space, attr);
+				if (pair == NULL)
+					break;
+				if (!do_match(key, op, result, pair->value))
+					break;
+			} else {
+				Perror(space, "invalid CONFIG{} operation");
+				goto invalid;
+			}
 		}
 
 		Perror(space, "unknown key '%s'", key);
@@ -1460,6 +1551,10 @@ static int parse(struct space *space, const char *filename)
 		dbg("read (%i) '%s'", linenum, line);
 		space->linenum = linenum;
 		err = parse_line(space, line, linesize);
+		if (err == -EJUSTRETURN) {
+			err = 0;
+			break;
+		}
 		linenum += linenum_adj;
 	}
 
