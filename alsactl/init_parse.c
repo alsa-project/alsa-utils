@@ -333,8 +333,9 @@ static const char *get_ctl_value(struct space *space)
 static int set_ctl_value(struct space *space, const char *value)
 {
 	snd_ctl_elem_type_t type;
-	unsigned int idx, count;
+	unsigned int idx, idx2, count, items;
 	const char *pos;
+	snd_hctl_elem_t *elem;
 	int val;
 
 	type = snd_ctl_elem_info_get_type(space->ctl_info);
@@ -377,8 +378,32 @@ static int set_ctl_value(struct space *space, const char *value)
 		for (idx = 0; idx < count; idx++) {
 			while (*value == ' ')
 				value++;
-			snd_ctl_elem_value_set_enumerated(space->ctl_value, idx, strtol(value, NULL, 0));
 			pos = strchr(value, ',');
+			if (isdigit(value[0]) || value[0] == '-') {
+				snd_ctl_elem_value_set_enumerated(space->ctl_value, idx, strtol(value, NULL, 0));
+			} else {
+				if (pos)
+					*(char *)pos = '\0';
+				remove_trailing_chars((char *)value, ' ');
+				items = snd_ctl_elem_info_get_items(space->ctl_info);
+				for (idx2 = 0; idx2 < items; idx2++) {
+					snd_ctl_elem_info_set_item(space->ctl_info, idx);
+					elem = snd_hctl_find_elem(space->ctl_handle, space->ctl_id);
+					if (elem == NULL)
+						return -ENOENT;
+					val = snd_hctl_elem_info(elem, space->ctl_info);
+					if (val < 0)
+						return val;
+					if (strcasecmp(snd_ctl_elem_info_get_item_name(space->ctl_info), value) == 0) {
+						snd_ctl_elem_value_set_enumerated(space->ctl_value, idx, idx2);
+						break;
+					}
+				}
+				if (idx2 >= items) {
+					Perror(space, "wrong enum identifier '%s'", value);
+					return -EINVAL;
+				}
+			}
 			value = pos ? pos + 1 : value + strlen(value) - 1;
 		}
 		break;
@@ -389,14 +414,14 @@ static int set_ctl_value(struct space *space, const char *value)
 		while (*value == ' ')
 			value++;
 		if (strlen(value) != count * 2) {
-			Perror(space, "bad ctl value hexa length (should be %u bytes, line %i)", count, space->linenum);
+			Perror(space, "bad ctl value hexa length (should be %u bytes)", count);
 			return -EINVAL;
 		}
 		for (idx = 0; idx < count; idx += 2) {
 			val = hextodigit(*(value++)) << 4;
 			val |= hextodigit(*(value++));
 			if (val > 255) {
-				Perror(space, "bad ctl hexa value (line %i)", space->linenum);
+				Perror(space, "bad ctl hexa value");
 				return -EINVAL;
 			}
 			snd_ctl_elem_value_set_byte(space->ctl_value, idx, val);
@@ -1371,6 +1396,8 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 						Perror(space, "unterminated GOTO '%s'", space->go_to);
 						free(space->go_to);
 					}
+					if (err)
+						break;
 				}
 				closedir(dir);
 			} else {
@@ -1391,6 +1418,8 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 			space->filename = filename;
 			space->linenum = linenum;
 			if (space->quit)
+				break;
+			if (err)
 				break;
 			continue;
 		}
