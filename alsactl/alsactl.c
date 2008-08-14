@@ -36,6 +36,7 @@
 int debugflag = 0;
 int force_restore = 1;
 char *command;
+char *statefile = NULL;
 
 static void help(void)
 {
@@ -49,6 +50,8 @@ static void help(void)
 	printf("  -F,--force       try to restore the matching controls as much as possible\n");
 	printf("                   (default mode)\n");
 	printf("  -P,--pedantic    don't restore mismatching controls (old default)\n");
+	printf("  -r,--runstate #  save restore and init state to this file (only errors)\n");
+	printf("                   default settings is 'no file set'\n");
 	printf("\nAvailable init options:\n");
 	printf("  -E,--env #=#	   set environment variable for init phase (NAME=VALUE)\n");
 	printf("  -i,--initfile #  main configuation file for init phase (default " DATADIR "/init/00main)\n");
@@ -73,19 +76,21 @@ int main(int argc, char *argv[])
 		{"initfile", 1, NULL, 'i'},
 		{"force", 0, NULL, 'F'},
 		{"pedantic", 0, NULL, 'P'},
+		{"runstate", 0, NULL, 'r'},
 		{"debug", 0, NULL, 'd'},
 		{"version", 0, NULL, 'v'},
 		{NULL, 0, NULL, 0},
 	};
 	char *cfgfile = SYS_ASOUNDRC;
 	char *initfile = DATADIR "/init/00main";
+	char *cardname;
 	int res;
 
 	command = argv[0];
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hdvf:FE:i:", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hdvf:FE:i:Pr:", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
@@ -105,6 +110,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'i':
 			initfile = optarg;
+			break;
+		case 'r':
+			statefile = optarg;
 			break;
 		case 'P':
 			force_restore = 0;
@@ -129,15 +137,14 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+	cardname = argc - optind > 1 ? argv[optind + 1] : NULL;
 	if (!strcmp(argv[optind], "init")) {
-		res = init(initfile,
-			argc - optind > 1 ? argv[optind + 1] : NULL);
+		res = init(initfile, cardname);
 	} else if (!strcmp(argv[optind], "store")) {
-		res = save_state(cfgfile,
-		   argc - optind > 1 ? argv[optind + 1] : NULL);
+		res = save_state(cfgfile, cardname);
 	} else if (!strcmp(argv[optind], "restore")) {
-		res = load_state(cfgfile, 
-		   argc - optind > 1 ? argv[optind + 1] : NULL);
+		remove(statefile);
+		res = load_state(cfgfile, initfile, cardname);
 	} else if (!strcmp(argv[optind], "names")) {
 		if (!strcmp(cfgfile, SYS_ASOUNDRC))
 			cfgfile = SYS_ASOUNDNAMES;

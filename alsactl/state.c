@@ -665,7 +665,7 @@ static long config_iface(snd_config_t *n)
 	return -1;
 }
 
-static int config_bool(snd_config_t *n)
+static int config_bool(snd_config_t *n, int doit)
 {
 	const char *str;
 	long val;
@@ -686,10 +686,10 @@ static int config_bool(snd_config_t *n)
 		snd_config_get_string(n, &str);
 		break;
 	case SND_CONFIG_TYPE_COMPOUND:
-		if (!force_restore)
+		if (!force_restore || !doit)
 			return -1;
 		n = snd_config_iterator_entry(snd_config_iterator_first(n));
-		return config_bool(n);
+		return config_bool(n, doit);
 	default:
 		return -1;
 	}
@@ -701,7 +701,7 @@ static int config_bool(snd_config_t *n)
 }
 
 static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
-			     snd_ctl_elem_info_t *info)
+			     snd_ctl_elem_info_t *info, int doit)
 {
 	const char *str;
 	long val;
@@ -719,10 +719,10 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 		snd_config_get_string(n, &str);
 		break;
 	case SND_CONFIG_TYPE_COMPOUND:
-		if (!force_restore)
+		if (!force_restore || !doit)
 			return -1;
 		n = snd_config_iterator_entry(snd_config_iterator_first(n));
-		return config_enumerated(n, handle, info);
+		return config_enumerated(n, handle, info, doit);
 	default:
 		return -1;
 	}
@@ -741,26 +741,26 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 	return -1;
 }
 
-static int config_integer(snd_config_t *n, long *val)
+static int config_integer(snd_config_t *n, long *val, int doit)
 {
 	int err = snd_config_get_integer(n, val);
-	if (err < 0 && force_restore) {
+	if (err < 0 && force_restore && doit) {
 		if (snd_config_get_type(n) != SND_CONFIG_TYPE_COMPOUND)
 			return err;
 		n = snd_config_iterator_entry(snd_config_iterator_first(n));
-		return config_integer(n, val);
+		return config_integer(n, val, doit);
 	}
 	return err;
 }
 
-static int config_integer64(snd_config_t *n, long long *val)
+static int config_integer64(snd_config_t *n, long long *val, int doit)
 {
 	int err = snd_config_get_integer64(n, val);
-	if (err < 0 && force_restore) {
+	if (err < 0 && force_restore && doit) {
 		if (snd_config_get_type(n) != SND_CONFIG_TYPE_COMPOUND)
 			return err;
 		n = snd_config_iterator_entry(snd_config_iterator_first(n));
-		return config_integer64(n, val);
+		return config_integer64(n, val, doit);
 	}
 	return err;
 }
@@ -966,10 +966,11 @@ static int check_comment_type(snd_config_t *conf, int type)
 static int convert_to_new_db(snd_config_t *value, long omin, long omax,
 			     long nmin, long nmax,
 			     long odbmin, long odbmax,
-			     long ndbmin, long ndbmax)
+			     long ndbmin, long ndbmax,
+			     int doit)
 {
 	long val;
-	if (config_integer(value, &val) < 0)
+	if (config_integer(value, &val, doit) < 0)
 		return -EINVAL;
 	if (val < omin || val > omax)
 		return -EINVAL;
@@ -988,7 +989,8 @@ static int convert_to_new_db(snd_config_t *value, long omin, long omax,
  * if any change occurs, try to keep the same dB level.
  */
 static int check_comment_range(snd_ctl_t *handle, snd_config_t *conf,
-			       snd_ctl_elem_info_t *info, snd_config_t *value)
+			       snd_ctl_elem_info_t *info, snd_config_t *value,
+			       int doit)
 {
 	snd_config_t *n;
 	long omin, omax, ostep;
@@ -1007,7 +1009,7 @@ static int check_comment_range(snd_ctl_t *handle, snd_config_t *conf,
 	nmax = snd_ctl_elem_info_get_max(info);
 	if (omin != nmin && omax != nmax) {
 		/* Hey, the range mismatches */
-		if (!force_restore)
+		if (!force_restore || !doit)
 			return -EINVAL;
 	}
 	if (omin >= omax || nmin >= nmax)
@@ -1016,12 +1018,12 @@ static int check_comment_range(snd_ctl_t *handle, snd_config_t *conf,
 	n = search_comment_item(conf, "dbmin");
 	if (!n)
 		return 0;
-	if (config_integer(n, &odbmin) < 0)
+	if (config_integer(n, &odbmin, doit) < 0)
 		return 0;
 	n = search_comment_item(conf, "dbmax");
 	if (!n)
 		return 0;
-	if (config_integer(n, &odbmax) < 0)
+	if (config_integer(n, &odbmax, doit) < 0)
 		return 0;
 	if (odbmin >= odbmax)
 		return 0; /* invalid values */
@@ -1041,18 +1043,19 @@ static int check_comment_range(snd_ctl_t *handle, snd_config_t *conf,
 		snd_config_for_each(i, next, value) {
 			snd_config_t *n = snd_config_iterator_entry(i);
 			convert_to_new_db(n, omin, omax, nmin, nmax,
-					  odbmin, odbmax, ndbmin, ndbmax);
+					  odbmin, odbmax, ndbmin, ndbmax, doit);
 		}
 	} else
 		convert_to_new_db(value, omin, omax, nmin, nmax,
-				  odbmin, odbmax, ndbmin, ndbmax);
+				  odbmin, odbmax, ndbmin, ndbmax, doit);
 	return 0;
 }
 
 static int restore_config_value(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
 				snd_ctl_elem_iface_t type,
 				snd_config_t *value,
-				snd_ctl_elem_value_t *ctl, int idx)
+				snd_ctl_elem_value_t *ctl, int idx,
+				int doit)
 {
 	long val;
 	long long lval;
@@ -1060,28 +1063,28 @@ static int restore_config_value(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
 
 	switch (type) {
 	case SND_CTL_ELEM_TYPE_BOOLEAN:
-		val = config_bool(value);
+		val = config_bool(value, doit);
 		if (val >= 0) {
 			snd_ctl_elem_value_set_boolean(ctl, idx, val);
 			return 1;
 		}
 		break;
 	case SND_CTL_ELEM_TYPE_INTEGER:
-		err = config_integer(value, &val);
+		err = config_integer(value, &val, doit);
 		if (err == 0) {
 			snd_ctl_elem_value_set_integer(ctl, idx, val);
 			return 1;
 		}
 		break;
 	case SND_CTL_ELEM_TYPE_INTEGER64:
-		err = config_integer64(value, &lval);
+		err = config_integer64(value, &lval, doit);
 		if (err == 0) {
 			snd_ctl_elem_value_set_integer64(ctl, idx, lval);
 			return 1;
 		}
 		break;
 	case SND_CTL_ELEM_TYPE_ENUMERATED:
-		val = config_enumerated(value, handle, info);
+		val = config_enumerated(value, handle, info, doit);
 		if (val >= 0) {
 			snd_ctl_elem_value_set_enumerated(ctl, idx, val);
 			return 1;
@@ -1091,7 +1094,7 @@ static int restore_config_value(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
 	case SND_CTL_ELEM_TYPE_IEC958:
 		break;
 	default:
-		error("Unknow control type: %d", type);
+		cerror(doit, "Unknow control type: %d", type);
 		return -EINVAL;
 	}
 	return 0;
@@ -1101,9 +1104,9 @@ static int restore_config_value2(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
 				 snd_ctl_elem_iface_t type,
 				 snd_config_t *value,
 				 snd_ctl_elem_value_t *ctl, int idx,
-				 unsigned int numid)
+				 unsigned int numid, int doit)
 {
-	int err = restore_config_value(handle, info, type, value, ctl, idx);
+	int err = restore_config_value(handle, info, type, value, ctl, idx, doit);
 	long val;
 
 	if (err != 0)
@@ -1113,8 +1116,8 @@ static int restore_config_value2(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
 	case SND_CTL_ELEM_TYPE_IEC958:
 		err = snd_config_get_integer(value, &val);
 		if (err < 0 || val < 0 || val > 255) {
-			error("bad control.%d.value.%d content", numid, idx);
-			return force_restore ? 0 : -EINVAL;
+			cerror(doit, "bad control.%d.value.%d content", numid, idx);
+			return force_restore && doit ? 0 : -EINVAL;
 		}
 		snd_ctl_elem_value_set_byte(ctl, idx, val);
 		return 1;
@@ -1125,7 +1128,8 @@ static int restore_config_value2(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
 	return 0;
 }
 
-static int set_control(snd_ctl_t *handle, snd_config_t *control)
+static int set_control(snd_ctl_t *handle, snd_config_t *control,
+		       int *maxnumid, int doit)
 {
 	snd_ctl_elem_value_t *ctl;
 	snd_ctl_elem_info_t *info;
@@ -1153,15 +1157,17 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	snd_ctl_elem_value_alloca(&ctl);
 	snd_ctl_elem_info_alloca(&info);
 	if (snd_config_get_type(control) != SND_CONFIG_TYPE_COMPOUND) {
-		error("control is not a compound");
+		cerror(doit, "control is not a compound");
 		return -EINVAL;
 	}
 	err = snd_config_get_id(control, &id);
 	if (err < 0) {
-		error("unable to get id");
+		cerror(doit, "unable to get id");
 		return -EINVAL;
 	}
 	numid = atoi(id);
+	if (numid > *maxnumid)
+		*maxnumid = numid;
 	snd_config_for_each(i, next, control) {
 		snd_config_t *n = snd_config_iterator_entry(i);
 		const char *fld;
@@ -1169,7 +1175,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 			continue;
 		if (strcmp(fld, "comment") == 0) {
 			if (snd_config_get_type(n) != SND_CONFIG_TYPE_COMPOUND) {
-				error("control.%d.%s is invalid", numid, fld);
+				cerror(doit, "control.%d.%s is invalid", numid, fld);
 				return -EINVAL;
 			}
 			comment = n;
@@ -1178,14 +1184,14 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		if (strcmp(fld, "iface") == 0) {
 			iface = (snd_ctl_elem_iface_t)config_iface(n);
 			if (iface < 0) {
-				error("control.%d.%s is invalid", numid, fld);
+				cerror(doit, "control.%d.%s is invalid", numid, fld);
 				return -EINVAL;
 			}
 			continue;
 		}
 		if (strcmp(fld, "device") == 0) {
 			if (snd_config_get_type(n) != SND_CONFIG_TYPE_INTEGER) {
-				error("control.%d.%s is invalid", numid, fld);
+				cerror(doit, "control.%d.%s is invalid", numid, fld);
 				return -EINVAL;
 			}
 			snd_config_get_integer(n, &device);
@@ -1193,7 +1199,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		}
 		if (strcmp(fld, "subdevice") == 0) {
 			if (snd_config_get_type(n) != SND_CONFIG_TYPE_INTEGER) {
-				error("control.%d.%s is invalid", numid, fld);
+				cerror(doit, "control.%d.%s is invalid", numid, fld);
 				return -EINVAL;
 			}
 			snd_config_get_integer(n, &subdevice);
@@ -1201,7 +1207,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		}
 		if (strcmp(fld, "name") == 0) {
 			if (snd_config_get_type(n) != SND_CONFIG_TYPE_STRING) {
-				error("control.%d.%s is invalid", numid, fld);
+				cerror(doit, "control.%d.%s is invalid", numid, fld);
 				return -EINVAL;
 			}
 			snd_config_get_string(n, &name);
@@ -1209,7 +1215,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		}
 		if (strcmp(fld, "index") == 0) {
 			if (snd_config_get_type(n) != SND_CONFIG_TYPE_INTEGER) {
-				error("control.%d.%s is invalid", numid, fld);
+				cerror(doit, "control.%d.%s is invalid", numid, fld);
 				return -EINVAL;
 			}
 			snd_config_get_integer(n, &index);
@@ -1219,10 +1225,10 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 			value = n;
 			continue;
 		}
-		error("unknown control.%d.%s field", numid, fld);
+		cerror(doit, "unknown control.%d.%s field", numid, fld);
 	}
 	if (!value) {
-		error("missing control.%d.value", numid);
+		cerror(doit, "missing control.%d.value", numid);
 		return -EINVAL;
 	}
 	if (device < 0)
@@ -1233,7 +1239,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		index = 0;
 
 	err = -EINVAL;
-	if (! force_restore) {
+	if (!force_restore) {
 		snd_ctl_elem_info_set_numid(info, numid);
 		err = snd_ctl_elem_info(handle, info);
 	}
@@ -1249,7 +1255,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 			if (err < 0 && comment && is_user_control(comment)) {
 				err = add_user_control(handle, info, comment);
 				if (err < 0) {
-					error("failed to add user control #%d (%s)",
+					cerror(doit, "failed to add user control #%d (%s)",
 					      numid, snd_strerror(err));
 					return err;
 				}
@@ -1257,7 +1263,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		}
 	}
 	if (err < 0) {
-		error("failed to obtain info for control #%d (%s)", numid, snd_strerror(err));
+		cerror(doit, "failed to obtain info for control #%d (%s)", numid, snd_strerror(err));
 		return -ENOENT;
 	}
 	numid1 = snd_ctl_elem_info_get_numid(info);
@@ -1268,30 +1274,30 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	index1 = snd_ctl_elem_info_get_index(info);
 	count = snd_ctl_elem_info_get_count(info);
 	type = snd_ctl_elem_info_get_type(info);
-	if (err |= numid != numid1 && ! force_restore)
-		error("warning: numid mismatch (%d/%d) for control #%d", 
+	if (err |= numid != numid1 && !force_restore)
+		cerror(doit, "warning: numid mismatch (%d/%d) for control #%d", 
 		      numid, numid1, numid);
 	if (err |= iface != iface1)
-		error("warning: iface mismatch (%d/%d) for control #%d", iface, iface1, numid);
+		cerror(doit, "warning: iface mismatch (%d/%d) for control #%d", iface, iface1, numid);
 	if (err |= device != device1)
-		error("warning: device mismatch (%ld/%ld) for control #%d", device, device1, numid);
+		cerror(doit, "warning: device mismatch (%ld/%ld) for control #%d", device, device1, numid);
 	if (err |= subdevice != subdevice1)
-		error("warning: subdevice mismatch (%ld/%ld) for control #%d", subdevice, subdevice1, numid);
+		cerror(doit, "warning: subdevice mismatch (%ld/%ld) for control #%d", subdevice, subdevice1, numid);
 	if (err |= strcmp(name, name1))
-		error("warning: name mismatch (%s/%s) for control #%d", name, name1, numid);
+		cerror(doit, "warning: name mismatch (%s/%s) for control #%d", name, name1, numid);
 	if (err |= index != index1)
-		error("warning: index mismatch (%ld/%ld) for control #%d", index, index1, numid);
+		cerror(doit, "warning: index mismatch (%ld/%ld) for control #%d", index, index1, numid);
 	if (err < 0) {
-		error("failed to obtain info for control #%d (%s)", numid, snd_strerror(err));
+		cerror(doit, "failed to obtain info for control #%d (%s)", numid, snd_strerror(err));
 		return -ENOENT;
 	}
 
 	if (comment) {
 		if (check_comment_type(comment, type) < 0)
-			error("incompatible field type for control #%d", numid);
+			cerror(doit, "incompatible field type for control #%d", numid);
 		if (type == SND_CTL_ELEM_TYPE_INTEGER) {
-			if (check_comment_range(handle, comment, info, value) < 0) {
-				error("value range mismatch for control #%d",
+			if (check_comment_range(handle, comment, info, value, doit) < 0) {
+				cerror(doit, "value range mismatch for control #%d",
 				      numid);
 				return -EINVAL;
 			}
@@ -1304,7 +1310,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	snd_ctl_elem_value_set_numid(ctl, numid1);
 
 	if (count == 1) {
-		err = restore_config_value(handle, info, type, value, ctl, 0);
+		err = restore_config_value(handle, info, type, value, ctl, 0, doit);
 		if (err < 0)
 			return err;
 		if (err > 0)
@@ -1323,13 +1329,13 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 			int size = type == SND_CTL_ELEM_TYPE_BYTES ?
 				count : sizeof(snd_aes_iec958_t);
 			if (size * 2 != len) {
-				error("bad control.%d.value contents\n", numid);
+				cerror(doit, "bad control.%d.value contents\n", numid);
 				return -EINVAL;
 			}
 			while (*buf) {
 				int c = *buf++;
 				if ((c = hextodigit(c)) < 0) {
-					error("bad control.%d.value contents\n", numid);
+					cerror(doit, "bad control.%d.value contents\n", numid);
 					return -EINVAL;
 				}
 				if (idx % 2 == 1)
@@ -1345,13 +1351,13 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		break;
 	}
 	if (snd_config_get_type(value) != SND_CONFIG_TYPE_COMPOUND) {
-		if (!force_restore) {
-			error("bad control.%d.value type", numid);
+		if (!force_restore || !doit) {
+			cerror(doit, "bad control.%d.value type", numid);
 			return -EINVAL;
 		}
 		for (idx = 0; idx < count; ++idx) {
 			err = restore_config_value2(handle, info, type, value,
-						    ctl, idx, numid);
+						    ctl, idx, numid, doit);
 			if (err < 0)
 				return err;
 		}
@@ -1368,13 +1374,13 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 		idx = atoi(id);
 		if (idx < 0 || idx >= count || 
 		    set[idx]) {
-			error("bad control.%d.value index", numid);
-			if (!force_restore)
+			cerror(doit, "bad control.%d.value index", numid);
+			if (!force_restore || !doit)
 				return -EINVAL;
 			continue;
 		}
 		err = restore_config_value2(handle, info, type, n,
-					    ctl, idx, numid);
+					    ctl, idx, numid, doit);
 		if (err < 0)
 			return err;
 		if (err > 0)
@@ -1382,14 +1388,14 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	}
 	for (idx = 0; idx < count; ++idx) {
 		if (!set[idx]) {
-			error("control.%d.value.%d is not specified", numid, idx);
-			if (!force_restore)
+			cerror(doit, "control.%d.value.%d is not specified", numid, idx);
+			if (!force_restore || !doit)
 				return -EINVAL;
 		}
 	}
 
  _ok:
-	err = snd_ctl_elem_write(handle, ctl);
+	err = doit ? snd_ctl_elem_write(handle, ctl) : 0;
 	if (err < 0) {
 		error("Cannot write control '%d:%ld:%ld:%s:%ld' : %s", (int)iface, device, subdevice, name, index, snd_strerror(err));
 		return err;
@@ -1397,13 +1403,13 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control)
 	return 0;
 }
 
-static int set_controls(int card, snd_config_t *top)
+static int set_controls(int card, snd_config_t *top, int doit)
 {
 	snd_ctl_t *handle;
 	snd_ctl_card_info_t *info;
 	snd_config_t *control;
 	snd_config_iterator_t i, next;
-	int err;
+	int err, maxnumid;
 	char name[32], tmpid[16];
 	const char *id;
 	snd_ctl_card_info_alloca(&info);
@@ -1435,14 +1441,30 @@ static int set_controls(int card, snd_config_t *top)
 		id = tmpid;
 	}
 	if (snd_config_get_type(control) != SND_CONFIG_TYPE_COMPOUND) {
-		error("state.%s.control is not a compound\n", id);
+		cerror(doit, "state.%s.control is not a compound\n", id);
 		return -EINVAL;
 	}
 	snd_config_for_each(i, next, control) {
 		snd_config_t *n = snd_config_iterator_entry(i);
-		err = set_control(handle, n);
-		if (err < 0 && ! force_restore)
+		err = set_control(handle, n, &maxnumid, doit);
+		if (err < 0 && (!force_restore || !doit))
 			goto _close;
+	}
+
+	/* check if we have additional controls in driver */
+	/* in this case we should go through init procedure */
+	if (!doit) {
+		snd_ctl_elem_id_t *id;
+		snd_ctl_elem_info_t *info;
+		snd_ctl_elem_id_alloca(&id);
+		snd_ctl_elem_info_alloca(&info);
+		snd_ctl_elem_info_set_numid(info, maxnumid+1);
+		if (snd_ctl_elem_info(handle, info) == 0) {
+			/* not very informative */
+			/* but value is used for check only */
+			err = -EAGAIN;
+			goto _close;
+		}
 	}
 
  _close:
@@ -1522,9 +1544,9 @@ int save_state(const char *file, const char *cardname)
 	return 0;
 }
 
-int load_state(const char *file, const char *cardname)
+int load_state(const char *file, const char *initfile, const char *cardname)
 {
-	int err;
+	int err, finalerr = 0;
 	snd_config_t *config;
 	snd_input_t *in;
 	int stdio;
@@ -1547,12 +1569,35 @@ int load_state(const char *file, const char *cardname)
 			return err;
 		}
 	} else {
+		int card, first = 1;
+		char cardname1[16];
+
 		error("Cannot open %s for reading: %s", file, snd_strerror(err));
-		return err;
+		finalerr = err;
+		card = -1;
+		/* find each installed soundcards */
+		while (1) {
+			if (snd_card_next(&card) < 0)
+				break;
+			if (card < 0)
+				break;
+			first = 0;
+			sprintf(cardname1, "%i", card);
+			err = init(initfile, cardname1);
+			if (err < 0) {
+				finalerr = err;
+				initfailed(card, "init");
+			}
+			initfailed(card, "restore");
+		}
+		if (!first)
+			finalerr = 0;	/* no cards, no error code */
+		return finalerr;
 	}
 
 	if (!cardname) {
 		int card, first = 1;
+		char cardname1[16];
 
 		card = -1;
 		/* find each installed soundcards */
@@ -1567,8 +1612,20 @@ int load_state(const char *file, const char *cardname)
 				break;
 			}
 			first = 0;
-			if ((err = set_controls(card, config)) && ! force_restore)
-				return err;
+			/* do a check if controls matches state file */
+ 			if (set_controls(card, config, 0)) {
+				sprintf(cardname1, "%i", card);
+				err = init(initfile, cardname1);
+				if (err < 0) {
+					initfailed(card, "init");
+					finalerr = err;
+				}
+			}
+			if ((err = set_controls(card, config, 1))) {
+				if (!force_restore)
+					finalerr = err;
+				initfailed(card, "restore");
+			}
 		}
 	} else {
 		int cardno;
@@ -1578,9 +1635,19 @@ int load_state(const char *file, const char *cardname)
 			error("Cannot find soundcard '%s'...", cardname);
 			return -ENODEV;
 		}
-		if ((err = set_controls(cardno, config)) && ! force_restore) {
-			return err;
+		/* do a check if controls matches state file */
+		if (set_controls(cardno, config, 0)) {
+			err = init(initfile, cardname);
+			if (err < 0) {
+				initfailed(cardno, "init");
+				return err;
+			}
+		}
+		if ((err = set_controls(cardno, config, 1))) {
+			initfailed(cardno, "restore");
+			if (!force_restore)
+				return err;
 		}
 	}
-	return 0;
+	return finalerr;
 }

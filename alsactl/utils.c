@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
+#include <alsa/asoundlib.h>
 #include "alsactl.h"
 
 int file_map(const char *filename, char **buf, size_t *bufsize)
@@ -76,4 +77,22 @@ size_t line_width(const char *buf, size_t bufsize, size_t pos)
 	}
 
 	return count - pos;
+}
+
+void initfailed(int cardnumber, const char *reason)
+{
+	int fp;
+	char *str;
+
+	if (statefile == NULL)
+		return;
+	if (snd_card_get_name(cardnumber, &str) < 0)
+		return;
+	fp = open(statefile, O_WRONLY|O_CREAT|O_APPEND, 0644);
+	write(fp, str, strlen(str));
+	write(fp, ":", 1);
+	write(fp, reason, strlen(reason));
+	write(fp, "\n", 1);
+	close(fp);
+	free(str);
 }

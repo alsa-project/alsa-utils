@@ -1627,7 +1627,7 @@ static int parse(struct space *space, const char *filename)
 	space->linenum = -1;
 	file_unmap(buf, bufsize);
 	dbg("end of file '%s'", filename);
-	return err;
+	return err ? err : -abs(space->exit_code);
 }
 
 int init(const char *filename, const char *cardname)
