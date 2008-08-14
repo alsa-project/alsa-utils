@@ -36,6 +36,7 @@
 #include <sys/select.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <math.h>
 #include <alsa/asoundlib.h>
 #include "aconfig.h"
 #include "alsactl.h"
@@ -330,13 +331,18 @@ static const char *get_ctl_value(struct space *space)
 	return res;
 }
 
+/* Function to convert from percentage to volume. val = percentage */
+#define convert_prange1(val, min, max) \
+        ceil((val) * ((max) - (min)) * 0.01 + (min))
+
 static int set_ctl_value(struct space *space, const char *value)
 {
 	snd_ctl_elem_type_t type;
 	unsigned int idx, idx2, count, items;
-	const char *pos;
+	const char *pos, *pos2;
 	snd_hctl_elem_t *elem;
 	int val;
+	long lval;
 
 	type = snd_ctl_elem_info_get_type(space->ctl_info);
 	count = snd_ctl_elem_info_get_count(space->ctl_info);
@@ -360,8 +366,38 @@ static int set_ctl_value(struct space *space, const char *value)
 		for (idx = 0; idx < count; idx++) {
 			while (*value == ' ')
 				value++;
-			snd_ctl_elem_value_set_integer(space->ctl_value, idx, strtol(value, NULL, 0));
 			pos = strchr(value, ',');
+			if (pos)
+				*(char *)pos = '\0';
+			remove_trailing_chars((char *)value, ' ');
+			items = pos ? pos - value : strlen(value);
+			if (items > 1 && value[items-1] == '%') {
+				val = convert_prange1(strtol(value, NULL, 0), snd_ctl_elem_info_get_min(space->ctl_info), snd_ctl_elem_info_get_max(space->ctl_info));
+				snd_ctl_elem_value_set_integer(space->ctl_value, idx, val);
+			} else if (items > 2 && value[items-2] == 'd' && value[items-1] == 'B') {
+				val = strtol(value, NULL, 0) * 100;
+				if ((pos2 = index(value, '.')) != NULL) {
+					if (isdigit(*(pos2-1)) && isdigit(*(pos2-2))) {
+						if (val < 0)
+							val -= strtol(pos2 + 1, NULL, 0);
+						else
+							val += strtol(pos2 + 1, NULL, 0);
+					} else if (isdigit(*(pos2-1))) {
+						if (val < 0)
+							val -= strtol(pos2 + 1, NULL, 0) * 10;
+						else
+							val += strtol(pos2 + 1, NULL, 0) * 10;
+					}
+				}
+				val = snd_ctl_convert_from_dB(snd_hctl_ctl(space->ctl_handle), space->ctl_id, val, &lval, -1);
+				if (val < 0) {
+					Perror(space, "unable to convert dB value '%s' to internal integer range", value);
+					return val;
+				}
+				snd_ctl_elem_value_set_integer(space->ctl_value, idx, lval);
+			} else {
+				snd_ctl_elem_value_set_integer(space->ctl_value, idx, strtol(value, NULL, 0));
+			}
 			value = pos ? pos + 1 : value + strlen(value) - 1;
 		}
 		break;
