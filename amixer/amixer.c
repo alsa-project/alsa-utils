@@ -456,7 +456,7 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 	unsigned int type = tlv[0];
 	unsigned int size;
 	unsigned int idx = 0;
-	
+
 	if (tlv_size < 2 * sizeof(unsigned int)) {
 		printf("TLV size error!\n");
 		return;
@@ -487,12 +487,12 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 		printf("dBscale-");
 		if (size != 2 * sizeof(unsigned int)) {
 			while (size > 0) {
-				printf("0x%x", tlv[idx++]);
+				printf("0x%08x,", tlv[idx++]);
 				size -= sizeof(unsigned int);
 			}
 		} else {
 			printf("min=");
-			print_dB(tlv[2]);
+			print_dB((int)tlv[2]);
 			printf(",step=");
 			print_dB(tlv[3] & 0xffff);
 			printf(",mute=%i", (tlv[3] >> 16) & 1);
@@ -503,7 +503,7 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 		printf("dBlinear-");
 		if (size != 2 * sizeof(unsigned int)) {
 			while (size > 0) {
-				printf("0x%x", tlv[idx++]);
+				printf("0x%08x,", tlv[idx++]);
 				size -= sizeof(unsigned int);
 			}
 		} else {
@@ -514,10 +514,30 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 		}
 		break;
 #endif
+#ifdef SND_CTL_TLVT_DB_RANGE
+	case SND_CTL_TLVT_DB_RANGE:
+		printf("dBrange-\n");
+		if ((size / (6 * sizeof(unsigned int))) != 0) {
+			while (size > 0) {
+				printf("0x%08x,", tlv[idx++]);
+				size -= sizeof(unsigned int);
+			}
+			break;
+		}
+		idx = 0;
+		while (idx < size) {
+			print_spaces(spaces + 2);
+			printf("rangemin=%i,", tlv[0]);
+			printf(",rangemax=%i\n", tlv[1]);
+			decode_tlv(spaces + 4, tlv + 2, 6 * sizeof(unsigned int));
+			idx += 6 * sizeof(unsigned int);
+		}
+		break;
+#endif
 	default:
 		printf("unk-%i-", type);
 		while (size > 0) {
-			printf("0x%x", tlv[idx++]);
+			printf("0x%08x,", tlv[idx++]);
 			size -= sizeof(unsigned int);
 		}
 		break;
