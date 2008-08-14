@@ -25,10 +25,10 @@ LABEL="Lenovo T61"
 # playback
 CTL{reset}="mixer"
 CTL{name}="Headphone Playback Switch", CTL{value}="on,on"
-CTL{name}="PCM Playback Volume", CTL{value}="30,30"
+CTL{name}="PCM Playback Volume", CTL{value}="-13.5dB,-13.5dB"
 # capture
 CTL{name}="Input Source", CTL{value}="Internal Mic"
 CTL{name}="Internal Mic Boost", CTL{value}="1"
-CTL{name}="Capture Volume", CTL{value}="45,45"
+CTL{name}="Capture Volume", CTL{value}="9dB,9dB"
 CTL{name}="Capture Switch", CTL{value}="on,on"
 RESULT="true", EXIT="return"

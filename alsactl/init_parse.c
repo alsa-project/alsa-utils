@@ -423,7 +423,7 @@ static int set_ctl_value(struct space *space, const char *value)
 				remove_trailing_chars((char *)value, ' ');
 				items = snd_ctl_elem_info_get_items(space->ctl_info);
 				for (idx2 = 0; idx2 < items; idx2++) {
-					snd_ctl_elem_info_set_item(space->ctl_info, idx);
+					snd_ctl_elem_info_set_item(space->ctl_info, idx2);
 					elem = snd_hctl_find_elem(space->ctl_handle, space->ctl_id);
 					if (elem == NULL)
 						return -ENOENT;
