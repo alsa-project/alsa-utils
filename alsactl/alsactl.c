@@ -82,9 +82,16 @@ int main(int argc, char *argv[])
 		{"version", 0, NULL, 'v'},
 		{NULL, 0, NULL, 0},
 	};
+	char *devfiles[] = {
+		"/dev/snd/controlC",
+		"/dev/snd/pcmC",
+		"/dev/snd/midiC",
+		"/dev/snd/hwC",
+		NULL
+	};
 	char *cfgfile = SYS_ASOUNDRC;
 	char *initfile = DATADIR "/init/00main";
-	char *cardname;
+	char *cardname, **tmp, ncardname[16];
 	int removestate = 0;
 	int res;
 
@@ -143,6 +150,16 @@ int main(int argc, char *argv[])
 	}
 
 	cardname = argc - optind > 1 ? argv[optind + 1] : NULL;
+	for (tmp = devfiles; cardname != NULL && tmp != NULL; tmp++) {
+		int len = strlen(*tmp);
+		if (!strncmp(cardname, *tmp, len)) {
+			long l = strtol(cardname + len, NULL, 0);
+			sprintf(ncardname, "%li", l);
+			cardname = ncardname;
+			break;
+		}
+	}
+
 	if (!strcmp(argv[optind], "init")) {
 		res = init(initfile, cardname);
 	} else if (!strcmp(argv[optind], "store")) {
