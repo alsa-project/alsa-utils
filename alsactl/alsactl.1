@@ -4,7 +4,7 @@ alsactl \- advanced controls for ALSA soundcard driver
 
 .SH SYNOPSIS
 
-\fBalsactl\fP [\fIoptions\fP] [\fIstore\fP|\fIrestore\fP|\fInames\fP] <card # or id>
+\fBalsactl\fP [\fIoptions\fP] [\fIstore\fP|\fIrestore\fP|\fIinit\fP] <card # or id or device>
 
 .SH DESCRIPTION
 \fBalsactl\fP is used to control advanced settings for the ALSA
@@ -18,11 +18,11 @@ you have come to the right place.
 to the configuration file.
 
 \fIrestore\fP loads driver state for the selected soundcard from the
-configuration file.
+configuration file. If restoring fails (eventually partly), the init
+action is called.
 
-\fInames\fP generates list of available device names for applications.
-The card number or id is ignored for this command. The list is always
-generated for all available cards.
+\fIinit\fP tries to initialize all devices to a default state. If device
+is not known, error code 99 is returned.
 
 If no soundcards are specified, setup for all cards will be saved or
 loaded.
@@ -34,9 +34,16 @@ loaded.
 Help: show available flags and commands.
 
 .TP
+\fI\-d, \-\-debug\fP
+Use debug mode: a bit more verbose.
+
+.TP
+\fI\-v, \-\-version\fP
+Print alsactl version number.
+
+.TP
 \fI\-f, \-\-file\fP
-Select the configuration file to use. The default is /etc/asound.state or
-/etc/asound.names (for the \fInames\fP command).
+Select the configuration file to use. The default is /etc/asound.state.
 
 .TP
 \fI\-F, \-\-force\fP
@@ -49,12 +56,22 @@ Used with restore command.  Don't restore mismatching control elements.
 This option was the old default behavior.
 
 .TP
-\fI\-d, \-\-debug\fP
-Use debug mode: a bit more verbose.
+\fI\-r, \-\-runstate\fP
+Save restore and init state to this file. The file will contain only errors.
+Errors are appended with the soundcard id to the end of file.
 
 .TP
-\fI\-v, \-\-version\fP
-Print alsactl version number.
+\fI\-R, \-\-remove\fP
+Remove runstate file at first.
+
+.TP
+\fI\-E, \-\-env\fP #=#
+Set environment variable (useful for init action).
+
+.TP
+\fI\-i, \-\-initfile\fP #=#
+The configuration file for init. By default, PREFIX/share/alsa/init/00main
+is used.
 
 .SH FILES
 \fI/etc/asound.state\fP (or whatever file you specify with the
@@ -69,13 +86,6 @@ The configuration file is generated automatically by running
 necessary for some soundcard features (e.g. enabling/disabling
 automatic mic gain, digital output, joystick/game ports, some future MIDI
 routing options, etc).
-
-\fI/etc/asound.names\fP (or whatever file you specify with the
-\fB\-f\fP flag) is used to store the list of device names available
-in your system. The list does not contain all virtual names, because
-the name space is infinite, but it detects present hardware and
-generates list of common names. The user / system administrator / another
-configuration tool might modify the file to add virtual names as well.
 
 .SH SEE ALSO
 \fB

@@ -31,7 +31,6 @@
 #include "alsactl.h"
 
 #define SYS_ASOUNDRC "/etc/asound.state"
-#define SYS_ASOUNDNAMES "/etc/asound.names"
 
 int debugflag = 0;
 int force_restore = 1;
@@ -46,12 +45,13 @@ static void help(void)
 	printf("  -d,--debug       debug mode\n");
 	printf("  -v,--version     print version of this program\n");
 	printf("\nAvailable state options:\n");
-	printf("  -f,--file #      configuration file (default " SYS_ASOUNDRC " or " SYS_ASOUNDNAMES ")\n");
+	printf("  -f,--file #      configuration file (default " SYS_ASOUNDRC ")\n");
 	printf("  -F,--force       try to restore the matching controls as much as possible\n");
 	printf("                   (default mode)\n");
 	printf("  -P,--pedantic    don't restore mismatching controls (old default)\n");
 	printf("  -r,--runstate #  save restore and init state to this file (only errors)\n");
 	printf("                   default settings is 'no file set'\n");
+	printf("  -R,--remove      remove runstate file at first, otherwise append errors\n");
 	printf("\nAvailable init options:\n");
 	printf("  -E,--env #=#	   set environment variable for init phase (NAME=VALUE)\n");
 	printf("  -i,--initfile #  main configuation file for init phase (default " DATADIR "/init/00main)\n");
@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
 		{"force", 0, NULL, 'F'},
 		{"pedantic", 0, NULL, 'P'},
 		{"runstate", 0, NULL, 'r'},
+		{"remove", 0, NULL, 'R'},
 		{"debug", 0, NULL, 'd'},
 		{"version", 0, NULL, 'v'},
 		{NULL, 0, NULL, 0},
@@ -84,13 +85,14 @@ int main(int argc, char *argv[])
 	char *cfgfile = SYS_ASOUNDRC;
 	char *initfile = DATADIR "/init/00main";
 	char *cardname;
+	int removestate = 0;
 	int res;
 
 	command = argv[0];
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hdvf:FE:i:Pr:", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hdvf:FE:i:Pr:R", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
@@ -113,6 +115,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'r':
 			statefile = optarg;
+			break;
+		case 'R':
+			removestate = 1;
 			break;
 		case 'P':
 			force_restore = 0;
@@ -143,12 +148,9 @@ int main(int argc, char *argv[])
 	} else if (!strcmp(argv[optind], "store")) {
 		res = save_state(cfgfile, cardname);
 	} else if (!strcmp(argv[optind], "restore")) {
-		remove(statefile);
+		if (removestate)
+			remove(statefile);
 		res = load_state(cfgfile, initfile, cardname);
-	} else if (!strcmp(argv[optind], "names")) {
-		if (!strcmp(cfgfile, SYS_ASOUNDRC))
-			cfgfile = SYS_ASOUNDNAMES;
-		res = generate_names(cfgfile);
 	} else {
 		fprintf(stderr, "alsactl: Unknown command '%s'...\n", 
 			argv[optind]);
