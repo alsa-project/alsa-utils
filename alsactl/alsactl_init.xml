@@ -258,6 +258,12 @@
                     </listitem>
                   </varlistentry>
                   <varlistentry>
+                    <term><option>enums</option></term>
+                    <listitem>
+                      <para>Enumerated value - list of text names stored between '|' character</para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
                     <term><option>value</option></term>
                     <listitem>
                       <para>Value of control stored to a string delimited by
@@ -390,6 +396,16 @@
               <listitem>
               	 <para>Value is set (written) also to soundcard's control
               	 device and RESULT key is set to errno code. The result of
+                 set operation is always true (it means continue with
+                 next key on line).</para>
+              </listitem>
+            </varlistentry>
+            <varlistentry>
+              <term><option>CTL{values}</option></term>
+              <listitem>
+              	 <para>Value is set (written) also to soundcard's control
+              	 device (all control values are set to specified value) and
+              	 RESULT key is set to errno code. The result of
                  set operation is always true (it means continue with
                  next key on line).</para>
               </listitem>

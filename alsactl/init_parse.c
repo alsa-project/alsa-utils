@@ -335,7 +335,7 @@ static const char *get_ctl_value(struct space *space)
 #define convert_prange1(val, min, max) \
         ceil((val) * ((max) - (min)) * 0.01 + (min))
 
-static int set_ctl_value(struct space *space, const char *value)
+static int set_ctl_value(struct space *space, const char *value, int all)
 {
 	snd_ctl_elem_type_t type;
 	unsigned int idx, idx2, count, items;
@@ -358,6 +358,8 @@ static int set_ctl_value(struct space *space, const char *value)
 				strncasecmp(value, "on", 2) == 0 ||
 				strncasecmp(value, "1", 1) == 0;
 			snd_ctl_elem_value_set_boolean(space->ctl_value, idx, val);
+			if (all)
+				continue;
 			pos = strchr(value, ',');
 			value = pos ? pos + 1 : value + strlen(value) - 1;
 		}
@@ -398,6 +400,8 @@ static int set_ctl_value(struct space *space, const char *value)
 			} else {
 				snd_ctl_elem_value_set_integer(space->ctl_value, idx, strtol(value, NULL, 0));
 			}
+			if (all)
+				continue;
 			value = pos ? pos + 1 : value + strlen(value) - 1;
 		}
 		break;
@@ -406,6 +410,8 @@ static int set_ctl_value(struct space *space, const char *value)
 			while (*value == ' ')
 				value++;
 			snd_ctl_elem_value_set_integer64(space->ctl_value, idx, strtoll(value, NULL, 0));
+			if (all)
+				continue;
 			pos = strchr(value, ',');
 			value = pos ? pos + 1 : value + strlen(value) - 1;
 		}
@@ -440,6 +446,8 @@ static int set_ctl_value(struct space *space, const char *value)
 					return -EINVAL;
 				}
 			}
+			if (all)
+				continue;
 			value = pos ? pos + 1 : value + strlen(value) - 1;
 		}
 		break;
@@ -478,7 +486,7 @@ static const char *elemid_get(struct space *space, const char *attr)
 {
 	long long val;
 	snd_ctl_elem_type_t type;
-	static char res[32];
+	static char res[256];
 
 	if (strncasecmp(attr, "numid", 5) == 0) {
 		val = snd_ctl_elem_id_get_numid(space->ctl_id);
@@ -617,6 +625,27 @@ dbvalue:
 		val = max;
 		goto dbvalue;
 	}
+	if (strncasecmp(attr, "enums", 5) == 0) {
+		unsigned int idx, items;
+		snd_hctl_elem_t *elem;
+		if (check_id_changed(space, 1))
+			return NULL;
+		if (snd_ctl_elem_info_get_type(space->ctl_info) != SND_CTL_ELEM_TYPE_ENUMERATED)
+			goto empty;
+		items = snd_ctl_elem_info_get_items(space->ctl_info);
+		strcpy(res, "|");
+		for (idx = 0; idx < items; idx++) {
+			snd_ctl_elem_info_set_item(space->ctl_info, idx);
+			elem = snd_hctl_find_elem(space->ctl_handle, space->ctl_id);
+			if (elem == NULL)
+				break;
+			if (snd_hctl_elem_info(elem, space->ctl_info) < 0)
+				break;
+			strlcat(res, snd_ctl_elem_info_get_item_name(space->ctl_info), sizeof(res));
+			strlcat(res, "|", sizeof(res));
+		}
+		return res;
+	}
 	Perror(space, "unknown ctl{} attribute '%s'", attr);
 	return NULL;
   value:
@@ -684,13 +713,14 @@ static int elemid_set(struct space *space, const char *attr, const char *value)
 		fcn = snd_ctl_elem_id_set_index;
 	    	goto value;
 	}
-	if (strncasecmp(attr, "value", 5) == 0) {
+	if (strncasecmp(attr, "values", 6) == 0 ||
+	    strncasecmp(attr, "value", 5) == 0) {
 		err = check_id_changed(space, 1);
 		if (err < 0) {
 			Perror(space, "control element not found");
 			return err;
 		}
-		err = set_ctl_value(space, value);
+		err = set_ctl_value(space, value, strncasecmp(attr, "values", 6) == 0);
 		if (err < 0) {
 			space->ctl_id_changed |= 2;
 		} else {
@@ -1244,7 +1274,7 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 		
 		err = get_key(&linepos, &key, &op, &value);
 		if (err < 0)
-			break;
+			goto invalid;
 
 		if (strncasecmp(key, "LABEL", 5) == 0) {
 			if (op != KEY_OP_ASSIGN) {
@@ -1391,6 +1421,13 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 				temp = getenv(attr);
 				dbg("env: '%s' '%s'", attr, temp);
 				if (!do_match(key, op, value, temp))
+					break;
+			} else if (op == KEY_OP_ASSIGN ||
+				   op == KEY_OP_ASSIGN_FINAL) {
+				strlcpy(result, value, sizeof(result));
+				apply_format(space, result, sizeof(result));
+				dbg("env set: '%s' '%s'", attr, result);
+				if (setenv(attr, result, op == KEY_OP_ASSIGN_FINAL))
 					break;
 			} else {
 				Perror(space, "invalid ENV{} operation");

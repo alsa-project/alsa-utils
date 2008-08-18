@@ -1,0 +1,145 @@
+#
+# Default ALSA volume levels and setting when initialization database fails.
+#
+# Basic rules are:
+#  - keep volumes at minimal level, but sound should be hearable
+#  - enable just main speakers for playback and main microphone for recording
+#
+
+# **************************************************************************
+# playback
+# **************************************************************************
+
+ENV{volume}:="-20dB"
+
+CTL{reset}="mixer"
+CTL{name}="Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Master Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="Master Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Master Digital Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="Master Digital Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Front Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="Front Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Headphone Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="Headphone Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Speaker Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="Speaker Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="PC Speaker Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="PC Speaker Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="PCM Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="PCM Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="PCM Playback Volume",CTL{index}="1",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="PCM Playback Switch",CTL{index}="1",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="DAC Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="DAC Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Synth Playback Volume",,PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="Synth Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Wave Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="100%"
+CTL{name}="Wave Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Music Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="100%"
+CTL{name}="Music Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="CD Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="CD Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Mono Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="Mono Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Master Mono Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="Master Mono Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="AC97 Playback Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="100%"
+CTL{name}="AC97 Playback Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+#
+# Powermacs
+#
+
+CTL{reset}="mixer"
+CTL{name}="DRC Range",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+
+# **************************************************************************
+# capture
+# **************************************************************************
+
+ENV{volume}:="20dB"
+
+CTL{reset}="mixer"
+CTL{name}="Capture Volume",PROGRAM=="__ctl_search", \
+  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="Capture Switch",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+
+CTL{name}="Input Source",PROGRAM=="__ctl_search", \
+  CTL{enums}=="*|Internal Mic|*",CTL{values}="Internal Mic", \
+  GOTO="end_input_source"
+CTL{name}="Input Source",PROGRAM=="__ctl_search", \
+  CTL{enums}=="*|Mic|*",CTL{values}="Mic"
+LABEL="end_input_source"
+
+CTL{name}="Internal Mic Boost",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
