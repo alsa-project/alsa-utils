@@ -1,6 +1,6 @@
 
 init_files = \
-	00main help info test \
+	00main default help info test \
 	hda
 EXTRA_DIRST = $(init_files)
 alsainitdir = $(datadir)/alsa/init
