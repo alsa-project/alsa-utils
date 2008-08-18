@@ -478,7 +478,7 @@ static const char *elemid_get(struct space *space, const char *attr)
 {
 	long long val;
 	snd_ctl_elem_type_t type;
-	static char res[16];
+	static char res[32];
 
 	if (strncasecmp(attr, "numid", 5) == 0) {
 		val = snd_ctl_elem_id_get_numid(space->ctl_id);
@@ -596,6 +596,26 @@ static const char *elemid_get(struct space *space, const char *attr)
 		if (check_id_changed(space, 3))
 			return NULL;
 		return get_ctl_value(space);
+	}
+	if (strncasecmp(attr, "dBmin", 5) == 0) {
+		long min, max;
+		if (check_id_changed(space, 1))
+			return NULL;
+		if (snd_ctl_get_dB_range(snd_hctl_ctl(space->ctl_handle), space->ctl_id, &min, &max) < 0)
+			goto empty;
+		val = min;
+dbvalue:
+		sprintf(res, "%li.%02idB", (long)(val / 100), (int)abs(val % 100));
+		return res;
+	}
+	if (strncasecmp(attr, "dBmax", 5) == 0) {
+		long min, max;
+		if (check_id_changed(space, 1))
+			return NULL;
+		if (snd_ctl_get_dB_range(snd_hctl_ctl(space->ctl_handle), space->ctl_id, &min, &max) < 0)
+			goto empty;
+		val = max;
+		goto dbvalue;
 	}
 	Perror(space, "unknown ctl{} attribute '%s'", attr);
 	return NULL;

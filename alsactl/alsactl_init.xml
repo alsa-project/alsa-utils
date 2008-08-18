@@ -240,6 +240,18 @@
                     </listitem>
                   </varlistentry>
                   <varlistentry>
+                    <term><option>dBmin</option></term>
+                    <listitem>
+                      <para>Value range - minimum dB value</para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                    <term><option>dBmax</option></term>
+                    <listitem>
+                      <para>Value range - maximum dB value</para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
                     <term><option>items</option></term>
                     <listitem>
                       <para>Enumerated value - number of text items</para>
