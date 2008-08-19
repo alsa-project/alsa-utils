@@ -174,5 +174,6 @@ int main(int argc, char *argv[])
 		res = -ENODEV;
 	}
 
+	snd_config_update_free_global();
 	return res < 0 ? res : 0;
 }

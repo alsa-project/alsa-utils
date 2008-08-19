@@ -124,13 +124,16 @@ static void free_space(struct space *space)
 		space->ctl_card_info = NULL;
 	}
 	if (space->ctl_handle) {
-		free(space->ctl_handle);
+		snd_hctl_close(space->ctl_handle);
 		space->ctl_handle = NULL;
 	}
 	if (space->rootdir)
 		free(space->rootdir);
 	if (space->program_result)
 		free(space->program_result);
+	if (space->go_to)
+		free(space->go_to);
+	free(space);
 }
 
 struct pair *value_find(struct space *space, const char *key)
@@ -1680,6 +1683,7 @@ static int parse(struct space *space, const char *filename)
 		linenum += linenum_adj;
 	}
 
+	free(line);
 	space->filename = NULL;
 	space->linenum = -1;
 	file_unmap(buf, bufsize);
