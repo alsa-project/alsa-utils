@@ -30,6 +30,7 @@ alsamixer/alsamixer
 amidi/amidi
 amixer/amixer
 aplay/aplay
+aplay/arecord
 aplay/arecord.1
 iecset/iecset
 seq/aconnect/aconnect
