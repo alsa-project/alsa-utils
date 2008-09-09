@@ -1073,6 +1073,22 @@ static void set_params(void)
 		if (hwparams.channels != 2 || !interleaved || verbose > 2)
 			vumeter = VUMETER_MONO;
 	}
+
+	/* show mmap buffer arragment */
+	if (mmap_flag && verbose) {
+		const snd_pcm_channel_area_t *areas;
+		snd_pcm_uframes_t offset;
+		int i;
+		err = snd_pcm_mmap_begin(handle, &areas, &offset, &chunk_size);
+		if (err < 0) {
+			error("snd_pcm_mmap_begin problem: %s", snd_strerror(err));
+			exit(EXIT_FAILURE);
+		}
+		for (i = 0; i < hwparams.channels; i++)
+			fprintf(stderr, "mmap_area[%i] = %p,%u,%u (%u)\n", i, areas[i].addr, areas[i].first, areas[i].step, snd_pcm_format_physical_width(hwparams.format));
+		/* not required, but for sure */
+		snd_pcm_mmap_commit(handle, offset, 0);
+	}
 }
 
 #ifndef timersub
