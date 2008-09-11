@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 	}
 
 	cardname = argc - optind > 1 ? argv[optind + 1] : NULL;
-	for (tmp = devfiles; cardname != NULL && tmp != NULL; tmp++) {
+	for (tmp = devfiles; cardname != NULL && *tmp != NULL; tmp++) {
 		int len = strlen(*tmp);
 		if (!strncmp(cardname, *tmp, len)) {
 			long l = strtol(cardname + len, NULL, 0);
