@@ -1507,8 +1507,12 @@ int save_state(const char *file, const char *cardname)
 				break;
 			if (card < 0) {
 				if (first) {
-					error("No soundcards found...");
-					return -ENODEV;
+					if (ignore_nocards) {
+						return 0;
+					} else {
+						error("No soundcards found...");
+						return -ENODEV;
+					}
 				}
 				break;
 			}
@@ -1606,8 +1610,12 @@ int load_state(const char *file, const char *initfile, const char *cardname)
 				break;
 			if (card < 0) {
 				if (first) {
-					error("No soundcards found...");
-					return -ENODEV;
+					if (ignore_nocards) {
+						return 0;
+					} else {
+						error("No soundcards found...");
+						return -ENODEV;
+					}
 				}
 				break;
 			}

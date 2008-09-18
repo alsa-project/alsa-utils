@@ -34,6 +34,7 @@
 
 int debugflag = 0;
 int force_restore = 1;
+int ignore_nocards = 0;
 char *command;
 char *statefile = NULL;
 
@@ -48,7 +49,8 @@ static void help(void)
 	printf("  -f,--file #      configuration file (default " SYS_ASOUNDRC ")\n");
 	printf("  -F,--force       try to restore the matching controls as much as possible\n");
 	printf("                   (default mode)\n");
-	printf("  -P,--pedantic    don't restore mismatching controls (old default)\n");
+	printf("  -g,--ignore      ignore 'No soundcards found' error\n");
+	printf("  -P,--pedantic    do not restore mismatching controls (old default)\n");
 	printf("  -r,--runstate #  save restore and init state to this file (only errors)\n");
 	printf("                   default settings is 'no file set'\n");
 	printf("  -R,--remove      remove runstate file at first, otherwise append errors\n");
@@ -75,6 +77,7 @@ int main(int argc, char *argv[])
 		{"env", 1, NULL, 'E'},
 		{"initfile", 1, NULL, 'i'},
 		{"force", 0, NULL, 'F'},
+		{"ignore", 0, NULL, 'g'},
 		{"pedantic", 0, NULL, 'P'},
 		{"runstate", 0, NULL, 'r'},
 		{"remove", 0, NULL, 'R'},
@@ -99,7 +102,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hdvf:FE:i:Pr:R", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hdvf:FgE:i:Pr:R", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
@@ -110,6 +113,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'F':
 			force_restore = 1;
+			break;
+		case 'g':
+			ignore_nocards = 1;
 			break;
 		case 'E':
 			if (putenv(optarg)) {

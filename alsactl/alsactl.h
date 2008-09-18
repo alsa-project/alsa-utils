@@ -1,5 +1,6 @@
 extern int debugflag;
 extern int force_restore;
+extern int ignore_nocards;
 extern char *command;
 extern char *statefile;
 
