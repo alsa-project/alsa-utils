@@ -4,7 +4,13 @@ ALSAMIXER_DIR=alsamixer
 else
 ALSAMIXER_DIR=
 endif
-SUBDIRS= include alsactl alsaconf $(ALSAMIXER_DIR) amidi amixer aplay iecset seq speaker-test utils m4 po
+if ALSACONF
+ALSACONF_DIR=alsaconf
+else
+ALSACONF_DIR=
+endif
+SUBDIRS= include alsactl $(ALSACONF_DIR) $(ALSAMIXER_DIR) amidi amixer \
+	 aplay iecset seq speaker-test utils m4 po
 EXTRA_DIST= TODO gitcompile
 AUTOMAKE_OPTIONS=foreign
 ACLOCAL_AMFLAGS = -I m4
