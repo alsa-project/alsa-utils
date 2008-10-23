@@ -106,6 +106,7 @@ static int vumeter = VUMETER_NONE;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t chunk_bytes;
+static int test_position = 0;
 static snd_output_t *log;
 
 static int fd = -1;
@@ -186,7 +187,8 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "    --disable-resample  disable automatic rate resample\n"
 "    --disable-channels  disable automatic channel conversions\n"
 "    --disable-format    disable automatic format conversions\n"
-"    --disable-softvol   disable software volume control (softvol)\n")
+"    --disable-softvol   disable software volume control (softvol)\n"
+"    --test-position     test ring buffer position\n")
 		, command);
 	printf(_("Recognized sample formats are:"));
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
@@ -347,7 +349,8 @@ enum {
 	OPT_DISABLE_RESAMPLE,
 	OPT_DISABLE_CHANNELS,
 	OPT_DISABLE_FORMAT,
-	OPT_DISABLE_SOFTVOL
+	OPT_DISABLE_SOFTVOL,
+	OPT_TEST_POSITION
 };
 
 int main(int argc, char *argv[])
@@ -385,6 +388,7 @@ int main(int argc, char *argv[])
 		{"disable-channels", 0, 0, OPT_DISABLE_CHANNELS},
 		{"disable-format", 0, 0, OPT_DISABLE_FORMAT},
 		{"disable-softvol", 0, 0, OPT_DISABLE_SOFTVOL},
+		{"test-position", 0, 0, OPT_TEST_POSITION},
 		{0, 0, 0, 0}
 	};
 	char *pcm_name = "default";
@@ -562,6 +566,9 @@ int main(int argc, char *argv[])
 			break;
 		case OPT_DISABLE_SOFTVOL:
 			open_mode |= SND_PCM_NO_SOFTVOL;
+			break;
+		case OPT_TEST_POSITION:
+			test_position = 1;
 			break;
 		default:
 			fprintf(stderr, _("Try `%s --help' for more information.\n"), command);
@@ -1089,6 +1096,8 @@ static void set_params(void)
 		/* not required, but for sure */
 		snd_pcm_mmap_commit(handle, offset, 0);
 	}
+
+	buffer_frames = buffer_size;	/* for position test */
 }
 
 #ifndef timersub
@@ -1385,6 +1394,25 @@ static void compute_max_peak(u_char *data, size_t count)
 	}
 }
 
+static void do_test_position(void)
+{
+	static int counter = 0;
+	snd_pcm_sframes_t avail, delay;
+	int err;
+
+	err = snd_pcm_avail_delay(handle, &avail, &delay);
+	if (err < 0)
+		return;
+	if (avail > 4 * (snd_pcm_sframes_t)buffer_frames ||
+	    avail < -4 * (snd_pcm_sframes_t)buffer_frames ||
+	    delay > 4 * (snd_pcm_sframes_t)buffer_frames ||
+	    delay < -4 * (snd_pcm_sframes_t)buffer_frames) {
+	  fprintf(stderr, "Suspicious buffer position (%i total): avail = %li, delay = %li, buffer = %li\n", ++counter, (long)avail, (long)delay, (long)buffer_frames);
+	} else if (verbose) {
+	  fprintf(stderr, "Buffer position: %li/%li (%li)\n", (long)avail, (long)delay, (long)buffer_frames);
+	}
+}
+
 /*
  *  write function
  */
@@ -1399,7 +1427,11 @@ static ssize_t pcm_write(u_char *data, size_t count)
 		count = chunk_size;
 	}
 	while (count > 0) {
+		if (test_position)
+			do_test_position();
 		r = writei_func(handle, data, count);
+		if (test_position)
+			do_test_position();
 		if (r == -EAGAIN || (r >= 0 && (size_t)r < count)) {
 			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
@@ -1440,7 +1472,11 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
 		size_t offset = result;
 		for (channel = 0; channel < channels; channel++)
 			bufs[channel] = data[channel] + offset * bits_per_sample / 8;
+		if (test_position)
+			do_test_position();
 		r = writen_func(handle, bufs, count);
+		if (test_position)
+			do_test_position();
 		if (r == -EAGAIN || (r >= 0 && (size_t)r < count)) {
 			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
@@ -1478,7 +1514,11 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 	}
 
 	while (count > 0) {
+		if (test_position)
+			do_test_position();
 		r = readi_func(handle, data, count);
+		if (test_position)
+			do_test_position();
 		if (r == -EAGAIN || (r >= 0 && (size_t)r < count)) {
 			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
@@ -1516,7 +1556,11 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 		size_t offset = result;
 		for (channel = 0; channel < channels; channel++)
 			bufs[channel] = data[channel] + offset * bits_per_sample / 8;
+		if (test_position)
+			do_test_position();
 		r = readn_func(handle, bufs, count);
+		if (test_position)
+			do_test_position();
 		if (r == -EAGAIN || (r >= 0 && (size_t)r < count)) {
 			snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
