@@ -90,6 +90,7 @@ static void usage(void)
 	printf("Options:\n");
 	printf("    -D device   specifies the control device to use\n");
 	printf("    -c card     specifies the card number to use (equiv. with -Dhw:#)\n");
+	printf("    -n number   specifies the control index number (default = 0)\n");
 	printf("    -x          dump the dump the AESx hex code for IEC958 PCM parameters\n");
 	printf("    -i          read commands from stdin\n");
 	printf("Commands:\n");
