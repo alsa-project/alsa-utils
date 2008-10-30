@@ -1,7 +1,10 @@
 SUBDIRS = init
 
 sbin_PROGRAMS=alsactl
-man_MANS=alsactl.1 alsactl_init.7
+man_MANS=alsactl.1
+if USE_XMLTO
+man_MANS += alsactl_init.7
+endif
 EXTRA_DIST=alsactl.1 alsactl_init.xml
 
 alsactl_SOURCES=alsactl.c state.c utils.c init_parse.c
