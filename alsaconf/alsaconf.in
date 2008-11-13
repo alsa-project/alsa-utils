@@ -65,6 +65,8 @@ elif test -f /etc/redhat-release && grep -q "Red Hat" /etc/redhat-release; then
   distribution="redhat"
 elif test -f /etc/fedora-release && grep -q "Fedora" /etc/fedora-release; then
   distribution="fedora"
+elif [ -f /etc/slackware-version -o -f /etc/slamd64-version ]; then
+  distribution="slackware"
 else
   distribution="unknown"
 fi
@@ -490,6 +492,8 @@ acex() {
 
 if [ "$distribution" = "debian" ]; then
     rcalsasound=/etc/init.d/alsa
+elif [ -x /etc/rc.d/rc.alsa ]; then
+    rcalsasound=/etc/rc.d/rc.alsa
 elif [ -x /etc/init.d/alsasound ]; then
     rcalsasound=/etc/init.d/alsasound
 elif [ -x /usr/sbin/rcalsasound ]; then
