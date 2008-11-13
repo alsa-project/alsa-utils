@@ -908,13 +908,12 @@ BEGIN { in_sound=0; }
 
     farewell
     clear
-    if [ "$distribution" = "gentoo" ]; then
-      xecho "Running modules-update..."
-      modules-update
-    elif [ "$distribution" = "debian" ]; then
-      xecho "Running update-modules..."
-      update-modules
-    fi
+    case "$distribution" in
+    gentoo | debian)
+	xecho "Running update-modules..."
+	update-modules
+	;;
+    esac
     if [ -x $rcalsasound ] ; then
       echo Loading driver...
       $rcalsasound restart
