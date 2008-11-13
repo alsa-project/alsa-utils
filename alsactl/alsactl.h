@@ -68,7 +68,8 @@ extern char *statefile;
 
 int init(const char *file, const char *cardname);
 int save_state(const char *file, const char *cardname);
-int load_state(const char *file, const char *initfile, const char *cardname);
+int load_state(const char *file, const char *initfile, const char *cardname,
+	       int do_init);
 int power(const char *argv[], int argc);
 int generate_names(const char *cfgfile);
 

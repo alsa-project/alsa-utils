@@ -61,6 +61,15 @@ Used with restore command.  Don't restore mismatching control elements.
 This option was the old default behavior.
 
 .TP
+\fI\-I, \-\-no\-init\-fallback\fP
+Don't initialize cards if restore fails.  Since version 1.0.18,
+\fBalsactl\fP tries to initialize the card with the restore operation
+as default.  But this can cause incompatibility with the older version.
+The caller may expect that the state won't be touched if no state file
+exists.  This option takes the restore behavior back to the older
+version by suppressing the initialization.
+
+.TP
 \fI\-r, \-\-runstate\fP
 Save restore and init state to this file. The file will contain only errors.
 Errors are appended with the soundcard id to the end of file.

@@ -51,6 +51,8 @@ static void help(void)
 	printf("                   (default mode)\n");
 	printf("  -g,--ignore      ignore 'No soundcards found' error\n");
 	printf("  -P,--pedantic    do not restore mismatching controls (old default)\n");
+	printf("  -I,--no-init-fallback\n"
+	       "                   don't initialize even if restore fails\n");
 	printf("  -r,--runstate #  save restore and init state to this file (only errors)\n");
 	printf("                   default settings is 'no file set'\n");
 	printf("  -R,--remove      remove runstate file at first, otherwise append errors\n");
@@ -76,6 +78,7 @@ int main(int argc, char *argv[])
 		{"file", 1, NULL, 'f'},
 		{"env", 1, NULL, 'E'},
 		{"initfile", 1, NULL, 'i'},
+		{"no-init-fallback", 0, NULL, 'I'},
 		{"force", 0, NULL, 'F'},
 		{"ignore", 0, NULL, 'g'},
 		{"pedantic", 0, NULL, 'P'},
@@ -96,6 +99,7 @@ int main(int argc, char *argv[])
 	char *initfile = DATADIR "/init/00main";
 	char *cardname, **tmp, ncardname[16];
 	int removestate = 0;
+	int init_fallback = 1; /* new default behavior */
 	int res;
 
 	command = argv[0];
@@ -125,6 +129,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'i':
 			initfile = optarg;
+			break;
+		case 'I':
+			init_fallback = 0;
 			break;
 		case 'r':
 			statefile = optarg;
@@ -173,7 +180,7 @@ int main(int argc, char *argv[])
 	} else if (!strcmp(argv[optind], "restore")) {
 		if (removestate)
 			remove(statefile);
-		res = load_state(cfgfile, initfile, cardname);
+		res = load_state(cfgfile, initfile, cardname, init_fallback);
 	} else {
 		fprintf(stderr, "alsactl: Unknown command '%s'...\n", 
 			argv[optind]);

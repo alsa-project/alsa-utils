@@ -1548,7 +1548,8 @@ int save_state(const char *file, const char *cardname)
 	return 0;
 }
 
-int load_state(const char *file, const char *initfile, const char *cardname)
+int load_state(const char *file, const char *initfile, const char *cardname,
+	       int do_init)
 {
 	int err, finalerr = 0;
 	snd_config_t *config;
@@ -1586,6 +1587,8 @@ int load_state(const char *file, const char *initfile, const char *cardname)
 			if (card < 0)
 				break;
 			first = 0;
+			if (!do_init)
+				break;
 			sprintf(cardname1, "%i", card);
 			err = init(initfile, cardname1);
 			if (err < 0) {
@@ -1594,7 +1597,7 @@ int load_state(const char *file, const char *initfile, const char *cardname)
 			}
 			initfailed(card, "restore");
 		}
-		if (!first)
+		if (first)
 			finalerr = 0;	/* no cards, no error code */
 		return finalerr;
 	}
@@ -1621,7 +1624,7 @@ int load_state(const char *file, const char *initfile, const char *cardname)
 			}
 			first = 0;
 			/* do a check if controls matches state file */
- 			if (set_controls(card, config, 0)) {
+ 			if (do_init && set_controls(card, config, 0)) {
 				sprintf(cardname1, "%i", card);
 				err = init(initfile, cardname1);
 				if (err < 0) {
@@ -1644,7 +1647,7 @@ int load_state(const char *file, const char *initfile, const char *cardname)
 			return -ENODEV;
 		}
 		/* do a check if controls matches state file */
-		if (set_controls(cardno, config, 0)) {
+		if (do_init && set_controls(cardno, config, 0)) {
 			err = init(initfile, cardname);
 			if (err < 0) {
 				initfailed(cardno, "init");
