@@ -908,13 +908,12 @@ BEGIN { in_sound=0; }
 
     farewell
     clear
-    if [ "$distribution" = "gentoo" ]; then
-      xecho "Running modules-update..."
-      modules-update
-    elif [ "$distribution" = "debian" ]; then
-      xecho "Running update-modules..."
-      update-modules
-    fi
+    case "$distribution" in
+    gentoo | debian)
+	xecho "Running update-modules..."
+	update-modules
+	;;
+    esac
     if [ -x $rcalsasound ] ; then
       echo Loading driver...
       $rcalsasound restart
@@ -1411,7 +1410,7 @@ if [ x$devs_found != x ]; then
          Following card(s) are found on your system.
          Choose a soundcard to configure:
 ")
-    $DIALOG --title "$title" --menu "$msg" 17 76 8 "${devs_found[@]}" 2> $FOUND || acex 0
+    $DIALOG --title "$title" --menu "$msg" 17 76 8 "${devs_found[@]}" --output-fd 3 3> $FOUND || acex 0
     card=`head -n 1 $FOUND`
     if [ "$card" = "legacy" ]; then
 	ac_config_legacy
