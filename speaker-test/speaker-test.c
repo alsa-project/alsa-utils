@@ -251,12 +251,9 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
   double   res;
   int      chn;
   int32_t  ires;
-  float    fres;
   int8_t  *samp8 = (int8_t*) frames;
   int16_t *samp16 = (int16_t*) frames;
   int32_t *samp32 = (int32_t*) frames;
-  float   *samp_f = (float*) frames;
-  int sample_size_bits = snd_pcm_format_width(format); 
 
   while (count-- > 0) {
     for(chn=0;chn<channels;chn++) {
