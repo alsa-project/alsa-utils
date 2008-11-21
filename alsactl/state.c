@@ -600,10 +600,6 @@ static int get_controls(int cardno, snd_config_t *top)
 		goto _close;
 	}
 	count = snd_ctl_elem_list_get_count(list);
-	if (count < 0) {
-		err = 0;
-		goto _close;
-	}
 	err = snd_config_compound_add(card, "control", count > 0, &control);
 	if (err < 0) {
 		error("snd_config_compound_add: %s", snd_strerror(err));
@@ -1183,10 +1179,6 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control,
 		}
 		if (strcmp(fld, "iface") == 0) {
 			iface = (snd_ctl_elem_iface_t)config_iface(n);
-			if (iface < 0) {
-				cerror(doit, "control.%d.%s is invalid", numid, fld);
-				return -EINVAL;
-			}
 			continue;
 		}
 		if (strcmp(fld, "device") == 0) {
@@ -1243,22 +1235,20 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control,
 		snd_ctl_elem_info_set_numid(info, numid);
 		err = snd_ctl_elem_info(handle, info);
 	}
-	if (err < 0) {
-		if (iface >= 0 && name) {
-			snd_ctl_elem_info_set_numid(info, 0);
-			snd_ctl_elem_info_set_interface(info, iface);
-			snd_ctl_elem_info_set_device(info, device);
-			snd_ctl_elem_info_set_subdevice(info, subdevice);
-			snd_ctl_elem_info_set_name(info, name);
-			snd_ctl_elem_info_set_index(info, index);
-			err = snd_ctl_elem_info(handle, info);
-			if (err < 0 && comment && is_user_control(comment)) {
-				err = add_user_control(handle, info, comment);
-				if (err < 0) {
-					cerror(doit, "failed to add user control #%d (%s)",
-					      numid, snd_strerror(err));
-					return err;
-				}
+	if (err < 0 && name) {
+		snd_ctl_elem_info_set_numid(info, 0);
+		snd_ctl_elem_info_set_interface(info, iface);
+		snd_ctl_elem_info_set_device(info, device);
+		snd_ctl_elem_info_set_subdevice(info, subdevice);
+		snd_ctl_elem_info_set_name(info, name);
+		snd_ctl_elem_info_set_index(info, index);
+		err = snd_ctl_elem_info(handle, info);
+		if (err < 0 && comment && is_user_control(comment)) {
+			err = add_user_control(handle, info, comment);
+			if (err < 0) {
+				cerror(doit, "failed to add user control #%d (%s)",
+				       numid, snd_strerror(err));
+				return err;
 			}
 		}
 	}
@@ -1372,8 +1362,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control,
 		if (snd_config_get_id(n, &id) < 0)
 			continue;
 		idx = atoi(id);
-		if (idx < 0 || idx >= count || 
-		    set[idx]) {
+		if (idx >= count || set[idx]) {
 			cerror(doit, "bad control.%d.value index", numid);
 			if (!force_restore || !doit)
 				return -EINVAL;
