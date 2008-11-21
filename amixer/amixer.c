@@ -1665,7 +1665,7 @@ static void events_remove(snd_hctl_elem_t *helem)
 	printf("\n");
 }
 
-int element_callback(snd_hctl_elem_t *elem, unsigned int mask)
+static int element_callback(snd_hctl_elem_t *elem, unsigned int mask)
 {
 	if (mask == SND_CTL_EVENT_MASK_REMOVE) {
 		events_remove(elem);
@@ -1689,7 +1689,7 @@ static void events_add(snd_hctl_elem_t *helem)
 	snd_hctl_elem_set_callback(helem, element_callback);
 }
 
-int ctl_callback(snd_hctl_t *ctl, unsigned int mask,
+static int ctl_callback(snd_hctl_t *ctl, unsigned int mask,
 		 snd_hctl_elem_t *elem)
 {
 	if (mask & SND_CTL_EVENT_MASK_ADD)
@@ -1743,7 +1743,7 @@ static void sevents_remove(snd_mixer_selem_id_t *sid)
 	printf("event remove: '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
 }
 
-int melem_event(snd_mixer_elem_t *elem, unsigned int mask)
+static int melem_event(snd_mixer_elem_t *elem, unsigned int mask)
 {
 	snd_mixer_selem_id_t *sid;
 	snd_mixer_selem_id_alloca(&sid);
@@ -1768,7 +1768,7 @@ static void sevents_add(snd_mixer_elem_t *elem)
 	snd_mixer_elem_set_callback(elem, melem_event);
 }
 
-int mixer_event(snd_mixer_t *mixer, unsigned int mask,
+static int mixer_event(snd_mixer_t *mixer, unsigned int mask,
 		snd_mixer_elem_t *elem)
 {
 	if (mask & SND_CTL_EVENT_MASK_ADD)

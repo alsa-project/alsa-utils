@@ -34,7 +34,7 @@
 #define ARRAY_SIZE(a) (sizeof (a) / sizeof (a)[0])
 
 
-char *id_str(snd_ctl_elem_id_t *id)
+static char *id_str(snd_ctl_elem_id_t *id)
 {
 	static char str[128];
 	assert(id);
@@ -47,7 +47,7 @@ char *id_str(snd_ctl_elem_id_t *id)
 	return str;
 }
 
-char *num_str(long n)
+static char *num_str(long n)
 {
 	static char str[32];
 	sprintf(str, "%ld", n);

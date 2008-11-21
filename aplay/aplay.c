@@ -127,7 +127,7 @@ static void end_wave(int fd);
 static void begin_au(int fd, size_t count);
 static void end_au(int fd);
 
-struct fmt_capture {
+static const struct fmt_capture {
 	void (*start) (int fd, size_t count);
 	void (*end) (int fd);
 	char *what;
@@ -663,7 +663,7 @@ int main(int argc, char *argv[])
  * Safe read (for pipes)
  */
  
-ssize_t safe_read(int fd, void *buf, size_t count)
+static ssize_t safe_read(int fd, void *buf, size_t count)
 {
 	ssize_t result = 0, res;
 
@@ -701,7 +701,7 @@ static int test_vocfile(void *buffer)
  * helper for test_wavefile
  */
 
-size_t test_wavefile_read(int fd, u_char *buffer, size_t *size, size_t reqsize, int line)
+static size_t test_wavefile_read(int fd, u_char *buffer, size_t *size, size_t reqsize, int line)
 {
 	if (*size >= reqsize)
 		return *size;
@@ -2129,7 +2129,7 @@ static void header(int rtype, char *name)
 
 /* playing raw data */
 
-void playback_go(int fd, size_t loaded, off64_t count, int rtype, char *name)
+static void playback_go(int fd, size_t loaded, off64_t count, int rtype, char *name)
 {
 	int l, r;
 	off64_t written = 0;
@@ -2369,7 +2369,7 @@ static void capture(char *orig_name)
 	} while ((file_type == FORMAT_RAW && !timelimit) || count > 0);
 }
 
-void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t count, int rtype, char **names)
+static void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t count, int rtype, char **names)
 {
 	int r;
 	size_t vsize;
@@ -2421,7 +2421,7 @@ void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t count,
 	snd_pcm_nonblock(handle, nonblock);
 }
 
-void capturev_go(int* fds, unsigned int channels, off64_t count, int rtype, char **names)
+static void capturev_go(int* fds, unsigned int channels, off64_t count, int rtype, char **names)
 {
 	size_t c;
 	ssize_t r;

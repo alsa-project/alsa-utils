@@ -136,7 +136,7 @@ static void free_space(struct space *space)
 	free(space);
 }
 
-struct pair *value_find(struct space *space, const char *key)
+static struct pair *value_find(struct space *space, const char *key)
 {
 	struct pair *pair = space->pairs;
 	

@@ -445,7 +445,7 @@ static void sig_handler(int dummy)
 	stop = 1;
 }
 
-void add_send_hex_data(const char *str)
+static void add_send_hex_data(const char *str)
 {
 	int length;
 	char *s;
