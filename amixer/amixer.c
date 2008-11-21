@@ -310,7 +310,7 @@ static int set_capture_dB(snd_mixer_elem_t *elem,
 	return snd_mixer_selem_set_capture_dB(elem, c, value, 0);
 }
 
-static struct volume_ops_set vol_ops[2] = {
+static const struct volume_ops_set vol_ops[2] = {
 	{
 		.has_volume = snd_mixer_selem_has_playback_volume,
 		.v = {{ snd_mixer_selem_get_playback_volume_range,
@@ -1346,7 +1346,7 @@ typedef struct channel_mask {
 	char *name;
 	unsigned int mask;
 } channel_mask_t;
-static channel_mask_t chanmask[] = {
+static const channel_mask_t chanmask[] = {
 	{"frontleft", 1 << SND_MIXER_SCHN_FRONT_LEFT},
 	{"frontright", 1 << SND_MIXER_SCHN_FRONT_RIGHT},
 	{"frontcenter", 1 << SND_MIXER_SCHN_FRONT_CENTER},
@@ -1363,7 +1363,7 @@ static channel_mask_t chanmask[] = {
 
 static unsigned int channels_mask(char **arg, unsigned int def)
 {
-	channel_mask_t *c;
+	const channel_mask_t *c;
 
 	for (c = chanmask; c->name; c++) {
 		if (strncasecmp(*arg, c->name, strlen(c->name)) == 0) {
@@ -1892,7 +1892,7 @@ int main(int argc, char *argv[])
 {
 	int morehelp, level = 0;
 	int read_stdin = 0;
-	static struct option long_option[] =
+	static const struct option long_option[] =
 	{
 		{"help", 0, NULL, 'h'},
 		{"card", 1, NULL, 'c'},

@@ -706,8 +706,8 @@ static void sighandler(int sig)
 
 int main(int argc, char *argv[])
 {
-	static char short_options[] = "hVlp:b:f:t:sdm:i:";
-	static struct option long_options[] = {
+	static const char short_options[] = "hVlp:b:f:t:sdm:i:";
+	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
 		{"list", 0, NULL, 'l'},

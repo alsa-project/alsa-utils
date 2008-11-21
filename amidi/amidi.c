@@ -465,8 +465,8 @@ static void add_send_hex_data(const char *str)
 
 int main(int argc, char *argv[])
 {
-	static char short_options[] = "hVlLp:s:r:S::dt:a";
-	static struct option long_options[] = {
+	static const char short_options[] = "hVlLp:s:r:S::dt:a";
+	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
 		{"list-devices", 0, NULL, 'l'},

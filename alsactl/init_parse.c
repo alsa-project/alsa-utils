@@ -272,7 +272,7 @@ static const char *get_ctl_value(struct space *space)
 	snd_ctl_elem_type_t type;
 	unsigned int idx, count;
 	static char res[1024], tmp[16];
-	static const char *hex = "0123456789abcdef";
+	static const char hex[] = "0123456789abcdef";
 	char *pos;
 	const char *pos1;
 

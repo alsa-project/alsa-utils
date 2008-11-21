@@ -255,7 +255,7 @@ enum {
 	SUBSCRIBE, UNSUBSCRIBE, LIST, REMOVE_ALL
 };
 
-static struct option long_option[] = {
+static const struct option long_option[] = {
 	{"disconnect", 0, NULL, 'd'},
 	{"input", 0, NULL, 'i'},
 	{"output", 0, NULL, 'o'},

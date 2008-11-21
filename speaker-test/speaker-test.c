@@ -84,7 +84,7 @@ static snd_pcm_uframes_t  period_size;
 static const char *given_test_wav_file = NULL;
 static char *wav_file_dir = SOUNDSDIR;
 
-static const char        *channel_name[MAX_CHANNELS] = {
+static const char *const channel_name[MAX_CHANNELS] = {
   N_("Front Left"),
   N_("Front Right"),
   N_("Rear Left"),
@@ -620,7 +620,7 @@ static int check_wav_file(int channel, const char *name)
 
 static int setup_wav_file(int chn)
 {
-  static const char *wavs[MAX_CHANNELS] = {
+  static const char *const wavs[MAX_CHANNELS] = {
     "Front_Left.wav",
     "Front_Right.wav",
     "Rear_Left.wav",
@@ -802,7 +802,7 @@ int main(int argc, char *argv[]) {
   unsigned int		n, nloops;
   struct   timeval	tv1,tv2;
 
-  struct option         long_option[] = {
+  static const struct option long_option[] = {
     {"help",      0, NULL, 'h'},
     {"device",    1, NULL, 'D'},
     {"rate",      1, NULL, 'r'},

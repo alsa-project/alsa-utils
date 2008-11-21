@@ -83,7 +83,7 @@ static int info = 0;
  * main routine
  */
 
-static struct option long_option[] = {
+static const struct option long_option[] = {
 	{"port", 1, NULL, 'p'},
 	{"source", 1, NULL, 's'},
 	{"dest", 1, NULL, 'd'},

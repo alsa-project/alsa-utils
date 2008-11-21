@@ -25,7 +25,7 @@ struct category_str {
 	const char *name;
 };
 
-static struct category_str con_category[] = {
+static const struct category_str con_category[] = {
 	{ IEC958_AES1_CON_GENERAL, "general" },
 
 	{ IEC958_AES1_CON_IEC908_CD, "CD" },

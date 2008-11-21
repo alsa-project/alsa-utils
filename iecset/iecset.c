@@ -52,7 +52,7 @@ struct cmdtbl {
 	const char *desc;
 };
 
-static struct cmdtbl cmds[] = {
+static const struct cmdtbl cmds[] = {
 	{ "pro", IDX_PRO, CMD_BOOL,
 	  "professional (common)\n\toff = consumer mode, on = professional mode" },
 	{ "aud", IDX_NOAUDIO, CMD_BOOL_INV,

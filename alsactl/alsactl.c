@@ -72,7 +72,7 @@ static void help(void)
 
 int main(int argc, char *argv[])
 {
-	struct option long_option[] =
+	static const struct option long_option[] =
 	{
 		{"help", 0, NULL, 'h'},
 		{"file", 1, NULL, 'f'},
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 		{"version", 0, NULL, 'v'},
 		{NULL, 0, NULL, 0},
 	};
-	char *devfiles[] = {
+	static const char *const devfiles[] = {
 		"/dev/snd/controlC",
 		"/dev/snd/pcmC",
 		"/dev/snd/midiC",

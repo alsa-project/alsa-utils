@@ -328,7 +328,7 @@ static int read_track(struct track *track, int track_end)
 
 		switch (cmd >> 4) {
 			/* maps SMF events to ALSA sequencer events */
-			static unsigned char cmd_type[] = {
+			static const unsigned char cmd_type[] = {
 				[0x8] = SND_SEQ_EVENT_NOTEOFF,
 				[0x9] = SND_SEQ_EVENT_NOTEON,
 				[0xa] = SND_SEQ_EVENT_KEYPRESS,
@@ -857,8 +857,8 @@ static void version(void)
 
 int main(int argc, char *argv[])
 {
-	static char short_options[] = "hVlp:d:";
-	static struct option long_options[] = {
+	static const char short_options[] = "hVlp:d:";
+	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
 		{"list", 0, NULL, 'l'},

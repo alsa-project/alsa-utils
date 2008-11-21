@@ -222,7 +222,7 @@ enum {
 #define MIXER_ELEM_HAS_VOLUME		0x800
 
 /* left and right channels for each type */
-static snd_mixer_selem_channel_id_t mixer_elem_chn[][2] = {
+static const snd_mixer_selem_channel_id_t mixer_elem_chn[][2] = {
   { SND_MIXER_SCHN_FRONT_LEFT, SND_MIXER_SCHN_FRONT_RIGHT },
   { SND_MIXER_SCHN_REAR_LEFT, SND_MIXER_SCHN_REAR_RIGHT },
   { SND_MIXER_SCHN_FRONT_CENTER, SND_MIXER_SCHN_UNKNOWN },

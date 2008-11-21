@@ -356,8 +356,8 @@ enum {
 int main(int argc, char *argv[])
 {
 	int option_index;
-	char *short_options = "hnlLD:qt:c:f:r:d:MNF:A:R:T:B:vV:IPC";
-	static struct option long_options[] = {
+	static const char short_options[] = "hnlLD:qt:c:f:r:d:MNF:A:R:T:B:vV:IPC";
+	static const struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"version", 0, 0, OPT_VERSION},
 		{"list-devnames", 0, 0, 'n'},
