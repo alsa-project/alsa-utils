@@ -1162,7 +1162,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control,
 		return -EINVAL;
 	}
 	numid = atoi(id);
-	if (numid > *maxnumid)
+	if ((int)numid > *maxnumid)
 		*maxnumid = numid;
 	snd_config_for_each(i, next, control) {
 		snd_config_t *n = snd_config_iterator_entry(i);
@@ -1398,7 +1398,7 @@ static int set_controls(int card, snd_config_t *top, int doit)
 	snd_ctl_card_info_t *info;
 	snd_config_t *control;
 	snd_config_iterator_t i, next;
-	int err, maxnumid;
+	int err, maxnumid = -1;
 	char name[32], tmpid[16];
 	const char *id;
 	snd_ctl_card_info_alloca(&info);
@@ -1442,7 +1442,7 @@ static int set_controls(int card, snd_config_t *top, int doit)
 
 	/* check if we have additional controls in driver */
 	/* in this case we should go through init procedure */
-	if (!doit) {
+	if (!doit && maxnumid >= 0) {
 		snd_ctl_elem_id_t *id;
 		snd_ctl_elem_info_t *info;
 		snd_ctl_elem_id_alloca(&id);
