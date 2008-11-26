@@ -422,6 +422,14 @@ static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_
       return err;
     }
   }
+
+  /* write the parameters to device */
+  err = snd_pcm_hw_params(handle, params);
+  if (err < 0) {
+    fprintf(stderr, _("Unable to set hw params for playback: %s\n"), snd_strerror(err));
+    return err;
+  }
+
   snd_pcm_hw_params_get_buffer_size(params, &buffer_size);
   snd_pcm_hw_params_get_period_size(params, &period_size, NULL);
   printf(_("was set period_size = %lu\n"),period_size);
@@ -429,13 +437,6 @@ static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_
   if (2*period_size > buffer_size) {
     fprintf(stderr, _("buffer to small, could not use\n"));
     return -EINVAL;
-  }
-
-  /* write the parameters to device */
-  err = snd_pcm_hw_params(handle, params);
-  if (err < 0) {
-    fprintf(stderr, _("Unable to set hw params for playback: %s\n"), snd_strerror(err));
-    return err;
   }
 
   return 0;
