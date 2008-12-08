@@ -17,7 +17,7 @@
  *
  */
 
-#ifdef __GLIBC__
+#if defined(__GLIBC__) && !(defined(__UCLIBC__) && defined(__USE_BSD))
 static size_t strlcpy(char *dst, const char *src, size_t size)
 {
 	size_t bytes = 0;
