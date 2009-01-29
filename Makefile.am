@@ -1,16 +1,25 @@
 INCLUDES=-I$(top_srcdir)/include
+
+SUBDIRS = include alsactl utils m4 po
 if ALSAMIXER
-ALSAMIXER_DIR=alsamixer
-else
-ALSAMIXER_DIR=
+SUBDIRS += alsamixer
+endif
+if HAVE_MIXER
+SUBDIRS += amixer
+endif
+if HAVE_RAWMIDI
+SUBDIRS += amidi
 endif
 if ALSACONF
-ALSACONF_DIR=alsaconf
-else
-ALSACONF_DIR=
+SUBDIRS += alsaconf
 endif
-SUBDIRS= include alsactl $(ALSACONF_DIR) $(ALSAMIXER_DIR) amidi amixer \
-	 aplay iecset seq speaker-test utils m4 po
+if HAVE_PCM
+SUBDIRS += aplay iecset speaker-test
+endif
+if HAVE_SEQ
+SUBDIRS += seq
+endif
+
 EXTRA_DIST= TODO gitcompile
 AUTOMAKE_OPTIONS=foreign
 ACLOCAL_AMFLAGS = -I m4
