@@ -11,6 +11,7 @@
 # **************************************************************************
 
 ENV{volume}:="-20dB"
+ENV{cvolume}:="12dB"
 
 CTL{reset}="mixer"
 CTL{name}="Playback Volume",PROGRAM=="__ctl_search", \
@@ -55,14 +56,21 @@ CTL{name}="PC Speaker Playback Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
-CTL{name}="PCM Playback Volume",PROGRAM=="__ctl_search", \
-  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="PCM Playback Volume",PROGRAM!="__ctl_search",GOTO="pcm0_end"
+# exception - some HDA codecs have shifted dB range
+CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{values}="0dB",GOTO="pcm0_end"
+CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+LABEL="pcm0_end"
 CTL{name}="PCM Playback Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
-CTL{name}="PCM Playback Volume",CTL{index}="1",PROGRAM=="__ctl_search", \
-  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="PCM Playback Volume",CTL{index}="1",PROGRAM!="__ctl_search", \
+  GOTO="pcm1_end"
+# exception - some HDA codecs have shifted dB range
+CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{values}="0dB",GOTO="pcm1_end"
+CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+LABEL="pcm1_end"
 CTL{name}="PCM Playback Switch",CTL{index}="1",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 
@@ -91,8 +99,11 @@ CTL{name}="Music Playback Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
-CTL{name}="CD Playback Volume",PROGRAM=="__ctl_search", \
-  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+CTL{name}="CD Playback Volume",PROGRAM!="__ctl_search", GOTO="cd0_end"
+# exception - some HDA codecs have shifted dB range
+CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{values}="0dB",GOTO="cd0_end"
+CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+LABEL="cd0_end"
 CTL{name}="CD Playback Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 
@@ -130,15 +141,14 @@ ENV{volume}:="20dB"
 
 CTL{reset}="mixer"
 CTL{name}="Capture Volume",PROGRAM=="__ctl_search", \
-  CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
+  CTL{values}="$env{cvolume}",RESULT!="0",CTL{values}="75%"
 CTL{name}="Capture Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 
-CTL{name}="Input Source",PROGRAM=="__ctl_search", \
-  CTL{enums}=="*|Internal Mic|*",CTL{values}="Internal Mic", \
+CTL{name}="Input Source",PROGRAM!="__ctl_search", GOTO="end_input_source"
+CTL{enums}=="*|Internal Mic|*",CTL{values}="Internal Mic", \
   GOTO="end_input_source"
-CTL{name}="Input Source",PROGRAM=="__ctl_search", \
-  CTL{enums}=="*|Mic|*",CTL{values}="Mic"
+CTL{enums}=="*|Mic|*",CTL{values}="Mic"
 LABEL="end_input_source"
 
 CTL{name}="Internal Mic Boost",PROGRAM=="__ctl_search", \
