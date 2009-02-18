@@ -97,7 +97,8 @@ int main(int argc, char *argv[])
 	};
 	char *cfgfile = SYS_ASOUNDRC;
 	char *initfile = DATADIR "/init/00main";
-	char *cardname, **tmp, ncardname[16];
+	char *cardname, ncardname[16];
+	const char *const *tmp;
 	int removestate = 0;
 	int init_fallback = 1; /* new default behavior */
 	int res;

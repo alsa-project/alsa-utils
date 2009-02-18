@@ -17,17 +17,6 @@
  */
 
 
-static int string_is_true(const char *str)
-{
-	if (strcasecmp(str, "true") == 0)
-		return 1;
-	if (strcasecmp(str, "yes") == 0)
-		return 1;
-	if (strcasecmp(str, "1") == 0)
-		return 1;
-	return 0;
-}
-
 static void remove_trailing_chars(char *path, char c)
 {
 	size_t len;
