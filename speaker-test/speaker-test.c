@@ -85,48 +85,48 @@ static const char *given_test_wav_file = NULL;
 static char *wav_file_dir = SOUNDSDIR;
 
 static const char *const channel_name[MAX_CHANNELS] = {
-  N_("Front Left"),
-  N_("Front Right"),
-  N_("Rear Left"),
-  N_("Rear Right"),
-  N_("Center"),
-  N_("LFE"),
-  N_("Side Left"),
-  N_("Side Right"),
-  N_("Channel 9"),
-  N_("Channel 10"),
-  N_("Channel 11"),
-  N_("Channel 12"),
-  N_("Channel 13"),
-  N_("Channel 14"),
-  N_("Channel 15"),
-  N_("Channel 16")
+  /*  0 */ N_("Front Left"),
+  /*  1 */ N_("Front Right"),
+  /*  2 */ N_("Rear Left"),
+  /*  3 */ N_("Rear Right"),
+  /*  4 */ N_("Center"),
+  /*  5 */ N_("LFE"),
+  /*  6 */ N_("Side Left"),
+  /*  7 */ N_("Side Right"),
+  /*  8 */ N_("Channel 9"),
+  /*  9 */ N_("Channel 10"),
+  /* 10 */ N_("Channel 11"),
+  /* 11 */ N_("Channel 12"),
+  /* 12 */ N_("Channel 13"),
+  /* 13 */ N_("Channel 14"),
+  /* 14 */ N_("Channel 15"),
+  /* 15 */ N_("Channel 16")
 };
 
 static const int	channels4[] = {
-  0,
-  1,
-  3,
-  2
+  0, /* Front Left  */
+  1, /* Front Right */
+  3, /* Rear Right  */
+  2, /* Rear Left   */
 };
 static const int	channels6[] = {
-  0,
-  4,
-  1,
-  3,
-  2,
-  5
-}; 
+  0, /* Front Left  */
+  4, /* Center      */
+  1, /* Front Right */
+  3, /* Rear Right  */
+  2, /* Rear Left   */
+  5, /* LFE         */
+};
 static const int	channels8[] = {
-  0,
-  4,
-  1,
-  7,
-  3,
-  2,
-  6,
-  5
-}; 
+  0, /* Front Left  */
+  4, /* Center      */
+  1, /* Front Right */
+  7, /* Side Right  */
+  3, /* Rear Right  */
+  2, /* Rear Left   */
+  6, /* Side Left   */
+  5, /* LFE         */
+};
 
 static void generate_sine(uint8_t *frames, int channel, int count, double *_phase) {
   double phase = *_phase;
