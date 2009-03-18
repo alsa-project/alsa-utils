@@ -291,6 +291,8 @@ esac
 
 # cfgfile = base config file to remove/update the sound setting
 # cfgout = new config file to write the sound setting (if different from $cfgfile)
+cfgout=""
+cfgoldout=""
 if [ -n "$cfgfile" ]; then
   if [ ! -r "$cfgfile" ]; then
     xecho "ERROR: The config file doesn't exist: "
@@ -301,10 +303,22 @@ else
 if [ "$distribution" = "gentoo" ]; then
   cfgfile="/etc/modules.d/alsa"
 elif [ "$kernel" = "new" ]; then
-  if [ -d /etc/modprobe.d ]; then
-    cfgout="/etc/modprobe.d/sound"
-  fi
   cfgfile="/etc/modprobe.conf"
+  if [ -d /etc/modprobe.d ]; then
+    cfgout="/etc/modprobe.d/50-sound.conf"
+    cfgoldout="/etc/modprobe.d/sound"
+    if [ ! -f $cfgout ]; then
+	modver=$(modprobe -V | sed -e's/^module-init-tools version //')
+	case "$modver" in
+	3.[789]*)
+	  ;;
+	*)
+	  cfgout="/etc/modprobe.d/sound"
+	  cfgoldout=""
+	  ;;
+	esac
+    fi
+  fi
 elif [ "$distribution" = "debian" ]; then
   cfgfile="/etc/modutils/sound"
 elif [ -e /etc/modules.conf ]; then
@@ -818,7 +832,7 @@ ac_config_card () {
 	msg=$(xmsg "
 Configuring %s
 Do you want to modify %s (and %s if present)?" $CARD_DRIVER $cfgout $cfgfile)
-        $DIALOG --yesno "$msg" 8 50 || acex 0
+        $DIALOG --yesno "$msg" 10 50 || acex 0
     else
 	msg=$(xmsg "
 Configuring %s
@@ -875,6 +889,7 @@ alias sound-slot-0 $CARD_DRIVER" >> $addcfg
     if [ -n "$cfgout" ]; then
 	[ ! -r "$cfgfile" ] || cmp -s "$TMP" "$cfgfile" || cat "$TMP" > "$cfgfile"
 	cmp -s "$addcfg" "$cfgout" || cat "$addcfg" > "$cfgout"
+	test -n "$cfgoldout" && rm -f "$cfgoldout"
     else
 	echo "$ACB
 # --- ALSACONF version $version ---" >> $TMP
