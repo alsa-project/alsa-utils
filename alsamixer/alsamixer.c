@@ -2113,11 +2113,13 @@ mixer_iteration (void)
 	mixer_hscroll_delta -= 1;
 	break;
       case KEY_UP:
+      case 'k':
       case 'w':
       case 'W':
 	mixer_vscroll_delta -= 1;
 	break;
       case KEY_DOWN:
+      case 'j':
       case 'x':
       case 'X':
 	mixer_vscroll_delta += 1;
@@ -2179,12 +2181,14 @@ mixer_iteration (void)
 	break;
       case 'w':
       case KEY_UP:
+      case 'k':
         mixer_set_delta(1);
       case 'W':
         mixer_add_delta(1);
 	break;
       case 'x':
       case KEY_DOWN:
+      case 'j':
         mixer_set_delta(-1);
       case 'X':
         mixer_add_delta(-1);
