@@ -1150,7 +1150,6 @@ static void xrun(void)
 			struct timespec now, diff, tstamp;
 			clock_gettime(CLOCK_MONOTONIC, &now);
 			snd_pcm_status_get_trigger_htstamp(status, &tstamp);
-			printf("AAA: %li %li\n" "BBB\n", tstamp.tv_sec, now.tv_nsec);
 			timermsub(&now, &tstamp, &diff);
 			fprintf(stderr, _("%s!!! (at least %.3f ms long)\n"),
 				stream == SND_PCM_STREAM_PLAYBACK ? _("underrun") : _("overrun"),
@@ -1162,7 +1161,6 @@ static void xrun(void)
 			struct timeval now, diff, tstamp;
 			gettimeofday(&now, 0);
 			snd_pcm_status_get_trigger_tstamp(status, &tstamp);
-			printf("AAA: %li %li\n", tstamp.tv_sec, now.tv_sec);
 			timersub(&now, &tstamp, &diff);
 			fprintf(stderr, _("%s!!! (at least %.3f ms long)\n"),
 				stream == SND_PCM_STREAM_PLAYBACK ? _("underrun") : _("overrun"),
