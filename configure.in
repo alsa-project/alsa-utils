@@ -44,6 +44,23 @@ AM_CONDITIONAL(HAVE_MIXER, test "$have_mixer" = "yes")
 AM_CONDITIONAL(HAVE_RAWMIDI, test "$have_rawmidi" = "yes")
 AM_CONDITIONAL(HAVE_SEQ, test "$have_seq" = "yes")
 
+dnl Check for librt
+LIBRT=""
+AC_MSG_CHECKING(for librt)
+AC_ARG_WITH(librt,
+  AS_HELP_STRING([--with-librt], [Use librt for monotonic clock (default = yes)]),
+  [ have_librt="$withval" ], [ have_librt="yes" ])
+if test "$have_librt" = "yes"; then
+  AC_CHECK_LIB([rt], [clock_gettime], [HAVE_LIBRT="yes"])
+  if test "$HAVE_LIBRT" = "yes" ; then
+    LIBRT="-lrt"
+    AC_DEFINE([HAVE_LIBRT], 1, [Have librt])
+    AC_DEFINE([HAVE_CLOCK_GETTIME], 1, [Have clock gettime])
+  fi
+else
+  AC_MSG_RESULT(no)
+fi
+
 dnl Disable alsamixer
 CURSESINC=""
 CURSESLIB=""
@@ -159,6 +176,8 @@ dnl Enable largefile support
 AC_SYS_LARGEFILE
 
 SAVE_UTIL_VERSION
+
+AC_SUBST(LIBRT)
 
 AC_OUTPUT(Makefile alsactl/Makefile alsactl/init/Makefile \
 	  alsamixer/Makefile amidi/Makefile amixer/Makefile \

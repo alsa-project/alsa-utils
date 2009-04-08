@@ -101,12 +101,14 @@ static snd_pcm_uframes_t buffer_frames = 0;
 static int avail_min = -1;
 static int start_delay = 0;
 static int stop_delay = 0;
+static int monotonic = 0;
 static int verbose = 0;
 static int vumeter = VUMETER_NONE;
 static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t chunk_bytes;
 static int test_position = 0;
+static int test_nowait = 0;
 static snd_output_t *log;
 
 static int fd = -1;
@@ -188,7 +190,8 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "    --disable-channels  disable automatic channel conversions\n"
 "    --disable-format    disable automatic format conversions\n"
 "    --disable-softvol   disable software volume control (softvol)\n"
-"    --test-position     test ring buffer position\n")
+"    --test-position     test ring buffer position\n"
+"    --test-nowait       do not wait for ring buffer - eats whole CPU\n")
 		, command);
 	printf(_("Recognized sample formats are:"));
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
@@ -350,7 +353,8 @@ enum {
 	OPT_DISABLE_CHANNELS,
 	OPT_DISABLE_FORMAT,
 	OPT_DISABLE_SOFTVOL,
-	OPT_TEST_POSITION
+	OPT_TEST_POSITION,
+	OPT_TEST_NOWAIT
 };
 
 int main(int argc, char *argv[])
@@ -389,6 +393,7 @@ int main(int argc, char *argv[])
 		{"disable-format", 0, 0, OPT_DISABLE_FORMAT},
 		{"disable-softvol", 0, 0, OPT_DISABLE_SOFTVOL},
 		{"test-position", 0, 0, OPT_TEST_POSITION},
+		{"test-nowait", 0, 0, OPT_TEST_NOWAIT},
 		{0, 0, 0, 0}
 	};
 	char *pcm_name = "default";
@@ -569,6 +574,9 @@ int main(int argc, char *argv[])
 			break;
 		case OPT_TEST_POSITION:
 			test_position = 1;
+			break;
+		case OPT_TEST_NOWAIT:
+			test_nowait = 1;
 			break;
 		default:
 			fprintf(stderr, _("Try `%s --help' for more information.\n"), command);
@@ -1017,6 +1025,7 @@ static void set_params(void)
 							     &buffer_frames);
 	}
 	assert(err >= 0);
+	monotonic = snd_pcm_hw_params_is_monotonic(params);
 	err = snd_pcm_hw_params(handle, params);
 	if (err < 0) {
 		error(_("Unable to install hw params:"));
@@ -1112,6 +1121,18 @@ do { \
 } while (0)
 #endif
 
+#ifndef timermsub
+#define	timermsub(a, b, result) \
+do { \
+	(result)->tv_sec = (a)->tv_sec - (b)->tv_sec; \
+	(result)->tv_nsec = (a)->tv_nsec - (b)->tv_nsec; \
+	if ((result)->tv_nsec < 0) { \
+		--(result)->tv_sec; \
+		(result)->tv_nsec += 1000000000L; \
+	} \
+} while (0)
+#endif
+
 /* I/O error handler */
 static void xrun(void)
 {
@@ -1124,13 +1145,29 @@ static void xrun(void)
 		exit(EXIT_FAILURE);
 	}
 	if (snd_pcm_status_get_state(status) == SND_PCM_STATE_XRUN) {
-		struct timeval now, diff, tstamp;
-		gettimeofday(&now, 0);
-		snd_pcm_status_get_trigger_tstamp(status, &tstamp);
-		timersub(&now, &tstamp, &diff);
-		fprintf(stderr, _("%s!!! (at least %.3f ms long)\n"),
-			stream == SND_PCM_STREAM_PLAYBACK ? _("underrun") : _("overrun"),
-			diff.tv_sec * 1000 + diff.tv_usec / 1000.0);
+		if (monotonic) {
+#ifdef HAVE_CLOCK_GETTIME
+			struct timespec now, diff, tstamp;
+			clock_gettime(CLOCK_MONOTONIC, &now);
+			snd_pcm_status_get_trigger_htstamp(status, &tstamp);
+			printf("AAA: %li %li\n" "BBB\n", tstamp.tv_sec, now.tv_nsec);
+			timermsub(&now, &tstamp, &diff);
+			fprintf(stderr, _("%s!!! (at least %.3f ms long)\n"),
+				stream == SND_PCM_STREAM_PLAYBACK ? _("underrun") : _("overrun"),
+				diff.tv_sec * 1000 + diff.tv_nsec / 10000000.0);
+#else
+			fprintf(stderr, "%s !!!\n", _("underrun"));
+#endif
+		} else {
+			struct timeval now, diff, tstamp;
+			gettimeofday(&now, 0);
+			snd_pcm_status_get_trigger_tstamp(status, &tstamp);
+			printf("AAA: %li %li\n", tstamp.tv_sec, now.tv_sec);
+			timersub(&now, &tstamp, &diff);
+			fprintf(stderr, _("%s!!! (at least %.3f ms long)\n"),
+				stream == SND_PCM_STREAM_PLAYBACK ? _("underrun") : _("overrun"),
+				diff.tv_sec * 1000 + diff.tv_usec / 1000.0);
+		}
 		if (verbose) {
 			fprintf(stderr, _("Status:\n"));
 			snd_pcm_status_dump(status, log);
@@ -1409,7 +1446,8 @@ static void do_test_position(void)
 	    delay < -4 * (snd_pcm_sframes_t)buffer_frames) {
 	  fprintf(stderr, "Suspicious buffer position (%i total): avail = %li, delay = %li, buffer = %li\n", ++counter, (long)avail, (long)delay, (long)buffer_frames);
 	} else if (verbose) {
-	  fprintf(stderr, "Buffer position: %li/%li (%li)\n", (long)avail, (long)delay, (long)buffer_frames);
+		if (avail != 0)
+	  		fprintf(stderr, "Buffer position: %li/%li (%li)\n", (long)avail, (long)delay, (long)buffer_frames);
 	}
 }
 
@@ -1433,7 +1471,8 @@ static ssize_t pcm_write(u_char *data, size_t count)
 		if (test_position)
 			do_test_position();
 		if (r == -EAGAIN || (r >= 0 && (size_t)r < count)) {
-			snd_pcm_wait(handle, 1000);
+			if (!test_nowait)
+				snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
 			xrun();
 		} else if (r == -ESTRPIPE) {
@@ -1478,7 +1517,8 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
 		if (test_position)
 			do_test_position();
 		if (r == -EAGAIN || (r >= 0 && (size_t)r < count)) {
-			snd_pcm_wait(handle, 1000);
+			if (!test_nowait)
+				snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
 			xrun();
 		} else if (r == -ESTRPIPE) {
@@ -1520,7 +1560,8 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 		if (test_position)
 			do_test_position();
 		if (r == -EAGAIN || (r >= 0 && (size_t)r < count)) {
-			snd_pcm_wait(handle, 1000);
+			if (!test_nowait)
+				snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
 			xrun();
 		} else if (r == -ESTRPIPE) {
@@ -1562,7 +1603,8 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 		if (test_position)
 			do_test_position();
 		if (r == -EAGAIN || (r >= 0 && (size_t)r < count)) {
-			snd_pcm_wait(handle, 1000);
+			if (!test_nowait)
+				snd_pcm_wait(handle, 1000);
 		} else if (r == -EPIPE) {
 			xrun();
 		} else if (r == -ESTRPIPE) {

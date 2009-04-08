@@ -1,5 +1,7 @@
+LIBRT = @LIBRT@
+
 INCLUDES = -I$(top_srcdir)/include
-LDADD = $(LIBINTL)
+LDADD = $(LIBINTL) $(LIBRT)
 
 # debug flags
 #LDFLAGS = -static
