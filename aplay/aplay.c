@@ -108,6 +108,7 @@ static int buffer_pos = 0;
 static size_t bits_per_sample, bits_per_frame;
 static size_t chunk_bytes;
 static int test_position = 0;
+static int test_coef = 8;
 static int test_nowait = 0;
 static snd_output_t *log;
 
@@ -191,6 +192,8 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "    --disable-format    disable automatic format conversions\n"
 "    --disable-softvol   disable software volume control (softvol)\n"
 "    --test-position     test ring buffer position\n"
+"    --test-coef=#	 test coeficient for ring buffer position (default 8)\n"
+"                        expression for validation is: coef * (buffer_size / 2)\n"
 "    --test-nowait       do not wait for ring buffer - eats whole CPU\n")
 		, command);
 	printf(_("Recognized sample formats are:"));
@@ -354,6 +357,7 @@ enum {
 	OPT_DISABLE_FORMAT,
 	OPT_DISABLE_SOFTVOL,
 	OPT_TEST_POSITION,
+	OPT_TEST_COEF,
 	OPT_TEST_NOWAIT
 };
 
@@ -393,6 +397,7 @@ int main(int argc, char *argv[])
 		{"disable-format", 0, 0, OPT_DISABLE_FORMAT},
 		{"disable-softvol", 0, 0, OPT_DISABLE_SOFTVOL},
 		{"test-position", 0, 0, OPT_TEST_POSITION},
+		{"test-coef", 1, 0, OPT_TEST_COEF},
 		{"test-nowait", 0, 0, OPT_TEST_NOWAIT},
 		{0, 0, 0, 0}
 	};
@@ -574,6 +579,11 @@ int main(int argc, char *argv[])
 			break;
 		case OPT_TEST_POSITION:
 			test_position = 1;
+			break;
+		case OPT_TEST_COEF:
+			test_coef = strtol(optarg, NULL, 0);
+			if (test_coef < 1)
+				test_coef = 1;
 			break;
 		case OPT_TEST_NOWAIT:
 			test_nowait = 1;
@@ -1431,21 +1441,60 @@ static void compute_max_peak(u_char *data, size_t count)
 
 static void do_test_position(void)
 {
-	static int counter = 0;
+	static long counter = 0;
+	static time_t tmr = -1;
+	time_t now;
+	static float availsum, delaysum, samples;
+	static snd_pcm_sframes_t maxavail, maxdelay;
+	static snd_pcm_sframes_t minavail, mindelay;
+	static snd_pcm_sframes_t badavail = 0, baddelay = 0;
+	snd_pcm_sframes_t outofrange;
 	snd_pcm_sframes_t avail, delay;
 	int err;
 
 	err = snd_pcm_avail_delay(handle, &avail, &delay);
 	if (err < 0)
 		return;
-	if (avail > 4 * (snd_pcm_sframes_t)buffer_frames ||
-	    avail < -4 * (snd_pcm_sframes_t)buffer_frames ||
-	    delay > 4 * (snd_pcm_sframes_t)buffer_frames ||
-	    delay < -4 * (snd_pcm_sframes_t)buffer_frames) {
-	  fprintf(stderr, "Suspicious buffer position (%i total): avail = %li, delay = %li, buffer = %li\n", ++counter, (long)avail, (long)delay, (long)buffer_frames);
+	outofrange = (test_coef * (snd_pcm_sframes_t)buffer_frames) / 2;
+	if (avail > outofrange || avail < -outofrange ||
+	    delay > outofrange || delay < -outofrange) {
+	  badavail = avail; baddelay = delay;
+	  availsum = delaysum = samples = 0;
+	  maxavail = maxdelay = 0;
+	  minavail = mindelay = buffer_frames * 16;
+	  fprintf(stderr, _("Suspicious buffer position (%li total): "
+	  	"avail = %li, delay = %li, buffer = %li\n"),
+	  	++counter, (long)avail, (long)delay, (long)buffer_frames);
 	} else if (verbose) {
-		if (avail != 0)
-	  		fprintf(stderr, "Buffer position: %li/%li (%li)\n", (long)avail, (long)delay, (long)buffer_frames);
+		time(&now);
+		if (tmr == (time_t) -1) {
+			tmr = now;
+			availsum = delaysum = samples = 0;
+			maxavail = maxdelay = 0;
+			minavail = mindelay = buffer_frames * 16;
+		}
+		if (avail > maxavail)
+			maxavail = avail;
+		if (delay > maxdelay)
+			maxdelay = delay;
+		if (avail < minavail)
+			minavail = avail;
+		if (delay < mindelay)
+			mindelay = delay;
+		availsum += avail;
+		delaysum += delay;
+		samples++;
+		if (avail != 0 && now != tmr) {
+			fprintf(stderr, "BUFPOS: avg%li/%li "
+				"min%li/%li max%li/%li (%li) (%li:%li/%li)\n",
+				(long)(availsum / samples),
+				(long)(delaysum / samples),
+				(long)minavail, (long)mindelay,
+				(long)maxavail, (long)maxdelay,
+				(long)buffer_frames,
+				counter, badavail, baddelay);
+			tmr = now;
+		}
 	}
 }
 
