@@ -396,7 +396,7 @@ static int set_ctl_value(struct space *space, const char *value, int all)
 				}
 				val = snd_ctl_convert_from_dB(snd_hctl_ctl(space->ctl_handle), space->ctl_id, val, &lval, -1);
 				if (val < 0) {
-					Perror(space, "unable to convert dB value '%s' to internal integer range", value);
+					dbg("unable to convert dB value '%s' to internal integer range", value);
 					return val;
 				}
 				snd_ctl_elem_value_set_integer(space->ctl_value, idx, lval);
@@ -1313,10 +1313,9 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 				}
 				snprintf(string, sizeof(string), "%i", err);
 				space->program_result = strdup(string);
-				if (err < 0 || space->program_result == NULL) {
-					err = 0;
+				err = 0;
+				if (space->program_result == NULL)
 					break;
-				}
 			} else if (op == KEY_OP_MATCH || op == KEY_OP_NOMATCH) {
 				dbg("ctl match: '%s' '%s'", value, attr);
 				temp = (char *)elemid_get(space, attr);
