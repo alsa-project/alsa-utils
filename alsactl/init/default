@@ -59,6 +59,7 @@ CTL{reset}="mixer"
 CTL{name}="PCM Playback Volume",PROGRAM!="__ctl_search",GOTO="pcm0_end"
 # exception - some HDA codecs have shifted dB range
 CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{values}="0dB",GOTO="pcm0_end"
+CTL{dBmin}=="-30.00dB",CTL{dBmax}=="0dB",CTL{values}="0dB",GOTO="pcm0_end"
 CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
 LABEL="pcm0_end"
 CTL{name}="PCM Playback Switch",PROGRAM=="__ctl_search", \
@@ -69,6 +70,7 @@ CTL{name}="PCM Playback Volume",CTL{index}="1",PROGRAM!="__ctl_search", \
   GOTO="pcm1_end"
 # exception - some HDA codecs have shifted dB range
 CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{values}="0dB",GOTO="pcm1_end"
+CTL{dBmin}=="-30.00dB",CTL{dBmax}=="0dB",CTL{values}="0dB",GOTO="pcm1_end"
 CTL{values}="$env{volume}",RESULT!="0",CTL{values}="75%"
 LABEL="pcm1_end"
 CTL{name}="PCM Playback Switch",CTL{index}="1",PROGRAM=="__ctl_search", \
