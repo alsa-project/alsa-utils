@@ -2,7 +2,9 @@
 # See 'man alsactl_init' for syntax.
 
 # set root device directory in sysfs for soundcard for ATTR{} command
-CONFIG{sysfs_device}="/class/sound/controlC$cardinfo{card}/device"
+CONFIG{sysfs_device}="/class/sound/card$cardinfo{card}/device"
+ACCESS!="$sysfsroot$config{sysfs_device}", \
+	CONFIG{sysfs_device}="/class/sound/controlC$cardinfo{card}/device"
 
 # test for extra commands
 ENV{CMD}=="help", INCLUDE="help", GOTO="00main_end"

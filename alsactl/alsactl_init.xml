@@ -279,7 +279,7 @@
               <listitem>
                 <para>The relative path to sysfs subsystem specifying
                 the root directory of a soundcard device. Usually,
-                it should be set to "/class/sound/controlC$cardinfo{card}/device".
+                it should be set to "/class/sound/card$cardinfo{card}/device".
                 </para>
               </listitem>
             </varlistentry>
@@ -462,7 +462,7 @@
               <listitem>
                 <para>The relative path to sysfs subsystem specifying
                 the root directory of a soundcard device. Usually,
-                it should be set to "/class/sound/controlC$cardinfo{card}/device".
+                it should be set to "/class/sound/card$cardinfo{card}/device".
                 </para>
               </listitem>
             </varlistentry>
@@ -549,6 +549,13 @@
               <listitem>
                 <para>Root directory where sysfs file-system is mounted.
                 Ususally, this value is just "/sys".</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>$config{<replaceable>key</replaceable>}</option>, <option>%g{<replaceable>key</replaceable>}</option></term>
+              <listitem>
+                <para>The value of a configuration variable. See CONFIG{} for more details.</para>
               </listitem>
             </varlistentry>
 

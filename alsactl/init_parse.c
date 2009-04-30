@@ -929,6 +929,7 @@ static void apply_format(struct space *space, char *string, size_t maxsize)
 		SUBST_ATTR,
 		SUBST_SYSFSROOT,
 		SUBST_ENV,
+		SUBST_CONFIG,
 	};
 	static const struct subst_map {
 		char *name;
@@ -941,6 +942,7 @@ static void apply_format(struct space *space, char *string, size_t maxsize)
 		{ .name = "attr",	.fmt = 's',	.type = SUBST_ATTR },
 		{ .name = "sysfsroot",	.fmt = 'r',	.type = SUBST_SYSFSROOT },
 		{ .name = "env",	.fmt = 'E',	.type = SUBST_ENV },
+		{ .name = "config",	.fmt = 'g',	.type = SUBST_CONFIG },
 		{ NULL, '\0', 0 }
 	};
 	enum subst_type type;
@@ -1100,6 +1102,16 @@ found:
 			}
 			dbg("substitute env '%s=%s'", attr, pos);
 			strlcat(string, pos, maxsize);
+			break;
+		case SUBST_CONFIG:
+			if (attr == NULL) {
+				dbg("missing attribute");
+				break;
+			}
+			pair = value_find(space, attr);
+			if (pair == NULL)
+				break;
+			strlcat(string, pair->value, maxsize);
 			break;
 		default:
 			Perror(space, "unknown substitution type=%i", type);
@@ -1520,15 +1532,23 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 		}
 		if (strncasecmp(key, "ACCESS", 6) == 0) {
 			if (op == KEY_OP_MATCH || op == KEY_OP_NOMATCH) {
+				if (value[0] == '$') {
+					strlcpy(string, value, sizeof(string));
+					apply_format(space, string, sizeof(string));
+					if (string[0] == '/')
+						goto __access1;
+				}
 				if (value[0] != '/') {
 					strlcpy(string, space->rootdir, sizeof(string));
 					strlcat(string, "/", sizeof(string));
 					strlcat(string, value, sizeof(string));
 				} else {
-					strlcat(string, value, sizeof(string));
+					strlcpy(string, value, sizeof(string));
 				}
+				apply_format(space, string, sizeof(string));
+			      __access1:
 				count = access(string, F_OK);
-				dbg("access(%s) = %i", value, count);
+				dbg("access(%s) = %i (%s)", string, count, value);
 				if (op == KEY_OP_MATCH && count != 0)
 					break;
 				if (op == KEY_OP_NOMATCH && count == 0)
