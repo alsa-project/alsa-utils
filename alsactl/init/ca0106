@@ -18,11 +18,8 @@ CTL{name}="IEC958 Center/LFE Playback Volume", CTL{value}="0dB"
 CTL{name}="Analog Source Capture Enum", CTL{value}="Mic"
 CTL{name}="Mic Capture Volume", CTL{value}="6dB"
 CTL{name}="Shared Mic/Line in Capture Switch", CTL{value}="Mic in"
-RESULT="true", EXIT="return"
 
-#
 # some variants have also AC97 mixer
-#
 
 CTL{reset}="mixer"
 CTL{name}="AC97 Line Capture Volume",PROGRAM!="__ctl_search",GOTO="ac97_end"
@@ -30,3 +27,5 @@ CTL{name}="Analog Source Capture Enum", CTL{value}="AC97 in"
 CTL{name}="AC97 Mic Capture Switch", "on"
 CTL{name}="AC97 Mic Capture Value", "6dB"
 LABEL="ac97_end"
+
+RESULT="true", EXIT="return"
