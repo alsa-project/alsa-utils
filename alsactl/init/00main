@@ -31,6 +31,7 @@ RESULT=="skip", GOTO="init_end"
 
 # real ALSA configuration database
 CARDINFO{driver}=="HDA-Intel", INCLUDE="hda", GOTO="init_end"
+CARDINFO{driver}=="CA0106", INCLUDE="ca0106", GOTO="init_end"
 CARDINFO{driver}=="Test", INCLUDE="test", GOTO="init_end"
 
 LABEL="init_end"
