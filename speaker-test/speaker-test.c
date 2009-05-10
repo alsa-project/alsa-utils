@@ -142,17 +142,6 @@ static void generate_sine(uint8_t *frames, int channel, int count, double *_phas
   float   *samp_f = (float*) frames;
 
   while (count-- > 0) {
-    //res = sin((phase * 2 * M_PI) / max_phase - M_PI) * 32767;
-    //res = sin((phase * 2 * M_PI) / max_phase - M_PI) * 32767;
-    //res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0x03fffffff; /* Don't use MAX volume */
-    //if (res > 0) res = 10000;
-    //if (res < 0) res = -10000;
-
-    /* printf("%e\n",res); */
-    //ires = res;
-    //ires = ((16 - (count & 0xf)) <<24);
-    //ires = 0;
-
     for(chn=0;chn<channels;chn++) {
       switch (format) {
       case SND_PCM_FORMAT_S8:
@@ -195,11 +184,7 @@ static void generate_sine(uint8_t *frames, int channel, int count, double *_phas
           res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0.75 ; /* Don't use MAX volume */
           fres = res;
 	  *samp_f++ = fres;
-	  //*samp32++ = 0xF2345678;
-	//printf("res=%lf, ires=%d 0x%x, samp32=0x%x\n",res,ires, ires, samp32[-1]);
         } else {
-	  //*samp32++ = ires+0x10000;
-	  //*samp32++ = ires;
 	  *samp_f++ = 0.0;
         }
         break;
