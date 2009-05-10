@@ -72,10 +72,14 @@ enum {
 #define COMPOSE_ID(a,b,c,d)	((a) | ((b)<<8) | ((c)<<16) | ((d)<<24))
 #define LE_SHORT(v)		(v)
 #define LE_INT(v)		(v)
-#else
+#define BE_SHORT(v)		bswap_16(v)
+#define BE_INT(v)		bswap_32(v)
+#else /* __BIG_ENDIAN */
 #define COMPOSE_ID(a,b,c,d)	((d) | ((c)<<8) | ((b)<<16) | ((a)<<24))
 #define LE_SHORT(v)		bswap_16(v)
 #define LE_INT(v)		bswap_32(v)
+#define BE_SHORT(v)		(v)
+#define BE_INT(v)		(v)
 #endif
 
 static char              *device      = "default";       /* playback device */
@@ -167,11 +171,7 @@ static void generate_sine(uint8_t *frames, int channel, int count, double *_phas
         if (chn==channel) {
           res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0x03fffffff; /* Don't use MAX volume */
           ires = res;
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-          *samp16++ = ires >> 16;
-#elif __BYTE_ORDER == __BIG_ENDIAN
-          *samp16++ = bswap_16(ires >> 16);
-#endif
+          *samp16++ = LE_SHORT(ires >> 16);
         } else {
           *samp16++ = 0;
         }
@@ -180,11 +180,7 @@ static void generate_sine(uint8_t *frames, int channel, int count, double *_phas
         if (chn==channel) {
           res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0x03fffffff; /* Don't use MAX volume */
           ires = res;
-#if __BYTE_ORDER == __BIG_ENDIAN
-          *samp16++ = ires >> 16;
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-          *samp16++ = bswap_16(ires >> 16);
-#endif
+          *samp16++ = BE_SHORT(ires >> 16);
         } else {
           *samp16++ = 0;
         }
@@ -202,11 +198,7 @@ static void generate_sine(uint8_t *frames, int channel, int count, double *_phas
         if (chn==channel) {
           res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0x03fffffff; /* Don't use MAX volume */
           ires = res;
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-          *samp32++ = ires;
-#elif __BYTE_ORDER == __BIG_ENDIAN
-          *samp32++ = bswap_32(ires);
-#endif
+          *samp32++ = LE_INT(ires);
         } else {
           *samp32++ = 0;
         }
@@ -215,11 +207,7 @@ static void generate_sine(uint8_t *frames, int channel, int count, double *_phas
         if (chn==channel) {
           res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * 0x03fffffff; /* Don't use MAX volume */
           ires = res;
-#if __BYTE_ORDER == __BIG_ENDIAN
-          *samp32++ = ires;
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-          *samp32++ = bswap_32(ires);
-#endif
+          *samp32++ = BE_INT(ires);
         } else {
           *samp32++ = 0;
         }
@@ -266,11 +254,7 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
         if (chn==channel) {
 	  res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
 	  ires = res;
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-          *samp16++ = ires >> 16;
-#elif __BYTE_ORDER == __BIG_ENDIAN
-          *samp16++ = bswap_16(ires >> 16);
-#endif
+          *samp16++ = LE_SHORT(ires >> 16);
         } else {
 	  *samp16++ = 0;
         }
@@ -279,11 +263,7 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
         if (chn==channel) {
           res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
           ires = res;
-#if __BYTE_ORDER == __BIG_ENDIAN
-          *samp16++ = ires >> 16;
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-          *samp16++ = bswap_16(ires >> 16);
-#endif
+          *samp16++ = BE_SHORT(ires >> 16);
         } else {
           *samp16++ = 0;
         }
@@ -292,11 +272,7 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
         if (chn==channel) {
           res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
           ires = res;
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-          *samp32++ = ires;
-#elif __BYTE_ORDER == __BIG_ENDIAN
-          *samp32++ = bswap_32(ires);
-#endif
+          *samp32++ = LE_INT(ires);
         } else {
           *samp32++ = 0;
         }
@@ -305,11 +281,7 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
         if (chn==channel) {
 	  res = generate_pink_noise_sample(&pink) * 0x03fffffff; /* Don't use MAX volume */
 	  ires = res;
-#if __BYTE_ORDER == __BIG_ENDIAN
-	  *samp32++ = ires;
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-          *samp32++ = bswap_32(ires);
-#endif
+	  *samp32++ = BE_INT(ires);
         } else {
 	  *samp32++ = 0;
         }
