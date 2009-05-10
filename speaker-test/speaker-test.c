@@ -76,7 +76,7 @@ static unsigned int       speaker     = 0;	            /* count of channels */
 static unsigned int       buffer_time = 0;	            /* ring buffer length in us */
 static unsigned int       period_time = 0;	            /* period time in us */
 static unsigned int       nperiods    = 4;                  /* number of periods */
-static double             freq        = 440;                /* sinusoidal wave frequency in Hz */
+static double             freq        = 440.0;              /* sinusoidal wave frequency in Hz */
 static int                test_type   = TEST_PINK_NOISE;    /* Test type. 1 = noise, 2 = sine wave */
 static pink_noise_t pink;
 static snd_pcm_uframes_t  buffer_size;
@@ -860,9 +860,9 @@ int main(int argc, char *argv[]) {
       channels = channels > 1024 ? 1024 : channels;
       break;
     case 'f':
-      freq = atoi(optarg);
-      freq = freq < 50 ? 50 : freq;
-      freq = freq > 5000 ? 5000 : freq;
+      freq = atof(optarg);
+      freq = freq < 50.0 ? 50.0 : freq;
+      freq = freq > 5000.0 ? 5000.0 : freq;
       break;
     case 'b':
       buffer_time = atoi(optarg);
