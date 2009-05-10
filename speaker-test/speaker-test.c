@@ -68,6 +68,16 @@ enum {
 
 #define MAX_CHANNELS	16
 
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define COMPOSE_ID(a,b,c,d)	((a) | ((b)<<8) | ((c)<<16) | ((d)<<24))
+#define LE_SHORT(v)		(v)
+#define LE_INT(v)		(v)
+#else
+#define COMPOSE_ID(a,b,c,d)	((d) | ((c)<<8) | ((b)<<16) | ((a)<<24))
+#define LE_SHORT(v)		bswap_16(v)
+#define LE_INT(v)		bswap_32(v)
+#endif
+
 static char              *device      = "default";       /* playback device */
 static snd_pcm_format_t   format      = SND_PCM_FORMAT_S16; /* sample format */
 static unsigned int       rate        = 48000;	            /* stream rate */
@@ -519,16 +529,6 @@ struct wave_header {
     uint32_t length;
   } chunk;
 };
-
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define COMPOSE_ID(a,b,c,d)	((a) | ((b)<<8) | ((c)<<16) | ((d)<<24))
-#define LE_SHORT(v)		(v)
-#define LE_INT(v)		(v)
-#else
-#define COMPOSE_ID(a,b,c,d)	((d) | ((c)<<8) | ((b)<<16) | ((a)<<24))
-#define LE_SHORT(v)		bswap_16(v)
-#define LE_INT(v)		bswap_32(v)
-#endif
 
 #define WAV_RIFF		COMPOSE_ID('R','I','F','F')
 #define WAV_WAVE		COMPOSE_ID('W','A','V','E')
