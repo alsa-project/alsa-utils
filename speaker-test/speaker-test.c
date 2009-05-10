@@ -861,7 +861,7 @@ int main(int argc, char *argv[]) {
       break;
     case 'f':
       freq = atof(optarg);
-      freq = freq < 50.0 ? 50.0 : freq;
+      freq = freq < 30.0 ? 30.0 : freq;
       freq = freq > 5000.0 ? 5000.0 : freq;
       break;
     case 'b':
