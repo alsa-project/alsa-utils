@@ -68,7 +68,8 @@ CTL{name}="PC Speaker Playback Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
-CTL{name}="PCM Playback Volume",PROGRAM!="__ctl_search",GOTO="pcm0_end"
+CTL{name}="PCM Playback Volume",PROGRAM!="__ctl_search", \
+ CTL{name}="PCM Volume",PROGRAM!="__ctl_search", GOTO="pcm0_end"
 # if master volume control is present, turn PCM volume to max
 ENV{has_pmaster_vol}=="true",CTL{values}="0dB",RESULT=="0",GOTO="pcm0_end"
 ENV{has_pmaster_vol}=="true",CTL{values)="100%",GOTO="pcm0_end"
@@ -77,12 +78,12 @@ CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{values}="0dB",GOTO="pcm0_end"
 CTL{dBmin}=="-30.00dB",CTL{dBmax}=="0dB",CTL{values}="0dB",GOTO="pcm0_end"
 CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="75%"
 LABEL="pcm0_end"
-CTL{name}="PCM Playback Switch",PROGRAM=="__ctl_search", \
-  CTL{values}="on"
+CTL{name}="PCM Playback Switch",PROGRAM=="__ctl_search", CTL{values}="on"
+CTL{name}="PCM Switch",PROGRAM=="__ctl_search",CTL{values}="on"
 
 CTL{reset}="mixer"
 CTL{name}="PCM Playback Volume",CTL{index}="1",PROGRAM!="__ctl_search", \
-  GOTO="pcm1_end"
+  CTL{name}="PCM Volume",PROGRAM!="__ctl_search",GOTO="pcm1_end"
 # if master volume control is present, turn PCM volume to max
 ENV{has_pmaster_vol}=="true",CTL{values}="0dB",RESULT=="0",GOTO="pcm1_end"
 ENV{has_pmaster_vol}=="true",CTL{values)="100%",GOTO="pcm1_end"
@@ -92,6 +93,8 @@ CTL{dBmin}=="-30.00dB",CTL{dBmax}=="0dB",CTL{values}="0dB",GOTO="pcm1_end"
 CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="75%"
 LABEL="pcm1_end"
 CTL{name}="PCM Playback Switch",CTL{index}="1",PROGRAM=="__ctl_search", \
+  CTL{values}="on"
+CTL{name}="PCM Switch",CTL{index}="1",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
