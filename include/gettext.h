@@ -1,7 +1,13 @@
 #ifndef __MY_GETTEXT_H
 #define __MY_GETTEXT_H
 
-#if ENABLE_NLS
+#ifdef USES_CURSES
+#define ENABLE_NLS_TEST ENABLE_NLS_IN_CURSES
+#else
+#define ENABLE_NLS_TEST ENABLE_NLS
+#endif
+
+#if ENABLE_NLS_TEST
 # include <libintl.h>
 #else
 # define gettext(msgid) (msgid)

@@ -1,4 +1,4 @@
-noinst_HEADERS=version.h gettext.h
+noinst_HEADERS=version.h gettext.h gettext_curses.h
 
 version.h: stamp-vh
 	@:

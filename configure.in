@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
-AC_INIT(alsamixer/alsamixer.c)
+AC_INIT(aplay/aplay.c)
 AC_PREFIX_DEFAULT(/usr)
 AM_INIT_AUTOMAKE(alsa-utils, 1.0.20)
 
@@ -105,16 +105,24 @@ if test x$alsamixer = xtrue; then
     [  --with-curses libname   Specify the curses library to use (default=auto)],
     curseslib="$withval",
     curseslib="auto")
-  if test "$curseslib" = "ncursesw"; then
+  CURSESLIBDIR=""
+  NCURSESLIBSUFFIX=""
+  CURSES_NLS="no"
+  if test "$curseslib" = "ncursesw" -o \( "$curseslib" = "auto" -a "$USE_NLS" = "yes" \); then
     AC_CHECK_PROG([ncursesw5_config], [ncursesw5-config], [yes])
     if test "$ncursesw5_config" = "yes"; then
       CURSESINC="<ncurses.h>"
       CURSESLIB=`ncursesw5-config --libs`
+      CURSESLIBDIR=`ncursesw5-config --libdir`
       CURSES_CFLAGS=`ncursesw5-config --cflags`
       curseslib="ncursesw"
     else
       AC_CHECK_LIB(ncursesw, initscr, 
                  [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncursesw'; curseslib="ncursesw"])
+    fi
+    if test -n "$CURSESINC"; then
+      NCURSESLIBSUFFIX="w"
+      CURSES_NLS="yes"
     fi
   fi
   if test "$curseslib" = "ncurses" -o "$curseslib" = "auto"; then
@@ -122,6 +130,7 @@ if test x$alsamixer = xtrue; then
     if test "$ncurses5_config" = "yes"; then
       CURSESINC="<ncurses.h>"
       CURSESLIB=`ncurses5-config --libs`
+      CURSESLIBDIR=`ncurses5-config --libdir`
       CURSES_CFLAGS=`ncurses5-config --cflags`
       curseslib="ncurses"
     else
@@ -136,6 +145,78 @@ if test x$alsamixer = xtrue; then
   if test -z "$CURSESINC"; then
      AC_MSG_ERROR(this packages requires a curses library)
   fi
+
+  AC_MSG_CHECKING([for curses library])
+  AC_MSG_RESULT([$curseslib])
+  AC_MSG_CHECKING([for curses header name])
+  AC_MSG_RESULT([$CURSESINC])
+  AC_MSG_CHECKING([for curses compiler flags])
+  AC_MSG_RESULT([$CURSES_CFLAGS])
+
+  dnl CURSESLIBS might have the library path at the beginning.  If so, we cut it
+  dnl off so that we can insert the other curses libraries before the ncurses
+  dnl library but after the library path (which is later again prepended below).
+  if test -n "$CURSESLIBDIR"; then
+    if test "-L$CURSESLIBDIR " = "$(echo $CURSESLIB | cut -c-$((${#CURSESLIBDIR}+3)) )"; then
+      CURSESLIB="$(echo $CURSESLIB | cut -c$((${#CURSESLIBDIR}+4))-)"
+    fi
+  fi
+
+  saved_CFLAGS="$CFLAGS"
+  saved_LDFLAGS="$LDFLAGS"
+  saved_LIBS="$LIBS"
+  CFLAGS="$CFLAGS $CURSES_CFLAGS"
+  if test -n "$CURSESLIBDIR"; then
+    LDFLAGS="$LDFLAGS -L$CURSESLIBDIR"
+  fi
+  LIBS="$CURSESLIB $LIBS"
+
+  if test "$USE_NLS" = "yes"; then
+    AC_MSG_CHECKING([for curses NLS support])
+    dnl In theory, a single-byte curses works just fine in ISO 8859-* locales.
+    dnl In practice, however, everybody uses UTF-8 nowadays, so we'd better
+    dnl check for wide-character support.
+    dnl For ncurses/ncursesw, CURSES_NLS was already set above.
+    if test "$curseslib" = "curses"; then
+      AC_TRY_LINK([
+          #define _XOPEN_SOURCE 1
+          #define _XOPEN_SOURCE_EXTENDED 1
+          #include <curses.h>
+        ], [
+          cchar_t wc;
+          setcchar(&wc, L"x", A_NORMAL, 0, 0);
+        ],
+        [CURSES_NLS="yes"])
+    fi
+    AC_MSG_RESULT([$CURSES_NLS])
+    if test "$CURSES_NLS" = "yes"; then
+      AC_DEFINE([ENABLE_NLS_IN_CURSES], [1],
+                [Define if curses-based programs can show translated messages.])
+    fi
+  fi
+
+  AC_CHECK_HEADERS([panel.h menu.h form.h], [],
+                   [AC_MSG_ERROR([required curses helper header not found])])
+  AC_CHECK_LIB([panel$NCURSESLIBSUFFIX], [new_panel],
+               [CURSESLIB="-lpanel$NCURSESLIBSUFFIX $CURSESLIB"],
+               [AC_MSG_ERROR([panel$NCURSESLIBSUFFIX library not found])])
+  AC_CHECK_LIB([menu$NCURSESLIBSUFFIX], [new_menu],
+               [CURSESLIB="-lmenu$NCURSESLIBSUFFIX $CURSESLIB"],
+               [AC_MSG_ERROR([menu$NCURSESLIBSUFFIX library not found])])
+  AC_CHECK_LIB([form$NCURSESLIBSUFFIX], [new_form],
+               [CURSESLIB="-lform$NCURSESLIBSUFFIX $CURSESLIB"],
+               [AC_MSG_ERROR([form$NCURSESLIBSUFFIX library not found])])
+
+  CFLAGS="$saved_CFLAGS"
+  LDFLAGS="$saved_LDFLAGS"
+  LIBS="$saved_LIBS"
+
+  if test -n "$CURSESLIBDIR"; then
+    CURSESLIB="-L$CURSESLIBDIR $CURSESLIB"
+  fi
+
+  AC_MSG_CHECKING([for curses linker flags])
+  AC_MSG_RESULT([$CURSESLIB])
 fi
 
 AC_SUBST(CURSESINC)
