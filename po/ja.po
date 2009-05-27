@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: alsa-utils 1.0.9a\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2009-05-24 19:56+0200\n"
-"PO-Revision-Date: 2006-04-18 15:51+0200\n"
+"PO-Revision-Date: 2009-05-27 15:08+0200\n"
 "Last-Translator: Takashi Iwai <tiwai@suse.de>\n"
 "Language-Team: Japanese\n"
 "MIME-Version: 1.0\n"
@@ -19,23 +19,23 @@ msgstr ""
 
 #: alsamixer/card_select.c:126 alsamixer/device_name.c:126
 msgid "Sound Card"
-msgstr ""
+msgstr "サウンドカード"
 
 #: alsamixer/card_select.c:181
 msgid "(default)"
-msgstr ""
+msgstr "(デフォルト)"
 
 #: alsamixer/card_select.c:191
 msgid "cannot enumerate sound cards"
-msgstr ""
+msgstr "サウンドカードを検出できません"
 
 #: alsamixer/card_select.c:215
 msgid "enter device name..."
-msgstr ""
+msgstr "デバイス名入力..."
 
 #: alsamixer/cli.c:40
 msgid "Usage: alsamixer [options]"
-msgstr ""
+msgstr "使用法: alsamixer [オプション]"
 
 #: alsamixer/cli.c:41
 msgid ""
@@ -45,6 +45,11 @@ msgid ""
 "  -D, --device=NAME       mixer device name\n"
 "  -V, --view=MODE         starting view mode: playback/capture/all"
 msgstr ""
+"主なオプション:\n"
+"  -h, --help               このヘルプ画面\n"
+"  -c, --card=番号          サウンドカード番号またはID\n"
+"  -D, --device=名前        ミキサーデバイス名\n"
+"  -V, --view=表示モード    開始時の表示モード: playback/capture/all"
 
 #: alsamixer/cli.c:46
 msgid ""
@@ -52,16 +57,19 @@ msgid ""
 "  -g, --no-color          toggle using of colors\n"
 "  -a, --abstraction=NAME  mixer abstraction level: none/basic"
 msgstr ""
+"デバッグオプション:\n"
+"  -g, --no-color           カラー/モノクロ表示\n"
+"  -a, --abstraction=名前   ミキサー抽象レベル: none/basic"
 
 #: alsamixer/cli.c:77
 #, c-format
 msgid "invalid card index: %s\n"
-msgstr ""
+msgstr "不正なカード番号: %s\n"
 
 #: alsamixer/cli.c:103
 #, c-format
 msgid "unknown abstraction level: %s\n"
-msgstr ""
+msgstr "未知の抽象レベル: %s\n"
 
 #: alsamixer/cli.c:108
 #, c-format
@@ -74,7 +82,7 @@ msgstr "より詳しい情報は「alsamixer --help」を実行してくださ�
 
 #: alsamixer/device_name.c:177
 msgid "Device name:"
-msgstr ""
+msgstr "デバイス名:"
 
 #: alsamixer/die.c:37
 #, c-format
@@ -83,19 +91,19 @@ msgstr ""
 
 #: alsamixer/mixer_display.c:95
 msgid "Card:"
-msgstr ""
+msgstr "カード:"
 
 #: alsamixer/mixer_display.c:96
 msgid "Chip:"
-msgstr ""
+msgstr "チップ:"
 
 #: alsamixer/mixer_display.c:97
 msgid "View:"
-msgstr ""
+msgstr "表示:"
 
 #: alsamixer/mixer_display.c:98
 msgid "Item:"
-msgstr ""
+msgstr "項目:"
 
 #: alsamixer/mixer_display.c:101
 msgid "F1:  Help"
@@ -103,15 +111,15 @@ msgstr "F1:  ヘルプ"
 
 #: alsamixer/mixer_display.c:102
 msgid "F2:  System information"
-msgstr ""
+msgstr "F2:  システム情報"
 
 #: alsamixer/mixer_display.c:103
 msgid "F6:  Select sound card"
-msgstr ""
+msgstr "F6:  サウンドカード選択"
 
 #: alsamixer/mixer_display.c:104
 msgid "Esc: Exit"
-msgstr ""
+msgstr "Esc: 終了"
 
 #: alsamixer/mixer_display.c:171
 msgid "(unplugged)"
@@ -119,23 +127,23 @@ msgstr ""
 
 #: alsamixer/mixer_display.c:189
 msgid "Playback"
-msgstr ""
+msgstr "再生"
 
 #: alsamixer/mixer_display.c:190
 msgid "Capture"
-msgstr ""
+msgstr "録音"
 
 #: alsamixer/mixer_display.c:191
 msgid "All"
-msgstr ""
+msgstr "全て"
 
 #: alsamixer/mixer_display.c:231
 msgid "mute"
-msgstr ""
+msgstr "ミュート"
 
 #: alsamixer/mixer_display.c:272 alsamixer/mixer_display.c:282
 msgid "dB gain:"
-msgstr ""
+msgstr "dBゲイン:"
 
 #: alsamixer/mixer_display.c:282
 #, c-format
@@ -145,31 +153,31 @@ msgstr ""
 #: alsamixer/mixer_display.c:291 alsamixer/mixer_display.c:297
 #: alsamixer/mixer_display.c:303 alsamixer/mixer_display.c:309
 msgid "Off"
-msgstr ""
+msgstr "オフ"
 
 #: alsamixer/mixer_display.c:297 alsamixer/mixer_display.c:309
 msgid "On"
-msgstr ""
+msgstr "オン"
 
 #: alsamixer/mixer_display.c:360
 msgid "The sound device was unplugged."
-msgstr ""
+msgstr "デバイスが接続されていません"
 
 #: alsamixer/mixer_display.c:361
 msgid "Press F6 to select another sound card."
-msgstr ""
+msgstr "他のカードを選択するにはF6を押して下さい"
 
 #: alsamixer/mixer_display.c:376
 msgid "This sound device does not have any playback controls."
-msgstr ""
+msgstr "このカードには再生ミキサーがありません"
 
 #: alsamixer/mixer_display.c:378
 msgid "This sound device does not have any capture controls."
-msgstr ""
+msgstr "このカードには録音ミキサーがありません"
 
 #: alsamixer/mixer_display.c:380
 msgid "This sound device does not have any controls."
-msgstr ""
+msgstr "このカードには制御可能なミキサーがありません"
 
 #. TRANSLATORS: playback on; one character
 #: alsamixer/mixer_display.c:512 alsamixer/mixer_display.c:517
@@ -194,139 +202,140 @@ msgstr ""
 #. TRANSLATORS: no more than eight characters
 #: alsamixer/mixer_display.c:538
 msgid "CAPTURE"
-msgstr ""
+msgstr "録音"
 
 #: alsamixer/mixer_display.c:588
 msgid "Front"
-msgstr ""
+msgstr "フロント"
 
 #: alsamixer/mixer_display.c:591
 msgid "Rear"
-msgstr ""
+msgstr "リア"
 
 #: alsamixer/mixer_display.c:594 speaker-test/speaker-test.c:106
 msgid "Center"
-msgstr ""
+msgstr "センター"
 
 #: alsamixer/mixer_display.c:597
 msgid "Woofer"
-msgstr ""
+msgstr "低音"
 
 #: alsamixer/mixer_display.c:600
 msgid "Side"
-msgstr ""
+msgstr "サイド"
 
 #: alsamixer/mixer_widget.c:83 alsamixer/mixer_widget.c:88
 msgid "cannot open mixer"
-msgstr ""
+msgstr "ミキサーを開けません"
 
 #: alsamixer/mixer_widget.c:94 alsamixer/mixer_widget.c:171
 msgid "cannot load mixer controls"
-msgstr ""
+msgstr "ミキサーをロードできません"
 
 #: alsamixer/mixer_widget.c:161
 #, c-format
 msgid "Cannot open mixer device '%s'."
-msgstr ""
+msgstr "ミキサーデバイス'%s'を開けません"
 
 #: alsamixer/mixer_widget.c:182
 msgid "Esc     Exit"
-msgstr ""
+msgstr "Esc    終了"
 
 #: alsamixer/mixer_widget.c:183
 msgid "F1 ? H  Help"
-msgstr ""
+msgstr "F1 ?   H ヘルプ"
 
 #: alsamixer/mixer_widget.c:184
 msgid "F2 /    System information"
-msgstr ""
+msgstr "F2 /   システム情報"
 
 #: alsamixer/mixer_widget.c:185
 msgid "F3      Show playback controls"
-msgstr ""
+msgstr "F3     再生ミキサー表示"
 
 #: alsamixer/mixer_widget.c:186
 msgid "F4      Show capture controls"
-msgstr ""
+msgstr "F4     録音ミキサー表示"
 
 #: alsamixer/mixer_widget.c:187
 msgid "F5      Show all controls"
-msgstr ""
+msgstr "F5     全て表示"
 
 #: alsamixer/mixer_widget.c:188
 msgid "Tab     Toggle view mode (F3/F4/F5)"
-msgstr ""
+msgstr "Tab    表示モード変更 (F3/F4/F5)"
 
 #: alsamixer/mixer_widget.c:189
 msgid "F6 S    Select sound card"
-msgstr ""
+msgstr "F5 S   サウンドカード選択"
 
 #: alsamixer/mixer_widget.c:190
 msgid "L       Redraw screen"
-msgstr ""
+msgstr "L      画面再描画"
 
 #: alsamixer/mixer_widget.c:192
 msgid "Left    Move to the previous control"
-msgstr ""
+msgstr "←     前の項目に移る"
 
 #: alsamixer/mixer_widget.c:193
 msgid "Right   Move to the next control"
-msgstr ""
+msgstr "→     次の項目に移る"
 
+# ↑
 #: alsamixer/mixer_widget.c:195
 msgid "Up/Down    Change volume"
-msgstr ""
+msgstr "↑/↓     音量変更"
 
 #: alsamixer/mixer_widget.c:196
 msgid "+ -        Change volume"
-msgstr ""
+msgstr "+ -       音量変更"
 
 #: alsamixer/mixer_widget.c:197
 msgid "Page Up/Dn Change volume in big steps"
-msgstr ""
+msgstr "Page Up/dn 音量変更"
 
 #: alsamixer/mixer_widget.c:198
 msgid "End        Set volume to 0%"
-msgstr ""
+msgstr "End       音量 0%"
 
 #: alsamixer/mixer_widget.c:199
 msgid "0-9        Set volume to 0%-90%"
-msgstr ""
+msgstr "0-9       音量 0%-90%"
 
 #: alsamixer/mixer_widget.c:200
 msgid "Q W E      Increase left/both/right volumes"
-msgstr ""
+msgstr "Q W E     左/両/右音量アップ"
 
 #. TRANSLATORS: or Y instead of Z
 #: alsamixer/mixer_widget.c:202
 msgid "Z X C      Decrease left/both/right volumes"
-msgstr ""
+msgstr "Z X C     左/両/右音量ダウン"
 
 #: alsamixer/mixer_widget.c:203
 msgid "B          Balance left and right volumes"
-msgstr ""
+msgstr "B         左右音量を平均化する"
 
 #: alsamixer/mixer_widget.c:205
 msgid "M          Toggle mute"
-msgstr ""
+msgstr "M         ミュートをトグル"
 
 #. TRANSLATORS: or , .
 #: alsamixer/mixer_widget.c:207
 msgid "< >        Toggle left/right mute"
-msgstr ""
+msgstr "< >       左/右ミュートをトグル"
 
 #: alsamixer/mixer_widget.c:209
 msgid "Space      Toggle capture"
-msgstr ""
+msgstr "スペース  録音をトグル"
 
 #. TRANSLATORS: or Insert Delete
 #: alsamixer/mixer_widget.c:211
 msgid "; '        Toggle left/right capture"
-msgstr ""
+msgstr "; '       左/右録音をトグル"
 
 #: alsamixer/mixer_widget.c:213
 msgid "Authors:"
-msgstr ""
+msgstr "作者:"
 
 #: alsamixer/mixer_widget.c:214
 msgid "  Tim Janik <timj@gtk.org>"
@@ -342,20 +351,20 @@ msgstr ""
 
 #: alsamixer/mixer_widget.c:218
 msgid "Help"
-msgstr ""
+msgstr "ヘルプ"
 
 #: alsamixer/proc_files.c:103
 msgid "Select File"
-msgstr ""
+msgstr "ファイル選択"
 
 #: alsamixer/textbox.c:52 alsamixer/textbox.c:66
 msgid "Error"
-msgstr ""
+msgstr "エラー"
 
 #: alsamixer/textbox.c:80
 #, c-format
 msgid "Cannot open file \"%s\"."
-msgstr ""
+msgstr "\"%s\"をオープンできません"
 
 #: aplay/aplay.c:139
 msgid "raw data"
@@ -374,7 +383,7 @@ msgid "Sparc Audio"
 msgstr "Sparc オーディオ"
 
 #: aplay/aplay.c:164
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: %s [OPTION]... [FILE]...\n"
 "\n"
@@ -439,15 +448,14 @@ msgstr ""
 "-v, --verbose           PCM の設定を表示 (複数指定可能)\n"
 "-V, --vumeter=TYPE      enable VU meter (TYPE: mono or stereo)\n"
 "-I, --separate-channels 各チャネルに一つのファイルを用いる\n"
-"    --disable-resample  disable automatic rate resample\n"
-"    --disable-channels  disable automatic channel conversions\n"
-"    --disable-format    disable automatic format conversions\n"
-"    --disable-softvol   disable software volume control (softvol)\n"
-"    --test-position     test ring buffer position\n"
-"    --test-coef=#\t test coeficient for ring buffer position (default 8)\n"
-"                        expression for validation is: coef * (buffer_size / "
-"2)\n"
-"    --test-nowait       do not wait for ring buffer - eats whole CPU\n"
+"    --disable-resample  自動レート変換を禁止する\n"
+"    --disable-channels  自動チャネル変換を禁止する\n"
+"    --disable-format    自動フォーマット変換を禁止する\n"
+"    --disable-softvol   ソフト音量制御(softvol)を禁止する\n"
+"    --test-position     リングバッファ位置をテストする\n"
+"    --test-coef=#       リングバッファ位置テストの係数 (デフォルト 8)\n"
+"                        テスト範囲: coef * (buffer_size / 2)\n"
+"    --test-nowait       リングバッファのウエイトを禁止 - 注意:高CPU負荷\n"
 
 #: aplay/aplay.c:199 speaker-test/speaker-test.c:740
 #, c-format
