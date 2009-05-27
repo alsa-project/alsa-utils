@@ -83,6 +83,7 @@ static char *read_file(const char *file_name, unsigned int *file_size)
 		return NULL;
 	}
 	*file_size = 0;
+	buf = NULL;
 	do {
 		allocated *= 2;
 		buf = crealloc(buf, allocated);
