@@ -166,7 +166,7 @@ static void update_text_lines(void)
 		if (width > current_left)
 			waddch(text_widget.window, ' ');
 		if (*line_begin != '\0') {
-			width = text_box_x;
+			width = text_box_x - (width > current_left);
 			line_end = mbs_at_width(line_begin, &width, -1);
 			if (width)
 				waddnstr(text_widget.window, line_begin,
