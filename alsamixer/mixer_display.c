@@ -394,7 +394,7 @@ static void display_control(unsigned int control_index)
 {
 	struct control *control;
 	int col;
-	int i;
+	int i, c;
 	int left, frame_left;
 	int bar_height, value;
 	long volumes[2];
@@ -465,19 +465,30 @@ static void display_control(unsigned int control_index)
 
 		if (control->flags & IS_ACTIVE)
 			wattrset(mixer_widget.window, 0);
-		bar_height = ((volumes[0] - min) * volume_height + max - min - 1) / (max - min);
-		for (i = 0; i < volume_height; ++i)
-			mvwaddch(mixer_widget.window, base_y - i - 1, frame_left + 1,
-				 i + 1 <= bar_height
-				 ? ACS_CKBOARD | (control->flags & IS_ACTIVE ? attr_ctl_bar : 0)
-				 : ' '         | (control->flags & IS_ACTIVE ? attr_ctl_frame : 0));
-		bar_height = ((volumes[1] - min) * volume_height + max - min - 1) / (max - min);
-		for (i = 0; i < volume_height; ++i)
-			mvwaddch(mixer_widget.window, base_y - i - 1, frame_left + 2,
-				 i + 1 <= bar_height
-				 ? ACS_CKBOARD | (control->flags & IS_ACTIVE ? attr_ctl_bar : 0)
-				 : ' '         | (control->flags & IS_ACTIVE ? attr_ctl_frame : 0));
-
+		for (c = 0; c < 2; c++) {
+			bar_height = ((volumes[c] - min) * volume_height +
+				      max - min - 1) / (max - min);
+			for (i = 0; i < volume_height; ++i) {
+				int attr;
+				if (i + 1 > bar_height)
+					attr = ' ' |
+						(control->flags & IS_ACTIVE ?
+						 attr_ctl_frame : 0);
+				else {
+					attr = ACS_CKBOARD;
+#ifdef TRICOLOR_VOLUME_BAR
+					if (i > volume_height * 8 / 10)
+						attr |= attr_ctl_bar_hi;
+					else if (i > volume_height * 4 / 10)
+						attr |= attr_ctl_bar_mi;
+					else
+#endif
+						attr |= attr_ctl_bar_lo;
+				}
+				mvwaddch(mixer_widget.window, base_y - i - 1,
+					 frame_left + c + 1, attr);
+			}
+		}
 		if (control->flags & IS_ACTIVE)
 			wattrset(mixer_widget.window, attr_mixer_active);
 		value = ((volumes[0] - min) * 100 + (max - min) / 2) / (max - min);
