@@ -469,24 +469,23 @@ static void display_control(unsigned int control_index)
 			bar_height = ((volumes[c] - min) * volume_height +
 				      max - min - 1) / (max - min);
 			for (i = 0; i < volume_height; ++i) {
-				int attr;
+				chtype ch;
 				if (i + 1 > bar_height)
-					attr = ' ' |
-						(control->flags & IS_ACTIVE ?
-						 attr_ctl_frame : 0);
+					ch = ' ' | (control->flags & IS_ACTIVE ?
+						    attr_ctl_frame : 0);
 				else {
-					attr = ACS_CKBOARD;
+					ch = ACS_CKBOARD;
 #ifdef TRICOLOR_VOLUME_BAR
 					if (i > volume_height * 8 / 10)
-						attr |= attr_ctl_bar_hi;
+						ch |= attr_ctl_bar_hi;
 					else if (i > volume_height * 4 / 10)
-						attr |= attr_ctl_bar_mi;
+						ch |= attr_ctl_bar_mi;
 					else
 #endif
-						attr |= attr_ctl_bar_lo;
+						ch |= attr_ctl_bar_lo;
 				}
 				mvwaddch(mixer_widget.window, base_y - i - 1,
-					 frame_left + c + 1, attr);
+					 frame_left + c + 1, ch);
 			}
 		}
 		if (control->flags & IS_ACTIVE)
