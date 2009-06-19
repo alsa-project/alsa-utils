@@ -475,13 +475,15 @@ static void display_control(unsigned int control_index)
 						    attr_ctl_frame : 0);
 				else {
 					ch = ACS_CKBOARD;
+					if (!(control->flags & IS_ACTIVE))
+						;
 #ifdef TRICOLOR_VOLUME_BAR
-					if (i > volume_height * 8 / 10)
+					else if (i > volume_height * 8 / 10)
 						ch |= attr_ctl_bar_hi;
 					else if (i > volume_height * 4 / 10)
 						ch |= attr_ctl_bar_mi;
-					else
 #endif
+					else
 						ch |= attr_ctl_bar_lo;
 				}
 				mvwaddch(mixer_widget.window, base_y - i - 1,
