@@ -31,7 +31,12 @@
 #include "aconfig.h"
 #include "version.h"
 
-#define MIDI_BYTES_PER_SEC 3125
+/*
+ * 31.25 kbaud, one start bit, eight data bits, two stop bits.
+ * (The MIDI spec says one stop bit, but every transmitter uses two, just to be
+ * sure, so we better not exceed that to avoid overflowing the output buffer.)
+ */
+#define MIDI_BYTES_PER_SEC (31250 / (1 + 8 + 2))
 
 /*
  * A MIDI event after being parsed/loaded from the file.
