@@ -44,7 +44,7 @@ void initialize_curses(bool use_color)
 	curses_initialized = initscr();
 	cbreak();
 	noecho();
-#ifdef NCURSES_VERSION
+#ifdef HAVE_CURSES_ESCDELAY
 	set_escdelay(100);
 #endif
 	window_size_changed(); /* update screen_lines/cols */

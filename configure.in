@@ -171,6 +171,11 @@ if test x$alsamixer = xtrue; then
   fi
   LIBS="$CURSESLIB $LIBS"
 
+  AC_TRY_LINK([#include <panel.h>], [set_escdelay(100);],[HAVE_CURSES_ESCDELAY="yes"])
+  if test "$HAVE_CURSES_ESCDELAY" = "yes"; then
+    AC_DEFINE([HAVE_CURSES_ESCDELAY], 1, [Have curses set_escdelay])
+  fi
+
   if test "$USE_NLS" = "yes"; then
     AC_MSG_CHECKING([for curses NLS support])
     dnl In theory, a single-byte curses works just fine in ISO 8859-* locales.
