@@ -49,7 +49,7 @@ CTL{reset}="mixer"
 CTL{name}="Headphone Playback Volume",PROGRAM!="__ctl_search",GOTO="headphone0_end"
 # if master volume control is present, turn headphone volume to max
 ENV{has_pmaster_vol}=="true",CTL{values}="0dB",RESULT=="0",GOTO="headphone0_end"
-ENV{has_pmaster_vol}=="true",CTL{values)="100%",GOTO="headphone0_end"
+ENV{has_pmaster_vol}=="true",CTL{values}="100%",GOTO="headphone0_end"
 CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="$env{ppercent}"
 LABEL="headphone0_end"
 CTL{name}="Headphone Playback Switch",PROGRAM=="__ctl_search", \
