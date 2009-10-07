@@ -18,29 +18,29 @@ ENV{has_pmaster_vol}:="false"
 
 CTL{reset}="mixer"
 CTL{name}="Playback Volume",PROGRAM=="__ctl_search", \
-  CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="$env{ppercent}"
+  CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
 CTL{name}="Playback Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
 CTL{name}="Master Playback Volume",PROGRAM=="__ctl_search", \
   ENV{has_pmaster_vol}:="true", \
-  CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="$env{ppercent}"
+  CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
 CTL{name}="Master Playback Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
 CTL{name}="Master Digital Playback Volume",PROGRAM=="__ctl_search", \
-  CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="$env{ppercent}"
+  CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
 CTL{name}="Master Digital Playback Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
 CTL{name}="Front Playback Volume",PROGRAM!="__ctl_search",GOTO="front0_end"
 # if master volume control is present, turn front volume to max
-ENV{has_pmaster_vol}=="true",CTL{values}="0dB",RESULT=="0",GOTO="front0_end"
-ENV{has_pmaster_vol}=="true",CTL{values}="100%",GOTO="front0_end"
-CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="$env{ppercent}"
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO="front0_end"
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO="front0_end"
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
 LABEL="front0_end"
 CTL{name}="Front Playback Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
@@ -48,9 +48,9 @@ CTL{name}="Front Playback Switch",PROGRAM=="__ctl_search", \
 CTL{reset}="mixer"
 CTL{name}="Headphone Playback Volume",PROGRAM!="__ctl_search",GOTO="headphone0_end"
 # if master volume control is present, turn headphone volume to max
-ENV{has_pmaster_vol}=="true",CTL{values}="0dB",RESULT=="0",GOTO="headphone0_end"
-ENV{has_pmaster_vol}=="true",CTL{values}="100%",GOTO="headphone0_end"
-CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="$env{ppercent}"
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO="headphone0_end"
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO="headphone0_end"
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
 LABEL="headphone0_end"
 CTL{name}="Headphone Playback Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
@@ -59,19 +59,19 @@ CTL{reset}="mixer"
 CTL{name}="Headphone Playback Volume",CTL{index}="1",PROGRAM!="__ctl_search",\
   GOTO="headphone1_end"
 # if master volume control is present, turn headphone volume to max
-ENV{has_pmaster_vol}=="true",CTL{values}="0dB",RESULT=="0",GOTO="headphone1_end"
-ENV{has_pmaster_vol}=="true",CTL{values}="100%",GOTO="headphone1_end"
-CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="$env{ppercent}"
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO="headphone1_end"
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO="headphone1_end"
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
 LABEL="headphone1_end"
 CTL{name}="Headphone Playback Switch",CTL{index}="1",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
-CTL{name}="Sepaker Playback Volume",PROGRAM!="__ctl_search",GOTO="speaker0_end"
+CTL{name}="Speaker Playback Volume",PROGRAM!="__ctl_search",GOTO="speaker0_end"
 # if master volume control is present, turn speaker volume to max
-ENV{has_pmaster_vol}=="true",CTL{values}="0dB",RESULT=="0",GOTO="speaker0_end"
-ENV{has_pmaster_vol}=="true",CTL{values}="100%",GOTO="speaker0_end"
-CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="$env{ppercent}"
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO="speaker0_end"
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO="speaker0_end"
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
 LABEL="speaker0_end"
 CTL{name}="Speaker Playback Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
@@ -86,12 +86,12 @@ CTL{reset}="mixer"
 CTL{name}="PCM Playback Volume",PROGRAM!="__ctl_search", \
  CTL{name}="PCM Volume",PROGRAM!="__ctl_search", GOTO="pcm0_end"
 # if master volume control is present, turn PCM volume to max
-ENV{has_pmaster_vol}=="true",CTL{values}="0dB",RESULT=="0",GOTO="pcm0_end"
-ENV{has_pmaster_vol}=="true",CTL{values}="100%",GOTO="pcm0_end"
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO="pcm0_end"
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO="pcm0_end"
 # exception - some HDA codecs have shifted dB range
-CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{values}="0dB",GOTO="pcm0_end"
-CTL{dBmin}=="-30.00dB",CTL{dBmax}=="0dB",CTL{values}="0dB",GOTO="pcm0_end"
-CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="75%"
+CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{write}=="0dB",GOTO="pcm0_end"
+CTL{dBmin}=="-30.00dB",CTL{dBmax}=="0dB",CTL{write}=="0dB",GOTO="pcm0_end"
+CTL{write}!="$env{pvolume}",CTL{values}="75%"
 LABEL="pcm0_end"
 CTL{name}="PCM Playback Switch",PROGRAM=="__ctl_search", CTL{values}="on"
 CTL{name}="PCM Switch",PROGRAM=="__ctl_search",CTL{values}="on"
@@ -100,12 +100,12 @@ CTL{reset}="mixer"
 CTL{name}="PCM Playback Volume",CTL{index}="1",PROGRAM!="__ctl_search", \
   CTL{name}="PCM Volume",PROGRAM!="__ctl_search",GOTO="pcm1_end"
 # if master volume control is present, turn PCM volume to max
-ENV{has_pmaster_vol}=="true",CTL{values}="0dB",RESULT=="0",GOTO="pcm1_end"
-ENV{has_pmaster_vol}=="true",CTL{values}="100%",GOTO="pcm1_end"
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO="pcm1_end"
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO="pcm1_end"
 # exception - some HDA codecs have shifted dB range
-CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{values}="0dB",GOTO="pcm1_end"
-CTL{dBmin}=="-30.00dB",CTL{dBmax}=="0dB",CTL{values}="0dB",GOTO="pcm1_end"
-CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="75%"
+CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{write}=="0dB",GOTO="pcm1_end"
+CTL{dBmin}=="-30.00dB",CTL{dBmax}=="0dB",CTL{write}=="0dB",GOTO="pcm1_end"
+CTL{write}!="$env{pvolume}",CTL{values}="75%"
 LABEL="pcm1_end"
 CTL{name}="PCM Playback Switch",CTL{index}="1",PROGRAM=="__ctl_search", \
   CTL{values}="on"
@@ -139,12 +139,12 @@ CTL{name}="Music Playback Switch",PROGRAM=="__ctl_search", \
 CTL{reset}="mixer"
 CTL{name}="CD Playback Volume",PROGRAM!="__ctl_search", GOTO="cd0_end"
 # if master volume control is present, turn CD volume to max
-ENV{has_pmaster_vol}=="true",CTL{values}="0dB",RESULT=="0",GOTO="cd0_end"
-ENV{has_pmaster_vol}=="true",CTL{values}="100%",GOTO="cd0_end"
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO="cd0_end"
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO="cd0_end"
 # exception - some HDA codecs have shifted dB range
-CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{values}="0dB",GOTO="cd0_end"
-CTL{dBmin}=="-30.00dB",CTL{dBmax}=="0dB",CTL{values}="0dB",GOTO="cd0_end"
-CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="$env{ppercent}"
+CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{write}=="0dB",GOTO="cd0_end"
+CTL{dBmin}=="-30.00dB",CTL{dBmax}=="0dB",CTL{write}=="0dB",GOTO="cd0_end"
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
 LABEL="cd0_end"
 CTL{name}="CD Playback Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
@@ -173,7 +173,7 @@ CTL{name}="AC97 Playback Switch",PROGRAM=="__ctl_search", \
 
 CTL{reset}="mixer"
 CTL{name}="DRC Range",PROGRAM=="__ctl_search", \
-  CTL{values}="$env{pvolume}",RESULT!="0",CTL{values}="$env{ppercent}"
+  CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
 
 # **************************************************************************
 # capture
@@ -181,7 +181,7 @@ CTL{name}="DRC Range",PROGRAM=="__ctl_search", \
 
 CTL{reset}="mixer"
 CTL{name}="Capture Volume",PROGRAM=="__ctl_search", \
-  CTL{values}="$env{cvolume}",RESULT!="0",CTL{values}="$env{cpercent}"
+  CTL{write}!="$env{cvolume}",CTL{values}="$env{cpercent}"
 CTL{name}="Capture Switch",PROGRAM=="__ctl_search", \
   CTL{values}="on"
 

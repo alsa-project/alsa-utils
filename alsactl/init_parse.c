@@ -1329,10 +1329,21 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 				if (space->program_result == NULL)
 					break;
 			} else if (op == KEY_OP_MATCH || op == KEY_OP_NOMATCH) {
-				dbg("ctl match: '%s' '%s'", value, attr);
-				temp = (char *)elemid_get(space, attr);
-				if (!do_match(key, op, value, temp))
-					break;
+				if (strncmp(attr, "write", 5) == 0) {
+					strlcpy(result, value, sizeof(result));
+					apply_format(space, result, sizeof(result));
+					dbg("ctl write: '%s' '%s'", value, attr);
+					err = elemid_set(space, "values", result);
+					if (err == 0 && op == KEY_OP_NOMATCH)
+						break;
+					if (err != 0 && op == KEY_OP_MATCH)
+						break;
+				} else {
+					temp = (char *)elemid_get(space, attr);
+					dbg("ctl match: '%s' '%s' '%s'", attr, value, temp);
+					if (!do_match(key, op, value, temp))
+						break;
+				}
 			} else {
 				Perror(space, "invalid CTL{} operation");
 				goto invalid;
