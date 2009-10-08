@@ -485,6 +485,46 @@ static int set_ctl_value(struct space *space, const char *value, int all)
   	return -EINVAL;
 }
 
+static int do_match(const char *key, enum key_op op,
+		    const char *key_value, const char *value)
+{
+	int match;
+
+	if (value == NULL)
+		return 0;
+	dbg("match %s '%s' <-> '%s'", key, key_value, value);
+	match = fnmatch(key_value, value, 0) == 0;
+	if (match && op == KEY_OP_MATCH) {
+		dbg("%s is true (matching value)", key);
+		return 1;
+	}
+	if (!match && op == KEY_OP_NOMATCH) {
+		dbg("%s is true (non-matching value)", key);
+		return 1;
+	}
+	dbg("%s is false", key);
+	return 0;
+}
+
+static int ctl_match(snd_ctl_elem_id_t *pattern, snd_ctl_elem_id_t *id)
+{
+	if (snd_ctl_elem_id_get_interface(pattern) != -1 &&
+	    snd_ctl_elem_id_get_interface(pattern) != snd_ctl_elem_id_get_interface(id))
+	    	return 0;
+	if (snd_ctl_elem_id_get_device(pattern) != -1 &&
+	    snd_ctl_elem_id_get_device(pattern) != snd_ctl_elem_id_get_device(id))
+		return 0;
+	if (snd_ctl_elem_id_get_subdevice(pattern) != -1 &&
+	    snd_ctl_elem_id_get_subdevice(pattern) != snd_ctl_elem_id_get_subdevice(id))
+	    	return 0;
+	if (snd_ctl_elem_id_get_index(pattern) != -1 &&
+	    snd_ctl_elem_id_get_index(pattern) != snd_ctl_elem_id_get_index(id))
+	    	return 0;
+	if (fnmatch(snd_ctl_elem_id_get_name(pattern), snd_ctl_elem_id_get_name(id), 0) != 0)
+		return 0;
+	return 1;
+}
+
 static const char *elemid_get(struct space *space, const char *attr)
 {
 	long long val;
@@ -647,6 +687,56 @@ dbvalue:
 			strlcat(res, snd_ctl_elem_info_get_item_name(space->ctl_info), sizeof(res));
 			strlcat(res, "|", sizeof(res));
 		}
+		return res;
+	}
+	if (strncasecmp(attr, "do_search", 9) == 0) {
+		int err, index = 0;
+		snd_hctl_elem_t *elem;
+		snd_ctl_elem_id_t *id;
+		char *pos = strchr(attr, ' ');
+		if (pos)
+			index = strtol(pos, NULL, 0);
+		err = snd_ctl_elem_id_malloc(&id);
+		if (err < 0)
+			return NULL;
+		elem = snd_hctl_first_elem(space->ctl_handle);
+		while (elem) {
+			snd_hctl_elem_get_id(elem, id);
+			if (!ctl_match(space->ctl_id, id))
+				goto next_search;
+			if (index > 0) {
+				index--;
+				goto next_search;
+			}
+			strcpy(res, "1");
+			snd_ctl_elem_id_copy(space->ctl_id, id);
+			snd_ctl_elem_id_free(id);
+			dbg("do_ctl_search found a control");
+			return res;
+		      next_search:
+			elem = snd_hctl_elem_next(elem);
+		}
+		snd_ctl_elem_id_free(id);
+		strcpy(res, "0");
+		return res;
+	}
+	if (strncasecmp(attr, "do_count", 8) == 0) {
+		int err, index = 0;
+		snd_hctl_elem_t *elem;
+		snd_ctl_elem_id_t *id;
+		err = snd_ctl_elem_id_malloc(&id);
+		if (err < 0)
+			return NULL;
+		elem = snd_hctl_first_elem(space->ctl_handle);
+		while (elem) {
+			snd_hctl_elem_get_id(elem, id);
+			if (ctl_match(space->ctl_id, id))
+				index++;
+			elem = snd_hctl_elem_next(elem);
+		}
+		snd_ctl_elem_id_free(id);
+		sprintf(res, "%u", index);
+		dbg("do_ctl_count found %s controls", res);
 		return res;
 	}
 	Perror(space, "unknown ctl{} attribute '%s'", attr);
@@ -1150,108 +1240,23 @@ found:
 	*tail = 0;
 }
 
-static int do_match(const char *key, enum key_op op,
-		    const char *key_value, const char *value)
-{
-	int match;
-
-	if (value == NULL)
-		return 0;
-	dbg("match %s '%s' <-> '%s'", key, key_value, value);
-	match = fnmatch(key_value, value, 0) == 0;
-	if (match && op == KEY_OP_MATCH) {
-		dbg("%s is true (matching value)", key);
-		return 1;
-	}
-	if (!match && op == KEY_OP_NOMATCH) {
-		dbg("%s is true (non-matching value)", key);
-		return 1;
-	}
-	dbg("%s is false", key);
-	return 0;
-}
-
-static int ctl_match(snd_ctl_elem_id_t *pattern, snd_ctl_elem_id_t *id)
-{
-	if (snd_ctl_elem_id_get_interface(pattern) != -1 &&
-	    snd_ctl_elem_id_get_interface(pattern) != snd_ctl_elem_id_get_interface(id))
-	    	return 0;
-	if (snd_ctl_elem_id_get_device(pattern) != -1 &&
-	    snd_ctl_elem_id_get_device(pattern) != snd_ctl_elem_id_get_device(id))
-		return 0;
-	if (snd_ctl_elem_id_get_subdevice(pattern) != -1 &&
-	    snd_ctl_elem_id_get_subdevice(pattern) != snd_ctl_elem_id_get_subdevice(id))
-	    	return 0;
-	if (snd_ctl_elem_id_get_index(pattern) != -1 &&
-	    snd_ctl_elem_id_get_index(pattern) != snd_ctl_elem_id_get_index(id))
-	    	return 0;
-	if (fnmatch(snd_ctl_elem_id_get_name(pattern), snd_ctl_elem_id_get_name(id), 0) != 0)
-		return 0;
-	return 1;
-}
-
 static
 int run_program1(struct space *space,
 		 const char *command0, char *result,
 		 size_t ressize, size_t *reslen, int log)
 {
-	char *pos = strchr(command0, ' ');
-	int cmdlen = pos ? pos - command0 : strlen(command0);
-	int err, index;
-	snd_hctl_elem_t *elem;
-	snd_ctl_elem_id_t *id;
-	
-	if (cmdlen == 12 && strncmp(command0, "__ctl_search", 12) == 0) {
-		index = 0;
-		if (pos)
-			index = strtol(pos, NULL, 0);
-		err = snd_ctl_elem_id_malloc(&id);
-		if (err < 0)
+	if (strncmp(command0, "__ctl_search", 12) == 0) {
+		const char *res = elemid_get(space, "do_search");
+		if (res == NULL || strcmp(res, "1") != 0)
 			return EXIT_FAILURE;
-		elem = snd_hctl_first_elem(space->ctl_handle);
-		while (elem) {
-			snd_hctl_elem_get_id(elem, id);
-			if (!ctl_match(space->ctl_id, id))
-				goto next_search;
-			if (index > 0) {
-				index--;
-				goto next_search;
-			}
-			strlcpy(result, "0", ressize);
-			snd_ctl_elem_id_copy(space->ctl_id, id);
-			snd_ctl_elem_id_free(id);
-			dbg("__ctl_search found a control");
-			return EXIT_SUCCESS;
-		      next_search:
-			elem = snd_hctl_elem_next(elem);
-		}
-		snd_ctl_elem_id_free(id);
-		return EXIT_FAILURE;
+		return EXIT_SUCCESS;
 	}
-	if (cmdlen == 11 && strncmp(command0, "__ctl_count", 11) == 0) {
-		index = 0;
-		err = snd_ctl_elem_id_malloc(&id);
-		if (err < 0)
+	if (strncmp(command0, "__ctl_count", 11) == 0) {
+		const char *res = elemid_get(space, "do_count");
+		if (res == NULL || strcmp(res, "0") == 0)
 			return EXIT_FAILURE;
-		elem = snd_hctl_first_elem(space->ctl_handle);
-		while (elem) {
-			snd_hctl_elem_get_id(elem, id);
-			if (!ctl_match(space->ctl_id, id))
-				goto next_count;
-			index++;
-		      next_count:
-			elem = snd_hctl_elem_next(elem);
-		}
-		snd_ctl_elem_id_free(id);
-		if (index > 0) {
-			snprintf(result, ressize, "%u", index);
-			dbg("__ctl_count found %s controls", result);
-			return EXIT_SUCCESS;
-		}
-		dbg("__ctl_count no match");
-		return EXIT_FAILURE;
-	}
-	if (cmdlen == 11 && strncmp(command0, "__ctl_write", 11) == 0) {
+		strlcpy(result, res, ressize);
+		return EXIT_SUCCESS;
 	}
 	Perror(space, "unknown buildin command '%s'", command0);
 	return EXIT_FAILURE;
