@@ -941,6 +941,17 @@ static int test_au(int fd, void *buffer)
 	return 0;
 }
 
+static void show_available_sample_formats(snd_pcm_hw_params_t* params)
+{
+	snd_pcm_format_t format;
+
+	fprintf(stderr, "Available formats:\n");
+	for (format = 0; format < SND_PCM_FORMAT_LAST; format++) {
+		if (snd_pcm_hw_params_test_format(handle, params, format) == 0)
+			fprintf(stderr, "- %s\n", snd_pcm_format_name(format));
+	}
+}
+
 static void set_params(void)
 {
 	snd_pcm_hw_params_t *params;
@@ -977,6 +988,7 @@ static void set_params(void)
 	err = snd_pcm_hw_params_set_format(handle, params, hwparams.format);
 	if (err < 0) {
 		error(_("Sample format non available"));
+		show_available_sample_formats(params);
 		exit(EXIT_FAILURE);
 	}
 	err = snd_pcm_hw_params_set_channels(handle, params, hwparams.channels);
