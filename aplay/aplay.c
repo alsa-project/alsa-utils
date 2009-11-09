@@ -1115,9 +1115,9 @@ static void set_params(void)
 	/* show mmap buffer arragment */
 	if (mmap_flag && verbose) {
 		const snd_pcm_channel_area_t *areas;
-		snd_pcm_uframes_t offset;
+		snd_pcm_uframes_t offset, size = chunk_size;
 		int i;
-		err = snd_pcm_mmap_begin(handle, &areas, &offset, &chunk_size);
+		err = snd_pcm_mmap_begin(handle, &areas, &offset, &size);
 		if (err < 0) {
 			error("snd_pcm_mmap_begin problem: %s", snd_strerror(err));
 			exit(EXIT_FAILURE);
