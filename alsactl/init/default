@@ -186,10 +186,13 @@ CTL{name}="Capture Switch",CTL{do_search}=="1", \
   CTL{values}="on"
 
 CTL{name}="Input Source",PROGRAM!="__ctl_search", GOTO=""
-CTL{enums}=="*|Internal Mic|*",CTL{values}="Internal Mic", \
-  GOTO=""
+CTL{enums}=="*|Internal Mic|*",CTL{values}="Internal Mic", GOTO=""
 CTL{enums}=="*|Mic|*",CTL{values}="Mic"
 LABEL=""
 
-CTL{name}="Internal Mic Boost",CTL{do_search}=="1", \
-  CTL{values}="on"
+CTL{name}="Digital Input Source",PROGRAM!="__ctl_search", GOTO=""
+CTL{enums}=="*|Digital Mic 1|*",CTL{values}="Digital Mic 1", GOTO=""
+CTL{enums}=="*|Mic|*",CTL{values}="Mic"
+LABEL=""
+
+CTL{name}="Internal Mic Boost",CTL{do_search}=="1", CTL{values}="on"
