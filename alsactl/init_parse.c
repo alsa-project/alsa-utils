@@ -1747,10 +1747,12 @@ int init(const char *filename, const char *cardname)
 			}
 			first = 0;
 			err = init_space(&space, card);
-			if (err == 0 &&
-			    (space->rootdir = new_root_dir(filename)) != NULL)
-				err = parse(space, filename);
-			free_space(space);
+			if (err == 0) {
+				space->rootdir = new_root_dir(filename);
+				if (space->rootdir != NULL)
+					err = parse(space, filename);
+				free_space(space);
+			}
 			if (err < 0)
 				break;
 		}
@@ -1762,10 +1764,12 @@ int init(const char *filename, const char *cardname)
 		}
 		memset(&space, 0, sizeof(space));
 		err = init_space(&space, card);
-		if (err == 0 &&
-		    (space->rootdir = new_root_dir(filename)) != NULL)
-			err = parse(space, filename);
-		free_space(space);
+		if (err == 0) {
+			space->rootdir = new_root_dir(filename);
+			if (space->rootdir  != NULL)
+				err = parse(space, filename);
+			free_space(space);
+		}
 	}
   error:
 	sysfs_cleanup();
