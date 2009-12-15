@@ -142,6 +142,15 @@ static const int	channels8[] = {
   6, /* Side Left   */
   5, /* LFE         */
 };
+static const int	supported_formats[] = {
+  SND_PCM_FORMAT_S8,
+  SND_PCM_FORMAT_S16_LE,
+  SND_PCM_FORMAT_S16_BE,
+  SND_PCM_FORMAT_FLOAT_LE,
+  SND_PCM_FORMAT_S32_LE,
+  SND_PCM_FORMAT_S32_BE,
+  -1
+};
 
 static void generate_sine(uint8_t *frames, int channel, int count, double *_phase) {
   double phase = *_phase;
@@ -718,7 +727,7 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
 
 static void help(void)
 {
-  int k;
+  const int *fmt;
 
   printf(
 	 _("Usage: speaker-test [OPTION]... \n"
@@ -737,17 +746,14 @@ static void help(void)
 	   "-w,--wavfile	Use the given WAV file as a test sound\n"
 	   "-W,--wavdir	Specify the directory containing WAV files\n"
 	   "\n"));
-#if 1
   printf(_("Recognized sample formats are:"));
-  for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
-    const char *s = snd_pcm_format_name(k);
+  for (fmt = supported_formats; *fmt >= 0; fmt++) {
+    const char *s = snd_pcm_format_name(*fmt);
     if (s)
       printf(" %s", s);
   }
 
   printf("\n\n");
-#endif
-
 }
 
 int main(int argc, char *argv[]) {
@@ -757,6 +763,7 @@ int main(int argc, char *argv[]) {
   snd_pcm_sw_params_t  *swparams;
   uint8_t              *frames;
   int                   chn;
+  const int	       *fmt;
   double		time1,time2,time3;
   unsigned int		n, nloops;
   struct   timeval	tv1,tv2;
@@ -807,6 +814,13 @@ int main(int argc, char *argv[]) {
       break;
     case 'F':
       format = snd_pcm_format_value(optarg);
+      for (fmt = supported_formats; *fmt >= 0; fmt++)
+        if (*fmt == format)
+          break;
+      if (*fmt < 0) {
+        fprintf(stderr, "Format %s is not supported...\n", snd_pcm_format_name(format));
+        exit(EXIT_FAILURE);
+      }
       break;
     case 'r':
       rate = atoi(optarg);
