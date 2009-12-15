@@ -97,6 +97,7 @@ static snd_pcm_uframes_t  buffer_size;
 static snd_pcm_uframes_t  period_size;
 static const char *given_test_wav_file = NULL;
 static char *wav_file_dir = SOUNDSDIR;
+static int debug = 0;
 
 static const char *const channel_name[MAX_CHANNELS] = {
   /*  0 */ N_("Front Left"),
@@ -775,6 +776,7 @@ int main(int argc, char *argv[]) {
     {"speaker",   1, NULL, 's'},
     {"wavfile",   1, NULL, 'w'},
     {"wavdir",    1, NULL, 'W'},
+    {"debug",	  0, NULL, 'd'},
     {NULL,        0, NULL, 0  },
   };
 
@@ -793,7 +795,7 @@ int main(int argc, char *argv[]) {
   while (1) {
     int c;
     
-    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:P:t:l:s:w:W:", long_option, NULL)) < 0)
+    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:P:t:l:s:w:W:d", long_option, NULL)) < 0)
       break;
     
     switch (c) {
@@ -872,6 +874,9 @@ int main(int argc, char *argv[]) {
     case 'W':
       wav_file_dir = optarg;
       break;
+    case 'd':
+      debug = 1;
+      break;
     default:
       fprintf(stderr, _("Unknown option '%c'\n"), c);
       exit(EXIT_FAILURE);
@@ -916,6 +921,14 @@ int main(int argc, char *argv[]) {
     printf(_("Setting of swparams failed: %s\n"), snd_strerror(err));
     snd_pcm_close(handle);
     exit(EXIT_FAILURE);
+  }
+  if (debug) {
+    snd_output_t *log;
+    err = snd_output_stdio_attach(&log, stderr, 0);
+    if (err >= 0) {
+      snd_pcm_dump(handle, log);
+      snd_output_close(log);
+    }
   }
 
   frames = malloc(snd_pcm_frames_to_bytes(handle, period_size));
