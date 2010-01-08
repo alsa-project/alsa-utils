@@ -1176,6 +1176,8 @@ static void xrun(void)
 			fprintf(stderr, _("%s!!! (at least %.3f ms long)\n"),
 				stream == SND_PCM_STREAM_PLAYBACK ? _("underrun") : _("overrun"),
 				diff.tv_sec * 1000 + diff.tv_nsec / 10000000.0);
+			if (verbose)
+				snd_pcm_dump(handle, log);
 #else
 			fprintf(stderr, "%s !!!\n", _("underrun"));
 #endif
