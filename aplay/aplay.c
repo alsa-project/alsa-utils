@@ -111,6 +111,10 @@ static int test_position = 0;
 static int test_coef = 8;
 static int test_nowait = 0;
 static snd_output_t *log;
+static long long max_file_size = 0;
+static int max_file_time = 0;
+static int use_strftime = 0;
+volatile static int recycle_capture_file = 0;
 
 static int fd = -1;
 static off64_t pbrec_count = LLONG_MAX, fdcount;
@@ -199,7 +203,10 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "    --test-coef=#	 test coeficient for ring buffer position (default 8)\n"
 "                        expression for validation is: coef * (buffer_size / 2)\n"
 "    --test-nowait       do not wait for ring buffer - eats whole CPU\n"
-"    --process-id-file   write the process ID here\n")
+"    --max-file-time=#   start another output file when the old file has recorded\n"
+"                        for this many seconds\n"
+"    --process-id-file   write the process ID here\n"
+"    --use-strftime      apply the strftime facility to the output file name\n")
 		, command);
 	printf(_("Recognized sample formats are:"));
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
@@ -365,6 +372,13 @@ static void signal_handler(int sig)
 	prg_exit(EXIT_FAILURE);
 }
 
+/* call on SIGUSR1 signal. */
+static void signal_handler_recycle (int sig)
+{
+	/* flag the capture loop to start a new output file */
+	recycle_capture_file = 1;
+}
+
 enum {
 	OPT_VERSION = 1,
 	OPT_PERIOD_SIZE,
@@ -376,7 +390,9 @@ enum {
 	OPT_TEST_POSITION,
 	OPT_TEST_COEF,
 	OPT_TEST_NOWAIT,
-	OPT_PROCESS_ID_FILE
+	OPT_MAX_FILE_TIME,
+	OPT_PROCESS_ID_FILE,
+	OPT_USE_STRFTIME
 };
 
 int main(int argc, char *argv[])
@@ -417,7 +433,9 @@ int main(int argc, char *argv[])
 		{"test-position", 0, 0, OPT_TEST_POSITION},
 		{"test-coef", 1, 0, OPT_TEST_COEF},
 		{"test-nowait", 0, 0, OPT_TEST_NOWAIT},
+		{"max-file-time", 1, 0, OPT_MAX_FILE_TIME},
 		{"process-id-file", 1, 0, OPT_PROCESS_ID_FILE},
+		{"use-strftime", 0, 0, OPT_USE_STRFTIME},
 		{0, 0, 0, 0}
 	};
 	char *pcm_name = "default";
@@ -607,8 +625,14 @@ int main(int argc, char *argv[])
 		case OPT_TEST_NOWAIT:
 			test_nowait = 1;
 			break;
+		case OPT_MAX_FILE_TIME:
+			max_file_time = strtol(optarg, NULL, 0);
+			break;
 		case OPT_PROCESS_ID_FILE:
 			pidfile_name = optarg;
+			break;
+		case OPT_USE_STRFTIME:
+			use_strftime = 1;
 			break;
 		default:
 			fprintf(stderr, _("Try `%s --help' for more information.\n"), command);
@@ -682,6 +706,7 @@ int main(int argc, char *argv[])
 	signal(SIGINT, signal_handler);
 	signal(SIGTERM, signal_handler);
 	signal(SIGABRT, signal_handler);
+	signal(SIGUSR1, signal_handler_recycle);
 	if (interleaved) {
 		if (optind > argc - 1) {
 			if (stream == SND_PCM_STREAM_PLAYBACK)
@@ -2379,13 +2404,98 @@ static void playback(char *name)
 		close(fd);
 }
 
+/**
+ * mystrftime
+ *
+ *   Variant of strftime(3) that supports additional format
+ *   specifiers in the format string.
+ *
+ * Parameters:
+ *
+ *   s	  - destination string
+ *   max	- max number of bytes to write
+ *   userformat - format string
+ *   tm	 - time information
+ *   filenumber - the number of the file, starting at 1
+ *
+ * Returns: number of bytes written to the string s
+ */
+size_t mystrftime(char *s, size_t max, const char *userformat,
+		  const struct tm *tm, const int filenumber)
+{
+	char formatstring[PATH_MAX] = "";
+	char tempstring[PATH_MAX] = "";
+	char *format, *tempstr;
+	const char *pos_userformat;
+
+	format = formatstring;
+
+	/* if mystrftime is called with userformat = NULL we return a zero length string */
+	if (userformat == NULL) {
+		*s = '\0';
+		return 0;
+	}
+
+	for (pos_userformat = userformat; *pos_userformat; ++pos_userformat) {
+		if (*pos_userformat == '%') {
+			tempstr = tempstring;
+			tempstr[0] = '\0';
+			switch (*++pos_userformat) {
+
+				case '\0': // end of string
+					--pos_userformat;
+					break;
+
+				case 'v': // file number 
+					sprintf(tempstr, "%02d", filenumber);
+					break;
+
+				default: // All other codes will be handled by strftime
+					*format++ = '%';
+					*format++ = *pos_userformat;
+					continue;
+			}
+
+			/* If a format specifier was found and used, copy the result. */
+			if (tempstr[0]) {
+				while ((*format = *tempstr++) != '\0')
+					++format;
+				continue;
+			}
+		}
+
+		/* For any other character than % we simply copy the character */
+		*format++ = *pos_userformat;
+	}
+
+	*format = '\0';
+	format = formatstring;
+	return strftime(s, max, format, tm);
+}
+
 static int new_capture_file(char *name, char *namebuf, size_t namelen,
 			    int filecount)
 {
-	/* get a copy of the original filename */
 	char *s;
 	char buf[PATH_MAX+1];
+	time_t t;
+	struct tm *tmp;
 
+	if (use_strftime) {
+		t = time(NULL);
+		tmp = localtime(&t);
+		if (tmp == NULL) {
+			perror("localtime");
+			prg_exit(EXIT_FAILURE);
+		}
+		if (mystrftime(namebuf, namelen, name, tmp, filecount+1) == 0) {
+			fprintf(stderr, "mystrftime returned 0");
+			prg_exit(EXIT_FAILURE);
+		}
+		return filecount;
+	}
+
+	/* get a copy of the original filename */
 	strncpy(buf, name, sizeof(buf));
 
 	/* separate extension from filename */
@@ -2417,6 +2527,58 @@ static int new_capture_file(char *name, char *namebuf, size_t namelen,
 	return filecount;
 }
 
+/**
+ * create_path
+ *
+ *   This function creates a file path, like mkdir -p. 
+ *
+ * Parameters:
+ *
+ *   path - the path to create
+ *
+ * Returns: 0 on success, -1 on failure
+ * On failure, a message has been printed to stderr.
+ */
+int create_path(const char *path)
+{
+	char *start;
+	mode_t mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
+
+	if (path[0] == '/')
+		start = strchr(path + 1, '/');
+	else
+		start = strchr(path, '/');
+
+	while (start) {
+		char *buffer = strdup(path);
+		buffer[start-path] = 0x00;
+
+		if (mkdir(buffer, mode) == -1 && errno != EEXIST) {
+			fprintf(stderr, "Problem creating directory %s", buffer);
+			perror(" ");
+			free(buffer);
+			return -1;
+		}
+		free(buffer);
+		start = strchr(start + 1, '/');
+	}
+	return 0;
+}
+
+static int safe_open(const char *name)
+{
+	int fd;
+
+	fd = open64(name, O_WRONLY | O_CREAT, 0644);
+	if (fd == -1) {
+		if (errno != ENOENT || !use_strftime)
+			return -1;
+		if (create_path(name) == 0)
+			fd = open64(name, O_WRONLY | O_CREAT, 0644);
+	}
+	return fd;
+}
+
 static void capture(char *orig_name)
 {
 	int tostdout=0;		/* boolean which describes output stream */
@@ -2429,6 +2591,10 @@ static void capture(char *orig_name)
 	count = calc_count();
 	if (count == 0)
 		count = LLONG_MAX;
+	/* compute the number of bytes per file */
+	max_file_size = max_file_time *
+		snd_pcm_format_size(hwparams.format,
+				    hwparams.rate * hwparams.channels);
 	/* WAVE-file should be even (I'm not sure), but wasting one byte
 	   isn't a problem (this can only be in 8 bit mono) */
 	if (count < LLONG_MAX)
@@ -2455,7 +2621,7 @@ static void capture(char *orig_name)
 		/* open a file to write */
 		if(!tostdout) {
 			/* upon the second file we start the numbering scheme */
-			if (filecount) {
+			if (filecount || use_strftime) {
 				filecount = new_capture_file(orig_name, namebuf,
 							     sizeof(namebuf),
 							     filecount);
@@ -2464,7 +2630,8 @@ static void capture(char *orig_name)
 			
 			/* open a new file */
 			remove(name);
-			if ((fd = open64(name, O_WRONLY | O_CREAT, 0644)) == -1) {
+			fd = safe_open(name);
+			if (fd < 0) {
 				perror(name);
 				prg_exit(EXIT_FAILURE);
 			}
@@ -2474,6 +2641,8 @@ static void capture(char *orig_name)
 		rest = count;
 		if (rest > fmt_rec_table[file_type].max_filesize)
 			rest = fmt_rec_table[file_type].max_filesize;
+		if (max_file_size && (rest > max_file_size)) 
+			rest = max_file_size;
 
 		/* setup sample header */
 		if (fmt_rec_table[file_type].start)
@@ -2481,7 +2650,7 @@ static void capture(char *orig_name)
 
 		/* capture */
 		fdcount = 0;
-		while (rest > 0) {
+		while (rest > 0 && recycle_capture_file == 0) {
 			size_t c = (rest <= (off64_t)chunk_bytes) ?
 				(size_t)rest : chunk_bytes;
 			size_t f = c * 8 / bits_per_frame;
@@ -2494,6 +2663,12 @@ static void capture(char *orig_name)
 			count -= c;
 			rest -= c;
 			fdcount += c;
+		}
+
+		/* re-enable SIGUSR1 signal */
+		if (recycle_capture_file) {
+			recycle_capture_file = 0;
+			signal(SIGUSR1, signal_handler_recycle);
 		}
 
 		/* finish sample container */
