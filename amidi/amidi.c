@@ -95,122 +95,63 @@ static void *my_malloc(size_t size)
 	return p;
 }
 
-static int is_input(snd_ctl_t *ctl, int card, int device, int sub)
-{
-	snd_rawmidi_info_t *info;
-	int err;
-
-	snd_rawmidi_info_alloca(&info);
-	snd_rawmidi_info_set_device(info, device);
-	snd_rawmidi_info_set_subdevice(info, sub);
-	snd_rawmidi_info_set_stream(info, SND_RAWMIDI_STREAM_INPUT);
-	
-	if ((err = snd_ctl_rawmidi_info(ctl, info)) < 0 && err != -ENXIO)
-		return err;
-	else if (err == 0)
-		return 1;
-
-	return 0;
-}
-
-static int is_output(snd_ctl_t *ctl, int card, int device, int sub)
-{
-	snd_rawmidi_info_t *info;
-	int err;
-
-	snd_rawmidi_info_alloca(&info);
-	snd_rawmidi_info_set_device(info, device);
-	snd_rawmidi_info_set_subdevice(info, sub);
-	snd_rawmidi_info_set_stream(info, SND_RAWMIDI_STREAM_OUTPUT);
-	
-	if ((err = snd_ctl_rawmidi_info(ctl, info)) < 0 && err != -ENXIO)
-		return err;
-	else if (err == 0)
-		return 1;
-
-	return 0;
-}
-
 static void list_device(snd_ctl_t *ctl, int card, int device)
 {
 	snd_rawmidi_info_t *info;
 	const char *name;
 	const char *sub_name;
 	int subs, subs_in, subs_out;
-	int sub, in, out;
+	int sub;
 	int err;
 
 	snd_rawmidi_info_alloca(&info);
 	snd_rawmidi_info_set_device(info, device);
 
 	snd_rawmidi_info_set_stream(info, SND_RAWMIDI_STREAM_INPUT);
-	snd_ctl_rawmidi_info(ctl, info);
-	subs_in = snd_rawmidi_info_get_subdevices_count(info);
+	err = snd_ctl_rawmidi_info(ctl, info);
+	if (err >= 0)
+		subs_in = snd_rawmidi_info_get_subdevices_count(info);
+	else
+		subs_in = 0;
+
 	snd_rawmidi_info_set_stream(info, SND_RAWMIDI_STREAM_OUTPUT);
-	snd_ctl_rawmidi_info(ctl, info);
-	subs_out = snd_rawmidi_info_get_subdevices_count(info);
+	err = snd_ctl_rawmidi_info(ctl, info);
+	if (err >= 0)
+		subs_out = snd_rawmidi_info_get_subdevices_count(info);
+	else
+		subs_out = 0;
+
 	subs = subs_in > subs_out ? subs_in : subs_out;
-
-	sub = 0;
-	in = out = 0;
-	if ((err = is_output(ctl, card, device, sub)) < 0) {
-		error("cannot get rawmidi information %d:%d: %s",
-		      card, device, snd_strerror(err));
+	if (!subs)
 		return;
-	} else if (err)
-		out = 1;
 
-	if (err == 0) {
-		if ((err = is_input(ctl, card, device, sub)) < 0) {
-			error("cannot get rawmidi information %d:%d: %s",
-			      card, device, snd_strerror(err));
+	for (sub = 0; sub < subs; ++sub) {
+		snd_rawmidi_info_set_stream(info, sub < subs_in ?
+					    SND_RAWMIDI_STREAM_INPUT :
+					    SND_RAWMIDI_STREAM_OUTPUT);
+		snd_rawmidi_info_set_subdevice(info, sub);
+		err = snd_ctl_rawmidi_info(ctl, info);
+		if (err < 0) {
+			error("cannot get rawmidi information %d:%d:%d: %s\n",
+			      card, device, sub, snd_strerror(err));
 			return;
 		}
-	} else if (err) 
-		in = 1;
-
-	if (err == 0)
-		return;
-
-	name = snd_rawmidi_info_get_name(info);
-	sub_name = snd_rawmidi_info_get_subdevice_name(info);
-	if (sub_name[0] == '\0') {
-		if (subs == 1) {
-			printf("%c%c  hw:%d,%d    %s\n", 
-			       in ? 'I' : ' ', out ? 'O' : ' ',
+		name = snd_rawmidi_info_get_name(info);
+		sub_name = snd_rawmidi_info_get_subdevice_name(info);
+		if (sub == 0 && sub_name[0] == '\0') {
+			printf("%c%c  hw:%d,%d    %s",
+			       sub < subs_in ? 'I' : ' ',
+			       sub < subs_out ? 'O' : ' ',
 			       card, device, name);
-		} else
-			printf("%c%c  hw:%d,%d    %s (%d subdevices)\n",
-			       in ? 'I' : ' ', out ? 'O' : ' ',
-			       card, device, name, subs);
-	} else {
-		sub = 0;
-		for (;;) {
+			if (subs > 1)
+				printf(" (%d subdevices)", subs);
+			putchar('\n');
+			break;
+		} else {
 			printf("%c%c  hw:%d,%d,%d  %s\n",
-			       in ? 'I' : ' ', out ? 'O' : ' ',
+			       sub < subs_in ? 'I' : ' ',
+			       sub < subs_out ? 'O' : ' ',
 			       card, device, sub, sub_name);
-			if (++sub >= subs)
-				break;
-
-			in = is_input(ctl, card, device, sub);
-			out = is_output(ctl, card, device, sub);
-			snd_rawmidi_info_set_subdevice(info, sub);
-			if (out) {
-				snd_rawmidi_info_set_stream(info, SND_RAWMIDI_STREAM_OUTPUT);
-				if ((err = snd_ctl_rawmidi_info(ctl, info)) < 0) {
-					error("cannot get rawmidi information %d:%d:%d: %s",
-					      card, device, sub, snd_strerror(err));
-					break;
-				} 
-			} else {
-				snd_rawmidi_info_set_stream(info, SND_RAWMIDI_STREAM_INPUT);
-				if ((err = snd_ctl_rawmidi_info(ctl, info)) < 0) {
-					error("cannot get rawmidi information %d:%d:%d: %s",
-					      card, device, sub, snd_strerror(err));
-					break;
-				}
-			}
-			sub_name = snd_rawmidi_info_get_subdevice_name(info);
 		}
 	}
 }
