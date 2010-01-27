@@ -689,6 +689,7 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
   double phase = 0;
   int    err, n;
 
+  fflush(stdout);
   if (test_type == TEST_WAV) {
     int bufsize = snd_pcm_frames_to_bytes(handle, period_size);
     n = 0;
