@@ -602,6 +602,8 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 		break;
 	}
 	if (level & LEVEL_BASIC) {
+		if (!snd_ctl_elem_info_is_readable(info))
+			goto __skip_read;
 		if ((err = snd_hctl_elem_read(elem, control)) < 0) {
 			error("Control %s element read error: %s\n", card, snd_strerror(err));
 			return err;
@@ -638,6 +640,7 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 			}
 		}
 		printf("\n");
+	      __skip_read:
 		if (!snd_ctl_elem_info_is_tlv_readable(info))
 			goto __skip_tlv;
 		tlv = malloc(4096);
