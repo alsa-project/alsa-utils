@@ -534,6 +534,26 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 		}
 		break;
 #endif
+#ifdef SND_CTL_TLVT_DB_MINMAX
+	case SND_CTL_TLVT_DB_MINMAX:
+	case SND_CTL_TLVT_DB_MINMAX_MUTE:
+		if (type == SND_CTL_TLVT_DB_MINMAX_MUTE)
+			printf("dBminmaxmute-");
+		else
+			printf("dBminmax-");
+		if (size != 2 * sizeof(unsigned int)) {
+			while (size > 0) {
+				printf("0x%08x,", tlv[idx++]);
+				size -= sizeof(unsigned int);
+			}
+		} else {
+			printf("min=");
+			print_dB(tlv[2]);
+			printf(",max=");
+			print_dB(tlv[3]);
+		}
+		break;
+#endif
 	default:
 		printf("unk-%i-", type);
 		while (size > 0) {
