@@ -189,5 +189,5 @@ int main(int argc, char *argv[])
 	}
 
 	snd_config_update_free_global();
-	return res < 0 ? res : 0;
+	return res < 0 ? -res : 0;
 }
