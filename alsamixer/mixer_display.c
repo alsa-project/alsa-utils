@@ -462,6 +462,8 @@ static void display_control(unsigned int control_index)
 			err = snd_mixer_selem_get_capture_volume_range(control->elem, &min, &max);
 		if (err < 0)
 			return;
+		if (min == max)
+			max = min + 1;
 
 		if (control->flags & IS_ACTIVE)
 			wattrset(mixer_widget.window, 0);
