@@ -390,6 +390,15 @@ static void display_string_centered_in_control(int y, int col, const char *s, in
 	display_string_in_field(y, x, s, width, ALIGN_CENTER);
 }
 
+static long clamp(long value, long min, long max)
+{
+	if (value < min)
+		return min;
+	if (value > max)
+		return max;
+	return value;
+}
+
 static void display_control(unsigned int control_index)
 {
 	struct control *control;
@@ -462,8 +471,10 @@ static void display_control(unsigned int control_index)
 			err = snd_mixer_selem_get_capture_volume_range(control->elem, &min, &max);
 		if (err < 0)
 			return;
-		if (min == max)
+		if (min >= max)
 			max = min + 1;
+		volumes[0] = clamp(volumes[0], min, max);
+		volumes[1] = clamp(volumes[1], min, max);
 
 		if (control->flags & IS_ACTIVE)
 			wattrset(mixer_widget.window, 0);
