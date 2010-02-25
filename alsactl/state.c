@@ -1582,9 +1582,9 @@ int load_state(const char *file, const char *initfile, const char *cardname,
 			err = init(initfile, cardname1);
 			if (err < 0) {
 				finalerr = err;
-				initfailed(card, "init");
+				initfailed(card, "init", err);
 			}
-			initfailed(card, "restore");
+			initfailed(card, "restore", -ENOENT);
 		}
 		if (first)
 			finalerr = 0;	/* no cards, no error code */
@@ -1617,14 +1617,14 @@ int load_state(const char *file, const char *initfile, const char *cardname,
 				sprintf(cardname1, "%i", card);
 				err = init(initfile, cardname1);
 				if (err < 0) {
-					initfailed(card, "init");
+					initfailed(card, "init", err);
 					finalerr = err;
 				}
 			}
 			if ((err = set_controls(card, config, 1))) {
 				if (!force_restore)
 					finalerr = err;
-				initfailed(card, "restore");
+				initfailed(card, "restore", err);
 			}
 		}
 	} else {
@@ -1639,12 +1639,12 @@ int load_state(const char *file, const char *initfile, const char *cardname,
 		if (do_init && set_controls(cardno, config, 0)) {
 			err = init(initfile, cardname);
 			if (err < 0) {
-				initfailed(cardno, "init");
-				return err;
+				initfailed(cardno, "init", err);
+				finalerr = err;
 			}
 		}
 		if ((err = set_controls(cardno, config, 1))) {
-			initfailed(cardno, "restore");
+			initfailed(cardno, "restore", err);
 			if (!force_restore)
 				return err;
 		}

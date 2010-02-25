@@ -79,19 +79,23 @@ size_t line_width(const char *buf, size_t bufsize, size_t pos)
 	return count - pos;
 }
 
-void initfailed(int cardnumber, const char *reason)
+void initfailed(int cardnumber, const char *reason, int exitcode)
 {
 	int fp;
 	char *str;
+	char sexitcode[16];
 
 	if (statefile == NULL)
 		return;
 	if (snd_card_get_name(cardnumber, &str) < 0)
 		return;
+	sprintf(sexitcode, "%i", exitcode);
 	fp = open(statefile, O_WRONLY|O_CREAT|O_APPEND, 0644);
 	write(fp, str, strlen(str));
 	write(fp, ":", 1);
 	write(fp, reason, strlen(reason));
+	write(fp, ":", 1);
+	write(fp, sexitcode, strlen(sexitcode));
 	write(fp, "\n", 1);
 	close(fp);
 	free(str);
