@@ -1415,6 +1415,7 @@ static int set_controls(int card, snd_config_t *top, int doit)
 		goto _close;
 	}
 	id = snd_ctl_card_info_get_id(info);
+	dbg("card-info-id: '%s'", id);
 	err = snd_config_searchv(top, &control, "state", id, "control", 0);
 	if (err < 0) {
 		if (force_restore) {
@@ -1440,19 +1441,18 @@ static int set_controls(int card, snd_config_t *top, int doit)
 			goto _close;
 	}
 
+	dbg("maxnumid=%i", maxnumid);
 	/* check if we have additional controls in driver */
 	/* in this case we should go through init procedure */
 	if (!doit && maxnumid >= 0) {
-		snd_ctl_elem_id_t *id;
 		snd_ctl_elem_info_t *info;
-		snd_ctl_elem_id_alloca(&id);
 		snd_ctl_elem_info_alloca(&info);
 		snd_ctl_elem_info_set_numid(info, maxnumid+1);
 		if (snd_ctl_elem_info(handle, info) == 0) {
 			/* not very informative */
 			/* but value is used for check only */
 			err = -EAGAIN;
-			dbg("maxnumid=%i: more controls?", maxnumid);
+			dbg("more controls than maxnumid?");
 			goto _close;
 		}
 	}
