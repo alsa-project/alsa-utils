@@ -1117,7 +1117,6 @@ static int restore_config_value2(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
 		}
 		snd_ctl_elem_value_set_byte(ctl, idx, val);
 		return 1;
-		break;
 	default:
 		break;
 	}
@@ -1404,6 +1403,7 @@ static int set_controls(int card, snd_config_t *top, int doit)
 	snd_ctl_card_info_alloca(&info);
 
 	sprintf(name, "hw:%d", card);
+	dbg("device='%s', doit=%i", name, doit);
 	err = snd_ctl_open(&handle, name, 0);
 	if (err < 0) {
 		error("snd_ctl_open error: %s", snd_strerror(err));
@@ -1452,12 +1452,14 @@ static int set_controls(int card, snd_config_t *top, int doit)
 			/* not very informative */
 			/* but value is used for check only */
 			err = -EAGAIN;
+			dbg("maxnumid=%i: more controls?", maxnumid);
 			goto _close;
 		}
 	}
 
  _close:
 	snd_ctl_close(handle);
+	dbg("result code: %i", err);
 	return err;
 }
 
