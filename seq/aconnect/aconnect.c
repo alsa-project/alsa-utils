@@ -192,52 +192,33 @@ static void remove_connection(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
 			      snd_seq_port_info_t *pinfo, int count)
 {
 	snd_seq_query_subscribe_t *query;
+	snd_seq_port_info_t *port;
+	snd_seq_port_subscribe_t *subs;
 
 	snd_seq_query_subscribe_alloca(&query);
 	snd_seq_query_subscribe_set_root(query, snd_seq_port_info_get_addr(pinfo));
-
 	snd_seq_query_subscribe_set_type(query, SND_SEQ_QUERY_SUBS_READ);
 	snd_seq_query_subscribe_set_index(query, 0);
-	for (; snd_seq_query_port_subscribers(seq, query) >= 0;
-	     snd_seq_query_subscribe_set_index(query, snd_seq_query_subscribe_get_index(query) + 1)) {
-		snd_seq_port_info_t *port;
-		snd_seq_port_subscribe_t *subs;
+
+	snd_seq_port_info_alloca(&port);
+	snd_seq_port_subscribe_alloca(&subs);
+
+	while (snd_seq_query_port_subscribers(seq, query) >= 0) {
 		const snd_seq_addr_t *sender = snd_seq_query_subscribe_get_root(query);
 		const snd_seq_addr_t *dest = snd_seq_query_subscribe_get_addr(query);
-		snd_seq_port_info_alloca(&port);
-		if (snd_seq_get_any_port_info(seq, dest->client, dest->port, port) < 0)
-			continue;
-		if (!(snd_seq_port_info_get_capability(port) & SND_SEQ_PORT_CAP_SUBS_WRITE))
-			continue;
-		if (snd_seq_port_info_get_capability(port) & SND_SEQ_PORT_CAP_NO_EXPORT)
-			continue;
-		snd_seq_port_subscribe_alloca(&subs);
-		snd_seq_port_subscribe_set_queue(subs, snd_seq_query_subscribe_get_queue(query));
-		snd_seq_port_subscribe_set_sender(subs, sender);
-		snd_seq_port_subscribe_set_dest(subs, dest);
-		snd_seq_unsubscribe_port(seq, subs);
-	}
 
-	snd_seq_query_subscribe_set_type(query, SND_SEQ_QUERY_SUBS_WRITE);
-	snd_seq_query_subscribe_set_index(query, 0);
-	for (; snd_seq_query_port_subscribers(seq, query) >= 0;
-	     snd_seq_query_subscribe_set_index(query, snd_seq_query_subscribe_get_index(query) + 1)) {
-		snd_seq_port_info_t *port;
-		snd_seq_port_subscribe_t *subs;
-		const snd_seq_addr_t *dest = snd_seq_query_subscribe_get_root(query);
-		const snd_seq_addr_t *sender = snd_seq_query_subscribe_get_addr(query);
-		snd_seq_port_info_alloca(&port);
-		if (snd_seq_get_any_port_info(seq, sender->client, sender->port, port) < 0)
+		if (snd_seq_get_any_port_info(seq, dest->client, dest->port, port) < 0 ||
+		    !(snd_seq_port_info_get_capability(port) & SND_SEQ_PORT_CAP_SUBS_WRITE) ||
+		    (snd_seq_port_info_get_capability(port) & SND_SEQ_PORT_CAP_NO_EXPORT)) {
+			snd_seq_query_subscribe_set_index(query, snd_seq_query_subscribe_get_index(query) + 1);
 			continue;
-		if (!(snd_seq_port_info_get_capability(port) & SND_SEQ_PORT_CAP_SUBS_READ))
-			continue;
-		if (snd_seq_port_info_get_capability(port) & SND_SEQ_PORT_CAP_NO_EXPORT)
-			continue;
-		snd_seq_port_subscribe_alloca(&subs);
+		}
 		snd_seq_port_subscribe_set_queue(subs, snd_seq_query_subscribe_get_queue(query));
 		snd_seq_port_subscribe_set_sender(subs, sender);
 		snd_seq_port_subscribe_set_dest(subs, dest);
-		snd_seq_unsubscribe_port(seq, subs);
+		if (snd_seq_unsubscribe_port(seq, subs) < 0) {
+			snd_seq_query_subscribe_set_index(query, snd_seq_query_subscribe_get_index(query) + 1);
+		}
 	}
 }
 
