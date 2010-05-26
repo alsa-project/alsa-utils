@@ -523,6 +523,7 @@ static int get_controls(int cardno, snd_config_t *top)
 	snd_ctl_card_info_t *info;
 	snd_config_t *state, *card, *control;
 	snd_ctl_elem_list_t *list;
+	snd_ctl_elem_id_t *elem_id;
 	unsigned int idx;
 	int err;
 	char name[32];
@@ -530,6 +531,7 @@ static int get_controls(int cardno, snd_config_t *top)
 	const char *id;
 	snd_ctl_card_info_alloca(&info);
 	snd_ctl_elem_list_alloca(&list);
+	snd_ctl_elem_id_alloca(&elem_id);
 
 	sprintf(name, "hw:%d", cardno);
 	err = snd_ctl_open(&handle, name, SND_CTL_READONLY);
@@ -604,10 +606,8 @@ static int get_controls(int cardno, snd_config_t *top)
 		goto _free;
 	}
 	for (idx = 0; idx < count; ++idx) {
-		snd_ctl_elem_id_t *id;
-		snd_ctl_elem_id_alloca(&id);
-		snd_ctl_elem_list_get_id(list, idx, id);
-		err = get_control(handle, id, control);
+		snd_ctl_elem_list_get_id(list, idx, elem_id);
+		err = get_control(handle, elem_id, control);
 		if (err < 0)
 			goto _free;
 	}		
