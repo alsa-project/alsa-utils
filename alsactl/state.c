@@ -58,15 +58,10 @@ static int snd_config_integer_add(snd_config_t *father, char *id, long integer)
 {
 	int err;
 	snd_config_t *leaf;
-	err = snd_config_make_integer(&leaf, id);
+	err = snd_config_imake_integer(&leaf, id, integer);
 	if (err < 0)
 		return err;
 	err = snd_config_add(father, leaf);
-	if (err < 0) {
-		snd_config_delete(leaf);
-		return err;
-	}
-	err = snd_config_set_integer(leaf, integer);
 	if (err < 0) {
 		snd_config_delete(leaf);
 		return err;
@@ -78,15 +73,10 @@ static int snd_config_integer64_add(snd_config_t *father, char *id, long long in
 {
 	int err;
 	snd_config_t *leaf;
-	err = snd_config_make_integer64(&leaf, id);
+	err = snd_config_imake_integer64(&leaf, id, integer);
 	if (err < 0)
 		return err;
 	err = snd_config_add(father, leaf);
-	if (err < 0) {
-		snd_config_delete(leaf);
-		return err;
-	}
-	err = snd_config_set_integer64(leaf, integer);
 	if (err < 0) {
 		snd_config_delete(leaf);
 		return err;
@@ -98,15 +88,10 @@ static int snd_config_string_add(snd_config_t *father, const char *id, const cha
 {
 	int err;
 	snd_config_t *leaf;
-	err = snd_config_make_string(&leaf, id);
+	err = snd_config_imake_string(&leaf, id, string);
 	if (err < 0)
 		return err;
 	err = snd_config_add(father, leaf);
-	if (err < 0) {
-		snd_config_delete(leaf);
-		return err;
-	}
-	err = snd_config_set_string(leaf, string);
 	if (err < 0) {
 		snd_config_delete(leaf);
 		return err;
@@ -1117,6 +1102,7 @@ static int restore_config_value2(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
 		}
 		snd_ctl_elem_value_set_byte(ctl, idx, val);
 		return 1;
+		break;
 	default:
 		break;
 	}
@@ -1403,7 +1389,6 @@ static int set_controls(int card, snd_config_t *top, int doit)
 	snd_ctl_card_info_alloca(&info);
 
 	sprintf(name, "hw:%d", card);
-	dbg("device='%s', doit=%i", name, doit);
 	err = snd_ctl_open(&handle, name, 0);
 	if (err < 0) {
 		error("snd_ctl_open error: %s", snd_strerror(err));
@@ -1415,7 +1400,6 @@ static int set_controls(int card, snd_config_t *top, int doit)
 		goto _close;
 	}
 	id = snd_ctl_card_info_get_id(info);
-	dbg("card-info-id: '%s'", id);
 	err = snd_config_searchv(top, &control, "state", id, "control", 0);
 	if (err < 0) {
 		if (force_restore) {
@@ -1441,25 +1425,24 @@ static int set_controls(int card, snd_config_t *top, int doit)
 			goto _close;
 	}
 
-	dbg("maxnumid=%i", maxnumid);
 	/* check if we have additional controls in driver */
 	/* in this case we should go through init procedure */
 	if (!doit && maxnumid >= 0) {
+		snd_ctl_elem_id_t *id;
 		snd_ctl_elem_info_t *info;
+		snd_ctl_elem_id_alloca(&id);
 		snd_ctl_elem_info_alloca(&info);
 		snd_ctl_elem_info_set_numid(info, maxnumid+1);
 		if (snd_ctl_elem_info(handle, info) == 0) {
 			/* not very informative */
 			/* but value is used for check only */
 			err = -EAGAIN;
-			dbg("more controls than maxnumid?");
 			goto _close;
 		}
 	}
 
  _close:
 	snd_ctl_close(handle);
-	dbg("result code: %i", err);
 	return err;
 }
 
@@ -1584,9 +1567,9 @@ int load_state(const char *file, const char *initfile, const char *cardname,
 			err = init(initfile, cardname1);
 			if (err < 0) {
 				finalerr = err;
-				initfailed(card, "init", err);
+				initfailed(card, "init");
 			}
-			initfailed(card, "restore", -ENOENT);
+			initfailed(card, "restore");
 		}
 		if (first)
 			finalerr = 0;	/* no cards, no error code */
@@ -1619,14 +1602,14 @@ int load_state(const char *file, const char *initfile, const char *cardname,
 				sprintf(cardname1, "%i", card);
 				err = init(initfile, cardname1);
 				if (err < 0) {
-					initfailed(card, "init", err);
+					initfailed(card, "init");
 					finalerr = err;
 				}
 			}
 			if ((err = set_controls(card, config, 1))) {
 				if (!force_restore)
 					finalerr = err;
-				initfailed(card, "restore", err);
+				initfailed(card, "restore");
 			}
 		}
 	} else {
@@ -1641,12 +1624,12 @@ int load_state(const char *file, const char *initfile, const char *cardname,
 		if (do_init && set_controls(cardno, config, 0)) {
 			err = init(initfile, cardname);
 			if (err < 0) {
-				initfailed(cardno, "init", err);
-				finalerr = err;
+				initfailed(cardno, "init");
+				return err;
 			}
 		}
 		if ((err = set_controls(cardno, config, 1))) {
-			initfailed(cardno, "restore", err);
+			initfailed(cardno, "restore");
 			if (!force_restore)
 				return err;
 		}

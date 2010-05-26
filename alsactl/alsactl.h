@@ -34,16 +34,16 @@ extern char *statefile;
 
 #if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
 #define cerror(cond, ...) do {\
-	if (cond || debugflag) { \
-		fprintf(stderr, "%s%s: %s:%d: ", debugflag ? "WARNING: " : "", command, __FUNCTION__, __LINE__); \
+	if (cond) { \
+		fprintf(stderr, "%s: %s:%d: ", command, __FUNCTION__, __LINE__); \
 		fprintf(stderr, __VA_ARGS__); \
 		putc('\n', stderr); \
 	} \
 } while (0)
 #else
 #define cerror(cond, args...) do {\
-	if (cond || debugflag) { \
-		fprintf(stderr, "%s%s: %s:%d: ", debugflag ? "WARNING: " : "", command, __FUNCTION__, __LINE__); \
+	if (cond) { \
+		fprintf(stderr, "%s: %s:%d: ", command, __FUNCTION__, __LINE__); \
 		fprintf(stderr, ##args); \
 		putc('\n', stderr); \
 	} \
@@ -78,7 +78,7 @@ int generate_names(const char *cfgfile);
 int file_map(const char *filename, char **buf, size_t *bufsize);
 void file_unmap(void *buf, size_t bufsize);
 size_t line_width(const char *buf, size_t bufsize, size_t pos);
-void initfailed(int cardnumber, const char *reason, int exitcode);
+void initfailed(int cardnumber, const char *reason);
 
 static inline int hextodigit(int c)
 {
