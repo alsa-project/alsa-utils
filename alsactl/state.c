@@ -164,14 +164,18 @@ static unsigned int *str_to_tlv(const char *s)
 }
 
 /*
- * add the TLV string and dB ranges to comment fields
+ * add the TLV string, dB ranges, and dB values to comment fields
  */
 static int add_tlv_comments(snd_ctl_t *handle, snd_ctl_elem_id_t *id,
-			    snd_ctl_elem_info_t *info, snd_config_t *comment)
+			    snd_ctl_elem_info_t *info, snd_ctl_elem_value_t *ctl,
+			    snd_config_t *comment)
 {
 	unsigned int tlv[MAX_USER_TLV_SIZE];
 	unsigned int *db;
-	long dbmin, dbmax;
+	long rangemin, rangemax;
+	long dbmin, dbmax, dbgain;
+	snd_config_t *value;
+	unsigned int i, count;
 	int err;
 
 	if (snd_ctl_elem_tlv_read(handle, id, tlv, sizeof(tlv)) < 0)
@@ -193,13 +197,35 @@ static int add_tlv_comments(snd_ctl_t *handle, snd_ctl_elem_id_t *id,
 	if (err <= 0)
 		return 0;
 
-	snd_tlv_get_dB_range(db, snd_ctl_elem_info_get_min(info),
-			     snd_ctl_elem_info_get_max(info),
-			     &dbmin, &dbmax);
+	rangemin = snd_ctl_elem_info_get_min(info);
+	rangemax = snd_ctl_elem_info_get_max(info);
+	snd_tlv_get_dB_range(db, rangemin, rangemax, &dbmin, &dbmax);
 	if (err < 0)
 		return err;
 	snd_config_integer_add(comment, "dbmin", dbmin);
 	snd_config_integer_add(comment, "dbmax", dbmax);
+
+	if (snd_ctl_elem_info_get_type(info) == SND_CTL_ELEM_TYPE_INTEGER) {
+		err = snd_config_compound_add(comment, "dbvalue", 1, &value);
+		if (err < 0) {
+			error("snd_config_compound_add: %s", snd_strerror(err));
+			return err;
+		}
+		count = snd_ctl_elem_info_get_count(info);
+		for (i = 0; i < count; i++) {
+			err = snd_tlv_convert_to_dB(db, rangemin, rangemax,
+					snd_ctl_elem_value_get_integer(ctl, i), &dbgain);
+			if (err < 0) {
+				error("snd_tlv_convert_to_dB: %s", snd_strerror(err));
+				return err;
+			}
+			err = snd_config_integer_add(value, num_str(i), dbgain);
+			if (err < 0) {
+				error("snd_config_integer_add: %s", snd_strerror(err));
+				return err;
+			}
+		}
+	}
 	return 0;
 }
 
@@ -302,7 +328,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 			return err;
 		}
 		if (snd_ctl_elem_info_is_tlv_readable(info)) {
-			err = add_tlv_comments(handle, id, info, comment);
+			err = add_tlv_comments(handle, id, info, ctl, comment);
 			if (err < 0)
 				return err;
 		}
@@ -930,20 +956,31 @@ static int check_comment_type(snd_config_t *conf, int type)
 static int convert_to_new_db(snd_config_t *value, long omin, long omax,
 			     long nmin, long nmax,
 			     long odbmin, long odbmax,
-			     long ndbmin, long ndbmax,
+			     snd_config_t *comment, const char *index,
+			     snd_ctl_t *device, snd_ctl_elem_id_t *id,
 			     int doit)
 {
-	long val;
-	if (config_integer(value, &val, doit) < 0)
-		return -EINVAL;
-	if (val < omin || val > omax)
-		return -EINVAL;
-	val = ((val - omin) * (odbmax - odbmin)) / (omax - omin) + odbmin;
-	if (val < ndbmin)
-		val = ndbmin;
-	else if (val > ndbmax)
-		val = ndbmax;
-	val = ((val - ndbmin) * (nmax - nmin)) / (ndbmax - ndbmin) + nmin;
+	snd_config_t *db_node;
+	long db, val;
+	int err;
+
+	if (snd_config_searchv(comment, &db_node, "dbvalue", index, NULL) < 0 ||
+	    snd_config_get_integer(db_node, &db) < 0) {
+		err = config_integer(value, &val, doit);
+		if (err < 0)
+			return err;
+		if (val < omin || val > omax)
+			return -EINVAL;
+		db = ((val - omin) * (odbmax - odbmin)) / (omax - omin) + odbmin;
+	}
+
+	err = snd_ctl_convert_from_dB(device, id, db, &val, db > 0);
+	if (err < 0)
+		return err;
+	if (val < nmin)
+		val = nmin;
+	else if (val > nmax)
+		val = nmax;
 	return snd_config_set_integer(value, val);
 }
 
@@ -961,6 +998,7 @@ static int check_comment_range(snd_ctl_t *handle, snd_config_t *conf,
 	long nmin, nmax;
 	long odbmin, odbmax;
 	long ndbmin, ndbmax;
+	long db;
 	snd_ctl_elem_id_t *id;
 
 	if (snd_config_search(conf, "range", &n) < 0)
@@ -1003,12 +1041,17 @@ static int check_comment_range(snd_ctl_t *handle, snd_config_t *conf,
 		snd_config_iterator_t i, next;
 		snd_config_for_each(i, next, value) {
 			snd_config_t *n = snd_config_iterator_entry(i);
+			const char *idxstr;
+			if (snd_config_get_id(n, &idxstr) < 0)
+				continue;
 			convert_to_new_db(n, omin, omax, nmin, nmax,
-					  odbmin, odbmax, ndbmin, ndbmax, doit);
+					  odbmin, odbmax, conf, idxstr,
+					  handle, id, doit);
 		}
 	} else
 		convert_to_new_db(value, omin, omax, nmin, nmax,
-				  odbmin, odbmax, ndbmin, ndbmax, doit);
+				  odbmin, odbmax, conf, "0",
+				  handle, id, doit);
 	return 0;
 }
 
