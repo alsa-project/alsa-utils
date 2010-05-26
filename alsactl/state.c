@@ -900,31 +900,14 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 }
 
 /*
- * look for a config node with the given item name
- */
-static snd_config_t *search_comment_item(snd_config_t *conf, const char *name)
-{
-	snd_config_iterator_t i, next;
-	snd_config_for_each(i, next, conf) {
-		snd_config_t *n = snd_config_iterator_entry(i);
-		const char *id;
-		if (snd_config_get_id(n, &id) < 0)
-			continue;
-		if (strcmp(id, name) == 0)
-			return n;
-	}
-	return NULL;
-}
-
-/*
  * check whether the config item has the same of compatible type
  */
 static int check_comment_type(snd_config_t *conf, int type)
 {
-	snd_config_t *n = search_comment_item(conf, "type");
+	snd_config_t *n;
 	int ctype;
 
-	if (!n)
+	if (snd_config_search(conf, "type", &n) < 0)
 		return 0; /* not defined */
 	ctype = get_comment_type(n);
 	if (ctype == type)
@@ -980,8 +963,7 @@ static int check_comment_range(snd_ctl_t *handle, snd_config_t *conf,
 	long ndbmin, ndbmax;
 	snd_ctl_elem_id_t *id;
 
-	n = search_comment_item(conf, "range");
-	if (!n)
+	if (snd_config_search(conf, "range", &n) < 0)
 		return 0;
 	if (get_comment_range(n, SND_CTL_ELEM_TYPE_INTEGER,
 			      &omin, &omax, &ostep) < 0)
@@ -996,13 +978,11 @@ static int check_comment_range(snd_ctl_t *handle, snd_config_t *conf,
 	if (omin >= omax || nmin >= nmax)
 		return 0; /* invalid values */
 
-	n = search_comment_item(conf, "dbmin");
-	if (!n)
+	if (snd_config_search(conf, "dbmin", &n) < 0)
 		return 0;
 	if (config_integer(n, &odbmin, doit) < 0)
 		return 0;
-	n = search_comment_item(conf, "dbmax");
-	if (!n)
+	if (snd_config_search(conf, "dbmax", &n) < 0)
 		return 0;
 	if (config_integer(n, &odbmax, doit) < 0)
 		return 0;
