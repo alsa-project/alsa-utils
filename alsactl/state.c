@@ -266,9 +266,9 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		error("snd_config_compound_add: %s", snd_strerror(err));
 		return err;
 	}
-	err = snd_config_compound_add(control, "comment", 1, &comment);
+	err = snd_config_make_compound(&comment, "comment", 0);
 	if (err < 0) {
-		error("snd_config_compound_add: %s", snd_strerror(err));
+		error("snd_config_make_compound: %s", snd_strerror(err));
 		return err;
 	}
 
@@ -432,7 +432,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 			error("snd_config_string_add: %s", snd_strerror(err));
 			return err;
 		}
-		return 0;
+		goto finish;
 	}
 	default:
 		break;
@@ -446,21 +446,21 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 				error("snd_config_string_add: %s", snd_strerror(err));
 				return err;
 			}
-			return 0;
+			goto finish;
 		case SND_CTL_ELEM_TYPE_INTEGER:
 			err = snd_config_integer_add(control, "value", snd_ctl_elem_value_get_integer(ctl, 0));
 			if (err < 0) {
 				error("snd_config_integer_add: %s", snd_strerror(err));
 				return err;
 			}
-			return 0;
+			goto finish;
 		case SND_CTL_ELEM_TYPE_INTEGER64:
 			err = snd_config_integer64_add(control, "value", snd_ctl_elem_value_get_integer64(ctl, 0));
 			if (err < 0) {
 				error("snd_config_integer64_add: %s", snd_strerror(err));
 				return err;
 			}
-			return 0;
+			goto finish;
 		case SND_CTL_ELEM_TYPE_ENUMERATED:
 		{
 			unsigned int v = snd_ctl_elem_value_get_enumerated(ctl, 0);
@@ -475,7 +475,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 			}
 			if (err < 0)
 				error("snd_config add: %s", snd_strerror(err));
-			return 0;
+			goto finish;
 		}
 		default:
 			error("Unknown control type: %d\n", type);
@@ -540,6 +540,12 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		return -EINVAL;
 	}
 	
+finish:
+	err = snd_config_add(control, comment);
+	if (err < 0) {
+		error("snd_config_add: %s", snd_strerror(err));
+		return err;
+	}
 	return 0;
 }
 	
