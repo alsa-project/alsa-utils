@@ -117,6 +117,7 @@ static long long max_file_size = 0;
 static int max_file_time = 0;
 static int use_strftime = 0;
 volatile static int recycle_capture_file = 0;
+static long term_c_lflag = 0;
 
 static int fd = -1;
 static off64_t pbrec_count = LLONG_MAX, fdcount;
@@ -127,6 +128,8 @@ FILE *pidf = NULL;
 static int pidfile_written = 0;
 
 /* needed prototypes */
+
+static void done_stdin(void);
 
 static void playback(char *filename);
 static void capture(char *filename);
@@ -343,6 +346,7 @@ static void version(void)
  */
 static void prg_exit(int code) 
 {
+	done_stdin();
 	if (handle)
 		snd_pcm_close(handle);
 	if (pidfile_written)
@@ -1202,13 +1206,25 @@ static void init_stdin(void)
 	struct termios term;
 	long flags;
 
+	tcgetattr(fileno(stdin), &term);
+	term_c_lflag = term.c_lflag;
 	if (fd == fileno(stdin))
 		return;
 	flags = fcntl(fileno(stdin), F_GETFL);
 	if (flags < 0 || fcntl(fileno(stdin), F_SETFL, flags|O_NONBLOCK) < 0)
 		fprintf(stderr, _("stdin O_NONBLOCK flag setup failed\n"));
-	tcgetattr(fileno(stdin), &term);
 	term.c_lflag &= ~ICANON;
+	tcsetattr(fileno(stdin), TCSANOW, &term);
+}
+
+static void done_stdin(void)
+{
+	struct termios term;
+
+	if (fd == fileno(stdin))
+		return;
+	tcgetattr(fileno(stdin), &term);
+	term.c_lflag = term_c_lflag;
 	tcsetattr(fileno(stdin), TCSANOW, &term);
 }
 
