@@ -117,7 +117,7 @@ static long long max_file_size = 0;
 static int max_file_time = 0;
 static int use_strftime = 0;
 volatile static int recycle_capture_file = 0;
-static long term_c_lflag = 0;
+static long term_c_lflag = -1;
 
 static int fd = -1;
 static off64_t pbrec_count = LLONG_MAX, fdcount;
@@ -1221,7 +1221,7 @@ static void done_stdin(void)
 {
 	struct termios term;
 
-	if (fd == fileno(stdin))
+	if (fd == fileno(stdin) || term_c_lflag == -1)
 		return;
 	tcgetattr(fileno(stdin), &term);
 	term.c_lflag = term_c_lflag;
