@@ -38,11 +38,14 @@ AC_CHECK_HEADERS([alsa/rawmidi.h], [have_rawmidi="yes"], [have_rawmidi="no"],
   [#include <alsa/asoundlib.h>])
 AC_CHECK_HEADERS([alsa/seq.h], [have_seq="yes"], [have_seq="no"],
   [#include <alsa/asoundlib.h>])
+AC_CHECK_HEADERS([samplerate.h], [have_samplerate="yes"], [have_samplerate="no"],
+  [#include <samplerate.h>])
 
 AM_CONDITIONAL(HAVE_PCM, test "$have_pcm" = "yes")
 AM_CONDITIONAL(HAVE_MIXER, test "$have_mixer" = "yes")
 AM_CONDITIONAL(HAVE_RAWMIDI, test "$have_rawmidi" = "yes")
 AM_CONDITIONAL(HAVE_SEQ, test "$have_seq" = "yes")
+AM_CONDITIONAL(HAVE_SAMPLERATE, test "$have_samplerate" = "yes")
 
 dnl Check for librt
 LIBRT=""
@@ -86,6 +89,16 @@ AC_ARG_ENABLE(alsaconf,
        *) AC_MSG_ERROR(bad value ${enableval} for --enable-alsaconf) ;;
      esac],[alsaconf=true])
 AM_CONDITIONAL(ALSACONF, test x$alsaconf = xtrue)
+
+dnl Disable alsaloop
+AC_ARG_ENABLE(alsaloop,
+     [  --disable-alsaloop      Disable alsaloop packaging],
+     [case "${enableval}" in
+       yes) alsaloop=true ;;
+       no)  alsaloop=false ;;
+       *) AC_MSG_ERROR(bad value ${enableval} for --enable-alsaloop) ;;
+     esac],[alsaloop=true])
+AM_CONDITIONAL(ALSALOOP, test x$alsaloop = xtrue)
 
 xmlto=""
 if test x"$alsaconf" = xtrue; then
@@ -273,4 +286,5 @@ AC_OUTPUT(Makefile alsactl/Makefile alsactl/init/Makefile \
 	  aplay/Makefile include/Makefile iecset/Makefile utils/Makefile \
 	  utils/alsa-utils.spec seq/Makefile seq/aconnect/Makefile \
 	  seq/aplaymidi/Makefile seq/aseqdump/Makefile seq/aseqnet/Makefile \
-	  speaker-test/Makefile speaker-test/samples/Makefile)
+	  speaker-test/Makefile speaker-test/samples/Makefile \
+	  alsaloop/Makefile)

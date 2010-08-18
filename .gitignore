@@ -39,6 +39,7 @@ seq/aplaymidi/arecordmidi
 seq/aseqdump/aseqdump
 seq/aseqnet/aseqnet
 speaker-test/speaker-test
+alsaloop/alsaloop
 
 include/aconfig.h*
 include/stamp-*

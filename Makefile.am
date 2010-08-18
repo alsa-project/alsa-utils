@@ -15,6 +15,9 @@ SUBDIRS += alsaconf
 endif
 if HAVE_PCM
 SUBDIRS += aplay iecset speaker-test
+if ALSALOOP
+SUBDIRS += alsaloop
+endif
 endif
 if HAVE_SEQ
 SUBDIRS += seq
