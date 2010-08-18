@@ -63,7 +63,8 @@
 enum {
   TEST_PINK_NOISE = 1,
   TEST_SINE,
-  TEST_WAV
+  TEST_WAV,
+  TEST_PATTERN,
 };
 
 #define MAX_CHANNELS	16
@@ -301,6 +302,71 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
       }
     }
   }
+}
+
+/*
+ * useful for tests
+ */
+static void generate_pattern(uint8_t *frames, int channel, int count, int *_pattern) {
+  int pattern = *_pattern;
+  int    chn;
+  int8_t *samp8 = (int8_t*) frames;
+  int16_t *samp16 = (int16_t*) frames;
+  int32_t *samp32 = (int32_t*) frames;
+  float   *samp_f = (float*) frames;
+
+  while (count-- > 0) {
+    for(chn=0;chn<channels;chn++,pattern++) {
+      switch (format) {
+      case SND_PCM_FORMAT_S8:
+        if (chn==channel) {
+          *samp8++ = pattern & 0xff;
+        } else {
+          *samp8++ = 0;
+        }
+        break;
+      case SND_PCM_FORMAT_S16_LE:
+        if (chn==channel) {
+          *samp16++ = LE_SHORT(pattern & 0xfffff);
+        } else {
+          *samp16++ = 0;
+        }
+        break;
+      case SND_PCM_FORMAT_S16_BE:
+        if (chn==channel) {
+          *samp16++ = BE_SHORT(pattern & 0xffff);
+        } else {
+          *samp16++ = 0;
+        }
+        break;
+      case SND_PCM_FORMAT_FLOAT_LE:
+        if (chn==channel) {
+	  *samp_f++ = LE_INT(((double)pattern) / INT32_MAX);
+        } else {
+	  *samp_f++ = 0.0;
+        }
+        break;
+      case SND_PCM_FORMAT_S32_LE:
+        if (chn==channel) {
+          *samp32++ = LE_INT(pattern);
+        } else {
+          *samp32++ = 0;
+        }
+        break;
+      case SND_PCM_FORMAT_S32_BE:
+        if (chn==channel) {
+          *samp32++ = BE_INT(pattern);
+        } else {
+          *samp32++ = 0;
+        }
+        break;
+      default:
+        ;
+      }
+    }
+  }
+
+  *_pattern = pattern;
 }
 
 static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_access_t access) {
@@ -687,6 +753,7 @@ static int write_buffer(snd_pcm_t *handle, uint8_t *ptr, int cptr)
 static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *frames)
 {
   double phase = 0;
+  int	 pattern = 0;
   int    err, n;
 
   fflush(stdout);
@@ -713,6 +780,8 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
   for(n = 0; n < periods; n++) {
     if (test_type == TEST_PINK_NOISE)
       generate_pink_noise(frames, channel, period_size);
+    else if (test_type == TEST_PATTERN)
+      generate_pattern(frames, channel, period_size, &pattern);
     else
       generate_sine(frames, channel, period_size, &phase);
 
@@ -860,9 +929,11 @@ int main(int argc, char *argv[]) {
 	test_type = TEST_SINE;
       else if (*optarg == 'w')
 	test_type = TEST_WAV;
+      else if (*optarg == 't')
+	test_type = TEST_PATTERN;
       else if (isdigit(*optarg)) {
 	test_type = atoi(optarg);
-	if (test_type < TEST_PINK_NOISE || test_type > TEST_WAV) {
+	if (test_type < TEST_PINK_NOISE || test_type > TEST_PATTERN) {
 	  fprintf(stderr, _("Invalid test type %s\n"), optarg);
 	  exit(1);
 	}
