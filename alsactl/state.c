@@ -251,8 +251,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		return err;
 	}
 
-	if (snd_ctl_elem_info_is_inactive(info) ||
-				!snd_ctl_elem_info_is_readable(info))
+	if (!snd_ctl_elem_info_is_readable(info))
 		return 0;
 	snd_ctl_elem_value_set_id(ctl, id);
 	err = snd_ctl_elem_read(handle, ctl);
@@ -778,7 +777,7 @@ static int config_integer64(snd_config_t *n, long long *val, int doit)
 	return err;
 }
 
-static int is_user_control(snd_config_t *conf)
+static int check_comment_access(snd_config_t *conf, const char *str)
 {
 	snd_config_iterator_t i, next;
 
@@ -790,7 +789,7 @@ static int is_user_control(snd_config_t *conf)
 		if (strcmp(id, "access") == 0) {
 			if (snd_config_get_string(n, &s) < 0)
 				return 0;
-			if (strstr(s, "user"))
+			if (strstr(s, str))
 				return 1;
 		}
 	}
@@ -1004,7 +1003,6 @@ static int check_comment_range(snd_ctl_t *handle, snd_config_t *conf,
 	long nmin, nmax;
 	long odbmin, odbmax;
 	long ndbmin, ndbmax;
-	long db;
 	snd_ctl_elem_id_t *id;
 
 	if (snd_config_search(conf, "range", &n) < 0)
@@ -1256,7 +1254,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control,
 		snd_ctl_elem_info_set_name(info, name);
 		snd_ctl_elem_info_set_index(info, index);
 		err = snd_ctl_elem_info(handle, info);
-		if (err < 0 && comment && is_user_control(comment)) {
+		if (err < 0 && comment && check_comment_access(comment, "user")) {
 			err = add_user_control(handle, info, comment);
 			if (err < 0) {
 				cerror(doit, "failed to add user control #%d (%s)",
@@ -1305,6 +1303,9 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control,
 				return -EINVAL;
 			}
 		}
+		/* inactive controls are not restored */
+		if (comment && check_comment_access(comment, "inactive"))
+			return 0;
 	}
 
 	if (snd_ctl_elem_info_is_inactive(info) ||
