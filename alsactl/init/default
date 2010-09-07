@@ -185,6 +185,11 @@ CTL{name}="Capture Volume",CTL{do_search}=="1", \
 CTL{name}="Capture Switch",CTL{do_search}=="1", \
   CTL{values}="on"
 
+CTL{name}="Capture Source",PROGRAM!="__ctl_search", GOTO=""
+CTL{enums}=="*|Internal Mic|*",CTL{values}="Internal Mic", GOTO=""
+CTL{enums}=="*|Mic|*",CTL{values}="Mic"
+LABEL=""
+
 CTL{name}="Input Source",PROGRAM!="__ctl_search", GOTO=""
 CTL{enums}=="*|Internal Mic|*",CTL{values}="Internal Mic", GOTO=""
 CTL{enums}=="*|Mic|*",CTL{values}="Mic"
@@ -195,4 +200,5 @@ CTL{enums}=="*|Digital Mic 1|*",CTL{values}="Digital Mic 1", GOTO=""
 CTL{enums}=="*|Mic|*",CTL{values}="Mic"
 LABEL=""
 
+CTL{name}="Mic Boost",CTL{do_search}=="1", CTL{values}="on"
 CTL{name}="Internal Mic Boost",CTL{do_search}=="1", CTL{values}="on"
