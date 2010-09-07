@@ -30,6 +30,13 @@ CTL{name}="Master Playback Switch",CTL{do_search}=="1", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
+CTL{name}="Master Front Playback Volume",CTL{do_search}=="1", \
+  ENV{has_pmaster_vol}:="true", \
+  CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
+CTL{name}="Master Front Playback Switch",CTL{do_search}=="1", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
 CTL{name}="Master Digital Playback Volume",CTL{do_search}=="1", \
   CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
 CTL{name}="Master Digital Playback Switch",CTL{do_search}=="1", \
