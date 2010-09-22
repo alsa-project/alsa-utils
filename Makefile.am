@@ -1,6 +1,6 @@
 INCLUDES=-I$(top_srcdir)/include
 
-SUBDIRS = include alsactl utils m4 po
+SUBDIRS = include alsactl alsaucm utils m4 po
 if ALSAMIXER
 SUBDIRS += alsamixer
 endif
