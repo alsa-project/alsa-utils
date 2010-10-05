@@ -1120,8 +1120,8 @@ static int parse_control_id(const char *str, snd_ctl_elem_id_t *id)
 					}
 					str++;
 				}
-				*ptr = '\0';
 			}
+			*ptr = '\0';
 			snd_ctl_elem_id_set_name(id, buf);
 		} else if (!strncasecmp(str, "index=", 6)) {
 			str += 6;
