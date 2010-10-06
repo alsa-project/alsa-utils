@@ -45,7 +45,7 @@ struct loopback_thread {
 int verbose = 0;
 int daemonize = 0;
 int use_syslog = 0;
-struct loopback **loopbacks;
+struct loopback **loopbacks = NULL;
 int loopbacks_count = 0;
 
 static void my_exit(struct loopback_thread *thread, int exitcode)
@@ -199,7 +199,8 @@ static long timediff(struct timeval t1, struct timeval t2)
 
 static void add_loop(struct loopback *loop)
 {
-	loopbacks = realloc(loopbacks, loopbacks_count * sizeof(struct loopback *));
+	loopbacks = realloc(loopbacks, (loopbacks_count + 1) *
+						sizeof(struct loopback *));
 	if (loopbacks == NULL) {
 		logit(LOG_CRIT, "No enough memory\n");
 		exit(EXIT_FAILURE);
@@ -321,7 +322,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 	morehelp = 0;
 	while (1) {
 		int c;
-		if ((c = getopt_long(argc, argv, "hdg:P:C:l:t:F:f:c:r:s:benvA:S:a:m:", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hdg:P:C:l:t:F:f:c:r:s:benvA:S:a:m:T:", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
