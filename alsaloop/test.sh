@@ -28,19 +28,19 @@ EOF
 }
 
 test3() {
-  echo "TEST2"
+  echo "TEST3"
 cat > $CFGFILE <<EOF
--C hw:1,0,0 -P dmix:0 --tlatency 50000 --thread 0 \
+-C hw:1,0,0 -P plug:dmix:0 --tlatency 50000 --thread 0 \
     --mixer "name='Master Playback Volume'@name='Master Playback Volume'" \
     --mixer "name='Master Playback Switch'@name='Master Playback Switch'" \
     --mixer "name='PCM Playback Volume'"
--C hw:1,0,1 -P dmix:0 --tlatency 50000 --thread 1
--C hw:1,0,2 -P dmix:0 --tlatency 50000 --thread 2
--C hw:1,0,3 -P dmix:0 --tlatency 50000 --thread 3
--C hw:1,0,4 -P dmix:0 --tlatency 50000 --thread 4
--C hw:1,0,5 -P dmix:0 --tlatency 50000 --thread 5
--C hw:1,0,6 -P dmix:0 --tlatency 50000 --thread 6
--C hw:1,0,7 -P dmix:0 --tlatency 50000 --thread 7
+-C hw:1,0,1 -P plug:dmix:0 --tlatency 50000 --thread 1
+-C hw:1,0,2 -P plug:dmix:0 --tlatency 50000 --thread 2
+-C hw:1,0,3 -P plug:dmix:0 --tlatency 50000 --thread 3
+-C hw:1,0,4 -P plug:dmix:0 --tlatency 50000 --thread 4
+-C hw:1,0,5 -P plug:dmix:0 --tlatency 50000 --thread 5
+-C hw:1,0,6 -P plug:dmix:0 --tlatency 50000 --thread 6
+-C hw:1,0,7 -P plug:dmix:0 --tlatency 50000 --thread 7
 EOF
   $DBG ./alsaloop --config $CFGFILE
 }

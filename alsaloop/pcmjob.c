@@ -1432,6 +1432,8 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 	}
 	if (verbose > 9)
 		snd_output_printf(loop->output, "%s: prevents = 0x%x, crevents = 0x%x\n", loop->id, prevents, crevents);
+	if (prevents == 0 && crevents == 0)
+		goto __pcm_end;
 	do {
 		ccount = readit(capt);
 		buf_add(loop, ccount);
@@ -1520,6 +1522,7 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 		else
 			snd_output_printf(loop->output, "%s: end delay %li\n", capt->id, cdelay);
 	}
+      __pcm_end:
 	if (verbose > 13) {
 		getcurtimestamp(&loop->tstamp_end);
 		snd_output_printf(loop->output, "%s: processing time %lius\n", capt->id, timediff(loop->tstamp_end, loop->tstamp_start));

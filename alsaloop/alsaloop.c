@@ -424,9 +424,9 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 		case 'a':
 			if (optarg[0] == 'a')
 				arg_slave = SLAVE_TYPE_AUTO;
-			else if (strcasecmp(optarg, "off"))
+			else if (strcasecmp(optarg, "on") == 0)
 				arg_slave = SLAVE_TYPE_ON;
-			else if (strcasecmp(optarg, "on"))
+			else if (strcasecmp(optarg, "off") == 0)
 				arg_slave = SLAVE_TYPE_OFF;
 			else
 				arg_slave = atoi(optarg);
