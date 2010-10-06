@@ -687,7 +687,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* we must sort thread IDs */
-	j = 0;
+	j = -1;
 	do {
 		k = 0x7fffffff;
 		for (i = 0; i < loopbacks_count; i++) {
@@ -695,11 +695,11 @@ int main(int argc, char *argv[])
 			    loopbacks[i]->thread > j)
 				k = loopbacks[i]->thread;
 		}
+		j++;
 		for (i = 0; i < loopbacks_count; i++) {
 			if (loopbacks[i]->thread == k)
 				loopbacks[i]->thread = j;
 		}
-		j++;
 	} while (k != 0x7fffffff);
 	/* fix maximum thread id */
 	for (i = 0, j = -1; i < loopbacks_count; i++) {
@@ -729,7 +729,6 @@ int main(int argc, char *argv[])
 	for (k = 0; k < j; k++)
 		thread_job(&threads[k]);
 
-	logit(LOG_CRIT, "threads = %i %i\n", j, loopbacks_count);
 	if (j > 1) {
 		for (k = 0; k < j; k++)
 			pthread_join(threads[k].thread, NULL);
