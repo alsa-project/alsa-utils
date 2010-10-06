@@ -81,7 +81,7 @@ static int create_loopback_handle(struct loopback_handle **_handle,
 	handle->format = SND_PCM_FORMAT_S16_LE;
 	handle->rate = 48000;
 	handle->channels = 2;
-	handle->resample = 1;
+	handle->resample = 0;
 	*_handle = handle;
 	return 0;
 }
@@ -384,7 +384,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 			arg_effect = 1;
 			break;
 		case 'n':
-			arg_resample = 0;
+			arg_resample = 1;
 			break;
 		case 'A':
 			if (strcasecmp(optarg, "sincbest") == 0)

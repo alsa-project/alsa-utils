@@ -108,7 +108,7 @@ static int setparams_stream(struct loopback_handle *lhandle,
 	rrate = 0;
 	snd_pcm_hw_params_get_rate(params, &rrate, 0);
 	if ((int)rrate != lhandle->rate) {
-		logit(LOG_CRIT, "Rate does not match (requested %iHz, get %iHz)\n", lhandle->rate, err);
+		logit(LOG_CRIT, "Rate does not match (requested %iHz, got %iHz, resample %i)\n", lhandle->rate, rrate, lhandle->resample);
 		return -EINVAL;
 	}
 	return 0;
