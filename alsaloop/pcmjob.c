@@ -99,18 +99,20 @@ static int setparams_stream(struct loopback_handle *lhandle,
 		logit(LOG_CRIT, "Channels count (%i) not available for %s: %s\n", lhandle->channels, lhandle->id, snd_strerror(err));
 		return err;
 	}
-	rrate = lhandle->rate;
+	rrate = lhandle->rate_req;
 	err = snd_pcm_hw_params_set_rate_near(handle, params, &rrate, 0);
 	if (err < 0) {
-		logit(LOG_CRIT, "Rate %iHz not available for %s: %s\n", lhandle->rate, lhandle->id, snd_strerror(err));
+		logit(LOG_CRIT, "Rate %iHz not available for %s: %s\n", lhandle->rate_req, lhandle->id, snd_strerror(err));
 		return err;
 	}
 	rrate = 0;
 	snd_pcm_hw_params_get_rate(params, &rrate, 0);
-	if ((int)rrate != lhandle->rate) {
+	lhandle->rate = rrate;
+	if (!lhandle->loopback->src_enable && (int)rrate != lhandle->rate) {
 		logit(LOG_CRIT, "Rate does not match (requested %iHz, got %iHz, resample %i)\n", lhandle->rate, rrate, lhandle->resample);
 		return -EINVAL;
 	}
+	lhandle->pitch = (double)lhandle->rate_req / (double)lhandle->rate;
 	return 0;
 }
 
@@ -245,11 +247,11 @@ static int setparams(struct loopback *loop, snd_pcm_uframes_t bufsize)
 		return err;
 	}
 
-	if ((err = setparams_bufsize(loop->play, p_params, pt_params, bufsize)) < 0) {
+	if ((err = setparams_bufsize(loop->play, p_params, pt_params, bufsize / loop->play->pitch)) < 0) {
 		logit(LOG_CRIT, "Unable to set buffer parameters for %s stream: %s\n", loop->play->id, snd_strerror(err));
 		return err;
 	}
-	if ((err = setparams_bufsize(loop->capt, c_params, ct_params, bufsize)) < 0) {
+	if ((err = setparams_bufsize(loop->capt, c_params, ct_params, bufsize / loop->capt->pitch)) < 0) {
 		logit(LOG_CRIT, "Unable to set buffer parameters for %s stream: %s\n", loop->capt->id, snd_strerror(err));
 		return err;
 	}
@@ -618,6 +620,7 @@ static snd_pcm_sframes_t remove_samples(struct loopback *loop,
 	} else {
 		if (count > play->buf_count)
 			count = play->buf_count;
+		play->buf_count -= count;
 	}
 	return count;
 }
@@ -627,7 +630,7 @@ static int xrun_sync(struct loopback *loop)
 	struct loopback_handle *play = loop->play;
 	struct loopback_handle *capt = loop->capt;
 	snd_pcm_uframes_t fill = get_whole_latency(loop);
-	snd_pcm_sframes_t delay, delayi, pdelay, cdelay, diff;
+	snd_pcm_sframes_t pdelay, cdelay, delay1, pdelay1, cdelay1, diff;
 	int err;
 
       __again:
@@ -681,45 +684,82 @@ static int xrun_sync(struct loopback *loop)
 	}
 	capt->counter = cdelay;
 	play->counter = pdelay;
-	loop->total_queued = 0;
+	if (play->buf != capt->buf)
+		cdelay += capt->buf_count;
+	pdelay += play->buf_count;
+#ifdef USE_SAMPLERATE
+	pdelay += loop->src_out_frames;
+#endif
+	cdelay1 = cdelay * capt->pitch;
+	pdelay1 = pdelay * play->pitch;
+	delay1 = cdelay1 + pdelay1;
+	capt->total_queued = 0;
+	play->total_queued = 0;
 	loop->total_queued_count = 0;
 	loop->pitch_diff = loop->pitch_diff_min = loop->pitch_diff_max = 0;
-	delay = delayi = pdelay + cdelay;
-	if (play->buf != capt->buf)
-		delay += capt->buf_count;
-	delay += play->buf_count;
-#ifdef USE_SAMPLERATE
-	delay += loop->src_out_frames;
-	delayi += loop->src_out_frames;
-#endif
-#if 0
-	printf("s: cdelay = %li, pdelay = %li, delay = %li, delayi = %li, fill = %li, src_out = %li\n",
-		(long)cdelay, (long)pdelay, (long)delay,
-		(long)delayi, (long)fill, (long)loop->src_out_frames);
-	printf("s: cbufcount = %li, pbufcount = %li\n", (long)capt->buf_count, (long)play->buf_count);
-#endif
-	if (delayi > fill) {
+	if (verbose > 6) {
+		snd_output_printf(loop->output,
+			"sync: cdelay=%li(%li), pdelay=%li(%li), fill=%li (delay=%li), src_out=%li\n",
+			(long)cdelay, (long)cdelay1, (long)pdelay, (long)pdelay1,
+			(long)fill, (long)delay1, (long)loop->src_out_frames);
+		snd_output_printf(loop->output,
+			"sync: cbufcount=%li, pbufcount=%li\n",
+			(long)capt->buf_count, (long)play->buf_count);
+	}
+	if (delay1 > fill && capt->counter > 0) {
 		if ((err = snd_pcm_drop(capt->handle)) < 0)
 			return err;
 		if ((err = snd_pcm_prepare(capt->handle)) < 0)
 			return err;
 		if ((err = snd_pcm_start(capt->handle)) < 0)
 			return err;
-		remove_samples(loop, 1, delayi - fill);
+		diff = remove_samples(loop, 1, (delay1 - fill) / capt->pitch);
+		if (verbose > 6)
+			snd_output_printf(loop->output,
+				"sync: capt stop removed %li samples\n", (long)diff);
 		goto __again;
 	}
-	if (delay > fill) {
-		diff = fill > delayi ? play->buf_count - (fill - delayi) : 0;
-		delay -= remove_samples(loop, 0, diff);
+	if (delay1 > fill) {
+		diff = (delay1 - fill) / play->pitch;
+		if (diff > play->buf_count)
+			diff = play->buf_count;
+		if (verbose > 6)
+			snd_output_printf(loop->output,
+				"sync: removing %li playback samples, delay1=%li\n", (long)diff, (long)delay1);
+		diff = remove_samples(loop, 0, diff);
+		pdelay -= diff;
+		pdelay1 = pdelay * play->pitch;
+		delay1 = cdelay1 + pdelay1;
+		if (verbose > 6)
+			snd_output_printf(loop->output,
+				"sync: removed %li playback samples, delay1=%li\n", (long)diff, (long)delay1);
 	}
-	if (delay > fill) {
-		diff = fill > delayi ? capt->buf_count - (fill - delayi) : 0;
-		delay -= remove_samples(loop, 1, diff);
+	if (delay1 > fill) {
+		diff = (delay1 - fill) / capt->pitch;
+		if (diff > capt->buf_count)
+			diff = capt->buf_count;
+		if (verbose > 6)
+			snd_output_printf(loop->output,
+				"sync: removing %li captured samples, delay1=%li\n", (long)diff, (long)delay1);
+		diff -= remove_samples(loop, 1, diff);
+		cdelay -= diff;
+		cdelay1 = cdelay * capt->pitch;
+		delay1 = cdelay1 + pdelay1;		
+		if (verbose > 6)
+			snd_output_printf(loop->output,
+				"sync: removed %li captured samples, delay1=%li\n", (long)diff, (long)delay1);
 	}
 	if (play->xrun_pending) {
 		play->xrun_pending = 0;
-		if (fill > delay && play->buf_count < fill - delay) {
-			diff = fill - delay - play->buf_count;
+		diff = (fill - delay1) / play->pitch;
+		if (verbose > 6)
+			snd_output_printf(loop->output,
+				"sync: xrun_pending, silence filling %li / buf_count=%li\n", (long)diff, play->buf_count);
+		if (fill > delay1 && play->buf_count < diff) {
+			diff = diff - play->buf_count;
+			if (verbose > 6)
+				snd_output_printf(loop->output,
+					"sync: playback silence added %li samples\n", (long)diff);
 			play->buf_pos -= diff;
 			play->buf_pos %= play->buf_size;
 			if ((err = snd_pcm_format_set_silence(play->format, play->buf + play->buf_pos * play->channels, diff)) < 0)
@@ -728,18 +768,43 @@ static int xrun_sync(struct loopback *loop)
 		}
 		if ((err = snd_pcm_prepare(play->handle)) < 0) {
 			logit(LOG_CRIT, "%s prepare failed: %s\n", play->id, snd_strerror(err));
+
 			return err;
 		}
-		delayi = writeit(play);
-		if (delayi > diff)
-			buf_remove(loop, delayi - diff);
+		delay1 = writeit(play);
+		if (verbose > 6)
+			snd_output_printf(loop->output,
+				"sync: playback wrote %li samples\n", (long)delay1);
+		if (delay1 > diff) {
+			buf_remove(loop, delay1 - diff);
+			if (verbose > 6)
+				snd_output_printf(loop->output,
+					"sync: playback buf_remove %li samples\n", (long)(delay1 - diff));
+		}
 		if ((err = snd_pcm_start(play->handle)) < 0) {
 			logit(LOG_CRIT, "%s start failed: %s\n", play->id, snd_strerror(err));
 			return err;
 		}
 	}
-	if (verbose > 5)
+	if (verbose > 5) {
 		snd_output_printf(loop->output, "%s: xrun sync ok\n", loop->id);
+		if (verbose > 6) {
+			if (snd_pcm_delay(capt->handle, &cdelay) < 0)
+				cdelay = -1;
+			if (snd_pcm_delay(play->handle, &pdelay) < 0)
+				pdelay = -1;
+			if (play->buf != capt->buf)
+				cdelay += capt->buf_count;
+			pdelay += play->buf_count;
+#ifdef USE_SAMPLERATE
+			pdelay += loop->src_out_frames;
+#endif
+			cdelay1 = cdelay * capt->pitch;
+			pdelay1 = pdelay * play->pitch;
+			delay1 = cdelay1 + pdelay1;
+			snd_output_printf(loop->output, "%s: sync verify: %li\n", loop->id, delay1);
+		}
+	}
 	return 0;
 }
 
@@ -776,6 +841,46 @@ static int set_rate_shift(struct loopback_handle *lhandle, double pitch)
 		return err;
 	}
 	return 0;
+}
+
+void update_pitch(struct loopback *loop)
+{
+	double pitch = loop->pitch;
+
+#ifdef USE_SAMPLERATE
+	if (loop->sync == SYNC_TYPE_SAMPLERATE) {
+		loop->src_data.src_ratio = (double)1.0 / (pitch *
+				loop->play->pitch * loop->capt->pitch);
+		if (verbose > 2)
+			snd_output_printf(loop->output, "%s: Samplerate src_ratio update1: %.8f\n", loop->id, loop->src_data.src_ratio);
+	} else
+#endif
+	if (loop->sync == SYNC_TYPE_CAPTRATESHIFT) {
+		set_rate_shift(loop->capt, pitch);
+#ifdef USE_SAMPLERATE
+		if (loop->use_samplerate) {
+			loop->src_data.src_ratio = 
+				(double)1.0 /
+					(loop->play->pitch * loop->capt->pitch);
+			if (verbose > 2)
+				snd_output_printf(loop->output, "%s: Samplerate src_ratio update2: %.8f\n", loop->id, loop->src_data.src_ratio);
+		}
+#endif
+	}
+	else if (loop->sync == SYNC_TYPE_PLAYRATESHIFT) {
+		set_rate_shift(loop->play, pitch);
+#ifdef USE_SAMPLERATE
+		if (loop->use_samplerate) {
+			loop->src_data.src_ratio = 
+				(double)1.0 /
+					(loop->play->pitch * loop->capt->pitch);
+			if (verbose > 2)
+				snd_output_printf(loop->output, "%s: Samplerate src_ratio update3: %.8f\n", loop->id, loop->src_data.src_ratio);
+		}
+#endif
+	}
+	if (verbose)
+		snd_output_printf(loop->output, "New pitch for %s: %.8f (min/max samples = %li/%li)\n", loop->id, pitch, loop->pitch_diff_min, loop->pitch_diff_max);
 }
 
 static int get_active(struct loopback_handle *lhandle)
@@ -1002,6 +1107,8 @@ int pcmjob_init(struct loopback *loop)
 #ifdef USE_SAMPLERATE
 	if (loop->sync == SYNC_TYPE_AUTO && loop->src_enable)
 		loop->sync = SYNC_TYPE_SAMPLERATE;
+#else
+	loop->src_enable = 0;
 #endif
 	if (loop->sync == SYNC_TYPE_AUTO)
 		loop->sync = SYNC_TYPE_SIMPLE;
@@ -1035,8 +1142,9 @@ int pcmjob_init(struct loopback *loop)
 static void freeloop(struct loopback *loop)
 {
 #ifdef USE_SAMPLERATE
-	if (loop->src_enable) {
-		src_delete(loop->src_state);
+	if (loop->use_samplerate) {
+		if (loop->src_state)
+			src_delete(loop->src_state);
 		loop->src_state = NULL;
 		free(loop->src_data.data_in);
 		loop->src_data.data_in = NULL;
@@ -1078,6 +1186,7 @@ static void lhandle_start(struct loopback_handle *lhandle)
 	lhandle->buf_pos = 0;
 	lhandle->buf_count = 0;
 	lhandle->counter = 0;
+	lhandle->total_queued = 0;
 }
 
 int pcmjob_start(struct loopback *loop)
@@ -1098,7 +1207,7 @@ int pcmjob_start(struct loopback *loop)
 		err = get_rate(loop->capt);
 		if (err < 0)
 			goto __error;
-		loop->play->rate = loop->capt->rate = err;
+		loop->play->rate_req = loop->capt->rate_req = err;
 		err = get_channels(loop->capt);
 		if (err < 0)
 			goto __error;
@@ -1107,6 +1216,7 @@ int pcmjob_start(struct loopback *loop)
 	loop->pollfd_count = loop->play->ctl_pollfd_count +
 			     loop->capt->ctl_pollfd_count;
 	loop->reinit = 0;
+	loop->use_samplerate = 0;
 	loop->latency = loop->latency_req;
 	if (loop->latency == 0)
 		loop->latency = time_to_frames(loop->play,
@@ -1114,7 +1224,7 @@ int pcmjob_start(struct loopback *loop)
 	if ((err = setparams(loop, loop->latency/2)) < 0)
 		goto __error;
 	if (verbose)
-		showlatency(loop, loop->latency, loop->play->rate);
+		showlatency(loop, loop->latency, loop->play->rate_req);
 	if (loop->play->access == loop->capt->access &&
 	    loop->play->format == loop->capt->format &&
 	    loop->play->rate == loop->capt->rate &&
@@ -1142,6 +1252,10 @@ int pcmjob_start(struct loopback *loop)
 			goto __error;
 		if ((err = init_handle(loop->capt, 1)) < 0)
 			goto __error;
+		if (loop->play->rate_req != loop->play->rate)
+			loop->use_samplerate = 1;
+		if (loop->capt->rate_req != loop->capt->rate)
+			loop->use_samplerate = 1;
 	}
 	if ((err = snd_pcm_poll_descriptors_count(loop->play->handle)) < 0)
 		goto __error;
@@ -1152,7 +1266,22 @@ int pcmjob_start(struct loopback *loop)
 	loop->capt->pollfd_count = err;
 	loop->pollfd_count += err;
 #ifdef USE_SAMPLERATE
-	if (loop->sync == SYNC_TYPE_SAMPLERATE) {
+	if (loop->sync == SYNC_TYPE_SAMPLERATE)
+		loop->use_samplerate = 1;
+	if (loop->use_samplerate && !loop->src_enable) {
+		logit(LOG_CRIT, "samplerate conversion required but disabled\n");
+		loop->use_samplerate = 0;
+		err = -EIO;
+		goto __error;		
+	}
+	if (loop->use_samplerate) {
+		if (loop->capt->format != SND_PCM_FORMAT_S16 ||
+		    loop->play->format != SND_PCM_FORMAT_S16) {
+			logit(LOG_CRIT, "samplerate conversion supports only S16_LE format (%i, %i)\n", loop->play->format, loop->capt->format);
+			loop->use_samplerate = 0;
+			err = -EIO;
+			goto __error;		
+		}
 		loop->src_state = src_new(loop->src_converter_type,
 					  loop->play->channels, &err);
 		loop->src_data.data_in = calloc(1, sizeof(float)*loop->capt->channels*loop->capt->buf_size);
@@ -1173,7 +1302,7 @@ int pcmjob_start(struct loopback *loop)
 		loop->src_state = NULL;
 	}
 #else
-	if (loop->sync == SYNC_TYPE_SAMPLERATE) {
+	if (loop->sync == SYNC_TYPE_SAMPLERATE || loop->use_samplerate) {
 		logit(LOG_CRIT, "alsaloop is compiled without libsamplerate support\n");
 		err = -EIO;
 		goto __error;
@@ -1195,12 +1324,12 @@ int pcmjob_start(struct loopback *loop)
 		logit(LOG_CRIT, "%s: silence error\n", loop->id);
 		goto __error;
 	}
-	loop->pitch = 1;
+	loop->pitch = 1.0;
+	update_pitch(loop);
 	loop->pitch_delta = 1.0 / ((double)loop->capt->rate * 4);
-	loop->total_queued = 0;
 	loop->total_queued_count = 0;
 	loop->pitch_diff = 0;
-	count = get_whole_latency(loop);
+	count = get_whole_latency(loop) / loop->play->pitch;
 	loop->play->buf_count = count;
 	if (loop->play->buf == loop->capt->buf)
 		loop->capt->buf_pos = count;
@@ -1277,23 +1406,30 @@ int pcmjob_pollfds_init(struct loopback *loop, struct pollfd *fds)
 	return idx;
 }
 
-static snd_pcm_sframes_t get_queued_samples(struct loopback *loop)
+static snd_pcm_sframes_t get_queued_playback_samples(struct loopback *loop)
 {
-	snd_pcm_sframes_t pdelay, cdelay, delay;
+	snd_pcm_sframes_t delay;
 	int err;
 
-	if ((err = snd_pcm_delay(loop->play->handle, &pdelay)) < 0)
+	if ((err = snd_pcm_delay(loop->play->handle, &delay)) < 0)
 		return 0;
-	if ((err = snd_pcm_delay(loop->capt->handle, &cdelay)) < 0)
-		return 0;
-	loop->play->last_delay = pdelay;
-	loop->capt->last_delay = cdelay;
-	delay = pdelay + cdelay;
-	delay += loop->capt->buf_count;
+	loop->play->last_delay = delay;
 	delay += loop->play->buf_count;
 #ifdef USE_SAMPLERATE
 	delay += loop->src_out_frames;
 #endif
+	return delay;
+}
+
+static snd_pcm_sframes_t get_queued_capture_samples(struct loopback *loop)
+{
+	snd_pcm_sframes_t delay;
+	int err;
+
+	if ((err = snd_pcm_delay(loop->capt->handle, &delay)) < 0)
+		return 0;
+	loop->capt->last_delay = delay;
+	delay += loop->capt->buf_count;
 	return delay;
 }
 
@@ -1363,7 +1499,6 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 	struct loopback_handle *capt = loop->capt;
 	unsigned short prevents, crevents, events;
 	snd_pcm_uframes_t ccount, pcount;
-	snd_pcm_sframes_t queued;
 	int err, loopcount = 10, idx;
 
 	if (verbose > 11)
@@ -1463,8 +1598,8 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 	    play->counter >= play->sync_point &&
 	    capt->counter >= play->sync_point) {
 		snd_pcm_sframes_t diff, lat = get_whole_latency(loop);
-		double pitch;
-		diff = ((double)loop->total_queued /
+		diff = ((double)(((double)play->total_queued * play->pitch) +
+				 ((double)capt->total_queued * capt->pitch)) /
 			(double)loop->total_queued_count) - lat;
 		/* FIXME: this algorithm may be slightly better */
 		if (verbose > 3)
@@ -1472,12 +1607,12 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 		if (diff > 0) {
 			if (diff == loop->pitch_diff)
 				loop->pitch += loop->pitch_delta;
-			if (diff > loop->pitch_diff)
+			else if (diff > loop->pitch_diff)
 				loop->pitch += loop->pitch_delta*2;
 		} else if (diff < 0) {
 			if (diff == loop->pitch_diff)
 				loop->pitch -= loop->pitch_delta;
-			if (diff < loop->pitch_diff)
+			else if (diff < loop->pitch_diff)
 				loop->pitch -= loop->pitch_delta*2;
 		}
 		loop->pitch_diff = diff;
@@ -1485,31 +1620,25 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 			loop->pitch_diff_min = diff;
 		if (loop->pitch_diff_max < diff)
 			loop->pitch_diff_max = diff;
-		pitch = loop->pitch;
-#ifdef USE_SAMPLERATE
-		if (loop->sync == SYNC_TYPE_SAMPLERATE)
-			loop->src_data.src_ratio = (double)1.0 / pitch;
-		else
-#endif
-		if (loop->sync == SYNC_TYPE_CAPTRATESHIFT)
-			set_rate_shift(capt, pitch);
-		if (loop->sync == SYNC_TYPE_PLAYRATESHIFT)
-			set_rate_shift(play, pitch);
-		if (verbose)
-			snd_output_printf(loop->output, "New pitch for %s: %.8f (min/max samples = %li/%li)\n", loop->id, pitch, loop->pitch_diff_min, loop->pitch_diff_max);
+		update_pitch(loop);
 		play->counter -= play->sync_point;
 		capt->counter -= play->sync_point;
-		loop->total_queued = 0;
+		play->total_queued = 0;
+		capt->total_queued = 0;
 		loop->total_queued_count = 0;
 	}
 	if (loop->sync != SYNC_TYPE_NONE) {
-		queued = get_queued_samples(loop);
+		snd_pcm_sframes_t pqueued, cqueued;
+		pqueued = get_queued_playback_samples(loop);
+		cqueued = get_queued_capture_samples(loop);
 		if (verbose > 4)
-			snd_output_printf(loop->output, "%s: queued %li samples\n", loop->id, queued);
-		if (queued > 0) {
-			loop->total_queued += queued;
+			snd_output_printf(loop->output, "%s: queued %li/%li samples\n", loop->id, pqueued, cqueued);
+		if (pqueued > 0)
+			loop->play->total_queued += pqueued;
+		if (cqueued > 0)
+			loop->capt->total_queued += cqueued;
+		if (pqueued > 0 || cqueued > 0)
 			loop->total_queued_count += 1;
-		}
 	}
 	if (verbose > 12) {
 		snd_pcm_sframes_t pdelay, cdelay;

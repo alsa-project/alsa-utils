@@ -79,6 +79,7 @@ struct loopback_handle {
 	snd_pcm_access_t access;
 	snd_pcm_format_t format;
 	unsigned int rate;
+	unsigned int rate_req;
 	unsigned int channels;
 	unsigned int buffer_size;
 	unsigned int period_size;
@@ -100,6 +101,8 @@ struct loopback_handle {
 	unsigned long long counter;
 	unsigned long sync_point;	/* in samples */
 	snd_pcm_sframes_t last_delay;
+	double pitch;
+	snd_pcm_uframes_t total_queued;
 	/* control */
 	snd_ctl_t *ctl;
 	unsigned int ctl_pollfd_count;
@@ -135,15 +138,15 @@ struct loopback {
 	snd_pcm_sframes_t pitch_diff;
 	snd_pcm_sframes_t pitch_diff_min;
 	snd_pcm_sframes_t pitch_diff_max;
-	snd_pcm_uframes_t total_queued;
 	unsigned int total_queued_count;
 	snd_timestamp_t tstamp_start;
 	snd_timestamp_t tstamp_end;
 	/* control mixer */
 	struct loopback_mixer *controls;
 	/* sample rate */
+	unsigned int use_samplerate:1;
 #ifdef USE_SAMPLERATE
-	unsigned int src_enable: 1;
+	unsigned int src_enable:1;
 	int src_converter_type;
 	SRC_STATE *src_state;
 	SRC_DATA src_data;

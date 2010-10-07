@@ -79,7 +79,7 @@ static int create_loopback_handle(struct loopback_handle **_handle,
 	handle->id = strdup(idbuf);
 	handle->access = SND_PCM_ACCESS_RW_INTERLEAVED;
 	handle->format = SND_PCM_FORMAT_S16_LE;
-	handle->rate = 48000;
+	handle->rate = handle->rate_req = 48000;
 	handle->channels = 2;
 	handle->resample = 0;
 	*_handle = handle;
@@ -311,7 +311,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 	int arg_nblock = 0;
 	int arg_effect = 0;
 	int arg_resample = 0;
-	int arg_samplerate = 0;
+	int arg_samplerate = SRC_SINC_FASTEST + 1;
 	int arg_sync = SYNC_TYPE_AUTO;
 	int arg_slave = SLAVE_TYPE_AUTO;
 	int arg_thread = 0;
@@ -474,7 +474,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 			exit(EXIT_FAILURE);
 		}
 		play->format = capt->format = arg_format;
-		play->rate = capt->rate = arg_rate;
+		play->rate = play->rate_req = capt->rate = capt->rate_req = arg_rate;
 		play->channels = capt->channels = arg_channels;
 		play->buffer_size_req = capt->buffer_size_req = arg_buffer_size;
 		play->period_size_req = capt->period_size_req = arg_period_size;
