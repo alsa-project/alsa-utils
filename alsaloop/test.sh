@@ -2,6 +2,7 @@
 
 #DBG="gdb --args "
 #DBG="strace"
+#DBG="valgrind --leak-check=full"
 CFGFILE="/tmp/alsaloop.test.cfg"
 
 test1() {
@@ -35,7 +36,8 @@ cat > $CFGFILE <<EOF
 -C hw:1,0,0 -P plug:dmix:0 --tlatency 50000 --thread 0 \
     --mixer "name='Master Playback Volume'@name='Master Playback Volume'" \
     --mixer "name='Master Playback Switch'@name='Master Playback Switch'" \
-    --mixer "name='PCM Playback Volume'"
+    --mixer "name='PCM Playback Volume'" \
+    --ossmixer "name=Master@VOLUME"
 -C hw:1,0,1 -P plug:dmix:0 --tlatency 50000 --thread 1
 -C hw:1,0,2 -P plug:dmix:0 --tlatency 50000 --thread 2
 -C hw:1,0,3 -P plug:dmix:0 --tlatency 50000 --thread 3
@@ -56,10 +58,24 @@ test4() {
     --mixer "name='PCM Playback Volume'"
 }
 
+test5() {
+  echo "TEST5"
+cat > $CFGFILE <<EOF
+-C hw:1,0,0 -P plughw:0,0 --tlatency 50000 --thread 1 \
+    --mixer "name='Master Playback Volume'@name='Master Playback Volume'" \
+    --mixer "name='Master Playback Switch'@name='Master Playback Switch'" \
+    --mixer "name='PCM Playback Volume'" \
+    --ossmixer "name=Master@VOLUME"
+-C hw:1,0,1 -P plughw:0,1 --tlatency 50000 --thread 2
+EOF
+  $DBG ./alsaloop --config $CFGFILE
+}
+
 case "$1" in
 test1) test1 ;;
 test2) test2 ;;
 test3) test3 ;;
 test4) test4 ;;
+test5) test5 ;;
 *) test1 ;;
 esac

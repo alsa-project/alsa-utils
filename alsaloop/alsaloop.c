@@ -47,6 +47,8 @@ int daemonize = 0;
 int use_syslog = 0;
 struct loopback **loopbacks = NULL;
 int loopbacks_count = 0;
+char **my_argv = NULL;
+int my_argc = 0;
 
 static void my_exit(struct loopback_thread *thread, int exitcode)
 {
@@ -575,9 +577,6 @@ static int parse_config_file(const char *file, snd_output_t *output)
 	int argc, c, err = 0;
 	char **argv;
 
-	argv = malloc(sizeof(char *) * MAX_ARGS);
-	if (argv == NULL)
-		return -ENOMEM;
 	fp = fopen(file, "r");
 	if (fp == NULL) {
 		logit(LOG_CRIT, "Unable to open file '%s': %s\n", file, strerror(errno));
@@ -587,8 +586,13 @@ static int parse_config_file(const char *file, snd_output_t *output)
 		if (fgets(line, sizeof(line)-1, fp) == NULL)
 			break;
 		line[sizeof(line)-1] = '\0';
+		my_argv = realloc(my_argv, my_argc + MAX_ARGS * sizeof(char *));
+		if (my_argv == NULL)
+			return -ENOMEM;
+		argv = my_argv + my_argc;
 		argc = 0;
 		argv[argc++] = strdup("<prog>");
+		my_argc++;
 		str = line;
 		while (*str) {
 			ptr = word;
@@ -607,25 +611,30 @@ static int parse_config_file(const char *file, snd_output_t *output)
 					*ptr++ = *str++;
 			}
 			if (ptr != word) {
+				if (*(ptr-1) == '\n')
+					ptr--;
 				*ptr = '\0';
+				if (argc >= MAX_ARGS) {
+					logit(LOG_CRIT, "Too many arguments.");
+					goto __error;
+				}
 				argv[argc++] = strdup(word);
+				my_argc++;
 			}
 		}
 		/* erase runtime variables for getopt */
 		optarg = NULL;
 		optind = opterr = 1;
-		optopt = 63;
+		optopt = '?';
 
 		err = parse_config(argc, argv, output);
 	      __next:
-		while (argc > 0)
-			free(argv[--argc]);
 		if (err < 0)
 			break;
 		err = 0;
 	}
+      __error:
 	fclose(fp);
-	free(argv);
 
 	return err;
 }
@@ -656,7 +665,7 @@ static void thread_job1(void *_data)
 		pfds_count += thread->loopbacks[i]->pollfd_count;
 	}
 	pfds = calloc(pfds_count, sizeof(struct pollfd));
-	if (pfds == NULL) {
+	if (pfds == NULL || pfds_count <= 0) {
 		logit(LOG_CRIT, "Poll FDs allocation failed.\n");
 		my_exit(thread, EXIT_FAILURE);
 	}
@@ -723,6 +732,9 @@ int main(int argc, char *argv[])
 		logit(LOG_CRIT, "Unable to parse arguments or configuration...\n");
 		exit(EXIT_FAILURE);
 	}
+	while (my_argc > 0)
+		free(my_argv[--my_argc]);
+	free(my_argv);
 
 	if (loopbacks_count <= 0) {
 		logit(LOG_CRIT, "No loopback defined...\n");

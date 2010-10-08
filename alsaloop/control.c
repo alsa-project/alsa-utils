@@ -164,6 +164,10 @@ static int control_init1(struct loopback_handle *lhandle,
 
 	snd_ctl_elem_info_set_id(ctl->info, ctl->id);
 	snd_ctl_elem_value_set_id(ctl->value, ctl->id);
+	if (lhandle->ctl == NULL) {
+		logit(LOG_WARNING, "Unable to read control info for '%s'\n", id_str(ctl->id));
+		return -EIO;
+	}
 	err = snd_ctl_elem_info(lhandle->ctl, ctl->info);
 	if (err < 0) {
 		logit(LOG_WARNING, "Unable to read control info '%s': %s\n", id_str(ctl->id), snd_strerror(err));

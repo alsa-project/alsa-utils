@@ -1195,6 +1195,16 @@ int pcmjob_start(struct loopback *loop)
 	snd_pcm_uframes_t count;
 	int err;
 
+	loop->pollfd_count = loop->play->ctl_pollfd_count +
+			     loop->capt->ctl_pollfd_count;
+	if ((err = snd_pcm_poll_descriptors_count(loop->play->handle)) < 0)
+		goto __error;
+	loop->play->pollfd_count = err;
+	loop->pollfd_count += err;
+	if ((err = snd_pcm_poll_descriptors_count(loop->capt->handle)) < 0)
+		goto __error;
+	loop->capt->pollfd_count = err;
+	loop->pollfd_count += err;
 	if (loop->slave == SLAVE_TYPE_ON) {
 		err = get_active(loop->capt);
 		if (err < 0)
@@ -1214,8 +1224,6 @@ int pcmjob_start(struct loopback *loop)
 			goto __error;
 		loop->play->channels = loop->capt->channels = err;
 	}
-	loop->pollfd_count = loop->play->ctl_pollfd_count +
-			     loop->capt->ctl_pollfd_count;
 	loop->reinit = 0;
 	loop->use_samplerate = 0;
 	loop->latency = loop->latency_req;
@@ -1258,14 +1266,6 @@ int pcmjob_start(struct loopback *loop)
 		if (loop->capt->rate_req != loop->capt->rate)
 			loop->use_samplerate = 1;
 	}
-	if ((err = snd_pcm_poll_descriptors_count(loop->play->handle)) < 0)
-		goto __error;
-	loop->play->pollfd_count = err;
-	loop->pollfd_count += err;
-	if ((err = snd_pcm_poll_descriptors_count(loop->capt->handle)) < 0)
-		goto __error;
-	loop->capt->pollfd_count = err;
-	loop->pollfd_count += err;
 #ifdef USE_SAMPLERATE
 	if (loop->sync == SYNC_TYPE_SAMPLERATE)
 		loop->use_samplerate = 1;
@@ -1463,9 +1463,11 @@ static int handle_ctl_events(struct loopback_handle *lhandle,
 		if (lhandle == lhandle->loopback->play)
 			goto __ctl_check;
 		if (verbose > 6)
-			snd_output_printf(lhandle->loopback->output, "ctl event!!!! %s\n", snd_ctl_event_elem_get_name(ev));
+			snd_output_printf(lhandle->loopback->output, "%s: ctl event!!!! %s\n", lhandle->id, snd_ctl_event_elem_get_name(ev));
 		if (ctl_event_check(lhandle->ctl_active, ev)) {
 			err = get_active(lhandle);
+			if (verbose > 7)
+				snd_output_printf(lhandle->loopback->output, "%s: ctl event active %i\n", lhandle->id, err);
 			if (err != lhandle->loopback->running)
 				goto __restart;
 		} else if (ctl_event_check(lhandle->ctl_format, ev)) {
