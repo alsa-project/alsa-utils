@@ -65,16 +65,25 @@ struct loopback_control {
 };
 
 struct loopback_mixer {
-	unsigned int skip: 1;
+	unsigned int skip:1;
 	struct loopback_control src;
 	struct loopback_control dst;
 	struct loopback_mixer *next;
+};
+
+struct loopback_ossmixer {
+	unsigned int skip:1;
+	const char *alsa_id;
+	int alsa_index;
+	const char *oss_id;
+	struct loopback_ossmixer *next;
 };
 
 struct loopback_handle {
 	struct loopback *loopback;
 	char *device;
 	char *id;
+	int card_number;
 	snd_pcm_t *handle;
 	snd_pcm_access_t access;
 	snd_pcm_format_t format;
@@ -143,6 +152,7 @@ struct loopback {
 	snd_timestamp_t tstamp_end;
 	/* control mixer */
 	struct loopback_mixer *controls;
+	struct loopback_ossmixer *oss_controls;
 	/* sample rate */
 	unsigned int use_samplerate:1;
 #ifdef USE_SAMPLERATE

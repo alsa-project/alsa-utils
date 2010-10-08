@@ -205,6 +205,34 @@ static int copy_value(struct loopback_control *dst,
 	return 0;
 }
 
+static int oss_set(struct loopback *loop,
+		   struct loopback_ossmixer *ossmix,
+		   int enable)
+{
+	char buf[128], file[128];
+	int fd;
+
+	if (loop->capt->card_number < 0)
+		return 0;
+	if (!enable) {
+		sprintf(buf, "%s \"\" 0\n", ossmix->oss_id);
+	} else {
+		sprintf(buf, "%s \"%s\" %i\n", ossmix->oss_id, ossmix->alsa_id, ossmix->alsa_index);
+	}
+	sprintf(file, "/proc/asound/card%i/oss_mixer", loop->capt->card_number);
+	if (verbose)
+		snd_output_printf(loop->output, "%s: Initialize OSS volume %s: %s", loop->id, file, buf);
+	fd = open(file, O_WRONLY);
+	if (fd >= 0 && write(fd, buf, strlen(buf)) == strlen(buf)) {
+		close(fd);
+		return 0;
+	}
+	if (fd >= 0)
+		close(fd);
+	logit(LOG_INFO, "%s: Unable to initialize OSS Mixer ID '%s'\n", loop->id, ossmix->oss_id);
+	return -1;
+}
+
 static int control_init2(struct loopback *loop,
 			 struct loopback_mixer *mix)
 {
@@ -280,12 +308,15 @@ static int control_init2(struct loopback *loop,
 int control_init(struct loopback *loop)
 {
 	struct loopback_mixer *mix;
+	struct loopback_ossmixer *ossmix;
 	int err;
 
+	for (ossmix = loop->oss_controls; ossmix; ossmix = ossmix->next)
+		oss_set(loop, ossmix, 0);
 	for (mix = loop->controls; mix; mix = mix->next) {
 		err = control_init1(loop->play, &mix->src);
 		if (err < 0) {
-			logit(LOG_WARNING, "Disabling playback control '%s'\n", id_str(mix->src.id));
+			logit(LOG_WARNING, "%s: Disabling playback control '%s'\n", loop->id, id_str(mix->src.id));
 			mix->skip = 1;
 			continue;
 		}
@@ -293,22 +324,35 @@ int control_init(struct loopback *loop)
 		if (err < 0)
 			return err;
 	}
+	for (ossmix = loop->oss_controls; ossmix; ossmix = ossmix->next) {
+		err = oss_set(loop, ossmix, 1);
+		if (err < 0) {
+			ossmix->skip = 1;
+			logit(LOG_WARNING, "%s: Disabling OSS mixer ID '%s'\n", loop->id, ossmix->oss_id);
+		}
+	}
 	return 0;
 }
 
 int control_done(struct loopback *loop)
 {
 	struct loopback_mixer *mix;
+	struct loopback_ossmixer *ossmix;
 	int err;
 
 	if (loop->capt->ctl == NULL)
 		return 0;
+	for (ossmix = loop->oss_controls; ossmix; ossmix = ossmix->next) {
+		err = oss_set(loop, ossmix, 0);
+		if (err < 0)
+			logit(LOG_WARNING, "%s: Unable to remove OSS control '%s'\n", loop->id, ossmix->oss_id);
+	}
 	for (mix = loop->controls; mix; mix = mix->next) {
 		if (mix->skip)
 			continue;
 		err = snd_ctl_elem_remove(loop->capt->ctl, mix->dst.id);
 		if (err < 0)
-			logit(LOG_WARNING, "Unable to remove control '%s': %s\n", id_str(mix->dst.id), snd_strerror(err));
+			logit(LOG_WARNING, "%s: Unable to remove control '%s': %s\n", loop->id, id_str(mix->dst.id), snd_strerror(err));
 	}
 	return 0;
 }

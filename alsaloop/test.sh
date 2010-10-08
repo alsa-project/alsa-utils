@@ -10,7 +10,9 @@ test1() {
     --tlatency 50000 \
     --mixer "name='Master Playback Volume'@name='Master Playback Volume'" \
     --mixer "name='Master Playback Switch'@name='Master Playback Switch'" \
-    --mixer "name='PCM Playback Volume'"
+    --mixer "name='PCM Playback Volume'" \
+    --ossmixer "Master@VOLUME" \
+    --ossmixer "PCM@PCM"
 }
 
 test2() {

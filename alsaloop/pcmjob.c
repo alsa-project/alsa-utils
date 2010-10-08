@@ -1022,6 +1022,7 @@ static int openit(struct loopback_handle *lhandle)
 	device = snd_pcm_info_get_device(info);
 	subdevice = snd_pcm_info_get_subdevice(info);
 	snd_pcm_info_free(info);
+	lhandle->card_number = card;
 	lhandle->ctl = NULL;
 	if (card >= 0) {
 		char name[16];

@@ -153,6 +153,22 @@ Known attributes:
   numid     - control ID numid
 
 .TP
+\fI\-O <ossmixid>\fP | \fI\-\-ossmixer=<midid>\fP
+
+Redirect mixer control from the OSS Mixer emulation layer (capture card)
+to the ALSA layer (capture card). Format of \fIossmixid\fP is
+ALSAID[,INDEX]@OSSID:
+
+  "Master@VOLUME"
+  "PCM,1@ALTPCM"
+
+Known OSS attributes:
+
+  VOLUME, BASS, TREBLE, SYNTH, PCM, SPEAKER, LINE, MIC, CD, IMIX, ALTPCM,
+  RECLEV, IGAIN, OGAIN, LINE1, LINE2, LINE3, DIGITAL1, DIGITAL2, DIGITAL3,
+  PHONEIN, PHONEOUT, VIDEO, RADIO, MONITOR
+
+.TP
 \fI\-v\fP | \fI\-\-verbose\fP
 
 Verbose mode. Use multiple times to increase verbosity.

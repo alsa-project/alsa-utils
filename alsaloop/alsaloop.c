@@ -164,7 +164,9 @@ void help(void)
 "-a,--slave     stream parameters slave mode (0=auto, 1=on, 2=off)\n"
 "-T,--thread    thread number (-1 = create unique)\n"
 "-m,--mixer	redirect mixer, argument is:\n"
-"			SRC_SLAVE_ID(PLAYBACK)@DST_SLAVE_ID(CAPTURE)\n"
+"		    SRC_SLAVE_ID(PLAYBACK)[@DST_SLAVE_ID(CAPTURE)]\n"
+"-O,--ossmixer	rescan and redirect oss mixer, argument is:\n"
+"		    ALSA_ID@OSS_ID  (for example: \"Master@VOLUME\")\n"
 "-e,--effect    apply an effect (bandpass filter sweep)\n"
 "-v,--verbose   verbose mode (more -v means more verbose)\n"
 );
@@ -266,6 +268,46 @@ static int add_mixers(struct loopback *loop,
 	return 0;
 }
 
+static int add_oss_mixers(struct loopback *loop,
+			  char **mixers,
+			  int mixers_count)
+{
+	struct loopback_ossmixer *mixer, *last = NULL;
+	char *str1, *str2;
+
+	while (mixers_count > 0) {
+		mixer = calloc(1, sizeof(*mixer));
+		if (mixer == NULL)
+			return -ENOMEM;
+		if (last)
+			last->next = mixer;
+		else
+			loop->oss_controls = mixer;
+		last = mixer;
+		str1 = strchr(*mixers, ',');
+		if (str1)
+			*str1 = '\0';
+		str2 = strchr(str1 ? str1 + 1 : *mixers, '@');
+		if (str2)
+			*str2 = '\0';
+		mixer->alsa_id = strdup(*mixers);
+		if (str1)
+			mixer->alsa_index = atoi(str1);
+		mixer->oss_id = strdup(str2 ? str2 + 1 : *mixers);
+		if (mixer->alsa_id == NULL || mixer->oss_id == NULL) {
+			logit(LOG_CRIT, "Not enough memory");
+			return -ENOMEM;
+		}
+		if (str1)
+			*str1 = ',';
+		if (str2)
+			*str2 = ',';
+		mixers++;
+		mixers_count--;
+	}
+	return 0;
+}
+
 static int parse_config_file(const char *file, snd_output_t *output);
 
 static int parse_config(int argc, char *argv[], snd_output_t *output)
@@ -294,6 +336,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 		{"slave", 1, NULL, 'a'},
 		{"thread", 1, NULL, 'T'},
 		{"mixer", 1, NULL, 'm'},
+		{"ossmixer", 1, NULL, 'O'},
 		{NULL, 0, NULL, 0},
 	};
 	int err, morehelp;
@@ -318,11 +361,15 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 	struct loopback *loop = NULL;
 	char *arg_mixers[MAX_MIXERS];
 	int arg_mixers_count = 0;
+	char *arg_ossmixers[MAX_MIXERS];
+	int arg_ossmixers_count = 0;
 
 	morehelp = 0;
 	while (1) {
 		int c;
-		if ((c = getopt_long(argc, argv, "hdg:P:C:l:t:F:f:c:r:s:benvA:S:a:m:T:", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv,
+				"hdg:P:C:l:t:F:f:c:r:s:benvA:S:a:m:T:O:",
+				long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
@@ -445,6 +492,13 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 			}
 			arg_mixers[arg_mixers_count++] = optarg;
 			break;
+		case 'O':
+			if (arg_ossmixers_count >= MAX_MIXERS) {
+				logit(LOG_CRIT, "Maximum redirected mixer controls reached (max %i)\n", (int)MAX_MIXERS);
+				exit(EXIT_FAILURE);
+			}
+			arg_ossmixers[arg_ossmixers_count++] = optarg;
+			break;
 		case 'v':
 			verbose++;
 			break;
@@ -488,6 +542,11 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 		err = add_mixers(loop, arg_mixers, arg_mixers_count);
 		if (err < 0) {
 			logit(LOG_CRIT, "Unable to add mixer controls.\n");
+			exit(EXIT_FAILURE);
+		}
+		err = add_oss_mixers(loop, arg_ossmixers, arg_ossmixers_count);
+		if (err < 0) {
+			logit(LOG_CRIT, "Unable to add ossmixer controls.\n");
 			exit(EXIT_FAILURE);
 		}
 #ifdef USE_SAMPLERATE
