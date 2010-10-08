@@ -94,8 +94,10 @@ static int list_verb_device_status(snd_use_case_mgr_t *uc_mgr)
 	int i, enabled, num;
 
 	verb = snd_use_case_get_verb(uc_mgr);
-	if (verb == NULL)
+	if (verb == NULL) {
+		printf(" no verb currently enabled.\n");
 		return -ENODEV;
+	}
 
 	num = snd_use_case_get_device_list(uc_mgr, verb, &device_list);
 	if (num <= 0) {
