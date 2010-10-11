@@ -66,6 +66,7 @@ static void my_exit(struct loopback_thread *thread, int exitcode)
 
 static int create_loopback_handle(struct loopback_handle **_handle,
 				  const char *device,
+				  const char *ctldev,
 				  const char *id)
 {
 	char idbuf[1024];
@@ -77,6 +78,15 @@ static int create_loopback_handle(struct loopback_handle **_handle,
 	if (device == NULL)
 		device = "hw:0,0";
 	handle->device = strdup(device);
+	if (handle->device == NULL)
+		return -ENOMEM;
+	if (ctldev) {
+		handle->ctldev = strdup(ctldev);
+		if (handle->ctldev == NULL)
+			return -ENOMEM;
+	} else {
+		handle->ctldev = NULL;
+	}
 	snprintf(idbuf, sizeof(idbuf)-1, "%s %s", id, device);
 	idbuf[sizeof(idbuf)-1] = '\0';
 	handle->id = strdup(idbuf);
@@ -150,6 +160,8 @@ void help(void)
 "-d,--daemonize daemonize the main process and use syslog for errors\n"
 "-P,--pdevice   playback device\n"
 "-C,--cdevice   capture device\n"
+"-X,--pctl      playback ctl device\n"
+"-Y,--cctl      capture ctl device\n"
 "-l,--latency   requested latency in frames\n"
 "-t,--tlatency  requested latency in usec (1/1000000sec)\n"
 "-f,--format    sample format\n"
@@ -323,6 +335,8 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 		{"daemonize", 0, NULL, 'd'},
 		{"pdevice", 1, NULL, 'P'},
 		{"cdevice", 1, NULL, 'C'},
+		{"pctl", 1, NULL, 'X'},
+		{"cctl", 1, NULL, 'Y'},
 		{"latency", 1, NULL, 'l'},
 		{"tlatency", 1, NULL, 't'},
 		{"format", 1, NULL, 'f'},
@@ -348,6 +362,8 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 	char *arg_config = NULL;
 	char *arg_pdevice = NULL;
 	char *arg_cdevice = NULL;
+	char *arg_pctl = NULL;
+	char *arg_cctl = NULL;
 	unsigned int arg_latency_req = 0;
 	unsigned int arg_latency_reqtime = 10000;
 	snd_pcm_format_t arg_format = SND_PCM_FORMAT_S16_LE;
@@ -373,7 +389,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 	while (1) {
 		int c;
 		if ((c = getopt_long(argc, argv,
-				"hdg:P:C:l:t:F:f:c:r:s:benvA:S:a:m:T:O:w:",
+				"hdg:P:C:X:Y:l:t:F:f:c:r:s:benvA:S:a:m:T:O:w:",
 				long_option, NULL)) < 0)
 			break;
 		switch (c) {
@@ -393,6 +409,12 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 			break;
 		case 'C':
 			arg_cdevice = strdup(optarg);
+			break;
+		case 'X':
+			arg_pctl = strdup(optarg);
+			break;
+		case 'Y':
+			arg_cctl = strdup(optarg);
 			break;
 		case 'l':
 			err = atoi(optarg);
@@ -521,12 +543,12 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 	if (arg_config == NULL) {
 		struct loopback_handle *play;
 		struct loopback_handle *capt;
-		err = create_loopback_handle(&play, arg_pdevice, "playback");
+		err = create_loopback_handle(&play, arg_pdevice, arg_pctl, "playback");
 		if (err < 0) {
 			logit(LOG_CRIT, "Unable to create playback handle.\n");
 			exit(EXIT_FAILURE);
 		}
-		err = create_loopback_handle(&capt, arg_cdevice, "capture");
+		err = create_loopback_handle(&capt, arg_cdevice, arg_cctl, "capture");
 		if (err < 0) {
 			logit(LOG_CRIT, "Unable to create capture handle.\n");
 			exit(EXIT_FAILURE);

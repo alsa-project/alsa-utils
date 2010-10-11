@@ -1063,14 +1063,17 @@ static int openit(struct loopback_handle *lhandle)
 	snd_pcm_info_free(info);
 	lhandle->card_number = card;
 	lhandle->ctl = NULL;
-	if (card >= 0) {
-		char name[16];
-		sprintf(name, "hw:%i", card);
+	if (card >= 0 || lhandle->ctldev) {
+		char name[16], *dev = lhandle->ctldev;
+		if (dev == NULL) {
+			sprintf(name, "hw:%i", card);
+			dev = name;
+		}
 		pcm_open_lock();
-		err = snd_ctl_open(&lhandle->ctl, name, SND_CTL_NONBLOCK);
+		err = snd_ctl_open(&lhandle->ctl, dev, SND_CTL_NONBLOCK);
 		pcm_open_unlock();
 		if (err < 0) {
-			logit(LOG_CRIT, "%s [%s] ctl open error: %s\n", lhandle->id, name, snd_strerror(err));
+			logit(LOG_CRIT, "%s [%s] ctl open error: %s\n", lhandle->id, dev, snd_strerror(err));
 			lhandle->ctl = NULL;
 		}
 		if (lhandle->ctl)

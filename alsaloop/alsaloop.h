@@ -84,6 +84,7 @@ struct loopback_ossmixer {
 struct loopback_handle {
 	struct loopback *loopback;
 	char *device;
+	char *ctldev;
 	char *id;
 	int card_number;
 	snd_pcm_t *handle;
