@@ -31,9 +31,11 @@
 #include <sys/time.h>
 #include <math.h>
 #include <syslog.h>
+#include <pthread.h>
 #include "alsaloop.h"
 
 static int set_rate_shift(struct loopback_handle *lhandle, double pitch);
+static int get_rate(struct loopback_handle *lhandle);
 
 #define SYNCTYPE(v) [SYNC_TYPE_##v] = #v
 
@@ -56,6 +58,21 @@ static const char *src_types[] = {
 	SRCTYPE(LINEAR)
 };
 
+static pthread_mutex_t pcm_open_mutex =
+                                PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+
+static inline void pcm_open_lock(void)
+{
+	if (workarounds & WORKAROUND_SERIALOPEN)
+	        pthread_mutex_lock(&pcm_open_mutex);
+}
+ 
+static inline void pcm_open_unlock(void)
+{
+	if (workarounds & WORKAROUND_SERIALOPEN)
+	        pthread_mutex_unlock(&pcm_open_mutex);
+}
+
 static inline snd_pcm_uframes_t get_whole_latency(struct loopback *loop)
 {
 	return loop->latency;
@@ -76,7 +93,7 @@ static int setparams_stream(struct loopback_handle *lhandle,
 
 	err = snd_pcm_hw_params_any(handle, params);
 	if (err < 0) {
-		logit(LOG_CRIT, "Broken configuration for %s PCM: no configurations available: %s\n", snd_strerror(err), lhandle->id);
+		logit(LOG_CRIT, "Broken configuration for %s PCM: no configurations available: %s\n", lhandle->id, snd_strerror(err));
 		return err;
 	}
 	err = snd_pcm_hw_params_set_rate_resample(handle, params, lhandle->resample);
@@ -153,6 +170,8 @@ static int setparams_bufsize(struct loopback_handle *lhandle,
 		goto __again;
 	}
 	snd_pcm_hw_params_get_buffer_size(params, &periodsize);
+	if (verbose > 6)
+		snd_output_printf(lhandle->loopback->output, "%s: buffer_size=%li\n", lhandle->id, periodsize);
 	if (lhandle->period_size_req > 0)
 		periodsize = lhandle->period_size_req;
 	else
@@ -163,6 +182,8 @@ static int setparams_bufsize(struct loopback_handle *lhandle,
 		goto __again;
 	}
 	snd_pcm_hw_params_get_period_size(params, &periodsize, NULL);
+	if (verbose > 6)
+		snd_output_printf(lhandle->loopback->output, "%s: period_size=%li\n", lhandle->id, periodsize);
 	if (periodsize != bufsize)
 		bufsize = periodsize;
 	snd_pcm_hw_params_get_buffer_size(params, &buffersize);
@@ -175,11 +196,12 @@ static int setparams_bufsize(struct loopback_handle *lhandle,
 
 static int setparams_set(struct loopback_handle *lhandle,
 			 snd_pcm_hw_params_t *params,
-			 snd_pcm_sw_params_t *swparams)
+			 snd_pcm_sw_params_t *swparams,
+			 snd_pcm_uframes_t bufsize)
 {
 	snd_pcm_t *handle = lhandle->handle;
 	int err;
-	snd_pcm_uframes_t val, val1;
+	snd_pcm_uframes_t val, period_size, buffer_size;
 
 	err = snd_pcm_hw_params(handle, params);
 	if (err < 0) {
@@ -196,21 +218,29 @@ static int setparams_set(struct loopback_handle *lhandle,
 		logit(LOG_CRIT, "Unable to set start threshold mode for %s: %s\n", lhandle->id, snd_strerror(err));
 		return err;
 	}
-	snd_pcm_hw_params_get_period_size(params, &val, NULL);
-	snd_pcm_hw_params_get_buffer_size(params, &val1);
+	snd_pcm_hw_params_get_period_size(params, &period_size, NULL);
+	snd_pcm_hw_params_get_buffer_size(params, &buffer_size);
 	if (lhandle->nblock) {
 		if (lhandle == lhandle->loopback->play) {
-			val = val1 - (2 * val - 4);
+			val = buffer_size - (2 * period_size - 4);
 		} else {
 			val = 4;
 		}
+		if (verbose > 6)
+			snd_output_printf(lhandle->loopback->output, "%s: avail_min1=%li\n", lhandle->id, val);
 	} else {
 		if (lhandle == lhandle->loopback->play) {
-			snd_pcm_hw_params_get_buffer_size(params, &val1);
-			val = val1 - val - val / 2;
+			val = bufsize / 2 + bufsize / 4 + bufsize / 8;
+			if (val > buffer_size / 4)
+				val = buffer_size / 4;
+			val = buffer_size - val;
 		} else {
-			val /= 2;
+			val = bufsize / 2;
+			if (val > buffer_size / 4)
+				val = buffer_size / 4;
 		}
+		if (verbose > 6)
+			snd_output_printf(lhandle->loopback->output, "%s: avail_min2=%li\n", lhandle->id, val);
 	}
 	err = snd_pcm_sw_params_set_avail_min(handle, swparams, val);
 	if (err < 0) {
@@ -256,11 +286,11 @@ static int setparams(struct loopback *loop, snd_pcm_uframes_t bufsize)
 		return err;
 	}
 
-	if ((err = setparams_set(loop->play, p_params, p_swparams)) < 0) {
+	if ((err = setparams_set(loop->play, p_params, p_swparams, bufsize / loop->play->pitch)) < 0) {
 		logit(LOG_CRIT, "Unable to set sw parameters for %s stream: %s\n", loop->play->id, snd_strerror(err));
 		return err;
 	}
-	if ((err = setparams_set(loop->capt, c_params, c_swparams)) < 0) {
+	if ((err = setparams_set(loop->capt, c_params, c_swparams, bufsize / loop->capt->pitch)) < 0) {
 		logit(LOG_CRIT, "Unable to set sw parameters for %s stream: %s\n", loop->capt->id, snd_strerror(err));
 		return err;
 	}
@@ -495,6 +525,12 @@ static int readit(struct loopback_handle *lhandle)
 	int err;
 
 	avail = snd_pcm_avail_update(lhandle->handle);
+	if (avail == -EPIPE) {
+		return xrun(lhandle);
+	} else if (avail == -ESTRPIPE) {
+		if ((err = suspend(lhandle)) < 0)
+			return err;
+	}
 	if (avail > buf_avail(lhandle)) {
 		lhandle->buf_over += avail - buf_avail(lhandle);
 		avail = buf_avail(lhandle);
@@ -1008,7 +1044,10 @@ static int openit(struct loopback_handle *lhandle)
 				SND_PCM_STREAM_PLAYBACK :
 				SND_PCM_STREAM_CAPTURE;
 	int err, card, device, subdevice;
-	if ((err = snd_pcm_open(&lhandle->handle, lhandle->device, stream, SND_PCM_NONBLOCK)) < 0) {
+	pcm_open_lock();
+	err = snd_pcm_open(&lhandle->handle, lhandle->device, stream, SND_PCM_NONBLOCK);
+	pcm_open_unlock();
+	if (err < 0) {
 		logit(LOG_CRIT, "%s open error: %s\n", lhandle->id, snd_strerror(err));
 		return err;
 	}
@@ -1027,7 +1066,9 @@ static int openit(struct loopback_handle *lhandle)
 	if (card >= 0) {
 		char name[16];
 		sprintf(name, "hw:%i", card);
+		pcm_open_lock();
 		err = snd_ctl_open(&lhandle->ctl, name, SND_CTL_NONBLOCK);
+		pcm_open_unlock();
 		if (err < 0) {
 			logit(LOG_CRIT, "%s [%s] ctl open error: %s\n", lhandle->id, name, snd_strerror(err));
 			lhandle->ctl = NULL;
@@ -1254,6 +1295,17 @@ int pcmjob_start(struct loopback *loop)
 				goto __error;
 			}
 			loop->play->buf = nbuf;
+			loop->play->buf_size = loop->capt->buf_size;
+		} else if (loop->capt->buf_size < loop->play->buf_size) {
+			char *nbuf = realloc(loop->capt->buf,
+					     loop->play->buf_size *
+					       loop->play->frame_size);
+			if (nbuf == NULL) {
+				err = -ENOMEM;
+				goto __error;
+			}
+			loop->capt->buf = nbuf;
+			loop->capt->buf_size = loop->play->buf_size;
 		}
 		loop->capt->buf = loop->play->buf;
 	} else {
@@ -1278,7 +1330,7 @@ int pcmjob_start(struct loopback *loop)
 	if (loop->use_samplerate) {
 		if (loop->capt->format != SND_PCM_FORMAT_S16 ||
 		    loop->play->format != SND_PCM_FORMAT_S16) {
-			logit(LOG_CRIT, "samplerate conversion supports only S16_LE format (%i, %i)\n", loop->play->format, loop->capt->format);
+			logit(LOG_CRIT, "samplerate conversion supports only %s format (play=%s, capt=%s)\n", snd_pcm_format_name(SND_PCM_FORMAT_S16), snd_pcm_format_name(loop->play->format), snd_pcm_format_name(loop->capt->format));
 			loop->use_samplerate = 0;
 			err = -EIO;
 			goto __error;		
@@ -1325,6 +1377,8 @@ int pcmjob_start(struct loopback *loop)
 		logit(LOG_CRIT, "%s: silence error\n", loop->id);
 		goto __error;
 	}
+	if (verbose > 4)
+		snd_output_printf(loop->output, "%s: capt->buffer_size = %li, play->buffer_size = %li\n", loop->id, loop->capt->buf_size, loop->play->buf_size);
 	loop->pitch = 1.0;
 	update_pitch(loop);
 	loop->pitch_delta = 1.0 / ((double)loop->capt->rate * 4);
@@ -1334,8 +1388,13 @@ int pcmjob_start(struct loopback *loop)
 	loop->play->buf_count = count;
 	if (loop->play->buf == loop->capt->buf)
 		loop->capt->buf_pos = count;
-	if (writeit(loop->play) != count) {
-		logit(LOG_CRIT, "%s: initial playback fill error\n", loop->id);
+	err = writeit(loop->play);
+	if (verbose > 4)
+		snd_output_printf(loop->output, "%s: silence queued %i samples\n", loop->id, err);
+	if (count > loop->play->buffer_size)
+		count = loop->play->buffer_size;
+	if (err != count) {
+		logit(LOG_CRIT, "%s: initial playback fill error (%i/%i/%i)\n", loop->id, err, (int)count, loop->play->buffer_size);
 		err = -EIO;
 		goto __error;
 	}
@@ -1511,13 +1570,13 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 	if (verbose > 12) {
 		snd_pcm_sframes_t pdelay, cdelay;
 		if ((err = snd_pcm_delay(play->handle, &pdelay)) < 0)
-			snd_output_printf(loop->output, "%s: delay error: %s\n", play->id, snd_strerror(err));
+			snd_output_printf(loop->output, "%s: delay error: %s / %li / %li\n", play->id, snd_strerror(err), play->buf_size, play->buf_count);
 		else
-			snd_output_printf(loop->output, "%s: delay %li\n", play->id, pdelay);
+			snd_output_printf(loop->output, "%s: delay %li / %li / %li\n", play->id, pdelay, play->buf_size, play->buf_count);
 		if ((err = snd_pcm_delay(capt->handle, &cdelay)) < 0)
-			snd_output_printf(loop->output, "%s: delay error: %s\n", capt->id, snd_strerror(err));
+			snd_output_printf(loop->output, "%s: delay error: %s / %li / %li\n", capt->id, snd_strerror(err), capt->buf_size, capt->buf_count);
 		else
-			snd_output_printf(loop->output, "%s: delay %li\n", capt->id, cdelay);
+			snd_output_printf(loop->output, "%s: delay %li / %li / %li\n", capt->id, cdelay, capt->buf_size, capt->buf_count);
 	}
 	idx = 0;
 	if (loop->running) {
@@ -1570,7 +1629,7 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 	}
 	if (verbose > 9)
 		snd_output_printf(loop->output, "%s: prevents = 0x%x, crevents = 0x%x\n", loop->id, prevents, crevents);
-	if (prevents == 0 && crevents == 0)
+	if (!loop->running)
 		goto __pcm_end;
 	do {
 		ccount = readit(capt);
@@ -1637,22 +1696,22 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 		if (verbose > 4)
 			snd_output_printf(loop->output, "%s: queued %li/%li samples\n", loop->id, pqueued, cqueued);
 		if (pqueued > 0)
-			loop->play->total_queued += pqueued;
+			play->total_queued += pqueued;
 		if (cqueued > 0)
-			loop->capt->total_queued += cqueued;
+			capt->total_queued += cqueued;
 		if (pqueued > 0 || cqueued > 0)
 			loop->total_queued_count += 1;
 	}
 	if (verbose > 12) {
 		snd_pcm_sframes_t pdelay, cdelay;
 		if ((err = snd_pcm_delay(play->handle, &pdelay)) < 0)
-			snd_output_printf(loop->output, "%s: end delay error: %s\n", play->id, snd_strerror(err));
+			snd_output_printf(loop->output, "%s: end delay error: %s / %li / %li\n", play->id, snd_strerror(err), play->buf_size, play->buf_count);
 		else
-			snd_output_printf(loop->output, "%s: end delay %li\n", play->id, pdelay);
+			snd_output_printf(loop->output, "%s: end delay %li / %li / %li\n", play->id, pdelay, play->buf_size, play->buf_count);
 		if ((err = snd_pcm_delay(capt->handle, &cdelay)) < 0)
-			snd_output_printf(loop->output, "%s: end delay error: %s\n", capt->id, snd_strerror(err));
+			snd_output_printf(loop->output, "%s: end delay error: %s / %li / %li\n", capt->id, snd_strerror(err), capt->buf_size, capt->buf_count);
 		else
-			snd_output_printf(loop->output, "%s: end delay %li\n", capt->id, cdelay);
+			snd_output_printf(loop->output, "%s: end delay %li / %li / %li\n", capt->id, cdelay, capt->buf_size, capt->buf_count);
 	}
       __pcm_end:
 	if (verbose > 13) {

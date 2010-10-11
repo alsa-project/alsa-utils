@@ -43,6 +43,7 @@ struct loopback_thread {
 };
 
 int verbose = 0;
+int workarounds = 0;
 int daemonize = 0;
 int use_syslog = 0;
 struct loopback **loopbacks = NULL;
@@ -171,6 +172,7 @@ void help(void)
 "		    ALSA_ID@OSS_ID  (for example: \"Master@VOLUME\")\n"
 "-e,--effect    apply an effect (bandpass filter sweep)\n"
 "-v,--verbose   verbose mode (more -v means more verbose)\n"
+"-w,--workaround use workaround (serialopen)\n"
 );
 	printf("\nRecognized sample formats are:");
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
@@ -339,6 +341,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 		{"thread", 1, NULL, 'T'},
 		{"mixer", 1, NULL, 'm'},
 		{"ossmixer", 1, NULL, 'O'},
+		{"workaround", 1, NULL, 'w'},
 		{NULL, 0, NULL, 0},
 	};
 	int err, morehelp;
@@ -370,7 +373,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 	while (1) {
 		int c;
 		if ((c = getopt_long(argc, argv,
-				"hdg:P:C:l:t:F:f:c:r:s:benvA:S:a:m:T:O:",
+				"hdg:P:C:l:t:F:f:c:r:s:benvA:S:a:m:T:O:w:",
 				long_option, NULL)) < 0)
 			break;
 		switch (c) {
@@ -503,6 +506,10 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 			break;
 		case 'v':
 			verbose++;
+			break;
+		case 'w':
+			if (strcasecmp(optarg, "serialopen") == 0)
+				workarounds |= WORKAROUND_SERIALOPEN;
 			break;
 		}
 	}

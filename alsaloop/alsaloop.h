@@ -40,6 +40,8 @@ enum {
 #define FILE_CWRITE "/tmp/alsaloop.craw"
 #endif
 
+#define WORKAROUND_SERIALOPEN	(1<<0)
+
 typedef enum _sync_type {
 	SYNC_TYPE_NONE = 0,
 	SYNC_TYPE_SIMPLE,	/* add or remove samples */
@@ -171,6 +173,7 @@ struct loopback {
 };
 
 extern int verbose;
+extern int workarounds;
 extern int use_syslog;
 
 #define logit(priority, fmt, args...) do {		\
