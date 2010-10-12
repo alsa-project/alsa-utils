@@ -23,9 +23,11 @@
  *  Copyright (C) 2008-2010 SlimLogic Ltd
  *  Copyright (C) 2010 Wolfson Microelectronics PLC
  *  Copyright (C) 2010 Texas Instruments Inc.
+ *  Copyright (C) 2010 Red Hat Inc.
  *  Authors: Liam Girdwood <lrg@slimlogic.co.uk>
  *           Stefan Schmidt <stefan@slimlogic.co.uk>
  *           Justin Xu <justinx@slimlogic.co.uk>
+ *           Jaroslav Kysela <perex@perex.cz>
  */
 
 #include <stdio.h>
@@ -33,408 +35,379 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <getopt.h>
 #include <alsa/asoundlib.h>
 #include <alsa/use-case.h>
+#include "aconfig.h"
+#include "version.h"
 
 #define MAX_BUF 256
 
-enum uc_cmd {
-	/* list verb, devices and modifiers */
-	OM_UNKNOWN = 0,
-	OM_LIST_VERBS,
-	OM_LIST_DEVICES,
-	OM_LIST_MODIFIERS,
-
-	/* enable and disable verb, device and modifier */
-	OM_SET_VERB,
-	OM_GET_VERB,
-	OM_ENABLE_DEVICE,
-	OM_ENABLE_MODIFIER,
-	OM_DISABLE_DEVICE,
-	OM_DISABLE_MODIFIER,
-	OM_SWITCH_DEVICE,
-	OM_SWITCH_MODIFIER,
-
-	/* dump sound card kcontrols */
-	OP_DUMP,
-	OP_HELP,
-	OP_QUIT,
-	OP_RESET,
+struct context {
+	snd_use_case_mgr_t *uc_mgr;
+	const char *command;
+	char *card;
+	char **argv;
+	int argc;
+	unsigned int interactive:1;
+	unsigned int no_open:1;
+	unsigned int do_exit:1;
 };
 
-static void dump_help(char *name)
-{
-	if (name)
-		printf("Usage: \n"
-			"  %s <card>"
-			"  %s <card> <cmd> [use case] [<cmd> [use case]]\n",
-			name, name);
+enum uc_cmd {
+	/* management */
+	OM_UNKNOWN = 0,
+	OM_OPEN,
+	OM_RESET,
+	OM_RELOAD,
+	OM_LIST,
 
-	printf(	"  reset  - reset sound card to default state\n"
-		"  listv  - list available use case verbs\n"
-		"  getv - get current verb\n"
-		"  setv <name> - apply use case verb <name>\n"
-		"  setd <name> - enable use case device <name>\n"
-		"  setm <name> - enable use case modifier <name>\n"
-		"  switchd <old> <new> - disable <old> device enable <new> device\n"
-		"  switchm <old> <new> - disable <old> modifier enable <new> modifier\n"
-		"  cleard <name> - disable use case device <name>\n"
-		"  clearm <name> - disable use case modifier <name>\n"
-		"  listd  - list available use case devices for current verb\n"
-		"  listm  - list available use case modifiers for current verb\n"
-		"  dump - dump all mixer control values\n"
-		"  h - help\n"
-		"  q - quit\n");
+	/* set/get */
+	OM_SET,
+	OM_GET,
+	OM_GETI,
+
+	/* misc */
+	OM_HELP,
+	OM_QUIT,
+};
+
+struct cmd {
+	int code;
+	int args;
+	const char *id;
+};
+
+static struct cmd cmds[] = {
+	{ OM_OPEN, 1, "open" },
+	{ OM_RESET, 0, "reset" },
+	{ OM_RELOAD, 0, "reload" },
+	{ OM_LIST, 0, "list" },
+	{ OM_SET, 2, "set" },
+	{ OM_GET, 1, "get" },
+	{ OM_GETI, 1, "geti" },
+	{ OM_HELP, 0, "help" },
+	{ OM_QUIT, 0, "quit" },
+	{ OM_HELP, 0, "h" },
+	{ OM_UNKNOWN, 0, NULL }
+};
+
+static void dump_help(struct context *context)
+{
+	if (context->command)
+		printf("Usage: %s <options> [command]\n", context->command);
+	printf(
+"\nAvailable options:\n"
+"  -h,--help                  this help\n"
+"  -c,--card NAME             open card NAME\n"
+"  -i,--interactive           interactive mode\n"
+"  -n,--no-open               do not open first card found\n"
+"\nAvailable commands:\n"
+"  open NAME                  open card NAME\n"
+"  reset                      reset sound card to default state\n"
+"  reload                     reload configuration\n"
+"  list IDENTIFIER            list command\n"
+"  get IDENTIFIER             get string value\n"
+"  geti IDENTIFIER            get integer value\n"
+"  set IDENTIFIER VALUE       set string value\n"
+"  h,help                     help\n"
+"  q,quit                     quit\n"
+);
 }
 
-/* list devices and status for current verb */
-static int list_verb_device_status(snd_use_case_mgr_t *uc_mgr)
+static int parse_line(struct context *context, char *line)
 {
-	const char **device_list, *verb;
-	int i, enabled, num;
+	char *start;
+	int c;
 
-	verb = snd_use_case_get_verb(uc_mgr);
-	if (verb == NULL) {
-		printf(" no verb currently enabled.\n");
-		return -ENODEV;
-	}
-
-	num = snd_use_case_get_device_list(uc_mgr, verb, &device_list);
-	if (num <= 0) {
-		printf(" no devices.\n");
-		return 0;
-	}
-
-	for (i = 0; i < num; i++) {
-		enabled = snd_use_case_get_device_status(uc_mgr,
-				device_list[i]);
-		if (enabled < 0)
-			printf(" %s: failed to get status %d\n",
-				device_list[i], enabled);
-		else
-			printf(" %s: %s\n", device_list[i],
-				enabled ? "enabled" : "disabled");
-	}
-	return num;
-}
-
-/* list devices and status for current verb */
-static int list_verb_modifiers_status(snd_use_case_mgr_t *uc_mgr)
-{
-	const char **modifier_list, *verb;
-	int i, enabled, num;
-
-	verb = snd_use_case_get_verb(uc_mgr);
-	if (verb == NULL)
-		return -ENODEV;
-
-	num = snd_use_case_get_mod_list(uc_mgr, verb, &modifier_list);
-	if (num <= 0) {
-		printf(" no modifiers\n");
-		return 0;
-	}
-
-	for (i = 0; i < num; i++) {
-		enabled = snd_use_case_get_modifier_status(uc_mgr,
-				modifier_list[i]);
-		if (enabled < 0)
-			printf(" %s: failed to get status %d\n", 
-				modifier_list[i], enabled);
-		else
-			printf(" %s: %s\n", modifier_list[i],
-				enabled ? "enabled" : "disabled");
-	}
-	return num;
-}
-
-static int list_verbs(snd_use_case_mgr_t *uc_mgr)
-{
-	const char **verb_list;
-	int num, i;
-
-	/* get list of use case verbs */
-	num = snd_use_case_get_verb_list(uc_mgr, &verb_list);
-	if (num == 0) {
-		printf(" error: no verbs defined for sound card\n");
-		return 0;
-	} else if (num < 0) {
-		printf(" error: can't get verbs for sound card\n");
-		return num;
-	}
-
-	for (i = 0 ; i < num ; i++) {
-		const char *verb = verb_list[i];
-		printf(" %s\n", verb);
-	}
-
-	return 0;
-}
-
-static int parse_cmdline(char *cmd, enum uc_cmd *command)
-{
-	if (!strcmp(cmd, "listv"))
-		*command = OM_LIST_VERBS;
-	else if (!strcmp(cmd, "listd"))
-		*command = OM_LIST_DEVICES;
-	else if (!strcmp(cmd, "listm"))
-		*command = OM_LIST_MODIFIERS;
-	else if (!strcmp(cmd, "setv"))
-		*command = OM_SET_VERB;
-	else if (!strcmp(cmd, "getv"))
-		*command = OM_GET_VERB;
-	else if (!strcmp(cmd, "setd"))
-		*command = OM_ENABLE_DEVICE;
-	else if (!strcmp(cmd, "setm"))
-		*command = OM_ENABLE_MODIFIER;
-	else if (!strcmp(cmd, "cleard"))
-		*command = OM_DISABLE_DEVICE;
-	else if (!strcmp(cmd, "clearm"))
-		*command = OM_DISABLE_MODIFIER;
-	else if (!strcmp(cmd, "switchd"))
-		*command = OM_SWITCH_DEVICE;
-	else if (!strcmp(cmd, "switchm"))
-		*command = OM_SWITCH_MODIFIER;
-	else if  (!strcmp(cmd, "q"))
-		*command = OP_QUIT;
-	else if  (!strcmp(cmd, "h"))
-		*command = OP_HELP;
-	else if (!strcmp(cmd, "dump"))
-		*command = OP_DUMP;
-	else if (!strcmp(cmd, "reset"))
-		*command = OP_RESET;
-
-	if (*command)
-		return 1;
-	return -1;
-}
-
-static int parse_cmd(char *cmd, enum uc_cmd *command, const char **parameter)
-{
-	char *cmd_c = cmd;
-
-	*parameter = NULL;
-	*command = OM_UNKNOWN;
-
-	/*
-	 * fgets() reads '\n' from stdin
-	 * it needs to be removed here
-	 */
-	cmd_c = strchr(cmd, '\n');
-	if (cmd_c != NULL)
-		*cmd_c = 0;
-
-	cmd_c = cmd;
-
-	/* Truncate spaces */
-	while (*cmd_c == ' ')
-		cmd_c++;
-
-	if (*cmd_c == 0)
-		return 0;
-
-	cmd = cmd_c;
-
-	cmd_c = strchr(cmd, ' ');
-	if (cmd_c != NULL) {
-		*cmd_c = 0;
-		/* Truncate spaces */
-		while (*++cmd_c == ' ');
-		*parameter = cmd_c;
-	}
-
-	return parse_cmdline(cmd, command);
-}
-
-static int get_switch_parameter(const char *parameter, const char **old,
-							const char **new)
-{
-	char *c;
-
-	if (parameter == NULL)
-		return -EINVAL;
-
-	*old = parameter;
-
-	c = strchr(parameter, ' ');
-	if (c != NULL) {
-		*c = 0;
-
-		/* Truncate spaces */
-		while (*++c == ' ');
-
-		if (*c) {
-			*new = c;
-			return 0;
+	context->argc = 0;
+	while (*line) {
+		while (*line && (*line == ' ' || *line == '\t' ||
+							*line == '\n'))
+			line++;
+		c = *line;
+		if (c == '\"' || c == '\'') {
+			start = ++line;
+			while (*line && *line != c)
+				line++;
+			if (*line) {
+				*line = '\0';
+				line++;
+			}
+		} else {
+			start = line;
+			while (*line && *line != ' ' && *line != '\t' &&
+			       *line != '\n')
+				line++;
+			if (*line) {
+				*line = '\0';
+				line++;
+			}
 		}
+		context->argv[context->argc++] = start;
 	}
-
-	return -EINVAL;
-}
-
-static int do_exit = 0;
-
-static int handle_command(snd_use_case_mgr_t *uc_mgr, enum uc_cmd command,
-							const char *parameter)
-{
-	int ret;
-	const char *verb;
-	const char *old = NULL, *new = NULL;
-
-	switch (command) {
-	case OM_UNKNOWN:
-		printf(" error: unknown command\n");
-		break;
-	case OM_LIST_VERBS:
-		return list_verbs(uc_mgr);
-	case OM_LIST_DEVICES:
-		return list_verb_device_status(uc_mgr);
-	case OM_LIST_MODIFIERS:
-		return list_verb_modifiers_status(uc_mgr);
-	case OM_SET_VERB:
-		return snd_use_case_set_verb(uc_mgr, parameter);
-	case OM_GET_VERB:
-		verb = snd_use_case_get_verb(uc_mgr);
-		if (verb != NULL)
-			printf(" current verb: %s\n", verb);
-		else
-			printf(" no verb enabled.\n");
-		return 0;
-	case OM_ENABLE_DEVICE:
-		return snd_use_case_enable_device(uc_mgr, parameter);
-	case OM_ENABLE_MODIFIER:
-		return snd_use_case_enable_modifier(uc_mgr, parameter);
-	case OM_DISABLE_DEVICE:
-		return snd_use_case_disable_device(uc_mgr, parameter);
-	case OM_DISABLE_MODIFIER:
-		return snd_use_case_disable_modifier(uc_mgr, parameter);
-	case OM_SWITCH_DEVICE:
-		ret = get_switch_parameter(parameter, &old, &new);
-		if (ret)
-			return ret;
-		else
-			return snd_use_case_switch_device(uc_mgr, old, new);
-	case OM_SWITCH_MODIFIER:
-		ret = get_switch_parameter(parameter, &old, &new);
-		if (ret)
-			return ret;
-		else
-			return snd_use_case_switch_modifier(uc_mgr, old, new);
-	case OP_HELP:
-		dump_help(NULL);
-		break;
-	case OP_QUIT:
-		do_exit = 1;
-		break;
-	case OP_RESET:
-		return snd_use_case_mgr_reset(uc_mgr);
-	default:
-		break;
-	}
-
 	return 0;
 }
+
+static int do_one(struct context *context, struct cmd *cmd, char **argv)
+{
+	const char **list, *str;
+	long lval;
+	int err, i;
+
+	if (cmd->code != OM_OPEN && cmd->code != OM_HELP &&
+	    cmd->code != OM_QUIT && context->uc_mgr == NULL) {
+		fprintf(stderr, "%s: command '%s' requires an open card\n",
+				context->command, cmd->id);
+		return 0;
+	}
+	switch (cmd->code) {
+	case OM_OPEN:
+		if (context->uc_mgr)
+			snd_use_case_mgr_close(context->uc_mgr);
+		context->uc_mgr = NULL;
+		free(context->card);
+		context->card = strdup(argv[0]);
+		err = snd_use_case_mgr_open(&context->uc_mgr, context->card);
+		if (err < 0) {
+			fprintf(stderr,
+				"%s: error failed to open sound card %s: %s\n",
+				context->command, context->card,
+				snd_strerror(err));
+			return err;
+		}
+		break;
+	case OM_RESET:
+		err = snd_use_case_mgr_reset(context->uc_mgr);
+		if (err < 0) {
+			fprintf(stderr,
+				"%s: error failed to reset sound card %s: %s\n",
+				context->command, context->card,
+				snd_strerror(err));
+			return err;
+		}
+		break;
+	case OM_RELOAD:
+		err = snd_use_case_mgr_reload(context->uc_mgr);
+		if (err < 0) {
+			fprintf(stderr,
+				"%s: error failed to reload manager %s: %s\n",
+				context->command, context->card,
+				snd_strerror(err));
+			return err;
+		}
+		break;
+	case OM_LIST:
+		err = snd_use_case_get_list(context->uc_mgr,
+					    argv[0],
+					    &list);
+		if (err < 0) {
+			fprintf(stderr,
+				"%s: error failed to get list %s: %s\n",
+				context->command, argv[0],
+				snd_strerror(err));
+			return err;
+		}
+		if (err == 0)
+			printf("  list is empty\n");
+		for (i = 0; i < err; i++)
+			printf("  %i: %s\n", i, list[i]);
+		snd_use_case_free_list(list, err);
+		break;
+	case OM_SET:
+		err = snd_use_case_set(context->uc_mgr, argv[0], argv[1]);
+		if (err < 0) {
+			fprintf(stderr,
+				"%s: error failed to set %s=%s: %s\n",
+				context->command, argv[0], argv[1],
+				snd_strerror(err));
+			return err;
+		}
+		break;
+	case OM_GET:
+		err = snd_use_case_get(context->uc_mgr, argv[0], &str);
+		if (err < 0) {
+			fprintf(stderr,
+				"%s: error failed to get %s: %s\n",
+				context->command, argv[0],
+				snd_strerror(err));
+			return err;
+		}
+		printf("  %s=%s\n", argv[0], str);
+		free((void *)str);
+		break;
+	case OM_GETI:
+		err = snd_use_case_geti(context->uc_mgr, argv[0], &lval);
+		if (err < 0) {
+			fprintf(stderr,
+				"%s: error failed to get integer %s: %s\n",
+				context->command, argv[0],
+				snd_strerror(err));
+			return lval;
+		}
+		printf("  %s=%li\n", argv[0], lval);
+		break;
+	case OM_QUIT:
+		context->do_exit = 1;
+		break;
+	case OM_HELP:
+		dump_help(context);
+		break;
+	default:
+		fprintf(stderr, "%s: unimplemented command '%s'\n",
+				context->command, cmd->id);
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static int do_commands(struct context *context)
+{
+	char *command, **argv;
+	struct cmd *cmd;
+	int i, acnt, err;
+
+	for (i = 0; i < context->argc && !context->do_exit; i++) {
+		command = context->argv[i];
+		for (cmd = cmds; cmd->id != NULL; cmd++) {
+			if (strcmp(cmd->id, command) == 0)
+				break;
+		}
+		if (cmd->id == NULL) {
+			fprintf(stderr, "%s: unknown command '%s'\n",
+						context->command, command);
+			return -EINVAL;
+		}
+		acnt = context->argc - (i + 1);
+		if (acnt < cmd->args) {
+			fprintf(stderr, "%s: expected %i arguments (got %i)\n",
+					context->command, cmd->args, acnt);
+			return -EINVAL;
+		}
+		argv = context->argv + i + 1;
+		err = do_one(context, cmd, argv);
+		if (err < 0)
+			return err;
+		i += cmd->args;
+	}
+	return 0;
+}
+
+static void my_exit(struct context *context, int exitcode)
+{
+	if (context->uc_mgr)
+		snd_use_case_mgr_close(context->uc_mgr);
+	free(context);
+	exit(exitcode);
+}
+
+enum {
+	OPT_VERSION = 1,
+};
 
 int main(int argc, char *argv[])
 {
-	snd_use_case_mgr_t  *uc_mgr;
-	const char *parameter;
+	static const char short_options[] = "hc:in";
+	static const struct option long_options[] = {
+		{"help", 0, 0, 'h'},
+		{"version", 0, 0, OPT_VERSION},
+		{"card", 1, 0, 'c'},
+		{"interactive", 0, 0, 'i'},
+		{"no-open", 0, 0, 'n'},
+		{0, 0, 0, 0}
+	};
+	struct context *context;
+	const char *command = argv[0];
+	const char **list;
+	int c, err, option_index;
 	char cmd[MAX_BUF];
-	enum uc_cmd command;
-	int card_argv = 1, cmd_status, i, err;
 
-	if (argc < 2) {
-		dump_help(argv[0]);
-		exit(1);
+	context = calloc(1, sizeof(*context));
+	if (context == NULL)
+		return EXIT_FAILURE;
+	context->command = command;
+	while ((c = getopt_long(argc, argv, short_options,
+				 long_options, &option_index)) != -1) {
+		switch (c) {
+		case 'h':
+			dump_help(context);
+			break;
+		case OPT_VERSION:
+			printf("%s: version " SND_UTIL_VERSION_STR "\n", command);
+			break;
+		case 'c':
+			if (context->card)
+				free(context->card);
+			context->card = strdup(optarg);
+			break;
+		case 'i':
+			context->interactive = 1;
+			break;
+		case 'n':
+			context->no_open = 1;
+			break;
+		default:
+			fprintf(stderr, "Try '%s --help' for more information.\n", command);
+			my_exit(context, EXIT_FAILURE);
+		}
 	}
 
-	/* check for dump as we dont need to open UCM */
-	if (argc == 3 && !strcmp(argv[2], "dump")) {
-		snd_use_case_dump(argv[1]);
-		return 0;
+	if (!context->no_open && context->card == NULL) {
+		err = snd_use_case_card_list(&list);
+		if (err < 0) {
+			fprintf(stderr, "%s: unable to obtain card list: %s\n", command, snd_strerror(err));
+			my_exit(context, EXIT_FAILURE);
+		}
+		if (err == 0) {
+			printf("No card found\n");
+			my_exit(context, EXIT_SUCCESS);
+		}
+		context->card = strdup(list[0]);
+		snd_use_case_free_list(list, err);
 	}
 
 	/* open library */
-	uc_mgr = snd_use_case_mgr_open(argv[card_argv]);
-	if (uc_mgr == NULL) {
-		printf("%s: error failed to open sound card %s\n",
-			argv[0], argv[card_argv]);
-		return 0;
+	if (!context->no_open) {
+		err = snd_use_case_mgr_open(&context->uc_mgr,
+					    context->card);
+		if (err < 0) {
+			fprintf(stderr,
+				"%s: error failed to open sound card %s: %s\n",
+				command, context->card, snd_strerror(err));
+			my_exit(context, EXIT_FAILURE);
+		}
 	}
 
 	/* parse and execute any command line commands */
 	if (argc >= 3) {
-		for (i = 2; i < argc; i++) {
-			if (parse_cmdline(argv[i], &command) == -1) {
-				printf("error: unknown command %s\n", argv[i]);
-				goto out;
-			} else {
-				switch(command) {
-				case OM_SWITCH_DEVICE:
-				case OM_SWITCH_MODIFIER:
-					if (++i >= argc) {
-						printf("error: %s missing argument\n", argv[i-1]);
-						goto out;
-					}
-					if (++i >= argc) {
-						printf("error: %s missing argument\n", argv[i-2]);
-						goto out;
-					}
-					err = handle_command(uc_mgr, command, argv[i -1]);
-					if (err < 0) {
-						printf(" error: command '%s' failed: %d\n",
-							argv[i - 2], err);
-						goto out;
-					}
-				case OM_SET_VERB:
-				case OM_ENABLE_DEVICE:
-				case OM_ENABLE_MODIFIER:
-				case OM_DISABLE_DEVICE:
-				case OM_DISABLE_MODIFIER:
-					if (++i >= argc) {
-						printf("error: %s missing argument\n", argv[i-1]);
-						goto out;
-					}
-					err = handle_command(uc_mgr, command, argv[i]);
-					if (err < 0) {
-						printf(" error: command '%s' failed: %d\n",
-							argv[i - 1], err);
-						goto out;
-					}
-					break;
-				default:
-					err = handle_command(uc_mgr, command, NULL);
-					if (err < 0) {
-						printf(" error: command '%s' failed: %d\n",
-							argv[i], err);
-						goto out;
-					}
-					break;
-				}
-			}
-		}
+		context->argv = argv + optind;
+		context->argc = argc - optind;
+		err = do_commands(context);
+		if (err < 0)
+			my_exit(context, EXIT_FAILURE);
 	}
 
-	printf("Starting %s - 'q' to quit\n", argv[0]);
+	if (!context->interactive)
+		my_exit(context, EXIT_SUCCESS);
+
+	printf("%s: Interacive mode - 'q' to quit\n", command);
 	/* run the interactive command parser and handler */
-	while (!do_exit) {
+	while (!context->do_exit) {
 		printf("%s>> ", argv[0]);
 		fflush(stdin);
 		if (fgets(cmd, MAX_BUF, stdin) == NULL)
 			break;
-			cmd_status = parse_cmd(cmd, &command, &parameter);
-		if (cmd_status == -1) {
-			printf(" error: unknown command %s\n", cmd);
-			continue;
-		} else if (cmd_status == 1) {
-			err = handle_command(uc_mgr, command, parameter);
-			if (err < 0) {
-				printf(" error: command '%s' failed: %d\n",
-					cmd, err);
-			}
+		err = parse_line(context, cmd);
+		if (err < 0) {
+			fprintf(stderr, "%s: unable to parse line\n",
+				command);
+			my_exit(context, EXIT_FAILURE);
 		}
+		err = do_commands(context);
+		if (err < 0)
+			my_exit(context, EXIT_FAILURE);
 	}
 
-out:
-	snd_use_case_mgr_close(uc_mgr);
-	return 0;
+	my_exit(context, EXIT_SUCCESS);
+	return EXIT_SUCCESS;
 }
