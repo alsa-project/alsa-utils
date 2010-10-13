@@ -60,6 +60,7 @@ enum uc_cmd {
 	OM_OPEN,
 	OM_RESET,
 	OM_RELOAD,
+	OM_LISTCARDS,
 	OM_LIST,
 
 	/* set/get */
@@ -75,21 +76,24 @@ enum uc_cmd {
 struct cmd {
 	int code;
 	int args;
+	unsigned int opencard:1;
 	const char *id;
 };
 
 static struct cmd cmds[] = {
-	{ OM_OPEN, 1, "open" },
-	{ OM_RESET, 0, "reset" },
-	{ OM_RELOAD, 0, "reload" },
-	{ OM_LIST, 0, "list" },
-	{ OM_SET, 2, "set" },
-	{ OM_GET, 1, "get" },
-	{ OM_GETI, 1, "geti" },
-	{ OM_HELP, 0, "help" },
-	{ OM_QUIT, 0, "quit" },
-	{ OM_HELP, 0, "h" },
-	{ OM_UNKNOWN, 0, NULL }
+	{ OM_OPEN, 1, 0, "open" },
+	{ OM_RESET, 0, 1, "reset" },
+	{ OM_RELOAD, 0, 1, "reload" },
+	{ OM_LISTCARDS, 0, 0, "listcards" },
+	{ OM_LIST, 0, 1, "list" },
+	{ OM_SET, 2, 1, "set" },
+	{ OM_GET, 1, 1, "get" },
+	{ OM_GETI, 1, 1, "geti" },
+	{ OM_HELP, 0, 0, "help" },
+	{ OM_QUIT, 0, 0, "quit" },
+	{ OM_HELP, 0, 0, "h" },
+	{ OM_QUIT, 0, 0, "q" },
+	{ OM_UNKNOWN, 0, 0, NULL }
 };
 
 static void dump_help(struct context *context)
@@ -106,6 +110,7 @@ static void dump_help(struct context *context)
 "  open NAME                  open card NAME\n"
 "  reset                      reset sound card to default state\n"
 "  reload                     reload configuration\n"
+"  listcards                  list available cards\n"
 "  list IDENTIFIER            list command\n"
 "  get IDENTIFIER             get string value\n"
 "  geti IDENTIFIER            get integer value\n"
@@ -155,8 +160,7 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 	long lval;
 	int err, i;
 
-	if (cmd->code != OM_OPEN && cmd->code != OM_HELP &&
-	    cmd->code != OM_QUIT && context->uc_mgr == NULL) {
+	if (cmd->opencard && context->uc_mgr == NULL) {
 		fprintf(stderr, "%s: command '%s' requires an open card\n",
 				context->command, cmd->id);
 		return 0;
@@ -196,6 +200,24 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 				snd_strerror(err));
 			return err;
 		}
+		break;
+	case OM_LISTCARDS:
+		err = snd_use_case_card_list(&list);
+		if (err < 0) {
+			fprintf(stderr,
+				"%s: error failed to get card list: %s\n",
+				context->command,
+				snd_strerror(err));
+			return err;
+		}
+		if (err == 0)
+			printf("  list is empty\n");
+		for (i = 0; i < err / 2; i++) {
+			printf("  %i: %s\n", i, list[i*2]);
+			if (list[i*2+1])
+				printf("    %s\n", list[i*2+1]);
+		}
+		snd_use_case_free_list(list, err);
 		break;
 	case OM_LIST:
 		err = snd_use_case_get_list(context->uc_mgr,
