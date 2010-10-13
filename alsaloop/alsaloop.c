@@ -31,6 +31,7 @@
 #include <math.h>
 #include <pthread.h>
 #include <syslog.h>
+#include <sys/signal.h>
 #include "alsaloop.h"
 
 struct loopback_thread {
@@ -42,6 +43,7 @@ struct loopback_thread {
 	snd_output_t *output;
 };
 
+int quit = 0;
 int verbose = 0;
 int workarounds = 0;
 int daemonize = 0;
@@ -50,6 +52,10 @@ struct loopback **loopbacks = NULL;
 int loopbacks_count = 0;
 char **my_argv = NULL;
 int my_argc = 0;
+struct loopback_thread *threads;
+int threads_count = 0;
+pthread_t main_job;
+int arg_default_xrun = 0;
 
 static void my_exit(struct loopback_thread *thread, int exitcode)
 {
@@ -118,6 +124,7 @@ static int create_loopback(struct loopback **_handle,
 	handle->loop_time = ~0UL;
 	handle->loop_limit = ~0ULL;
 	handle->output = output;
+	handle->state = output;
 #ifdef USE_SAMPLERATE
 	handle->src_enable = 1;
 	handle->src_converter_type = SRC_SINC_BEST_QUALITY;
@@ -185,6 +192,7 @@ void help(void)
 "-e,--effect    apply an effect (bandpass filter sweep)\n"
 "-v,--verbose   verbose mode (more -v means more verbose)\n"
 "-w,--workaround use workaround (serialopen)\n"
+"-U,--xrun      xrun profiling\n"
 );
 	printf("\nRecognized sample formats are:");
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
@@ -326,7 +334,8 @@ static int add_oss_mixers(struct loopback *loop,
 
 static int parse_config_file(const char *file, snd_output_t *output);
 
-static int parse_config(int argc, char *argv[], snd_output_t *output)
+static int parse_config(int argc, char *argv[], snd_output_t *output,
+			int cmdline)
 {
 	struct option long_option[] =
 	{
@@ -356,6 +365,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 		{"mixer", 1, NULL, 'm'},
 		{"ossmixer", 1, NULL, 'O'},
 		{"workaround", 1, NULL, 'w'},
+		{"xrun", 0, NULL, 'U'},
 		{NULL, 0, NULL, 0},
 	};
 	int err, morehelp;
@@ -384,12 +394,13 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 	int arg_mixers_count = 0;
 	char *arg_ossmixers[MAX_MIXERS];
 	int arg_ossmixers_count = 0;
+	int arg_xrun = arg_default_xrun;
 
 	morehelp = 0;
 	while (1) {
 		int c;
 		if ((c = getopt_long(argc, argv,
-				"hdg:P:C:X:Y:l:t:F:f:c:r:s:benvA:S:a:m:T:O:w:",
+				"hdg:P:C:X:Y:l:t:F:f:c:r:s:benvA:S:a:m:T:O:w:U",
 				long_option, NULL)) < 0)
 			break;
 		switch (c) {
@@ -533,6 +544,11 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 			if (strcasecmp(optarg, "serialopen") == 0)
 				workarounds |= WORKAROUND_SERIALOPEN;
 			break;
+		case 'U':
+			arg_xrun = 1;
+			if (cmdline)
+				arg_default_xrun = 1;
+			break;
 		}
 	}
 
@@ -570,6 +586,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output)
 		loop->sync = arg_sync;
 		loop->slave = arg_slave;
 		loop->thread = arg_thread;
+		loop->xrun = arg_xrun;
 		err = add_mixers(loop, arg_mixers, arg_mixers_count);
 		if (err < 0) {
 			logit(LOG_CRIT, "Unable to add mixer controls.\n");
@@ -656,7 +673,7 @@ static int parse_config_file(const char *file, snd_output_t *output)
 		optind = opterr = 1;
 		optopt = '?';
 
-		err = parse_config(argc, argv, output);
+		err = parse_config(argc, argv, output, 0);
 	      __next:
 		if (err < 0)
 			break;
@@ -698,7 +715,7 @@ static void thread_job1(void *_data)
 		logit(LOG_CRIT, "Poll FDs allocation failed.\n");
 		my_exit(thread, EXIT_FAILURE);
 	}
-	while (1) {
+	while (!quit) {
 		struct timeval tv1, tv2;
 		for (i = j = 0; i < thread->loopbacks_count; i++) {
 			err = pcmjob_pollfds_init(thread->loopbacks[i], &pfds[j]);
@@ -711,12 +728,16 @@ static void thread_job1(void *_data)
 		if (verbose > 10)
 			gettimeofday(&tv1, NULL);
 		err = poll(pfds, j, -1);
+		if (err < 0)
+			err = -errno;
 		if (verbose > 10) {
 			gettimeofday(&tv2, NULL);
 			snd_output_printf(output, "pool took %lius\n", timediff(tv2, tv1));
 		}
 		if (err < 0) {
-			logit(LOG_CRIT, "Poll failed.\n");
+			if (err == -EINTR || err == -ERESTART)
+				continue;
+			logit(LOG_CRIT, "Poll failed: %s\n", strerror(-err));
 			my_exit(thread, EXIT_FAILURE);
 		}
 		for (i = j = 0; i < thread->loopbacks_count; i++) {
@@ -745,18 +766,58 @@ static void thread_job(struct loopback_thread *thread)
 					      (void *) thread);
 }
 
+static void send_to_all(int sig)
+{
+	struct loopback_thread *thread;
+	int i;
+
+	for (i = 0; i < threads_count; i++) {
+		thread = &threads[i];
+		if (thread->threaded)
+			pthread_kill(thread->thread, sig);
+	}
+}
+
+static void signal_handler(int sig)
+{
+	quit = 1;
+	send_to_all(SIGUSR2);
+}
+
+static void signal_handler_state(int sig)
+{
+	pthread_t self = pthread_self();
+	struct loopback_thread *thread;
+	int i, j;
+
+	if (pthread_equal(main_job, self))
+		send_to_all(SIGUSR1);
+	for (i = 0; i < threads_count; i++) {
+		thread = &threads[i];
+		if (thread->thread == self) {
+			for (j = 0; j < thread->loopbacks_count; j++)
+				pcmjob_state(thread->loopbacks[j]);
+		}
+	}
+	signal(sig, signal_handler_state);
+}
+
+static void signal_handler_ignore(int sig)
+{
+	signal(sig, signal_handler_ignore);
+}
+
 int main(int argc, char *argv[])
 {
 	snd_output_t *output;
 	int i, j, k, l, err;
-	struct loopback_thread *threads;
 
 	err = snd_output_stdio_attach(&output, stdout, 0);
 	if (err < 0) {
 		logit(LOG_CRIT, "Output failed: %s\n", snd_strerror(err));
 		exit(EXIT_FAILURE);
 	}
-	err = parse_config(argc, argv, output);
+	err = parse_config(argc, argv, output, 1);
 	if (err < 0) {
 		logit(LOG_CRIT, "Unable to parse arguments or configuration...\n");
 		exit(EXIT_FAILURE);
@@ -825,12 +886,20 @@ int main(int argc, char *argv[])
 			if (loopbacks[i]->thread == k)
 				threads[k].loopbacks[l++] = loopbacks[i];
 	}
+	threads_count = j;
+	main_job = pthread_self();
+ 
+	signal(SIGINT, signal_handler);
+	signal(SIGTERM, signal_handler);
+	signal(SIGABRT, signal_handler);
+	signal(SIGUSR1, signal_handler_state);
+	signal(SIGUSR2, signal_handler_ignore);
 
-	for (k = 0; k < j; k++)
+	for (k = 0; k < threads_count; k++)
 		thread_job(&threads[k]);
 
 	if (j > 1) {
-		for (k = 0; k < j; k++)
+		for (k = 0; k < threads_count; k++)
 			pthread_join(threads[k].thread, NULL);
 	}
 

@@ -95,6 +95,7 @@ struct loopback_handle {
 	unsigned int channels;
 	unsigned int buffer_size;
 	unsigned int period_size;
+	snd_pcm_uframes_t avail_min;
 	unsigned int buffer_size_req;
 	unsigned int period_size_req;
 	unsigned int frame_size;
@@ -130,12 +131,13 @@ struct loopback {
 	char *id;
 	struct loopback_handle *capt;
 	struct loopback_handle *play;
-	snd_pcm_uframes_t latency;	/* final latency */
-	unsigned int latency_req;	/* in frames / 2 */
-	unsigned int latency_reqtime;	/* in us / 2 */
+	snd_pcm_uframes_t latency;	/* final latency in frames */
+	unsigned int latency_req;	/* in frames */
+	unsigned int latency_reqtime;	/* in us */
 	unsigned long loop_time;	/* ~0 = unlimited (in seconds) */
 	unsigned long long loop_limit;	/* ~0 = unlimited (in frames) */
 	snd_output_t *output;
+	snd_output_t *state;
 	int pollfd_count;
 	int active_pollfd_count;
 	unsigned int linked:1;		/* linked streams */
@@ -153,6 +155,17 @@ struct loopback {
 	unsigned int total_queued_count;
 	snd_timestamp_t tstamp_start;
 	snd_timestamp_t tstamp_end;
+	/* xrun profiling */
+	unsigned int xrun:1;		/* xrun profiling */
+	snd_timestamp_t xrun_last_update;
+	snd_timestamp_t xrun_last_wake0;
+	snd_timestamp_t xrun_last_wake;
+	snd_timestamp_t xrun_last_check0;
+	snd_timestamp_t xrun_last_check;
+	snd_pcm_sframes_t xrun_last_pdelay;
+	snd_pcm_sframes_t xrun_last_cdelay;
+	long xrun_max_proctime;
+	double xrun_max_missing;
 	/* control mixer */
 	struct loopback_mixer *controls;
 	struct loopback_ossmixer *oss_controls;
@@ -190,6 +203,7 @@ int pcmjob_start(struct loopback *loop);
 int pcmjob_stop(struct loopback *loop);
 int pcmjob_pollfds_init(struct loopback *loop, struct pollfd *fds);
 int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds);
+void pcmjob_state(struct loopback *loop);
 
 int control_parse_id(const char *str, snd_ctl_elem_id_t *id);
 int control_id_match(snd_ctl_elem_id_t *id1, snd_ctl_elem_id_t *id2);

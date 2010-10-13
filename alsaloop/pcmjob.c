@@ -34,6 +34,8 @@
 #include <pthread.h>
 #include "alsaloop.h"
 
+#define XRUN_PROFILE_UNKNOWN (-10000000)
+
 static int set_rate_shift(struct loopback_handle *lhandle, double pitch);
 static int get_rate(struct loopback_handle *lhandle);
 
@@ -50,6 +52,7 @@ static const char *sync_types[] = {
 
 #define SRCTYPE(v) [SRC_##v] = "SRC_" #v
 
+#ifdef USE_SAMPLERATE
 static const char *src_types[] = {
 	SRCTYPE(SINC_BEST_QUALITY),
 	SRCTYPE(SINC_MEDIUM_QUALITY),
@@ -57,6 +60,7 @@ static const char *src_types[] = {
 	SRCTYPE(ZERO_ORDER_HOLD),
 	SRCTYPE(LINEAR)
 };
+#endif
 
 static pthread_mutex_t pcm_open_mutex =
                                 PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
@@ -76,6 +80,13 @@ static inline void pcm_open_unlock(void)
 static inline snd_pcm_uframes_t get_whole_latency(struct loopback *loop)
 {
 	return loop->latency;
+}
+
+static inline unsigned long long
+			frames_to_time(struct loopback_handle *lhandle,
+				       snd_pcm_uframes_t frames)
+{
+	return (frames * 1000000ULL) / lhandle->rate;
 }
 
 static inline snd_pcm_uframes_t time_to_frames(struct loopback_handle *lhandle,
@@ -125,7 +136,11 @@ static int setparams_stream(struct loopback_handle *lhandle,
 	rrate = 0;
 	snd_pcm_hw_params_get_rate(params, &rrate, 0);
 	lhandle->rate = rrate;
-	if (!lhandle->loopback->src_enable && (int)rrate != lhandle->rate) {
+	if (
+#ifdef USE_SAMPLERATE
+	    !lhandle->loopback->src_enable &&
+#endif
+	    (int)rrate != lhandle->rate) {
 		logit(LOG_CRIT, "Rate does not match (requested %iHz, got %iHz, resample %i)\n", lhandle->rate, rrate, lhandle->resample);
 		return -EINVAL;
 	}
@@ -247,6 +262,7 @@ static int setparams_set(struct loopback_handle *lhandle,
 		logit(LOG_CRIT, "Unable to set avail min for %s: %s\n", lhandle->id, snd_strerror(err));
 		return err;
 	}
+	snd_pcm_sw_params_get_avail_min(swparams, &lhandle->avail_min);
 	err = snd_pcm_sw_params(handle, swparams);
 	if (err < 0) {
 		logit(LOG_CRIT, "Unable to set sw params for %s: %s\n", lhandle->id, snd_strerror(err));
@@ -316,11 +332,12 @@ static int setparams(struct loopback *loop, snd_pcm_uframes_t bufsize)
 	return 0;
 }
 
-static void showlatency(struct loopback *loop, size_t latency, unsigned int rate)
+static void showlatency(snd_output_t *out, size_t latency, unsigned int rate,
+			char *prefix)
 {
 	double d;
 	d = (double)latency / (double)rate;
-	snd_output_printf(loop->output, "Latency %li frames, %.3fus, %.6fms (%.4fHz)\n", (long)latency, d * 1000000, d * 1000, (double)1 / d);
+	snd_output_printf(out, "%s %li frames, %.3fus, %.6fms (%.4fHz)\n", prefix, (long)latency, d * 1000000, d * 1000, (double)1 / d);
 }
 
 static long timediff(snd_timestamp_t t1, snd_timestamp_t t2)
@@ -328,11 +345,11 @@ static long timediff(snd_timestamp_t t1, snd_timestamp_t t2)
 	signed long l;
 
 	t1.tv_sec -= t2.tv_sec;
-	l = (signed long) t1.tv_usec - (signed long) t2.tv_usec;
-	if (l < 0) {
+	if (t1.tv_usec < t2.tv_usec) {
+		l = ((t1.tv_usec + 1000000) - t2.tv_usec) % 1000000;
 		t1.tv_sec--;
-		l = -l;
-		l %= 1000000;
+	} else {
+		l = t1.tv_usec - t2.tv_usec;
 	}
 	return (t1.tv_sec * 1000000) + l;
 }
@@ -344,6 +361,56 @@ static int getcurtimestamp(snd_timestamp_t *ts)
 	ts->tv_sec = tv.tv_sec;
 	ts->tv_usec = tv.tv_usec;
 	return 0;
+}
+
+static void xrun_profile0(struct loopback *loop)
+{
+	snd_pcm_sframes_t pdelay, cdelay;
+
+	if (snd_pcm_delay(loop->play->handle, &pdelay) >= 0 &&
+	    snd_pcm_delay(loop->capt->handle, &cdelay) >= 0) {
+		getcurtimestamp(&loop->xrun_last_update);
+		loop->xrun_last_pdelay = pdelay;
+		loop->xrun_last_cdelay = cdelay;
+	}
+}
+
+static inline void xrun_profile(struct loopback *loop)
+{
+	if (loop->xrun)
+		xrun_profile0(loop);
+}
+
+static void xrun_stats0(struct loopback *loop)
+{
+	snd_timestamp_t t;
+	double expected, last, wake, check, queued = -1, proc, missing;
+
+	expected = ((double)loop->latency /
+				(double)loop->play->rate) * 1000;
+	getcurtimestamp(&t);
+	last = (double)timediff(t, loop->xrun_last_update) / 1000;
+	wake = (double)timediff(t, loop->xrun_last_wake) / 1000;
+	check = (double)timediff(t, loop->xrun_last_check) / 1000;
+	if (loop->xrun_last_pdelay != XRUN_PROFILE_UNKNOWN)
+		queued = (((double)loop->xrun_last_pdelay *
+						loop->play->pitch) /
+				(double)loop->play->rate) * 1000;
+	proc = (double)loop->xrun_max_proctime / 1000;
+	missing = last - queued;
+	if (loop->xrun_max_missing < missing)
+		loop->xrun_max_missing = missing;
+	loop->xrun_max_proctime = 0;
+	getcurtimestamp(&t);
+	logit(LOG_INFO, "  last write before %.4fms, queued %.4fms -> missing %.4fms\n", last, queued, missing);
+	logit(LOG_INFO, "  expected %.4fms, processing %.4fms, max missing %.4fms\n", expected, proc, loop->xrun_max_missing);
+	logit(LOG_INFO, "  last wake before %.4fms, last check before %.4fms\n", wake, check);
+}
+
+static inline void xrun_stats(struct loopback *loop)
+{
+	if (loop->xrun)
+		xrun_stats0(loop);
 }
 
 static inline snd_pcm_uframes_t buf_avail(struct loopback_handle *lhandle)
@@ -495,11 +562,13 @@ static int xrun(struct loopback_handle *lhandle)
 
 	if (lhandle == lhandle->loopback->play) {
 		logit(LOG_DEBUG, "underrun for %s\n", lhandle->id);
+		xrun_stats(lhandle->loopback);
 		if ((err = snd_pcm_prepare(lhandle->handle)) < 0)
 			return err;
 		lhandle->xrun_pending = 1;
 	} else {
 		logit(LOG_DEBUG, "overrun for %s\n", lhandle->id);
+		xrun_stats(lhandle->loopback);
 		if ((err = snd_pcm_prepare(lhandle->handle)) < 0)
 			return err;
 		lhandle->xrun_pending = 1;
@@ -622,6 +691,7 @@ static int writeit(struct loopback_handle *lhandle)
 			fwrite(lhandle->buf + lhandle->buf_pos * lhandle->frame_size,
 			       r, lhandle->frame_size, lhandle->loopback->pfile);
 #endif
+		xrun_profile(lhandle->loopback);
 		res += r;
 		lhandle->counter += r;
 		lhandle->buf_count -= r;
@@ -735,9 +805,17 @@ static int xrun_sync(struct loopback *loop)
 	loop->pitch_diff = loop->pitch_diff_min = loop->pitch_diff_max = 0;
 	if (verbose > 6) {
 		snd_output_printf(loop->output,
-			"sync: cdelay=%li(%li), pdelay=%li(%li), fill=%li (delay=%li), src_out=%li\n",
+			"sync: cdelay=%li(%li), pdelay=%li(%li), fill=%li (delay=%li)"
+#ifdef USE_SAMPLERATE
+			", src_out=%li"
+#endif
+			"\n",
 			(long)cdelay, (long)cdelay1, (long)pdelay, (long)pdelay1,
-			(long)fill, (long)delay1, (long)loop->src_out_frames);
+			(long)fill, (long)delay1
+#ifdef USE_SAMPLERATE
+			, (long)loop->src_out_frames
+#endif
+			);
 		snd_output_printf(loop->output,
 			"sync: cbufcount=%li, pbufcount=%li\n",
 			(long)capt->buf_count, (long)play->buf_count);
@@ -1112,10 +1190,7 @@ static int init_handle(struct loopback_handle *lhandle, int alloc)
 	lhandle->frame_size = (snd_pcm_format_width(lhandle->format) / 8) *
 							   lhandle->channels;
 	lhandle->sync_point = lhandle->rate * 15;	/* every 15 seconds */
-	lat = lhandle->loopback->latency_req;
-	if (lat == 0)
-		lat = time_to_frames(lhandle,
-				     lhandle->loopback->latency_reqtime);
+	lat = lhandle->loopback->latency;
 	if (lhandle->buffer_size > lat)
 		lat = lhandle->buffer_size;
 	lhandle->buf_size = lat * 2;
@@ -1152,8 +1227,6 @@ int pcmjob_init(struct loopback *loop)
 #ifdef USE_SAMPLERATE
 	if (loop->sync == SYNC_TYPE_AUTO && loop->src_enable)
 		loop->sync = SYNC_TYPE_SAMPLERATE;
-#else
-	loop->src_enable = 0;
 #endif
 	if (loop->sync == SYNC_TYPE_AUTO)
 		loop->sync = SYNC_TYPE_SIMPLE;
@@ -1270,14 +1343,16 @@ int pcmjob_start(struct loopback *loop)
 	}
 	loop->reinit = 0;
 	loop->use_samplerate = 0;
-	loop->latency = loop->latency_req;
-	if (loop->latency == 0)
-		loop->latency = time_to_frames(loop->play,
-					       loop->latency_reqtime);
+	if (loop->latency_req) {
+		loop->latency_reqtime = frames_to_time(loop->play,
+						       loop->latency_req);
+		loop->latency_req = 0;
+	}
+	loop->latency = time_to_frames(loop->play, loop->latency_reqtime);
 	if ((err = setparams(loop, loop->latency/2)) < 0)
 		goto __error;
 	if (verbose)
-		showlatency(loop, loop->latency, loop->play->rate_req);
+		showlatency(loop->output, loop->latency, loop->play->rate, "Latency");
 	if (loop->play->access == loop->capt->access &&
 	    loop->play->format == loop->capt->format &&
 	    loop->play->rate == loop->capt->rate &&
@@ -1402,6 +1477,12 @@ int pcmjob_start(struct loopback *loop)
 		goto __error;
 	}
 	loop->running = 1;
+	if (loop->xrun) {
+		getcurtimestamp(&loop->xrun_last_update);
+		loop->xrun_last_pdelay = XRUN_PROFILE_UNKNOWN;
+		loop->xrun_last_cdelay = XRUN_PROFILE_UNKNOWN;
+		loop->xrun_max_proctime = 0;
+	}
 	if ((err = snd_pcm_start(loop->capt->handle)) < 0) {
 		logit(LOG_CRIT, "pcm start %s error: %s\n", loop->capt->id, snd_strerror(err));
 		goto __error;
@@ -1568,7 +1649,7 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 
 	if (verbose > 11)
 		snd_output_printf(loop->output, "%s: pollfds handle\n", loop->id);
-	if (verbose > 13)
+	if (verbose > 13 || loop->xrun)
 		getcurtimestamp(&loop->tstamp_start);
 	if (verbose > 12) {
 		snd_pcm_sframes_t pdelay, cdelay;
@@ -1595,6 +1676,14 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 		if (err < 0)
 			return err;
 		idx += capt->pollfd_count;
+		if (loop->xrun) {
+			if (prevents || crevents) {
+				loop->xrun_last_wake = loop->xrun_last_wake0;
+				loop->xrun_last_wake0 = loop->tstamp_start;
+			}
+			loop->xrun_last_check = loop->xrun_last_check0;
+			loop->xrun_last_check0 = loop->tstamp_start;
+		}
 	} else {
 		prevents = crevents = 0;
 	}
@@ -1717,9 +1806,54 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 			snd_output_printf(loop->output, "%s: end delay %li / %li / %li\n", capt->id, cdelay, capt->buf_size, capt->buf_count);
 	}
       __pcm_end:
-	if (verbose > 13) {
+	if (verbose > 13 || loop->xrun) {
+		long diff;
 		getcurtimestamp(&loop->tstamp_end);
-		snd_output_printf(loop->output, "%s: processing time %lius\n", capt->id, timediff(loop->tstamp_end, loop->tstamp_start));
+		diff = timediff(loop->tstamp_end, loop->tstamp_start);
+		if (verbose > 13)
+			snd_output_printf(loop->output, "%s: processing time %lius\n", loop->id, diff);
+		if (loop->xrun && loop->xrun_max_proctime < diff)
+			loop->xrun_max_proctime = diff;
 	}
 	return 0;
+}
+
+#define OUT(args...) \
+	snd_output_printf(loop->state, ##args)
+
+static pthread_mutex_t state_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void show_handle(struct loopback_handle *lhandle, const char *id)
+{
+	struct loopback *loop = lhandle->loopback;
+
+	OUT("  %s: %s:\n", id, lhandle->id);
+	OUT("    device = '%s', ctldev '%s'\n", lhandle->device, lhandle->ctldev);
+	OUT("    card_number = %i\n", lhandle->card_number);
+	if (!loop->running)
+		return;
+	OUT("    access = %s, format = %s, rate = %u, channels = %u\n", snd_pcm_access_name(lhandle->access), snd_pcm_format_name(lhandle->format), lhandle->rate, lhandle->channels);
+	OUT("    buffer_size = %u, period_size = %u, avail_min = %li\n", lhandle->buffer_size, lhandle->period_size, lhandle->avail_min);
+	OUT("    xrun_pending = %i\n", lhandle->xrun_pending);
+	OUT("    buf_size = %li, buf_pos = %li, buf_count = %li, buf_over = %li\n", lhandle->buf_size, lhandle->buf_pos, lhandle->buf_count, lhandle->buf_over);
+	OUT("    pitch = %.8f\n", lhandle->pitch);
+}
+
+void pcmjob_state(struct loopback *loop)
+{
+	pthread_t self = pthread_self();
+	pthread_mutex_lock(&state_mutex);
+	OUT("State dump for thread %p job %i: %s:\n", (void *)self, loop->thread, loop->id);
+	OUT("  running = %i\n", loop->running);
+	OUT("  sync = %i\n", loop->sync);
+	OUT("  slave = %i\n", loop->slave);
+	if (!loop->running)
+		goto __skip;
+	OUT("  pollfd_count = %i\n", loop->pollfd_count);
+	OUT("  pitch = %.8f, delta = %.8f, diff = %li, min = %li, max = %li\n", loop->pitch, loop->pitch_delta, loop->pitch_diff, loop->pitch_diff_min, loop->pitch_diff_max);
+	OUT("  use_samplerate = %i\n", loop->use_samplerate);
+      __skip:
+	show_handle(loop->play, "playback");
+	show_handle(loop->capt, "capture");
+	pthread_mutex_unlock(&state_mutex);
 }
