@@ -1394,7 +1394,7 @@ int pcmjob_start(struct loopback *loop)
 	if ((err = setparams(loop, loop->latency/2)) < 0)
 		goto __error;
 	if (verbose)
-		showlatency(loop->output, loop->latency, loop->play->rate, "Latency");
+		showlatency(loop->output, loop->latency, loop->play->rate_req, "Latency");
 	if (loop->play->access == loop->capt->access &&
 	    loop->play->format == loop->capt->format &&
 	    loop->play->rate == loop->capt->rate &&
