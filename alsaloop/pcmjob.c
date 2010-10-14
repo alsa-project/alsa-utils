@@ -83,16 +83,16 @@ static inline snd_pcm_uframes_t get_whole_latency(struct loopback *loop)
 }
 
 static inline unsigned long long
-			frames_to_time(struct loopback_handle *lhandle,
+			frames_to_time(unsigned int rate,
 				       snd_pcm_uframes_t frames)
 {
-	return (frames * 1000000ULL) / lhandle->rate;
+	return (frames * 1000000ULL) / rate;
 }
 
-static inline snd_pcm_uframes_t time_to_frames(struct loopback_handle *lhandle,
+static inline snd_pcm_uframes_t time_to_frames(unsigned int rate,
 					       unsigned long long time)
 {
-	return (time * lhandle->rate) / 1000000ULL;
+	return (time * rate) / 1000000ULL;
 }
 
 static int setparams_stream(struct loopback_handle *lhandle,
@@ -245,12 +245,16 @@ static int setparams_set(struct loopback_handle *lhandle,
 			snd_output_printf(lhandle->loopback->output, "%s: avail_min1=%li\n", lhandle->id, val);
 	} else {
 		if (lhandle == lhandle->loopback->play) {
-			val = bufsize / 2 + bufsize / 4 + bufsize / 8;
-			if (val > buffer_size / 4)
-				val = buffer_size / 4;
+			val = bufsize + bufsize / 2;
+			if (val < (period_size * 3) / 4)
+				val = (period_size * 3) / 4;
+			if (val > (buffer_size * 3) / 4)
+				val = (buffer_size * 3) / 4;
 			val = buffer_size - val;
 		} else {
 			val = bufsize / 2;
+			if (val < period_size / 2)
+				val = period_size / 2;
 			if (val > buffer_size / 4)
 				val = buffer_size / 4;
 		}
@@ -372,6 +376,11 @@ static void xrun_profile0(struct loopback *loop)
 		getcurtimestamp(&loop->xrun_last_update);
 		loop->xrun_last_pdelay = pdelay;
 		loop->xrun_last_cdelay = cdelay;
+		loop->xrun_buf_pcount = loop->play->buf_count;
+		loop->xrun_buf_ccount = loop->capt->buf_count;
+#ifdef USE_SAMPLERATE
+		loop->xrun_out_frames = loop->src_out_frames;
+#endif
 	}
 }
 
@@ -384,27 +393,45 @@ static inline void xrun_profile(struct loopback *loop)
 static void xrun_stats0(struct loopback *loop)
 {
 	snd_timestamp_t t;
-	double expected, last, wake, check, queued = -1, proc, missing;
+	double expected, last, wake, check, queued = -1, proc, missing = -1;
+	double maxbuf, pfilled, cfilled, cqueued = -1, avail_min;
+	double sincejob;
 
 	expected = ((double)loop->latency /
-				(double)loop->play->rate) * 1000;
+				(double)loop->play->rate_req) * 1000;
 	getcurtimestamp(&t);
 	last = (double)timediff(t, loop->xrun_last_update) / 1000;
 	wake = (double)timediff(t, loop->xrun_last_wake) / 1000;
 	check = (double)timediff(t, loop->xrun_last_check) / 1000;
+	sincejob = (double)timediff(t, loop->tstamp_start) / 1000;
 	if (loop->xrun_last_pdelay != XRUN_PROFILE_UNKNOWN)
-		queued = (((double)loop->xrun_last_pdelay *
-						loop->play->pitch) /
+		queued = ((double)loop->xrun_last_pdelay /
+				(double)loop->play->rate) * 1000;
+	if (loop->xrun_last_cdelay != XRUN_PROFILE_UNKNOWN)
+		cqueued = ((double)loop->xrun_last_cdelay /
+				(double)loop->capt->rate) * 1000;
+	maxbuf = ((double)loop->play->buffer_size /
 				(double)loop->play->rate) * 1000;
 	proc = (double)loop->xrun_max_proctime / 1000;
-	missing = last - queued;
-	if (loop->xrun_max_missing < missing)
+	pfilled = ((double)(loop->xrun_buf_pcount + loop->xrun_out_frames) /
+				(double)loop->play->rate) * 1000;
+	cfilled = ((double)loop->xrun_buf_ccount /
+				(double)loop->capt->rate) * 1000;
+	avail_min = (((double)loop->play->buffer_size - 
+				(double)loop->play->avail_min ) / 
+				(double)loop->play->rate) * 1000;
+	avail_min = expected - avail_min;
+	if (queued >= 0)
+		missing = last - queued;
+	if (missing >= 0 && loop->xrun_max_missing < missing)
 		loop->xrun_max_missing = missing;
 	loop->xrun_max_proctime = 0;
 	getcurtimestamp(&t);
-	logit(LOG_INFO, "  last write before %.4fms, queued %.4fms -> missing %.4fms\n", last, queued, missing);
+	logit(LOG_INFO, "  last write before %.4fms, queued %.4fms/%.4fms -> missing %.4fms\n", last, queued, cqueued, missing);
 	logit(LOG_INFO, "  expected %.4fms, processing %.4fms, max missing %.4fms\n", expected, proc, loop->xrun_max_missing);
-	logit(LOG_INFO, "  last wake before %.4fms, last check before %.4fms\n", wake, check);
+	logit(LOG_INFO, "  last wake %.4fms, last check %.4fms, avail_min %.4fms\n", wake, check, avail_min);
+	logit(LOG_INFO, "  max buf %.4fms, pfilled %.4fms, cfilled %.4fms\n", maxbuf, pfilled, cfilled);
+	logit(LOG_INFO, "  job started before %.4fms\n", sincejob);
 }
 
 static inline void xrun_stats(struct loopback *loop)
@@ -483,7 +510,14 @@ static void buf_add_src(struct loopback *loop)
 		count1 = count;
 		if (count1 + pos1 > capt->buf_size)
 			count1 = capt->buf_size - pos1;
-		src_short_to_float_array((short *)(capt->buf +
+		if (capt->format == SND_PCM_FORMAT_S32)
+			src_int_to_float_array((int *)(capt->buf +
+						pos1 * capt->frame_size),
+					 loop->src_data.data_in +
+					   pos * capt->channels,
+					 count1 * capt->channels);
+		else
+			src_short_to_float_array((short *)(capt->buf +
 						pos1 * capt->frame_size),
 					 loop->src_data.data_in +
 					   pos * capt->channels,
@@ -514,7 +548,14 @@ static void buf_add_src(struct loopback *loop)
 			count1 = buf_avail(play);
 		if (count1 == 0)
 			break;
-		src_float_to_short_array(loop->src_data.data_out +
+		if (capt->format == SND_PCM_FORMAT_S32)
+			src_float_to_int_array(loop->src_data.data_out +
+					   pos * play->channels,
+					 (int *)(play->buf +
+					   pos1 * play->frame_size),
+					 count1 * play->channels);
+		else
+			src_float_to_short_array(loop->src_data.data_out +
 					   pos * play->channels,
 					 (short *)(play->buf +
 					   pos1 * play->frame_size),
@@ -691,12 +732,12 @@ static int writeit(struct loopback_handle *lhandle)
 			fwrite(lhandle->buf + lhandle->buf_pos * lhandle->frame_size,
 			       r, lhandle->frame_size, lhandle->loopback->pfile);
 #endif
-		xrun_profile(lhandle->loopback);
 		res += r;
 		lhandle->counter += r;
 		lhandle->buf_count -= r;
 		lhandle->buf_pos += r;
 		lhandle->buf_pos %= lhandle->buf_size;
+		xrun_profile(lhandle->loopback);
 	}
 	return res;
 }
@@ -919,6 +960,7 @@ static int xrun_sync(struct loopback *loop)
 			snd_output_printf(loop->output, "%s: sync verify: %li\n", loop->id, delay1);
 		}
 	}
+	loop->xrun_max_proctime = 0;
 	return 0;
 }
 
@@ -1344,11 +1386,11 @@ int pcmjob_start(struct loopback *loop)
 	loop->reinit = 0;
 	loop->use_samplerate = 0;
 	if (loop->latency_req) {
-		loop->latency_reqtime = frames_to_time(loop->play,
+		loop->latency_reqtime = frames_to_time(loop->play->rate_req,
 						       loop->latency_req);
 		loop->latency_req = 0;
 	}
-	loop->latency = time_to_frames(loop->play, loop->latency_reqtime);
+	loop->latency = time_to_frames(loop->play->rate_req, loop->latency_reqtime);
 	if ((err = setparams(loop, loop->latency/2)) < 0)
 		goto __error;
 	if (verbose)
@@ -1406,9 +1448,11 @@ int pcmjob_start(struct loopback *loop)
 		goto __error;		
 	}
 	if (loop->use_samplerate) {
-		if (loop->capt->format != SND_PCM_FORMAT_S16 ||
-		    loop->play->format != SND_PCM_FORMAT_S16) {
-			logit(LOG_CRIT, "samplerate conversion supports only %s format (play=%s, capt=%s)\n", snd_pcm_format_name(SND_PCM_FORMAT_S16), snd_pcm_format_name(loop->play->format), snd_pcm_format_name(loop->capt->format));
+		if ((loop->capt->format != SND_PCM_FORMAT_S16 ||
+		    loop->play->format != SND_PCM_FORMAT_S16) &&
+		    (loop->capt->format != SND_PCM_FORMAT_S32 ||
+		     loop->play->format != SND_PCM_FORMAT_S32)) {
+			logit(LOG_CRIT, "samplerate conversion supports only %s or %s formats (play=%s, capt=%s)\n", snd_pcm_format_name(SND_PCM_FORMAT_S16), snd_pcm_format_name(SND_PCM_FORMAT_S32), snd_pcm_format_name(loop->play->format), snd_pcm_format_name(loop->capt->format));
 			loop->use_samplerate = 0;
 			err = -EIO;
 			goto __error;		

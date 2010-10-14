@@ -56,6 +56,7 @@ struct loopback_thread *threads;
 int threads_count = 0;
 pthread_t main_job;
 int arg_default_xrun = 0;
+int arg_default_wake = 0;
 
 static void my_exit(struct loopback_thread *thread, int exitcode)
 {
@@ -193,6 +194,7 @@ void help(void)
 "-v,--verbose   verbose mode (more -v means more verbose)\n"
 "-w,--workaround use workaround (serialopen)\n"
 "-U,--xrun      xrun profiling\n"
+"-W,--wake      process wake timeout in ms\n"
 );
 	printf("\nRecognized sample formats are:");
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
@@ -395,12 +397,13 @@ static int parse_config(int argc, char *argv[], snd_output_t *output,
 	char *arg_ossmixers[MAX_MIXERS];
 	int arg_ossmixers_count = 0;
 	int arg_xrun = arg_default_xrun;
+	int arg_wake = arg_default_wake;
 
 	morehelp = 0;
 	while (1) {
 		int c;
 		if ((c = getopt_long(argc, argv,
-				"hdg:P:C:X:Y:l:t:F:f:c:r:s:benvA:S:a:m:T:O:w:U",
+				"hdg:P:C:X:Y:l:t:F:f:c:r:s:benvA:S:a:m:T:O:w:UW:",
 				long_option, NULL)) < 0)
 			break;
 		switch (c) {
@@ -549,6 +552,11 @@ static int parse_config(int argc, char *argv[], snd_output_t *output,
 			if (cmdline)
 				arg_default_xrun = 1;
 			break;
+		case 'W':
+			arg_wake = atoi(optarg);
+			if (cmdline)
+				arg_default_wake = arg_wake;
+			break;
 		}
 	}
 
@@ -587,6 +595,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output,
 		loop->slave = arg_slave;
 		loop->thread = arg_thread;
 		loop->xrun = arg_xrun;
+		loop->wake = arg_wake;
 		err = add_mixers(loop, arg_mixers, arg_mixers_count);
 		if (err < 0) {
 			logit(LOG_CRIT, "Unable to add mixer controls.\n");
@@ -691,7 +700,7 @@ static void thread_job1(void *_data)
 	snd_output_t *output = thread->output;
 	struct pollfd *pfds = NULL;
 	int pfds_count = 0;
-	int i, j, err;
+	int i, j, err, wake = 1000000;
 
 	setscheduler();
 
@@ -709,7 +718,12 @@ static void thread_job1(void *_data)
 			my_exit(thread, EXIT_FAILURE);
 		}
 		pfds_count += thread->loopbacks[i]->pollfd_count;
+		j = thread->loopbacks[i]->wake;
+		if (j > 0 && j < wake)
+			wake = j;
 	}
+	if (wake >= 1000000)
+		wake = -1;
 	pfds = calloc(pfds_count, sizeof(struct pollfd));
 	if (pfds == NULL || pfds_count <= 0) {
 		logit(LOG_CRIT, "Poll FDs allocation failed.\n");
@@ -727,7 +741,7 @@ static void thread_job1(void *_data)
 		}
 		if (verbose > 10)
 			gettimeofday(&tv1, NULL);
-		err = poll(pfds, j, -1);
+		err = poll(pfds, j, wake);
 		if (err < 0)
 			err = -errno;
 		if (verbose > 10) {

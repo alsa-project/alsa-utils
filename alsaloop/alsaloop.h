@@ -146,6 +146,7 @@ struct loopback {
 	sync_type_t sync;		/* type of sync */
 	slave_type_t slave;
 	int thread;			/* thread number */
+	unsigned int wake;
 	/* statistics */
 	double pitch;
 	double pitch_delta;
@@ -164,6 +165,9 @@ struct loopback {
 	snd_timestamp_t xrun_last_check;
 	snd_pcm_sframes_t xrun_last_pdelay;
 	snd_pcm_sframes_t xrun_last_cdelay;
+	snd_pcm_uframes_t xrun_buf_pcount;
+	snd_pcm_uframes_t xrun_buf_ccount;
+	unsigned int xrun_out_frames;
 	long xrun_max_proctime;
 	double xrun_max_missing;
 	/* control mixer */
