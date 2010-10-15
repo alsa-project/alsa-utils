@@ -993,9 +993,9 @@ int main(int argc, char *argv[]) {
 
   }
 
-  while ((err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
+  if ((err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
     printf(_("Playback open error: %d,%s\n"), err,snd_strerror(err));
-    sleep(1);
+    exit(EXIT_FAILURE);
   }
 
   if ((err = set_hwparams(handle, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
