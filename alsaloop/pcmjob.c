@@ -738,6 +738,15 @@ static int writeit(struct loopback_handle *lhandle)
 		lhandle->buf_pos += r;
 		lhandle->buf_pos %= lhandle->buf_size;
 		xrun_profile(lhandle->loopback);
+		if (lhandle->loopback->stop_pending) {
+			lhandle->loopback->stop_count += r;
+			if (lhandle->loopback->stop_count * lhandle->pitch >
+			    lhandle->loopback->latency * 3) {
+				lhandle->loopback->stop_pending = 0;
+				lhandle->loopback->reinit = 1;
+				break;
+			}
+		}
 	}
 	return res;
 }
@@ -1521,6 +1530,7 @@ int pcmjob_start(struct loopback *loop)
 		goto __error;
 	}
 	loop->running = 1;
+	loop->stop_pending = 0;
 	if (loop->xrun) {
 		getcurtimestamp(&loop->xrun_last_update);
 		loop->xrun_last_pdelay = XRUN_PROFILE_UNKNOWN;
@@ -1638,6 +1648,7 @@ static int ctl_event_check(snd_ctl_elem_value_t *val, snd_ctl_event_t *ev)
 static int handle_ctl_events(struct loopback_handle *lhandle,
 			     unsigned short events)
 {
+	struct loopback *loop = lhandle->loopback;
 	snd_ctl_event_t *ev;
 	int err;
 
@@ -1647,16 +1658,24 @@ static int handle_ctl_events(struct loopback_handle *lhandle,
 			break;
 		if (snd_ctl_event_get_type(ev) != SND_CTL_EVENT_ELEM)
 			continue;
-		if (lhandle == lhandle->loopback->play)
+		if (lhandle == loop->play)
 			goto __ctl_check;
 		if (verbose > 6)
-			snd_output_printf(lhandle->loopback->output, "%s: ctl event!!!! %s\n", lhandle->id, snd_ctl_event_elem_get_name(ev));
+			snd_output_printf(loop->output, "%s: ctl event!!!! %s\n", lhandle->id, snd_ctl_event_elem_get_name(ev));
 		if (ctl_event_check(lhandle->ctl_active, ev)) {
 			err = get_active(lhandle);
 			if (verbose > 7)
-				snd_output_printf(lhandle->loopback->output, "%s: ctl event active %i\n", lhandle->id, err);
-			if (err != lhandle->loopback->running)
-				goto __restart;
+				snd_output_printf(loop->output, "%s: ctl event active %i\n", lhandle->id, err);
+			if (!err) {
+				if (lhandle->loopback->running) {
+					loop->stop_pending = 1;
+					loop->stop_count = 0;
+				}
+			} else {
+				loop->stop_pending = 0;
+				if (loop->running == 0)
+					goto __restart;
+			}
 		} else if (ctl_event_check(lhandle->ctl_format, ev)) {
 			err = get_format(lhandle);
 			if (lhandle->format != err)
@@ -1676,8 +1695,8 @@ static int handle_ctl_events(struct loopback_handle *lhandle,
 	return 0;
 
       __restart:
-	pcmjob_stop(lhandle->loopback);
-	err = pcmjob_start(lhandle->loopback);
+	pcmjob_stop(loop);
+	err = pcmjob_start(loop);
 	if (err < 0)
 		return err;
 	return 1;

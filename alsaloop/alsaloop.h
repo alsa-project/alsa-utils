@@ -143,6 +143,8 @@ struct loopback {
 	unsigned int linked:1;		/* linked streams */
 	unsigned int reinit:1;
 	unsigned int running:1;
+	unsigned int stop_pending:1;
+	snd_pcm_uframes_t stop_count;
 	sync_type_t sync;		/* type of sync */
 	slave_type_t slave;
 	int thread;			/* thread number */
