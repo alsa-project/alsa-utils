@@ -1650,7 +1650,7 @@ static int handle_ctl_events(struct loopback_handle *lhandle,
 {
 	struct loopback *loop = lhandle->loopback;
 	snd_ctl_event_t *ev;
-	int err;
+	int err, restart = 0;
 
 	snd_ctl_event_alloca(&ev);
 	while ((err = snd_ctl_read(lhandle->ctl, ev)) != 0 && err != -EAGAIN) {
@@ -1663,42 +1663,45 @@ static int handle_ctl_events(struct loopback_handle *lhandle,
 		if (verbose > 6)
 			snd_output_printf(loop->output, "%s: ctl event!!!! %s\n", lhandle->id, snd_ctl_event_elem_get_name(ev));
 		if (ctl_event_check(lhandle->ctl_active, ev)) {
-			err = get_active(lhandle);
-			if (verbose > 7)
-				snd_output_printf(loop->output, "%s: ctl event active %i\n", lhandle->id, err);
-			if (!err) {
-				if (lhandle->loopback->running) {
-					loop->stop_pending = 1;
-					loop->stop_count = 0;
-				}
-			} else {
-				loop->stop_pending = 0;
-				if (loop->running == 0)
-					goto __restart;
-			}
+			continue;
 		} else if (ctl_event_check(lhandle->ctl_format, ev)) {
 			err = get_format(lhandle);
 			if (lhandle->format != err)
-				goto __restart;
+				restart = 1;
+			continue;
 		} else if (ctl_event_check(lhandle->ctl_rate, ev)) {
 			err = get_rate(lhandle);
 			if (lhandle->rate != err)
-				goto __restart;
+				restart = 1;
+			continue;
 		} else if (ctl_event_check(lhandle->ctl_channels, ev)) {
 			err = get_channels(lhandle);
 			if (lhandle->channels != err)
-				goto __restart;
+				restart = 1;
+			continue;
 		}
 	      __ctl_check:
 		control_event(lhandle, ev);
 	}
-	return 0;
-
-      __restart:
-	pcmjob_stop(loop);
-	err = pcmjob_start(loop);
-	if (err < 0)
-		return err;
+	err = get_active(lhandle);
+	if (verbose > 7)
+		snd_output_printf(loop->output, "%s: ctl event active %i\n", lhandle->id, err);
+	if (!err) {
+		if (lhandle->loopback->running) {
+			loop->stop_pending = 1;
+			loop->stop_count = 0;
+		}
+	} else {
+		loop->stop_pending = 0;
+		if (loop->running == 0)
+			restart = 1;
+	}
+	if (restart) {
+		pcmjob_stop(loop);
+		err = pcmjob_start(loop);
+		if (err < 0)
+			return err;
+	}
 	return 1;
 }
 
