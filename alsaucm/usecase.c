@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* parse and execute any command line commands */
-	if (argc >= 3) {
+	if (argc > optind) {
 		context->argv = argv + optind;
 		context->argc = argc - optind;
 		err = do_commands(context);
