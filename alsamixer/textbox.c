@@ -1,6 +1,6 @@
 /*
  * textbox.c - show a text box for messages, files or help
- * Copyright (c) 1998,1999 Tim Janik <timj@gtk.org>
+ * Copyright (c) 1998,1999 Tim Janik
  *                         Jaroslav Kysela <perex@perex.cz>
  * Copyright (c) 2009      Clemens Ladisch <clemens@ladisch.de>
  *

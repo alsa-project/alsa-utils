@@ -1,6 +1,6 @@
 /*
  * colors.c - color and attribute definitions
- * Copyright (c) 1998,1999 Tim Janik <timj@gtk.org>
+ * Copyright (c) 1998,1999 Tim Janik
  *                         Jaroslav Kysela <perex@perex.cz>
  * Copyright (c) 2009      Clemens Ladisch <clemens@ladisch.de>
  *

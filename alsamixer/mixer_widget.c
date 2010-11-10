@@ -1,6 +1,6 @@
 /*
  * mixer_widget.c - mixer widget and keys handling
- * Copyright (c) 1998,1999 Tim Janik <timj@gtk.org>
+ * Copyright (c) 1998,1999 Tim Janik
  *                         Jaroslav Kysela <perex@perex.cz>
  * Copyright (c) 2009      Clemens Ladisch <clemens@ladisch.de>
  *
@@ -211,7 +211,7 @@ static void show_help(void)
 		_("; '        Toggle left/right capture"),
 		"",
 		_("Authors:"),
-		_("  Tim Janik <timj@gtk.org>"),
+		_("  Tim Janik"),
 		_("  Jaroslav Kysela <perex@perex.cz>"),
 		_("  Clemens Ladisch <clemens@ladisch.de>"),
 	};
