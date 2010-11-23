@@ -26,6 +26,7 @@ fi
 AC_PROG_CC
 dnl AC_PROG_CXX
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AM_PATH_ALSA(1.0.16)
 
@@ -130,7 +131,7 @@ if test x$alsamixer = xtrue; then
       CURSES_CFLAGS=`ncursesw5-config --cflags`
       curseslib="ncursesw"
     else
-      AC_CHECK_LIB(ncursesw, initscr, 
+      AC_CHECK_LIB(ncursesw, initscr,
                  [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncursesw'; curseslib="ncursesw"])
     fi
     if test -n "$CURSESINC"; then
@@ -147,12 +148,12 @@ if test x$alsamixer = xtrue; then
       CURSES_CFLAGS=`ncurses5-config --cflags`
       curseslib="ncurses"
     else
-      AC_CHECK_LIB(ncurses, initscr, 
+      AC_CHECK_LIB(ncurses, initscr,
                  [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncurses'; curseslib="ncurses"])
     fi
   fi
   if test "$curseslib" = "curses" -o "$curseslib" = "auto"; then
-    AC_CHECK_LIB(curses, initscr, 
+    AC_CHECK_LIB(curses, initscr,
                  [ CURSESINC='<curses.h>'; CURSESLIB='-lcurses'; curseslib="curses"])
   fi
   if test -z "$CURSESINC"; then
@@ -277,6 +278,16 @@ AC_SYS_LARGEFILE
 SAVE_UTIL_VERSION
 
 AC_SUBST(LIBRT)
+
+dnl Check for systemd
+PKG_PROG_PKG_CONFIG
+AC_ARG_WITH([systemdsystemunitdir],
+        AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files]),
+        [], [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
+if test "x$with_systemdsystemunitdir" != xno; then
+        AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
+fi
+AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
 
 AC_OUTPUT(Makefile alsactl/Makefile alsactl/init/Makefile \
 	  alsamixer/Makefile amidi/Makefile amixer/Makefile \

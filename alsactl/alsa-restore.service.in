@@ -1,0 +1,11 @@
+[Unit]
+Description=Restore Sound Card State
+DefaultDependencies=no
+After=sysinit.target
+Before=shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=-@sbindir@/alsactl restore
+StandardOutput=syslog
