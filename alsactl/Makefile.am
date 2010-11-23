@@ -8,6 +8,7 @@ endif
 EXTRA_DIST=alsactl.1 alsactl_init.xml
 
 alsactl_SOURCES=alsactl.c state.c utils.c init_parse.c
+alsactl_CFLAGS=$(AM_CFLAGS) -DSYS_ASOUNDRC=\"$(ASOUND_STATE_DIR)/asound.state\"
 noinst_HEADERS=alsactl.h list.h init_sysdeps.c init_utils_string.c init_utils_run.c init_sysfs.c
 
 udevrulesdir=/lib/udev/rules.d

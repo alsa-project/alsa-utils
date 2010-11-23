@@ -956,8 +956,9 @@ If you have a big amplifier, lower your volumes or say no.
 	  aplay -N $TESTSOUND
       fi
     fi
-    if [ ! -r /etc/asound.state ]; then
-	xecho "Saving the mixer setup used for this in /etc/asound.state."
+    mkdir -p -m 0755 @ASOUND_STATE_DIR@
+    if [ ! -r @ASOUND_STATE_DIR@/asound.state ]; then
+	xecho "Saving the mixer setup used for this in @ASOUND_STATE_DIR@/asound.state."
 	$sbindir/alsactl store
     fi
     clear

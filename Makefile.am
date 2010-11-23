@@ -38,5 +38,8 @@ dist-hook:
 		$(TAR) --create --verbose --file=- $(distdir) | bzip2 -c -9 > $(distdir).tar.bz2 ; \
 	fi
 
+install-data-hook:
+	$(MKDIR_P) -m 0755 $(DESTDIR)$(ASOUND_STATE_DIR)
+
 DISTCHECK_CONFIGURE_FLAGS = \
         --with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir)

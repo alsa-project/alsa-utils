@@ -43,7 +43,7 @@ Print alsactl version number.
 
 .TP
 \fI\-f, \-\-file\fP
-Select the configuration file to use. The default is /etc/asound.state.
+Select the configuration file to use. The default is /var/lib/alsa/asound.state.
 
 .TP
 \fI\-F, \-\-force\fP
@@ -90,7 +90,7 @@ The configuration file for init. By default, PREFIX/share/alsa/init/00main
 is used.
 
 .SH FILES
-\fI/etc/asound.state\fP (or whatever file you specify with the
+\fI/var/lib/alsa/asound.state\fP (or whatever file you specify with the
 \fB\-f\fP flag) is used to store current settings for your
 soundcards. The settings include all the usual soundcard mixer
 settings.  More importantly, alsactl is

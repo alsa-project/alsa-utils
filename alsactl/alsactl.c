@@ -30,7 +30,9 @@
 #include <alsa/asoundlib.h>
 #include "alsactl.h"
 
-#define SYS_ASOUNDRC "/etc/asound.state"
+#ifndef SYS_ASOUNDRC
+#define SYS_ASOUNDRC "/var/lib/alsa/asound.state"
+#endif
 
 int debugflag = 0;
 int force_restore = 1;
