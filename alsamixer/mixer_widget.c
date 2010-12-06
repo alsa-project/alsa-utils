@@ -318,7 +318,7 @@ static void change_volume_to_percent(struct control *control, int value, unsigne
 		set_func(control->elem, control->volume_channels[1], min + (max - min) * value / 100);
 }
 
-static void change_volume_relative(struct control *control, int delta, unsigned int channels)
+static void change_volume_relative(struct control *control, long delta, unsigned int channels)
 {
 	int (*get_range_func)(snd_mixer_elem_t *, long *, long *);
 	int (*get_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t, long *);
@@ -352,6 +352,8 @@ static void change_volume_relative(struct control *control, int delta, unsigned 
 		if (err < 0)
 			return;
 	}
+	if (max - min > 100)
+		delta = (delta * (max - min) + (delta > 0 ? 99 : -99)) / 100;
 	if (channels & LEFT) {
 		value = left + delta;
 		if (value < min)
