@@ -17,10 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _C99_SOURCE /* lrint() */
 #include "aconfig.h"
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <math.h>
 #include CURSESINC
 #include <alsa/asoundlib.h>
 #include "gettext_curses.h"
@@ -28,6 +30,7 @@
 #include "mem.h"
 #include "colors.h"
 #include "widget.h"
+#include "volume_mapping.h"
 #include "mixer_widget.h"
 #include "mixer_controls.h"
 #include "mixer_display.h"
@@ -390,24 +393,14 @@ static void display_string_centered_in_control(int y, int col, const char *s, in
 	display_string_in_field(y, x, s, width, ALIGN_CENTER);
 }
 
-static long clamp(long value, long min, long max)
-{
-	if (value < min)
-		return min;
-	if (value > max)
-		return max;
-	return value;
-}
-
 static void display_control(unsigned int control_index)
 {
 	struct control *control;
 	int col;
 	int i, c;
 	int left, frame_left;
-	int bar_height, value;
-	long volumes[2];
-	long min, max;
+	int bar_height;
+	double volumes[2];
 	int switches[2];
 	unsigned int index;
 	const char *s;
@@ -452,35 +445,22 @@ static void display_control(unsigned int control_index)
 		waddch(mixer_widget.window, ACS_LRCORNER);
 	}
 	if (control->flags & (TYPE_PVOLUME | TYPE_CVOLUME)) {
-		int (*get_vol_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t, long *);
+		double (*get_vol_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t);
 
 		if (control->flags & TYPE_PVOLUME)
-			get_vol_func = snd_mixer_selem_get_playback_volume;
+			get_vol_func = get_normalized_playback_volume;
 		else
-			get_vol_func = snd_mixer_selem_get_capture_volume;
-		err = get_vol_func(control->elem, control->volume_channels[0], &volumes[0]);
-		if (err >= 0 && (control->flags & HAS_VOLUME_1))
-			err = get_vol_func(control->elem, control->volume_channels[1], &volumes[1]);
+			get_vol_func = get_normalized_capture_volume;
+		volumes[0] = get_vol_func(control->elem, control->volume_channels[0]);
+		if (control->flags & HAS_VOLUME_1)
+			volumes[1] = get_vol_func(control->elem, control->volume_channels[1]);
 		else
 			volumes[1] = volumes[0];
-		if (err < 0)
-			return;
-		if (control->flags & TYPE_PVOLUME)
-			err = snd_mixer_selem_get_playback_volume_range(control->elem, &min, &max);
-		else
-			err = snd_mixer_selem_get_capture_volume_range(control->elem, &min, &max);
-		if (err < 0)
-			return;
-		if (min >= max)
-			max = min + 1;
-		volumes[0] = clamp(volumes[0], min, max);
-		volumes[1] = clamp(volumes[1], min, max);
 
 		if (control->flags & IS_ACTIVE)
 			wattrset(mixer_widget.window, 0);
 		for (c = 0; c < 2; c++) {
-			bar_height = ((volumes[c] - min) * volume_height +
-				      max - min - 1) / (max - min);
+			bar_height = lrint(volumes[c] * volume_height);
 			for (i = 0; i < volume_height; ++i) {
 				chtype ch;
 				if (i + 1 > bar_height)
@@ -505,19 +485,18 @@ static void display_control(unsigned int control_index)
 		}
 		if (control->flags & IS_ACTIVE)
 			wattrset(mixer_widget.window, attr_mixer_active);
-		value = ((volumes[0] - min) * 100 + (max - min) / 2) / (max - min);
 		if (!(control->flags & HAS_VOLUME_1)) {
-			sprintf(buf, "%d", value);
+			sprintf(buf, "%d", lrint(volumes[0] * 100));
 			display_string_in_field(values_y, frame_left - 2, buf, 8, ALIGN_CENTER);
 		} else {
-			mvwprintw(mixer_widget.window, values_y, frame_left - 2, "%3d", value);
+			mvwprintw(mixer_widget.window, values_y, frame_left - 2,
+				  "%3d", lrint(volumes[0] * 100));
 			if (control->flags & IS_ACTIVE)
 				wattrset(mixer_widget.window, attr_ctl_frame);
 			waddstr(mixer_widget.window, "<>");
 			if (control->flags & IS_ACTIVE)
 				wattrset(mixer_widget.window, attr_mixer_active);
-			value = ((volumes[1] - min) * 100 + (max - min) / 2) / (max - min);
-			wprintw(mixer_widget.window, "%-3d", value);
+			wprintw(mixer_widget.window, "%-3d", lrint(volumes[1] * 100));
 		}
 	}
 

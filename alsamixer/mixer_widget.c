@@ -33,6 +33,7 @@
 #include "textbox.h"
 #include "proc_files.h"
 #include "card_select.h"
+#include "volume_mapping.h"
 #include "mixer_controls.h"
 #include "mixer_display.h"
 #include "mixer_widget.h"
@@ -295,82 +296,57 @@ static void change_enum_relative(struct control *control, int delta)
 
 static void change_volume_to_percent(struct control *control, int value, unsigned int channels)
 {
-	int (*get_range_func)(snd_mixer_elem_t *, long *, long *);
-	int (*set_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t, long);
-	long min, max;
-	int err;
+	int (*set_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t, double, int);
 
 	if (!(control->flags & HAS_VOLUME_1))
 		channels = LEFT;
-	if (control->flags & TYPE_PVOLUME) {
-		get_range_func = snd_mixer_selem_get_playback_volume_range;
-		set_func = snd_mixer_selem_set_playback_volume;
-	} else {
-		get_range_func = snd_mixer_selem_get_capture_volume_range;
-		set_func = snd_mixer_selem_set_capture_volume;
-	}
-	err = get_range_func(control->elem, &min, &max);
-	if (err < 0)
-		return;
+	if (control->flags & TYPE_PVOLUME)
+		set_func = set_normalized_playback_volume;
+	else
+		set_func = set_normalized_capture_volume;
 	if (channels & LEFT)
-		set_func(control->elem, control->volume_channels[0], min + (max - min) * value / 100);
+		set_func(control->elem, control->volume_channels[0], value / 100.0, 0);
 	if (channels & RIGHT)
-		set_func(control->elem, control->volume_channels[1], min + (max - min) * value / 100);
+		set_func(control->elem, control->volume_channels[1], value / 100.0, 0);
 }
 
-static void change_volume_relative(struct control *control, long delta, unsigned int channels)
+static double clamp_volume(double v)
 {
-	int (*get_range_func)(snd_mixer_elem_t *, long *, long *);
-	int (*get_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t, long *);
-	int (*set_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t, long);
-	long min, max;
-	long left, right;
-	long value;
-	int err;
+	if (v < 0)
+		return 0;
+	if (v > 1)
+		return 1;
+	return v;
+}
+
+static void change_volume_relative(struct control *control, int delta, unsigned int channels)
+{
+	double (*get_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t);
+	int (*set_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t, double, int);
+	double left, right;
+	int dir;
 
 	if (!(control->flags & HAS_VOLUME_1))
 		channels = LEFT;
 	if (control->flags & TYPE_PVOLUME) {
-		get_range_func = snd_mixer_selem_get_playback_volume_range;
-		get_func = snd_mixer_selem_get_playback_volume;
-		set_func = snd_mixer_selem_set_playback_volume;
+		get_func = get_normalized_playback_volume;
+		set_func = set_normalized_playback_volume;
 	} else {
-		get_range_func = snd_mixer_selem_get_capture_volume_range;
-		get_func = snd_mixer_selem_get_capture_volume;
-		set_func = snd_mixer_selem_set_capture_volume;
+		get_func = get_normalized_capture_volume;
+		set_func = set_normalized_capture_volume;
 	}
-	err = get_range_func(control->elem, &min, &max);
-	if (err < 0)
-		return;
+	if (channels & LEFT)
+		left = get_func(control->elem, control->volume_channels[0]);
+	if (channels & RIGHT)
+		right = get_func(control->elem, control->volume_channels[1]);
+	dir = delta > 0 ? 1 : -1;
 	if (channels & LEFT) {
-		err = get_func(control->elem, control->volume_channels[0], &left);
-		if (err < 0)
-			return;
+		left = clamp_volume(left + delta / 100.0);
+		set_func(control->elem, control->volume_channels[0], left, dir);
 	}
 	if (channels & RIGHT) {
-		err = get_func(control->elem, control->volume_channels[1], &right);
-		if (err < 0)
-			return;
-	}
-	if (max - min > 100)
-		delta = (delta * (max - min) + (delta > 0 ? 99 : -99)) / 100;
-	if (channels & LEFT) {
-		value = left + delta;
-		if (value < min)
-			value = min;
-		else if (value > max)
-			value = max;
-		if (value != left)
-			set_func(control->elem, control->volume_channels[0], value);
-	}
-	if (channels & RIGHT) {
-		value = right + delta;
-		if (value < min)
-			value = min;
-		else if (value > max)
-			value = max;
-		if (value != right)
-			set_func(control->elem, control->volume_channels[1], value);
+		right = clamp_volume(right + delta / 100.0);
+		set_func(control->elem, control->volume_channels[1], right, dir);
 	}
 }
 
@@ -460,34 +436,26 @@ static void toggle_capture(unsigned int channels)
 static void balance_volumes(void)
 {
 	struct control *control;
-	long left, right;
+	double left, right;
 	int err;
 
 	control = get_focus_control(TYPE_PVOLUME | TYPE_CVOLUME);
 	if (!control || !(control->flags & HAS_VOLUME_1))
 		return;
 	if (control->flags & TYPE_PVOLUME) {
-		err = snd_mixer_selem_get_playback_volume(control->elem, control->volume_channels[0], &left);
-		if (err < 0)
-			return;
-		err = snd_mixer_selem_get_playback_volume(control->elem, control->volume_channels[1], &right);
-		if (err < 0)
-			return;
+		left = get_normalized_playback_volume(control->elem, control->volume_channels[0]);
+		right = get_normalized_playback_volume(control->elem, control->volume_channels[1]);
 	} else {
-		err = snd_mixer_selem_get_capture_volume(control->elem, control->volume_channels[0], &left);
-		if (err < 0)
-			return;
-		err = snd_mixer_selem_get_capture_volume(control->elem, control->volume_channels[1], &right);
-		if (err < 0)
-			return;
+		left = get_normalized_capture_volume(control->elem, control->volume_channels[0]);
+		right = get_normalized_capture_volume(control->elem, control->volume_channels[1]);
 	}
 	left = (left + right) / 2;
 	if (control->flags & TYPE_PVOLUME) {
-		snd_mixer_selem_set_playback_volume(control->elem, control->volume_channels[0], left);
-		snd_mixer_selem_set_playback_volume(control->elem, control->volume_channels[1], left);
+		set_normalized_playback_volume(control->elem, control->volume_channels[0], left, 0);
+		set_normalized_playback_volume(control->elem, control->volume_channels[1], left, 0);
 	} else {
-		snd_mixer_selem_set_capture_volume(control->elem, control->volume_channels[0], left);
-		snd_mixer_selem_set_capture_volume(control->elem, control->volume_channels[1], left);
+		set_normalized_capture_volume(control->elem, control->volume_channels[0], left, 0);
+		set_normalized_capture_volume(control->elem, control->volume_channels[1], left, 0);
 	}
 	display_controls();
 }
