@@ -102,13 +102,11 @@ AC_ARG_ENABLE(alsaloop,
 AM_CONDITIONAL(ALSALOOP, test x$alsaloop = xtrue)
 
 xmlto=""
-if test x"$alsaconf" = xtrue; then
-   AC_ARG_ENABLE(xmlto,
-     AS_HELP_STRING([--disable-xmlto], [Disable man page creation via xmlto]),
-     xmlto="$enableval", xmlto="yes")
-   if test "$xmlto" = "yes"; then
-      AC_CHECK_PROG([xmlto], [xmlto], [yes])
-   fi
+AC_ARG_ENABLE(xmlto,
+ AS_HELP_STRING([--disable-xmlto], [Disable man page creation via xmlto]),
+ xmlto="$enableval", xmlto="yes")
+if test "$xmlto" = "yes"; then
+  AC_CHECK_PROG([xmlto], [xmlto], [yes])
 fi
 AM_CONDITIONAL(USE_XMLTO, test x"$xmlto" = xyes)
 
