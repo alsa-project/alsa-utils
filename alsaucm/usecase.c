@@ -85,7 +85,7 @@ static struct cmd cmds[] = {
 	{ OM_RESET, 0, 1, "reset" },
 	{ OM_RELOAD, 0, 1, "reload" },
 	{ OM_LISTCARDS, 0, 0, "listcards" },
-	{ OM_LIST, 0, 1, "list" },
+	{ OM_LIST, 1, 1, "list" },
 	{ OM_SET, 2, 1, "set" },
 	{ OM_GET, 1, 1, "get" },
 	{ OM_GETI, 1, 1, "geti" },
@@ -232,8 +232,11 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 		}
 		if (err == 0)
 			printf("  list is empty\n");
-		for (i = 0; i < err; i++)
-			printf("  %i: %s\n", i, list[i]);
+		for (i = 0; i < err / 2; i++) {
+			printf("  %i: %s\n", i, list[i*2]);
+			if (list[i*2+1])
+				printf("    %s\n", list[i*2+1]);
+		}
 		snd_use_case_free_list(list, err);
 		break;
 	case OM_SET:
