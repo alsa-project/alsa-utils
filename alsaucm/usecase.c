@@ -49,6 +49,8 @@ struct context {
 	char *card;
 	char **argv;
 	int argc;
+	int arga;
+	char *batch;
 	unsigned int interactive:1;
 	unsigned int no_open:1;
 	unsigned int do_exit:1;
@@ -92,6 +94,7 @@ static struct cmd cmds[] = {
 	{ OM_HELP, 0, 0, "help" },
 	{ OM_QUIT, 0, 0, "quit" },
 	{ OM_HELP, 0, 0, "h" },
+	{ OM_HELP, 0, 0, "?" },
 	{ OM_QUIT, 0, 0, "q" },
 	{ OM_UNKNOWN, 0, 0, NULL }
 };
@@ -105,6 +108,7 @@ static void dump_help(struct context *context)
 "  -h,--help                  this help\n"
 "  -c,--card NAME             open card NAME\n"
 "  -i,--interactive           interactive mode\n"
+"  -b,--batch FILE            batch mode (use '-' for the stdin input)\n"
 "  -n,--no-open               do not open first card found\n"
 "\nAvailable commands:\n"
 "  open NAME                  open card NAME\n"
@@ -122,7 +126,7 @@ static void dump_help(struct context *context)
 
 static int parse_line(struct context *context, char *line)
 {
-	char *start;
+	char *start, **nargv;
 	int c;
 
 	context->argc = 0;
@@ -148,6 +152,16 @@ static int parse_line(struct context *context, char *line)
 				*line = '\0';
 				line++;
 			}
+		}
+		if (start[0] == '\0' && context->argc == 0)
+			return 0;
+		if (context->argc + 1 >= context->arga) {
+			context->arga += 4;
+			nargv = realloc(context->argv,
+					context->arga * sizeof(char *));
+			if (nargv == NULL)
+				return -ENOMEM;
+			context->argv = nargv;
 		}
 		context->argv[context->argc++] = start;
 	}
@@ -322,6 +336,12 @@ static void my_exit(struct context *context, int exitcode)
 {
 	if (context->uc_mgr)
 		snd_use_case_mgr_close(context->uc_mgr);
+	if (context->arga > 0)
+		free(context->argv);
+	if (context->card)
+		free(context->card);
+	if (context->batch)
+		free(context->batch);
 	free(context);
 	exit(exitcode);
 }
@@ -332,12 +352,13 @@ enum {
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hc:in";
+	static const char short_options[] = "hb:c:in";
 	static const struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"version", 0, 0, OPT_VERSION},
 		{"card", 1, 0, 'c'},
 		{"interactive", 0, 0, 'i'},
+		{"batch", 1, 0, 'b'},
 		{"no-open", 0, 0, 'n'},
 		{0, 0, 0, 0}
 	};
@@ -346,6 +367,7 @@ int main(int argc, char *argv[])
 	const char **list;
 	int c, err, option_index;
 	char cmd[MAX_BUF];
+	FILE *in;
 
 	context = calloc(1, sizeof(*context));
 	if (context == NULL)
@@ -367,6 +389,11 @@ int main(int argc, char *argv[])
 			break;
 		case 'i':
 			context->interactive = 1;
+			context->batch = NULL;
+			break;
+		case 'b':
+			context->batch = strdup(optarg);
+			context->interactive = 0;
 			break;
 		case 'n':
 			context->no_open = 1;
@@ -412,15 +439,31 @@ int main(int argc, char *argv[])
 			my_exit(context, EXIT_FAILURE);
 	}
 
-	if (!context->interactive)
+	if (!context->interactive && !context->batch)
 		my_exit(context, EXIT_SUCCESS);
 
-	printf("%s: Interacive mode - 'q' to quit\n", command);
+	if (context->interactive) {
+		printf("%s: Interacive mode - 'q' to quit\n", command);
+		in = stdin;
+	} else {
+		if (strcmp(context->batch, "-") == 0) {
+			in = stdin;
+		} else {
+			in = fopen(context->batch, "r");
+			if (in == NULL) {
+				fprintf(stderr, "%s: error failed to open file '%s': %s\n",
+					command, context->batch, strerror(-errno));
+				my_exit(context, EXIT_FAILURE);
+			}
+		}
+	}
+
 	/* run the interactive command parser and handler */
-	while (!context->do_exit) {
-		printf("%s>> ", argv[0]);
+	while (!context->do_exit && !feof(in)) {
+		if (context->interactive)
+			printf("%s>> ", argv[0]);
 		fflush(stdin);
-		if (fgets(cmd, MAX_BUF, stdin) == NULL)
+		if (fgets(cmd, MAX_BUF, in) == NULL)
 			break;
 		err = parse_line(context, cmd);
 		if (err < 0) {
@@ -432,6 +475,9 @@ int main(int argc, char *argv[])
 		if (err < 0)
 			my_exit(context, EXIT_FAILURE);
 	}
+	
+	if (in != stdin)
+		fclose(in);
 
 	my_exit(context, EXIT_SUCCESS);
 	return EXIT_SUCCESS;
