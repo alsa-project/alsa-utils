@@ -472,8 +472,12 @@ int main(int argc, char *argv[])
 			my_exit(context, EXIT_FAILURE);
 		}
 		err = do_commands(context);
-		if (err < 0)
-			my_exit(context, EXIT_FAILURE);
+		if (err < 0) {
+			if (context->interactive)
+				printf("^^^ error, try again\n");
+			else
+				my_exit(context, EXIT_FAILURE);
+		}
 	}
 	
 	if (in != stdin)
