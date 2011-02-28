@@ -59,10 +59,21 @@ enum channel_mask {
 
 static int elem_callback(snd_mixer_elem_t *elem, unsigned int mask)
 {
+	unsigned int i;
+
 	if (mask & (SND_CTL_EVENT_MASK_REMOVE |
 		    SND_CTL_EVENT_MASK_INFO |
 		    SND_CTL_EVENT_MASK_VALUE))
 		controls_changed = TRUE;
+
+	if (mask & SND_CTL_EVENT_MASK_INFO)
+		for (i = 0; i < controls_count; ++i)
+			if (controls[i].elem == elem) {
+				controls[i].flags &= ~IS_ACTIVE;
+				if (snd_mixer_selem_is_active(controls[i].elem))
+					controls[i].flags |= IS_ACTIVE;
+			}
+
 	return 0;
 }
 
