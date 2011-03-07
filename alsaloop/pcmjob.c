@@ -1238,8 +1238,8 @@ static int closeit(struct loopback_handle *lhandle)
 static int init_handle(struct loopback_handle *lhandle, int alloc)
 {
 	snd_pcm_uframes_t lat;
-	lhandle->frame_size = (snd_pcm_format_width(lhandle->format) / 8) *
-							   lhandle->channels;
+	lhandle->frame_size = (snd_pcm_format_physical_width(lhandle->format) 
+						/ 8) * lhandle->channels;
 	lhandle->sync_point = lhandle->rate * 15;	/* every 15 seconds */
 	lat = lhandle->loopback->latency;
 	if (lhandle->buffer_size > lat)
@@ -1358,6 +1358,23 @@ static void lhandle_start(struct loopback_handle *lhandle)
 	lhandle->total_queued = 0;
 }
 
+static void fix_format(struct loopback *loop)
+{
+	snd_pcm_format_t format = loop->capt->format;
+
+	if (loop->sync != SYNC_TYPE_SAMPLERATE)
+		return;
+	if (format == SND_PCM_FORMAT_S16 ||
+	    format == SND_PCM_FORMAT_S32)
+		return;
+	if (snd_pcm_format_width(format) > 16)
+		format = SND_PCM_FORMAT_S32;
+	else
+		format = SND_PCM_FORMAT_S16;
+	loop->capt->format = format;
+	loop->play->format = format;
+}
+
 int pcmjob_start(struct loopback *loop)
 {
 	snd_pcm_uframes_t count;
@@ -1383,6 +1400,7 @@ int pcmjob_start(struct loopback *loop)
 		if (err < 0)
 			goto __error;
 		loop->play->format = loop->capt->format = err;
+		fix_format(loop);
 		err = get_rate(loop->capt);
 		if (err < 0)
 			goto __error;
