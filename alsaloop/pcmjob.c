@@ -1358,11 +1358,11 @@ static void lhandle_start(struct loopback_handle *lhandle)
 	lhandle->total_queued = 0;
 }
 
-static void fix_format(struct loopback *loop)
+static void fix_format(struct loopback *loop, int force)
 {
 	snd_pcm_format_t format = loop->capt->format;
 
-	if (loop->sync != SYNC_TYPE_SAMPLERATE)
+	if (!force && loop->sync != SYNC_TYPE_SAMPLERATE)
 		return;
 	if (format == SND_PCM_FORMAT_S16 ||
 	    format == SND_PCM_FORMAT_S32)
@@ -1400,7 +1400,7 @@ int pcmjob_start(struct loopback *loop)
 		if (err < 0)
 			goto __error;
 		loop->play->format = loop->capt->format = err;
-		fix_format(loop);
+		fix_format(loop, 0);
 		err = get_rate(loop->capt);
 		if (err < 0)
 			goto __error;
@@ -1412,6 +1412,7 @@ int pcmjob_start(struct loopback *loop)
 	}
 	loop->reinit = 0;
 	loop->use_samplerate = 0;
+__again:
 	if (loop->latency_req) {
 		loop->latency_reqtime = frames_to_time(loop->play->rate_req,
 						       loop->latency_req);
@@ -1460,10 +1461,19 @@ int pcmjob_start(struct loopback *loop)
 			goto __error;
 		if ((err = init_handle(loop->capt, 1)) < 0)
 			goto __error;
-		if (loop->play->rate_req != loop->play->rate)
+		if (loop->play->rate_req != loop->play->rate ||
+                    loop->capt->rate_req != loop->capt->rate) {
+                        snd_pcm_format_t format1, format2;
 			loop->use_samplerate = 1;
-		if (loop->capt->rate_req != loop->capt->rate)
-			loop->use_samplerate = 1;
+                        format1 = loop->play->format;
+                        format2 = loop->capt->format;
+                        fix_format(loop, 1);
+                        if (loop->play->format != format1 ||
+                            loop->capt->format != format2) {
+                                pcmjob_stop(loop);
+                                goto __again;
+                        }
+                }
 	}
 #ifdef USE_SAMPLERATE
 	if (loop->sync == SYNC_TYPE_SAMPLERATE)
