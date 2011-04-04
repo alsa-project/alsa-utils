@@ -144,17 +144,10 @@ CTL{name}="Music Playback Switch",CTL{do_search}=="1", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
-CTL{name}="CD Playback Volume",PROGRAM!="__ctl_search", GOTO=""
-# if master volume control is present, turn CD volume to max
-ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO=""
-ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO=""
-# exception - some HDA codecs have shifted dB range
-CTL{dBmin}=="-34.50dB",CTL{dBmax}=="12.00dB",CTL{write}=="0dB",GOTO=""
-CTL{dBmin}=="-30.00dB",CTL{dBmax}=="0dB",CTL{write}=="0dB",GOTO=""
-CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
-LABEL=""
+CTL{name}="CD Playback Volume",CTL{do_search}=="1", \
+  CTL{values}="0%"
 CTL{name}="CD Playback Switch",CTL{do_search}=="1", \
-  CTL{values}="on"
+  CTL{values}="off"
 
 CTL{reset}="mixer"
 CTL{name}="Mono Playback Volume",CTL{do_search}=="1", \
