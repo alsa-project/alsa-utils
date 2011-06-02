@@ -226,8 +226,10 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 				snd_strerror(err));
 			return err;
 		}
-		if (err == 0)
+		if (err == 0) {
 			printf("  list is empty\n");
+			return 0;
+		}
 		for (i = 0; i < err / 2; i++) {
 			printf("  %i: %s\n", i, list[i*2]);
 			if (list[i*2+1])
@@ -256,8 +258,10 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 				snd_strerror(err));
 			return err;
 		}
-		if (err == 0)
+		if (err == 0) {
 			printf("  list is empty\n");
+			return 0;
+		}
 		for (i = 0; i < err / entries; i++) {
 			printf("  %i: %s\n", i, list[i*entries]);
 			for (j = 0; j < entries - 1; j++)
