@@ -63,7 +63,8 @@ enum uc_cmd {
 	OM_RESET,
 	OM_RELOAD,
 	OM_LISTCARDS,
-	OM_LIST,
+	OM_LIST2,
+	OM_LIST1,
 
 	/* set/get */
 	OM_SET,
@@ -87,7 +88,8 @@ static struct cmd cmds[] = {
 	{ OM_RESET, 0, 1, "reset" },
 	{ OM_RELOAD, 0, 1, "reload" },
 	{ OM_LISTCARDS, 0, 0, "listcards" },
-	{ OM_LIST, 1, 1, "list" },
+	{ OM_LIST1, 1, 1, "list1" },
+	{ OM_LIST2, 1, 1, "list" },
 	{ OM_SET, 2, 1, "set" },
 	{ OM_GET, 1, 1, "get" },
 	{ OM_GETI, 1, 1, "geti" },
@@ -172,7 +174,7 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 {
 	const char **list, *str;
 	long lval;
-	int err, i;
+	int err, i, j, entries;
 
 	if (cmd->opencard && context->uc_mgr == NULL) {
 		fprintf(stderr, "%s: command '%s' requires an open card\n",
@@ -233,7 +235,17 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 		}
 		snd_use_case_free_list(list, err);
 		break;
-	case OM_LIST:
+	case OM_LIST1:
+	case OM_LIST2:
+		switch (cmd->code) {
+		case OM_LIST1:
+		    entries = 1;
+		    break;
+		case OM_LIST2:
+		    entries = 2;
+		    break;
+		}
+
 		err = snd_use_case_get_list(context->uc_mgr,
 					    argv[0],
 					    &list);
@@ -246,10 +258,11 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 		}
 		if (err == 0)
 			printf("  list is empty\n");
-		for (i = 0; i < err / 2; i++) {
-			printf("  %i: %s\n", i, list[i*2]);
-			if (list[i*2+1])
-				printf("    %s\n", list[i*2+1]);
+		for (i = 0; i < err / entries; i++) {
+			printf("  %i: %s\n", i, list[i*entries]);
+			for (j = 0; j < entries - 1; j++)
+				if (list[i*entries+j+1])
+					printf("    %s\n", list[i*entries+j+1]);
 		}
 		snd_use_case_free_list(list, err);
 		break;
