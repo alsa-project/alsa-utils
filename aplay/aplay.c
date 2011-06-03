@@ -103,6 +103,7 @@ static int avail_min = -1;
 static int start_delay = 0;
 static int stop_delay = 0;
 static int monotonic = 0;
+static int interactive = 0;
 static int can_pause = 0;
 static int verbose = 0;
 static int vumeter = VUMETER_NONE;
@@ -200,6 +201,7 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "-v, --verbose           show PCM structure and setup (accumulative)\n"
 "-V, --vumeter=TYPE      enable VU meter (TYPE: mono or stereo)\n"
 "-I, --separate-channels one file for each channel\n"
+"-i, --interactive       allow interactive operation from stdin\n"
 "    --disable-resample  disable automatic rate resample\n"
 "    --disable-channels  disable automatic channel conversions\n"
 "    --disable-format    disable automatic format conversions\n"
@@ -404,7 +406,7 @@ enum {
 int main(int argc, char *argv[])
 {
 	int option_index;
-	static const char short_options[] = "hnlLD:qt:c:f:r:d:MNF:A:R:T:B:vV:IPC";
+	static const char short_options[] = "hnlLD:qt:c:f:r:d:MNF:A:R:T:B:vV:IPCi";
 	static const struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"version", 0, 0, OPT_VERSION},
@@ -442,6 +444,7 @@ int main(int argc, char *argv[])
 		{"max-file-time", 1, 0, OPT_MAX_FILE_TIME},
 		{"process-id-file", 1, 0, OPT_PROCESS_ID_FILE},
 		{"use-strftime", 0, 0, OPT_USE_STRFTIME},
+		{"interactive", 0, 0, 'i'},
 		{0, 0, 0, 0}
 	};
 	char *pcm_name = "default";
@@ -607,6 +610,9 @@ int main(int argc, char *argv[])
 			start_delay = 1;
 			if (file_type == FORMAT_DEFAULT)
 				file_type = FORMAT_WAVE;
+			break;
+		case 'i':
+			interactive = 1;
 			break;
 		case OPT_DISABLE_RESAMPLE:
 			open_mode |= SND_PCM_NO_AUTO_RESAMPLE;
@@ -1206,6 +1212,8 @@ static void init_stdin(void)
 	struct termios term;
 	long flags;
 
+	if (!interactive)
+		return;
 	tcgetattr(fileno(stdin), &term);
 	term_c_lflag = term.c_lflag;
 	if (fd == fileno(stdin))
@@ -1221,6 +1229,8 @@ static void done_stdin(void)
 {
 	struct termios term;
 
+	if (!interactive)
+		return;
 	if (fd == fileno(stdin) || term_c_lflag == -1)
 		return;
 	tcgetattr(fileno(stdin), &term);
@@ -1258,6 +1268,8 @@ static void check_stdin(void)
 {
 	unsigned char b;
 
+	if (!interactive)
+		return;
 	if (fd != fileno(stdin)) {
 		while (read(fileno(stdin), &b, 1) == 1) {
 			if (b == ' ' || b == '\r') {
