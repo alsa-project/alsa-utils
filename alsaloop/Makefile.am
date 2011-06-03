@@ -1,6 +1,6 @@
 INCLUDES = -I$(top_srcdir)/include
 LDADD = -lm
-CFLAGS += -D_GNU_SOURCE
+AM_CFLAGS = -D_GNU_SOURCE
 if HAVE_SAMPLERATE
 LDADD += -lsamplerate
 endif
