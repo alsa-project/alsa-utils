@@ -40,6 +40,7 @@ seq/aseqdump/aseqdump
 seq/aseqnet/aseqnet
 speaker-test/speaker-test
 alsaloop/alsaloop
+alsaucm/alsaucm
 
 include/aconfig.h*
 include/stamp-*
