@@ -486,17 +486,17 @@ static void display_control(unsigned int control_index)
 		if (control->flags & IS_ACTIVE)
 			wattrset(mixer_widget.window, attr_mixer_active);
 		if (!(control->flags & HAS_VOLUME_1)) {
-			sprintf(buf, "%d", lrint(volumes[0] * 100));
+			sprintf(buf, "%d", (int)lrint(volumes[0] * 100));
 			display_string_in_field(values_y, frame_left - 2, buf, 8, ALIGN_CENTER);
 		} else {
 			mvwprintw(mixer_widget.window, values_y, frame_left - 2,
-				  "%3d", lrint(volumes[0] * 100));
+				  "%3d", (int)lrint(volumes[0] * 100));
 			if (control->flags & IS_ACTIVE)
 				wattrset(mixer_widget.window, attr_ctl_frame);
 			waddstr(mixer_widget.window, "<>");
 			if (control->flags & IS_ACTIVE)
 				wattrset(mixer_widget.window, attr_mixer_active);
-			wprintw(mixer_widget.window, "%-3d", lrint(volumes[1] * 100));
+			wprintw(mixer_widget.window, "%-3d", (int)lrint(volumes[1] * 100));
 		}
 	}
 
