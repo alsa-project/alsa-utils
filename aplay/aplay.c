@@ -358,6 +358,12 @@ static void prg_exit(int code)
 
 static void signal_handler(int sig)
 {
+	static int in_aborting;
+
+	if (in_aborting)
+		return;
+
+	in_aborting = 1;
 	if (verbose==2)
 		putchar('\n');
 	if (!quiet_mode)
