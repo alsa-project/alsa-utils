@@ -11,7 +11,7 @@
 .  fi
 .  PP
 ..
-.TH SPEAKER\-TEST 1 "20 September 2004" speaker-test
+.TH SPEAKER\-TEST 1 "April 2nd, 2011" speaker-test
 .SH NAME
 speaker\-test \- command-line speaker test tone generator for ALSA 
 .SH SYNOPSIS
@@ -19,6 +19,41 @@ speaker\-test \- command-line speaker test tone generator for ALSA
 
 .SH DESCRIPTION
 \fBspeaker\-test\fP generates a tone that can be used to test the speakers of a computer.
+
+\fBspeaker-test\fP by default will test the \fIdefault\fP device. If you
+want to test another sound device you will have first to get a list of
+all of the sound cards in your system and the devices associated with
+those cards. Notice that there might be for example, one device for
+analog sound, one for digital sound and one for HDMI sound.
+To get the list of available cards and devices you can run \fBaplay -L\fR.
+
+.P \fBaplay\fR's output will be similar to this one:
+
+.nf
+$ aplay -L
+null
+    Discard all samples (playback) or generate zero samples (capture)
+default:CARD=ICH5
+    Intel ICH5, Intel ICH5
+    Default Audio Device
+front:CARD=ICH5,DEV=0
+    Intel ICH5, Intel ICH5
+    Front speakers
+surround40:CARD=ICH5,DEV=0
+    Intel ICH5, Intel ICH5
+    4.0 Surround output to Front and Rear speakers
+(...)
+.fi
+
+.P Each of the devices is listed in the beginning of the definition so,
+in the above example, there are four devices listed: null, default, front
+and surround40. So, if you want to test the last device you can 
+run \fBspeaker-test -Dsurround40:ICH5 -c 6\fR. The \fB-c\fR option will
+indicate that the six audio channels in the device have to be tested.
+
+
+
+
 
 .SH OPTIONS
 
@@ -118,6 +153,15 @@ To send a nice low 75Hz tone to the Woofer and then exit without touching any ot
 .EX
   speaker-test -Dplug:surround51 -c6 -s1 -f75
 .EE
+
+To do a 2-speaker test using the spdif (coax or optical) output:
+.EX
+  speaker-test -Dplug:spdif -c2
+.EE
+
+
+.SH SEE ALSO
+.BR aplay(1)
 
 .SH AUTHOR
 The speaker-test program was written by James Courtier-Dutton.
