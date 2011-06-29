@@ -526,7 +526,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'c':
 			rhwparams.channels = strtol(optarg, NULL, 0);
-			if (rhwparams.channels < 1 || rhwparams.channels > 32) {
+			if (rhwparams.channels < 1 || rhwparams.channels > 256) {
 				error(_("value %i for channels is invalid"), rhwparams.channels);
 				return 1;
 			}
@@ -1015,7 +1015,7 @@ static int test_au(int fd, void *buffer)
 	if (hwparams.rate < 2000 || hwparams.rate > 256000)
 		return -1;
 	hwparams.channels = BE_INT(ap->channels);
-	if (hwparams.channels < 1 || hwparams.channels > 128)
+	if (hwparams.channels < 1 || hwparams.channels > 256)
 		return -1;
 	if ((size_t)safe_read(fd, buffer + sizeof(AuHeader), BE_INT(ap->hdr_size) - sizeof(AuHeader)) != BE_INT(ap->hdr_size) - sizeof(AuHeader)) {
 		error(_("read error"));
