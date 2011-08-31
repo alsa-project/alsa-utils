@@ -5,13 +5,13 @@ SUBDIRS = po
 
 install-man8:
 	@for i in $(man_MANS); do \
-	  ext=`echo $$i | sed -e 's/^.*\\.//'`; \
-	  inst=`echo $$i | sed -e 's/\\.[^.]*$$//'`; \
+	  ext=`echo $$i | $(SED) -e 's/^.*\\.//'`; \
+	  inst=`echo $$i | $(SED) -e 's/\\.[^.]*$$//'`; \
 	  case $$inst in \
 	  *.[a-za-z]*)\
-	    loc=`echo $$inst | sed -e 's/^.*\\.//'`; \
+	    loc=`echo $$inst | $(SED) -e 's/^.*\\.//'`; \
 	    loc="/$$loc"; \
-	    inst=`echo $$inst | sed -e 's/\\.[^.]*$$//'`;; \
+	    inst=`echo $$inst | $(SED) -e 's/\\.[^.]*$$//'`;; \
 	  *)\
 	    loc="";; \
 	  esac; \
@@ -22,13 +22,13 @@ install-man8:
 
 uninstall-man8:
 	@for i in $(man_MANS); do \
-	  ext=`echo $$i | sed -e 's/^.*\\.//'`; \
-	  inst=`echo $$i | sed -e 's/\\.[^.]*$$//'`; \
+	  ext=`echo $$i | $(SED) -e 's/^.*\\.//'`; \
+	  inst=`echo $$i | $(SED) -e 's/\\.[^.]*$$//'`; \
 	  case $$inst in \
 	  *.[a-za-z]*)\
-	    loc=`echo $$inst | sed -e 's/^.*\\.//'`; \
+	    loc=`echo $$inst | $(SED) -e 's/^.*\\.//'`; \
 	    loc="/$$loc"; \
-	    inst=`echo $$inst | sed -e 's/\\.[^.]*$$//'`;; \
+	    inst=`echo $$inst | $(SED) -e 's/\\.[^.]*$$//'`;; \
 	  *)\
 	    loc="";; \
 	  esac; \

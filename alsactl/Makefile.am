@@ -34,7 +34,7 @@ install-data-hook:
 endif
 
 edit = \
-	sed $(SED) -r 's,@sbindir\@,$(sbindir),g' < $< > $@ || rm $@
+	$(SED) -r 's,@sbindir\@,$(sbindir),g' < $< > $@ || rm $@
 
 alsa-store.service: alsa-store.service.in
 	$(edit)
