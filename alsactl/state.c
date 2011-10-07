@@ -847,6 +847,49 @@ static int get_comment_range(snd_config_t *n, int ctype,
 	return 0;
 }
 
+struct string_array {
+	unsigned int count;
+	const char **strings;
+};
+
+static int get_comment_items(snd_config_t *n, struct string_array *items)
+{
+	snd_config_iterator_t it, next;
+	unsigned int i;
+	int err;
+
+	snd_config_for_each(it, next, n) {
+		snd_config_t *item = snd_config_iterator_entry(it);
+		const char *id;
+		unsigned int numid;
+
+		if (snd_config_get_id(item, &id) < 0)
+			return -EINVAL;
+		numid = atoi(id);
+		if (numid > 999999)
+			return -EINVAL;
+
+		if (numid >= items->count) {
+			const char **strings = realloc(items->strings, (numid + 1) * sizeof(char *));
+			if (!strings)
+				return -ENOMEM;
+			for (i = items->count; i < numid + 1; ++i)
+				strings[i] = NULL;
+			items->count = numid + 1;
+			items->strings = strings;
+		}
+		err = snd_config_get_string(item, &items->strings[numid]);
+		if (err < 0)
+			return err;
+	}
+
+	for (i = 0; i < items->count; ++i)
+		if (!items->strings[i])
+			return -EINVAL;
+
+	return 0;
+}
+
 static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_config_t *conf)
 {
 	snd_ctl_elem_id_t *id;
@@ -854,12 +897,15 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 	long imin, imax, istep;
 	snd_ctl_elem_type_t ctype;
 	unsigned int count;
+	struct string_array enum_items;
 	int err;
 	unsigned int *tlv;
 
 	imin = imax = istep = 0;
 	count = 0;
 	ctype = SND_CTL_ELEM_TYPE_NONE;
+	enum_items.count = 0;
+	enum_items.strings = NULL;
 	tlv = NULL;
 	snd_config_for_each(i, next, conf) {
 		snd_config_t *n = snd_config_iterator_entry(i);
@@ -869,31 +915,39 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 		if (strcmp(id, "type") == 0) {
 			err = get_comment_type(n);
 			if (err < 0)
-				return err;
+				goto error;
 			ctype = err;
 			continue;
 		}
 		if (strcmp(id, "range") == 0) {
 			err = get_comment_range(n, ctype, &imin, &imax, &istep);
 			if (err < 0)
-				return err;
+				goto error;
 			continue;
 		}
 		if (strcmp(id, "count") == 0) {
 			long v;
 			if ((err = snd_config_get_integer(n, &v)) < 0)
-				return err;
+				goto error;
 			count = v;
+			continue;
+		}
+		if (strcmp(id, "item") == 0) {
+			err = get_comment_items(n, &enum_items);
+			if (err < 0)
+				goto error;
 			continue;
 		}
 		if (strcmp(id, "tlv") == 0) {
 			const char *s;
 			if ((err = snd_config_get_string(n, &s)) < 0)
-				return -EINVAL;
+				goto error;
 			if (tlv)
 				free(tlv);
-			if ((tlv = str_to_tlv(s)) == NULL)
-				return -EINVAL;
+			if ((tlv = str_to_tlv(s)) == NULL) {
+				err = -EINVAL;
+				goto error;
+			}
 			continue;
 		}
 	}
@@ -904,8 +958,10 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 		count = 1;
 	switch (ctype) {
 	case SND_CTL_ELEM_TYPE_INTEGER:
-		if (imin > imax || istep > imax - imin)
-			return -EINVAL;
+		if (imin > imax || istep > imax - imin) {
+			err = -EINVAL;
+			goto error;
+		}
 		err = snd_ctl_elem_add_integer(handle, id, count, imin, imax, istep);
 		if (err < 0)
 			goto error;
@@ -914,6 +970,10 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 		break;
 	case SND_CTL_ELEM_TYPE_BOOLEAN:
 		err = snd_ctl_elem_add_boolean(handle, id, count);
+		break;
+	case SND_CTL_ELEM_TYPE_ENUMERATED:
+		err = snd_ctl_elem_add_enumerated(handle, id, count,
+						  enum_items.count, enum_items.strings);
 		break;
 	case SND_CTL_ELEM_TYPE_IEC958:
 		err = snd_ctl_elem_add_iec958(handle, id);
@@ -925,6 +985,7 @@ static int add_user_control(snd_ctl_t *handle, snd_ctl_elem_info_t *info, snd_co
 
  error:
 	free(tlv);
+	free(enum_items.strings);
 	if (err < 0)
 		return err;
 	return snd_ctl_elem_info(handle, info);

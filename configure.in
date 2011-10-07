@@ -29,7 +29,9 @@ AC_PROG_INSTALL
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_SED
-AM_PATH_ALSA(1.0.16)
+AM_PATH_ALSA(1.0.24)
+AC_CHECK_FUNC([snd_ctl_elem_add_enumerated],
+	      , [AC_ERROR([No user enum control support in alsa-lib])])
 
 dnl Check components
 AC_CHECK_HEADERS([alsa/pcm.h], [have_pcm="yes"], [have_pcm="no"],
