@@ -5,6 +5,6 @@
 
 void initialize_curses(bool use_color);
 void mainloop(void);
-void shutdown(void);
+void app_shutdown(void);
 
 #endif

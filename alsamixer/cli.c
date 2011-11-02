@@ -130,6 +130,6 @@ int main(int argc, char *argv[])
 
 	mainloop();
 
-	shutdown();
+	app_shutdown();
 	return 0;
 }

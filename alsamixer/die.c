@@ -26,14 +26,14 @@
 
 void fatal_error(const char *msg)
 {
-	shutdown();
+	app_shutdown();
 	fprintf(stderr, "%s\n", msg);
 	exit(EXIT_FAILURE);
 }
 
 void fatal_alsa_error(const char *msg, int err)
 {
-	shutdown();
+	app_shutdown();
 	fprintf(stderr, _("%s: %s\n"), msg, snd_strerror(err));
 	exit(EXIT_FAILURE);
 }

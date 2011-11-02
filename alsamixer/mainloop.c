@@ -52,7 +52,7 @@ void initialize_curses(bool use_color)
 	snd_lib_error_set_handler(black_hole_error_handler);
 }
 
-void shutdown(void)
+void app_shutdown(void)
 {
 	if (curses_initialized) {
 		clear();
