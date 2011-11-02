@@ -1,4 +1,4 @@
-.TH APLAYMIDI 1 "15 Feb 2004"
+.TH APLAYMIDI 1 "2 Nov 2011"
 
 .SH NAME
 aplaymidi \- play Standard MIDI Files
@@ -35,6 +35,10 @@ A client can be specified by its number, its name, or a prefix of its
 name. A port is specified by its number; for port 0 of a client, the
 ":0" part of the port specification can be omitted.
 
+Multiple ports can be specified to allow playback of MIDI file(s) that
+contain events for multiple devices (ports), as specified by "Port
+Number" meta events.
+
 For compatibility with
 .B pmidi(1),
 the port specification is taken from the
@@ -45,6 +49,10 @@ environment variable if none is given on the command line.
 .I \-d, \-\-delay=seconds
 Specifies how long to wait after the end of each MIDI file,
 to allow the last notes to die away.
+
+.SH BUGS
+.B aplaymidi
+handles "Port Number" meta events, but not "Port Name" meta events.
 
 .SH SEE ALSO
 pmidi(1)
