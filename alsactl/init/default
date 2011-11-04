@@ -53,6 +53,36 @@ CTL{name}="Front Playback Switch",CTL{do_search}=="1", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
+CTL{name}="Surround Playback Volume",PROGRAM!="__ctl_search",GOTO=""
+# if master volume control is present, turn front volume to max
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO=""
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO=""
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
+LABEL=""
+CTL{name}="Surround Playback Switch",CTL{do_search}=="1", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Center Playback Volume",PROGRAM!="__ctl_search",GOTO=""
+# if master volume control is present, turn front volume to max
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO=""
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO=""
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
+LABEL=""
+CTL{name}="Center Playback Switch",CTL{do_search}=="1", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="LFE Playback Volume",PROGRAM!="__ctl_search",GOTO=""
+# if master volume control is present, turn front volume to max
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO=""
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO=""
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
+LABEL=""
+CTL{name}="LFE Playback Switch",CTL{do_search}=="1", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
 CTL{name}="Headphone Playback Volume",PROGRAM!="__ctl_search",GOTO=""
 # if master volume control is present, turn headphone volume to max
 ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO=""
@@ -81,6 +111,46 @@ ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO=""
 CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
 LABEL=""
 CTL{name}="Speaker Playback Switch",CTL{do_search}=="1", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Front Speaker Playback Volume",PROGRAM!="__ctl_search",GOTO=""
+# if master volume control is present, turn speaker volume to max
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO=""
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO=""
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
+LABEL=""
+CTL{name}="Front Speaker Playback Switch",CTL{do_search}=="1", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Front Speaker Playback Volume",PROGRAM!="__ctl_search",GOTO=""
+# if master volume control is present, turn speaker volume to max
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO=""
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO=""
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
+LABEL=""
+CTL{name}="Surround Speaker Playback Switch",CTL{do_search}=="1", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Front Speaker Playback Volume",PROGRAM!="__ctl_search",GOTO=""
+# if master volume control is present, turn speaker volume to max
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO=""
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO=""
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
+LABEL=""
+CTL{name}="Center Speaker Playback Switch",CTL{do_search}=="1", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
+CTL{name}="Front Speaker Playback Volume",PROGRAM!="__ctl_search",GOTO=""
+# if master volume control is present, turn speaker volume to max
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO=""
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO=""
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
+LABEL=""
+CTL{name}="LFE Speaker Playback Switch",CTL{do_search}=="1", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
