@@ -58,6 +58,14 @@
 #define LLONG_MAX    9223372036854775807LL
 #endif
 
+#ifndef le16toh
+#include <asm/byteorder.h>
+#define le16toh(x) __le16_to_cpu(x)
+#define be16toh(x) __be16_to_cpu(x)
+#define le32toh(x) __le32_to_cpu(x)
+#define be32toh(x) __be32_to_cpu(x)
+#endif
+
 #define DEFAULT_FORMAT		SND_PCM_FORMAT_U8
 #define DEFAULT_SPEED 		8000
 
