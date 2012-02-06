@@ -213,14 +213,14 @@ pcm.copy {
 .fi
 
 .TP
-\fBarecord \-t wav \-max-file_time 30 mon.wav\fP
+\fBarecord \-t wav \-\-max-file-time 30 mon.wav\fP
 Record from the default audio source in monaural, 8,000 samples
 per second, 8 bits per sample.  Start a new file every
 30 seconds.  File names are mon-nn.wav, where nn increases
 from 01.  The file after mon-99.wav is mon-100.wav.
 
 .TP
-\fBarecord \-f cd \-t wav \-max-file-time 3600 --use-strftime %Y/%m/%d/listen-%H-%M-%v.wav\fP
+\fBarecord \-f cd \-t wav \-\-max-file-time 3600 --use-strftime %Y/%m/%d/listen-%H-%M-%v.wav\fP
 Record in stereo from the default audio source.  Create a new file
 every hour.  The files are placed in directories based on their start dates
 and have names which include their start times and file numbers.
