@@ -24,11 +24,11 @@ package. The configure script from alsa-utils package probably cannot find
 header file asoundlib.h in $prefix/include/alsa directory (usually in
 /usr/include/alsa directory).
 
-Compilation from HG sources
+Compilation from git sources
 ---------------------------
 
 You need also GNU packages autoconf and automake installed in your system
-to compile HG (Mercurial) sources of alsa-utils package.
+to compile git sources of alsa-utils package.
 
 For compilation you can use these commands:
 
@@ -40,7 +40,7 @@ For compilation you can use these commands:
 	./configure
 	make
 
-The included hgcompile script does this job for you.
+The included gitcompile script does this job for you.
 
 Note: Some automake packages have missing aclocal program. Use newer version
       in the case.
