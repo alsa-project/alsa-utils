@@ -949,6 +949,23 @@ static int xrun_sync(struct loopback *loop)
 			logit(LOG_CRIT, "%s start failed: %s\n", play->id, snd_strerror(err));
 			return err;
 		}
+	} else if (delay1 < fill) {
+		diff = (fill - delay1) / play->pitch;
+		while (diff > 0) {
+			delay1 = play->buf_size - play->buf_pos;
+			if (verbose > 6)
+				snd_output_printf(loop->output,
+					"sync: playback short, silence filling %li / buf_count=%li\n", (long)delay1, play->buf_count);
+			if (delay1 > diff)
+				delay1 = diff;
+			if ((err = snd_pcm_format_set_silence(play->format, play->buf + play->buf_pos * play->channels, delay1)) < 0)
+				return err;
+			play->buf_pos += delay1;
+			play->buf_pos %= play->buf_size;
+			play->buf_count += delay1;
+			diff -= delay1;
+		}
+		writeit(play);
 	}
 	if (verbose > 5) {
 		snd_output_printf(loop->output, "%s: xrun sync ok\n", loop->id);
