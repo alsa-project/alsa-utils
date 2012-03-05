@@ -129,6 +129,7 @@ static int max_file_time = 0;
 static int use_strftime = 0;
 volatile static int recycle_capture_file = 0;
 static long term_c_lflag = -1;
+static int dump_hw_params = 0;
 
 static int fd = -1;
 static off64_t pbrec_count = LLONG_MAX, fdcount;
@@ -223,7 +224,8 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "    --max-file-time=#   start another output file when the old file has recorded\n"
 "                        for this many seconds\n"
 "    --process-id-file   write the process ID here\n"
-"    --use-strftime      apply the strftime facility to the output file name\n")
+"    --use-strftime      apply the strftime facility to the output file name\n"
+"    --dump-hw-params    dump hw_params of the device\n")
 		, command);
 	printf(_("Recognized sample formats are:"));
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
@@ -416,7 +418,8 @@ enum {
 	OPT_TEST_NOWAIT,
 	OPT_MAX_FILE_TIME,
 	OPT_PROCESS_ID_FILE,
-	OPT_USE_STRFTIME
+	OPT_USE_STRFTIME,
+	OPT_DUMP_HWPARAMS
 };
 
 int main(int argc, char *argv[])
@@ -461,6 +464,7 @@ int main(int argc, char *argv[])
 		{"process-id-file", 1, 0, OPT_PROCESS_ID_FILE},
 		{"use-strftime", 0, 0, OPT_USE_STRFTIME},
 		{"interactive", 0, 0, 'i'},
+		{"dump-hw-params", 0, 0, OPT_DUMP_HWPARAMS},
 		{0, 0, 0, 0}
 	};
 	char *pcm_name = "default";
@@ -661,6 +665,9 @@ int main(int argc, char *argv[])
 			break;
 		case OPT_USE_STRFTIME:
 			use_strftime = 1;
+			break;
+		case OPT_DUMP_HWPARAMS:
+			dump_hw_params = 1;
 			break;
 		default:
 			fprintf(stderr, _("Try `%s --help' for more information.\n"), command);
@@ -1058,6 +1065,13 @@ static void set_params(void)
 	if (err < 0) {
 		error(_("Broken configuration for this PCM: no configurations available"));
 		prg_exit(EXIT_FAILURE);
+	}
+	if (dump_hw_params) {
+		fprintf(stderr, _("HW Params of device \"%s\":\n"),
+			snd_pcm_name(handle));
+		fprintf(stderr, "--------------------\n");
+		snd_pcm_hw_params_dump(params, log);
+		fprintf(stderr, "--------------------\n");
 	}
 	if (mmap_flag) {
 		snd_pcm_access_mask_t *mask = alloca(snd_pcm_access_mask_sizeof());

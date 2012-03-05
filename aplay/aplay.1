@@ -184,6 +184,13 @@ the month, %H hour, %M minute and %S second.  In addition, %v is
 the file number, starting at 1.  When this option is specified,
 intermediate directories for the output file are created automatically.
 This option has no effect if \-\-separate\-channels is specified.
+.TP
+\fI\-\-dump\-hw\-params\fP
+Dump hw_params of the device preconfigured status to stderr. The dump
+lists capabilities of the selected device such as supported formats,
+sampling rates, numbers of channels, period and buffer bytes/sizes/times.
+For raw device hw:X this option basically lists hardware capabilities of
+the soundcard.
 
 .SH SIGNALS
 When recording, SIGINT, SIGTERM and SIGABRT will close the output 
