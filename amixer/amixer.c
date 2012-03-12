@@ -29,7 +29,9 @@
 #include <assert.h>
 #include <alsa/asoundlib.h>
 #include <sys/poll.h>
+#include <stdint.h>
 #include "amixer.h"
+#include "../alsamixer/volume_mapping.h"
 
 #define LEVEL_BASIC		(1<<0)
 #define LEVEL_INACTIVE		(1<<1)
@@ -68,6 +70,8 @@ static int help(void)
 	printf("  -i,--inactive   show also inactive controls\n");
 	printf("  -a,--abstract L select abstraction level (none or basic)\n");
 	printf("  -s,--stdin      Read and execute commands from stdin sequentially\n");
+	printf("  -R,--raw-volume Use the raw value (default)\n");
+	printf("  -M,--mapped-volume Use the mapped volume\n");
 	printf("\nAvailable commands:\n");
 	printf("  scontrols       show all mixer simple controls\n");
 	printf("  scontents	  show contents of all mixer simple controls (default command)\n");
@@ -187,9 +191,9 @@ static int convert_db_range(int val, int omin, int omax, int nmin, int nmax)
 
 /* Fuction to convert from volume to percentage. val = volume */
 
-static int convert_prange(int val, int min, int max)
+static int convert_prange(long val, long min, long max)
 {
-	int range = max - min;
+	long range = max - min;
 	int tmp;
 
 	if (range == 0)
@@ -203,29 +207,6 @@ static int convert_prange(int val, int min, int max)
 
 #define convert_prange1(val, min, max) \
 	ceil((val) * ((max) - (min)) * 0.01 + (min))
-
-static const char *get_percent(int val, int min, int max)
-{
-	static char str[32];
-	int p;
-	
-	p = convert_prange(val, min, max);
-	sprintf(str, "%i [%i%%]", val, p);
-	return str;
-}
-
-#if 0
-static const char *get_percent1(int val, int min, int max, int min_dB, int max_dB)
-{
-	static char str[32];
-	int p, db;
-
-	p = convert_prange(val, min, max);
-	db = convert_db_range(val, min, max, min_dB, max_dB);
-	sprintf(str, "%i [%i%%] [%i.%02idB]", val, p, db / 100, abs(db % 100));
-	return str;
-}
-#endif
 
 static long get_integer(char **ptr, long min, long max)
 {
@@ -288,26 +269,83 @@ struct volume_ops {
 	int (*get)(snd_mixer_elem_t *elem, snd_mixer_selem_channel_id_t c,
 		   long *value);
 	int (*set)(snd_mixer_elem_t *elem, snd_mixer_selem_channel_id_t c,
-		   long value);
+		   long value, int dir);
 };
 	
-enum { VOL_RAW, VOL_DB };
+enum { VOL_RAW, VOL_DB, VOL_MAP };
 
 struct volume_ops_set {
 	int (*has_volume)(snd_mixer_elem_t *elem);
-	struct volume_ops v[2];
+	struct volume_ops v[3];
 };
 
 static int set_playback_dB(snd_mixer_elem_t *elem,
-			   snd_mixer_selem_channel_id_t c, long value)
+			   snd_mixer_selem_channel_id_t c, long value, int dir)
 {
-	return snd_mixer_selem_set_playback_dB(elem, c, value, 0);
+	return snd_mixer_selem_set_playback_dB(elem, c, value, dir);
 }
 
 static int set_capture_dB(snd_mixer_elem_t *elem,
-			  snd_mixer_selem_channel_id_t c, long value)
+			  snd_mixer_selem_channel_id_t c, long value, int dir)
 {
-	return snd_mixer_selem_set_capture_dB(elem, c, value, 0);
+	return snd_mixer_selem_set_capture_dB(elem, c, value, dir);
+}
+
+static int set_playback_raw_volume(snd_mixer_elem_t *elem,
+				   snd_mixer_selem_channel_id_t c,
+				   long value, int dir)
+{
+	return snd_mixer_selem_set_playback_volume(elem, c, value);
+}
+
+static int set_capture_raw_volume(snd_mixer_elem_t *elem,
+				  snd_mixer_selem_channel_id_t c,
+				  long value, int dir)
+{
+	return snd_mixer_selem_set_capture_volume(elem, c, value);
+}
+
+/* FIXME: normalize to int32 space to be compatible with other types */
+#define MAP_VOL_RES	(INT32_MAX / 100)
+
+static int get_mapped_volume_range(snd_mixer_elem_t *elem,
+				   long *pmin, long *pmax)
+{
+	*pmin = 0;
+	*pmax = MAP_VOL_RES;
+	return 0;
+}
+
+static int get_playback_mapped_volume(snd_mixer_elem_t *elem,
+				      snd_mixer_selem_channel_id_t c,
+				      long *value)
+{
+	*value = (rint)(get_normalized_playback_volume(elem, c) * MAP_VOL_RES);
+	return 0;
+}
+
+static int set_playback_mapped_volume(snd_mixer_elem_t *elem,
+				      snd_mixer_selem_channel_id_t c,
+				      long value, int dir)
+{
+	return set_normalized_playback_volume(elem, c,
+					      (double)value / MAP_VOL_RES, dir);
+}
+
+static int get_capture_mapped_volume(snd_mixer_elem_t *elem,
+				     snd_mixer_selem_channel_id_t c,
+				     long *value)
+{
+	*value = (rint)(get_normalized_capture_volume(elem, c) * MAP_VOL_RES);
+	return 0;
+}
+
+static int set_capture_mapped_volume(snd_mixer_elem_t *elem,
+				     snd_mixer_selem_channel_id_t c,
+				     long value, int dir)
+{
+	return set_normalized_capture_volume(elem, c,
+					     (double)value / MAP_VOL_RES, dir);
 }
 
 static const struct volume_ops_set vol_ops[2] = {
@@ -315,21 +353,31 @@ static const struct volume_ops_set vol_ops[2] = {
 		.has_volume = snd_mixer_selem_has_playback_volume,
 		.v = {{ snd_mixer_selem_get_playback_volume_range,
 			snd_mixer_selem_get_playback_volume,
-			snd_mixer_selem_set_playback_volume },
+			set_playback_raw_volume },
 		      { snd_mixer_selem_get_playback_dB_range,
 			snd_mixer_selem_get_playback_dB,
-			set_playback_dB }},
+			set_playback_dB },
+		      { get_mapped_volume_range,
+			get_playback_mapped_volume,
+			set_playback_mapped_volume },
+		},
 	},
 	{
 		.has_volume = snd_mixer_selem_has_capture_volume,
 		.v = {{ snd_mixer_selem_get_capture_volume_range,
 			snd_mixer_selem_get_capture_volume,
-			snd_mixer_selem_set_capture_volume },
+			set_capture_raw_volume },
 		      { snd_mixer_selem_get_capture_dB_range,
 			snd_mixer_selem_get_capture_dB,
-			set_capture_dB }},
+			set_capture_dB },
+		      { get_mapped_volume_range,
+			get_capture_mapped_volume,
+			set_capture_mapped_volume },
+		},
 	},
 };
+
+static int std_vol_type = VOL_RAW;
 
 static int set_volume_simple(snd_mixer_elem_t *elem,
 			     snd_mixer_selem_channel_id_t chn,
@@ -337,7 +385,10 @@ static int set_volume_simple(snd_mixer_elem_t *elem,
 {
 	long val, orig, pmin, pmax;
 	char *p = *ptr, *s;
-	int invalid = 0, err = 0, vol_type = VOL_RAW;
+	int invalid = 0, percent = 0, err = 0;
+	int vol_type = std_vol_type;
+	double scale = 1.0;
+	int correct = 0;
 
 	if (! vol_ops[dir].has_volume(elem))
 		invalid = 1;
@@ -347,10 +398,6 @@ static int set_volume_simple(snd_mixer_elem_t *elem,
 	if (*p == '\0' || (!isdigit(*p) && *p != '-'))
 		goto skip;
 
-	if (! invalid &&
-	    vol_ops[dir].v[VOL_RAW].get_range(elem, &pmin, &pmax) < 0)
-		invalid = 1;
-
 	s = p;
 	val = strtol(s, &p, 10);
 	if (*p == '.') {
@@ -358,32 +405,37 @@ static int set_volume_simple(snd_mixer_elem_t *elem,
 		strtol(p, &p, 10);
 	}
 	if (*p == '%') {
-		if (! invalid)
-			val = (long)convert_prange1(strtod(s, NULL), pmin, pmax);
+		percent = 1;
 		p++;
 	} else if (p[0] == 'd' && p[1] == 'B') {
-		if (! invalid) {
-			val = (long)(strtod(s, NULL) * 100.0);
-			vol_type = VOL_DB;
-			if (vol_ops[dir].v[vol_type].get_range(elem, &pmin, &pmax) < 0)
-				invalid = 1;
-		}
+		vol_type = VOL_DB;
 		p += 2;
-	}
+		scale = 100;
+	} else
+		vol_type = VOL_RAW;
+
+	val = (long)(strtod(s, NULL) * scale);
+	if (vol_ops[dir].v[vol_type].get_range(elem, &pmin, &pmax) < 0)
+		invalid = 1;
+	if (percent)
+		val = (long)convert_prange1(val, pmin, pmax);
 	if (*p == '+' || *p == '-') {
 		if (! invalid) {
 			if (vol_ops[dir].v[vol_type].get(elem, chn, &orig) < 0)
 				invalid = 1;
-			if (*p == '+')
+			if (*p == '+') {
 				val = orig + val;
-			else
+				correct = -1;
+			} else {
 				val = orig - val;
+				correct = 1;
+			}
 		}
 		p++;
 	}
 	if (! invalid) {
 		val = check_range(val, pmin, pmax);
-		err = vol_ops[dir].v[vol_type].set(elem, chn, val);
+		err = vol_ops[dir].v[vol_type].set(elem, chn, val, correct);
 	}
  skip:
 	if (*p == ',')
@@ -711,15 +763,33 @@ static int controls(int level)
 	return 0;
 }
 
+static void show_selem_volume(snd_mixer_elem_t *elem, 
+			      snd_mixer_selem_channel_id_t chn, int dir,
+			      long min, long max)
+{
+	long raw, val;
+	vol_ops[dir].v[VOL_RAW].get(elem, chn, &raw);
+	if (std_vol_type == VOL_RAW)
+		val = convert_prange(raw, min, max);
+	else {
+		vol_ops[dir].v[std_vol_type].get(elem, chn, &val);
+		val = convert_prange(val, 0, MAP_VOL_RES);
+	}
+	printf(" %li [%li%%]", raw, val);
+	if (!vol_ops[dir].v[VOL_DB].get(elem, chn, &val)) {
+		printf(" [");
+		print_dB(val);
+		printf("]");
+	}
+}
+
 static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char *space, int level)
 {
 	snd_mixer_selem_channel_id_t chn;
 	long pmin = 0, pmax = 0;
 	long cmin = 0, cmax = 0;
-	long pvol, cvol;
 	int psw, csw;
 	int pmono, cmono, mono_ok = 0;
-	long db;
 	snd_mixer_elem_t *elem;
 	
 	elem = snd_mixer_find_selem(handle, id);
@@ -868,13 +938,7 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 				mono_ok = 1;
 			}
 			if (snd_mixer_selem_has_common_volume(elem)) {
-				snd_mixer_selem_get_playback_volume(elem, SND_MIXER_SCHN_MONO, &pvol);
-				printf(" %s", get_percent(pvol, pmin, pmax));
-				if (!snd_mixer_selem_get_playback_dB(elem, SND_MIXER_SCHN_MONO, &db)) {
-					printf(" [");
-					print_dB(db);
-					printf("]");
-				}
+				show_selem_volume(elem, SND_MIXER_SCHN_MONO, 0, pmin, pmax);
 			}
 			if (snd_mixer_selem_has_common_switch(elem)) {
 				snd_mixer_selem_get_playback_switch(elem, SND_MIXER_SCHN_MONO, &psw);
@@ -891,13 +955,7 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 				if (snd_mixer_selem_has_playback_volume(elem)) {
 					printf(" Playback");
 					title = 1;
-					snd_mixer_selem_get_playback_volume(elem, SND_MIXER_SCHN_MONO, &pvol);
-					printf(" %s", get_percent(pvol, pmin, pmax));
-					if (!snd_mixer_selem_get_playback_dB(elem, SND_MIXER_SCHN_MONO, &db)) {
-						printf(" [");
-						print_dB(db);
-						printf("]");
-					}
+					show_selem_volume(elem, SND_MIXER_SCHN_MONO, 0, pmin, pmax);
 				}
 			}
 			if (!snd_mixer_selem_has_common_switch(elem)) {
@@ -919,13 +977,7 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 				if (snd_mixer_selem_has_capture_volume(elem)) {
 					printf(" Capture");
 					title = 1;
-					snd_mixer_selem_get_capture_volume(elem, SND_MIXER_SCHN_MONO, &cvol);
-					printf(" %s", get_percent(cvol, cmin, cmax));
-					if (!snd_mixer_selem_get_capture_dB(elem, SND_MIXER_SCHN_MONO, &db)) {
-						printf(" [");
-						print_dB(db);
-						printf("]");
-					}
+					show_selem_volume(elem, SND_MIXER_SCHN_MONO, 1, cmin, cmax);
 				}
 			}
 			if (!snd_mixer_selem_has_common_switch(elem)) {
@@ -946,13 +998,7 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 					continue;
 				printf("%s%s:", space, snd_mixer_selem_channel_name(chn));
 				if (!pmono && !cmono && snd_mixer_selem_has_common_volume(elem)) {
-					snd_mixer_selem_get_playback_volume(elem, chn, &pvol);
-					printf(" %s", get_percent(pvol, pmin, pmax));
-					if (!snd_mixer_selem_get_playback_dB(elem, chn, &db)) {
-						printf(" [");
-						print_dB(db);
-						printf("]");
-					}
+					show_selem_volume(elem, chn, 0, pmin, pmax);
 				}
 				if (!pmono && !cmono && snd_mixer_selem_has_common_switch(elem)) {
 					snd_mixer_selem_get_playback_switch(elem, chn, &psw);
@@ -964,13 +1010,7 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 						if (snd_mixer_selem_has_playback_volume(elem)) {
 							printf(" Playback");
 							title = 1;
-							snd_mixer_selem_get_playback_volume(elem, chn, &pvol);
-							printf(" %s", get_percent(pvol, pmin, pmax));
-							if (!snd_mixer_selem_get_playback_dB(elem, chn, &db)) {
-								printf(" [");
-								print_dB(db);
-								printf("]");
-							}
+							show_selem_volume(elem, chn, 0, pmin, pmax);
 						}
 					}
 					if (!snd_mixer_selem_has_common_switch(elem)) {
@@ -988,13 +1028,7 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 						if (snd_mixer_selem_has_capture_volume(elem)) {
 							printf(" Capture");
 							title = 1;
-							snd_mixer_selem_get_capture_volume(elem, chn, &cvol);
-							printf(" %s", get_percent(cvol, cmin, cmax));
-							if (!snd_mixer_selem_get_capture_dB(elem, chn, &db)) {
-								printf(" [");
-								print_dB(db);
-								printf("]");
-							}
+							show_selem_volume(elem, chn, 1, cmin, cmax);
 						}
 					}
 					if (!snd_mixer_selem_has_common_switch(elem)) {
@@ -1927,6 +1961,8 @@ int main(int argc, char *argv[])
 		{"version", 0, NULL, 'v'},
 		{"abstract", 1, NULL, 'a'},
 		{"stdin", 0, NULL, 's'},
+		{"raw-volume", 0, NULL, 'R'},
+		{"mapped-volume", 0, NULL, 'M'},
 		{NULL, 0, NULL, 0},
 	};
 
@@ -1934,7 +1970,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hc:D:qidnva:s", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, "hc:D:qidnva:sRM", long_option, NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
@@ -1986,6 +2022,12 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			read_stdin = 1;
+			break;
+		case 'R':
+			std_vol_type = VOL_RAW;
+			break;
+		case 'M':
+			std_vol_type = VOL_MAP;
 			break;
 		default:
 			fprintf(stderr, "Invalid switch or option needs an argument.\n");
