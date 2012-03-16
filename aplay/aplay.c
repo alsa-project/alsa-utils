@@ -115,6 +115,7 @@ static int stop_delay = 0;
 static int monotonic = 0;
 static int interactive = 0;
 static int can_pause = 0;
+static int fatal_errors = 0;
 static int verbose = 0;
 static int vumeter = VUMETER_NONE;
 static int buffer_pos = 0;
@@ -225,7 +226,8 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "                        for this many seconds\n"
 "    --process-id-file   write the process ID here\n"
 "    --use-strftime      apply the strftime facility to the output file name\n"
-"    --dump-hw-params    dump hw_params of the device\n")
+"    --dump-hw-params    dump hw_params of the device\n"
+"    --fatal-errors      treat all errors as fatal\n")
 		, command);
 	printf(_("Recognized sample formats are:"));
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
@@ -419,7 +421,8 @@ enum {
 	OPT_MAX_FILE_TIME,
 	OPT_PROCESS_ID_FILE,
 	OPT_USE_STRFTIME,
-	OPT_DUMP_HWPARAMS
+	OPT_DUMP_HWPARAMS,
+	OPT_FATAL_ERRORS,
 };
 
 int main(int argc, char *argv[])
@@ -465,6 +468,7 @@ int main(int argc, char *argv[])
 		{"use-strftime", 0, 0, OPT_USE_STRFTIME},
 		{"interactive", 0, 0, 'i'},
 		{"dump-hw-params", 0, 0, OPT_DUMP_HWPARAMS},
+		{"fatal-errors", 0, 0, OPT_FATAL_ERRORS},
 		{0, 0, 0, 0}
 	};
 	char *pcm_name = "default";
@@ -668,6 +672,9 @@ int main(int argc, char *argv[])
 			break;
 		case OPT_DUMP_HWPARAMS:
 			dump_hw_params = 1;
+			break;
+		case OPT_FATAL_ERRORS:
+			fatal_errors = 1;
 			break;
 		default:
 			fprintf(stderr, _("Try `%s --help' for more information.\n"), command);
@@ -1350,6 +1357,12 @@ static void xrun(void)
 		prg_exit(EXIT_FAILURE);
 	}
 	if (snd_pcm_status_get_state(status) == SND_PCM_STATE_XRUN) {
+		if (fatal_errors) {
+			error(_("fatal %s: %s"),
+					stream == SND_PCM_STREAM_PLAYBACK ? _("underrun") : _("overrun"),
+					snd_strerror(res));
+			prg_exit(EXIT_FAILURE);
+		}
 		if (monotonic) {
 #ifdef HAVE_CLOCK_GETTIME
 			struct timespec now, diff, tstamp;

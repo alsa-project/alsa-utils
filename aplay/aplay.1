@@ -191,6 +191,10 @@ lists capabilities of the selected device such as supported formats,
 sampling rates, numbers of channels, period and buffer bytes/sizes/times.
 For raw device hw:X this option basically lists hardware capabilities of
 the soundcard.
+.TP
+\fI\-\-fatal\-errors\fP
+Disables recovery attempts when errors (e.g. xrun) are encountered; the
+aplay process instead aborts immediately.
 
 .SH SIGNALS
 When recording, SIGINT, SIGTERM and SIGABRT will close the output 
