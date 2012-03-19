@@ -104,9 +104,20 @@ The commands to unmatched ids are ignored without errors too.
 .TP
 \fI\-h\fP 
 Help: show syntax.
+
 .TP
 \fI\-q\fP
 Quiet mode. Do not show results of changes.
+
+.TP
+\fI\-R\fP 
+Use the raw value for evaluating the percentage representation.
+This is the default mode.
+
+.TP
+\fI\-M\fP 
+Use the mapped volume for evaluating the percentage representation
+like \fBalsamixer\fR, to be more natural for human ear.
 
 .SH EXAMPLES
 
@@ -134,8 +145,14 @@ will set the third soundcard's second line playback volume(s) to 40%
 \fBamixer \-c 2 cset numid=34 40%\fR
 will set the 34th soundcard element to 40%
 
+.SH SEE ALSO
+\fB
+alsamixer(1)
+\fP
+
 .SH BUGS 
 None known.
+
 .SH AUTHOR
 \fBamixer\fP is by Jaroslav Kysela <perex@perex.cz>.
 This document is by Paul Winkler <zarmzarm@erols.com> and Jaroslav Kysela <perex@perex.cz>.

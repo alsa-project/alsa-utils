@@ -157,6 +157,19 @@ Quit the program with \fIALT Q\fP, or by hitting \fIESC\fP.
 Please note that you might need to hit \fIESC\fP twice on some terminals
 since it's regarded as a prefix key.
 
+.SH VOLUME MAPPING
+In \fBalsamixer\fP, the volume is mapped to a value that is more natural
+for a human ear.  The mapping is designed so that the position in the
+interval is proportional to the volume as a human ear would perceive
+it, i.e. the position is the cubic root of the linear sample
+multiplication factor.  For controls with a small range (24 dB or
+less), the mapping is linear in the dB values so that each step has
+the same size visually.
+
+Only for controls without dB information, a linear mapping of the
+hardware volume register values is used (this is the same algorithm as
+used in the old \fBalsamixer\fP).
+
 .SH SEE ALSO
 \fB
 amixer(1),
