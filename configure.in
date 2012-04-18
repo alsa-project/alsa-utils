@@ -76,7 +76,7 @@ CURSES_CFLAGS=""
 alsamixer=
 if test "$have_mixer" = "yes"; then
 AC_ARG_ENABLE(alsamixer,
-     [  --disable-alsamixer     Disable alsamixer compilation],
+     AS_HELP_STRING([--disable-alsamixer], [Disable alsamixer compilation]),
      [case "${enableval}" in
        yes) alsamixer=true ;;
        no)  alsamixer=false ;;
@@ -87,7 +87,7 @@ AM_CONDITIONAL(ALSAMIXER, test x$alsamixer = xtrue)
 
 dnl Disable alsaconf
 AC_ARG_ENABLE(alsaconf,
-     [  --disable-alsaconf      Disable alsaconf packaging],
+     AS_HELP_STRING([--disable-alsaconf], [Disable alsaconf packaging]),
      [case "${enableval}" in
        yes) alsaconf=true ;;
        no)  alsaconf=false ;;
@@ -97,7 +97,7 @@ AM_CONDITIONAL(ALSACONF, test x$alsaconf = xtrue)
 
 dnl Disable alsaloop
 AC_ARG_ENABLE(alsaloop,
-     [  --disable-alsaloop      Disable alsaloop packaging],
+     AS_HELP_STRING([--disable-alsaloop], [Disable alsaloop packaging]),
      [case "${enableval}" in
        yes) alsaloop=true ;;
        no)  alsaloop=false ;;
@@ -124,7 +124,7 @@ dnl Checks for header files.
 AC_HEADER_STDC
 if test x$alsamixer = xtrue; then
   AC_ARG_WITH(curses,
-    [  --with-curses libname   Specify the curses library to use (default=auto)],
+    AS_HELP_STRING([--with-curses=libname], [Specify the curses library to use (default=auto)]),
     curseslib="$withval",
     curseslib="auto")
   CURSESLIBDIR=""
@@ -283,7 +283,7 @@ mydatadir="$dir/alsa"
 AC_DEFINE_UNQUOTED(DATADIR, "$mydatadir", [directory containing alsa configuration])
 
 AC_ARG_WITH(testsound,
-  [  --with-testsound=file        give the path of test sound file for alsaconf],
+  AS_HELP_STRING([--with-testsound=file], [give the path of test sound file for alsaconf]),
   TESTSOUND="$withval",
   TESTSOUND="$dir/test.wav")
 AC_SUBST(TESTSOUND)
