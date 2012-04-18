@@ -29,6 +29,7 @@ AC_PROG_INSTALL
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_SED
+PKG_PROG_PKG_CONFIG
 AM_PATH_ALSA(1.0.24)
 AC_CHECK_FUNC([snd_ctl_elem_add_enumerated],
 	      , [AC_ERROR([No user enum control support in alsa-lib])])
@@ -130,34 +131,52 @@ if test x$alsamixer = xtrue; then
   NCURSESLIBSUFFIX=""
   CURSES_NLS="no"
   if test "$curseslib" = "ncursesw" -o \( "$curseslib" = "auto" -a "$USE_NLS" = "yes" \); then
-    AC_CHECK_PROG([ncursesw5_config], [ncursesw5-config], [yes])
-    if test "$ncursesw5_config" = "yes"; then
-      CURSESINC="<ncurses.h>"
-      CURSESLIB=`ncursesw5-config --libs`
-      CURSESLIBDIR=`ncursesw5-config --libdir`
-      CURSES_CFLAGS=`ncursesw5-config --cflags`
-      curseslib="ncursesw"
-    else
-      AC_CHECK_LIB(ncursesw, initscr,
-                 [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncursesw'; curseslib="ncursesw"])
-    fi
+    dnl First try out pkg-config, then fall back to old config scripts.
+    PKG_CHECK_MODULES([NCURSESW], [ncursesw], [
+        CURSESINC="<ncurses.h>"
+        CURSESLIB="${NCURSESW_LIBS}"
+        CURSESLIBDIR=
+        CURSES_CFLAGS="${NCURSESW_CFLAGS}"
+        curseslib="ncursesw"
+      ], [
+        AC_CHECK_PROG([ncursesw5_config], [ncursesw5-config], [yes])
+        if test "$ncursesw5_config" = "yes"; then
+          CURSESINC="<ncurses.h>"
+          CURSESLIB=`ncursesw5-config --libs`
+          CURSESLIBDIR=`ncursesw5-config --libdir`
+          CURSES_CFLAGS=`ncursesw5-config --cflags`
+          curseslib="ncursesw"
+        else
+          AC_CHECK_LIB(ncursesw, initscr,
+                     [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncursesw'; curseslib="ncursesw"])
+        fi
+      ])
     if test -n "$CURSESINC"; then
       NCURSESLIBSUFFIX="w"
       CURSES_NLS="yes"
     fi
   fi
   if test "$curseslib" = "ncurses" -o "$curseslib" = "auto"; then
-    AC_CHECK_PROG([ncurses5_config], [ncurses5-config], [yes])
-    if test "$ncurses5_config" = "yes"; then
-      CURSESINC="<ncurses.h>"
-      CURSESLIB=`ncurses5-config --libs`
-      CURSESLIBDIR=`ncurses5-config --libdir`
-      CURSES_CFLAGS=`ncurses5-config --cflags`
-      curseslib="ncurses"
-    else
-      AC_CHECK_LIB(ncurses, initscr,
-                 [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncurses'; curseslib="ncurses"])
-    fi
+    dnl First try out pkg-config, then fall back to old config scripts.
+    PKG_CHECK_MODULES([NCURSES], [ncurses], [
+        CURSESINC="<ncurses.h>"
+        CURSESLIB="${NCURSES_LIBS}"
+        CURSESLIBDIR=
+        CURSES_CFLAGS="${NCURSES_CFLAGS}"
+        curseslib="ncurses"
+      ], [
+        AC_CHECK_PROG([ncurses5_config], [ncurses5-config], [yes])
+        if test "$ncurses5_config" = "yes"; then
+          CURSESINC="<ncurses.h>"
+          CURSESLIB=`ncurses5-config --libs`
+          CURSESLIBDIR=`ncurses5-config --libdir`
+          CURSES_CFLAGS=`ncurses5-config --cflags`
+          curseslib="ncurses"
+        else
+          AC_CHECK_LIB(ncurses, initscr,
+                     [ CURSESINC='<ncurses.h>'; CURSESLIB='-lncurses'; curseslib="ncurses"])
+        fi
+      ])
   fi
   if test "$curseslib" = "curses" -o "$curseslib" = "auto"; then
     AC_CHECK_LIB(curses, initscr,
@@ -287,7 +306,6 @@ SAVE_UTIL_VERSION
 AC_SUBST(LIBRT)
 
 dnl Check for systemd
-PKG_PROG_PKG_CONFIG
 AC_ARG_WITH([systemdsystemunitdir],
         AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files]),
         [], [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
