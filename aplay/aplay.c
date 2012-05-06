@@ -1453,9 +1453,9 @@ static void print_vu_meter_mono(int perc, int maxperc)
 		sprintf(line + val, "| MAX");
 	else
 		sprintf(line + val, "| %02i%%", maxperc);
-	fputs(line, stdout);
+	fputs(line, stderr);
 	if (perc > 100)
-		printf(_(" !clip  "));
+		fprintf(stderr, _(" !clip  "));
 }
 
 static void print_vu_meter_stereo(int *perc, int *maxperc)
@@ -1493,7 +1493,7 @@ static void print_vu_meter_stereo(int *perc, int *maxperc)
 			memcpy(line + bar_length, tmp, 3);
 	}
 	line[bar_length * 2 + 6 + 2] = 0;
-	fputs(line, stdout);
+	fputs(line, stderr);
 }
 
 static void print_vu_meter(signed int *perc, signed int *maxperc)
@@ -1631,9 +1631,9 @@ static void compute_max_peak(u_char *data, size_t count)
 			if (perc[c] > maxperc[c])
 				maxperc[c] = perc[c];
 
-		putchar('\r');
+		putc('\r', stderr);
 		print_vu_meter(perc, maxperc);
-		fflush(stdout);
+		fflush(stderr);
 	}
 	else if(verbose==3) {
 		printf(_("Max peak (%li samples): 0x%08x "), (long)ocount, max_peak[0]);
@@ -1642,8 +1642,8 @@ static void compute_max_peak(u_char *data, size_t count)
 				putchar('#');
 			else
 				putchar(' ');
-		printf(" %i%%\n", perc[0]);
-		fflush(stdout);
+		fprintf(stderr, " %i%%\n", perc[0]);
+		fflush(stderr);
 	}
 }
 
