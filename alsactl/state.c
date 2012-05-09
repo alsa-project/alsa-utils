@@ -1646,13 +1646,23 @@ int load_state(const char *file, const char *initfile, const char *cardname,
 
 		error("Cannot open %s for reading: %s", file, snd_strerror(err));
 		finalerr = err;
-		card = -1;
+		if (cardname) {
+			card = snd_card_get_index(cardname);
+			if (card < 0) {
+				error("Cannot find soundcard '%s'...", cardname);
+				return -ENODEV;
+			}
+			goto single;
+		} else {
+			card = -1;
+		}
 		/* find each installed soundcards */
-		while (1) {
+		while (!cardname) {
 			if (snd_card_next(&card) < 0)
 				break;
 			if (card < 0)
 				break;
+single:
 			first = 0;
 			if (!do_init)
 				break;
