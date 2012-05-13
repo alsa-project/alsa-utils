@@ -246,15 +246,11 @@ static int setparams_set(struct loopback_handle *lhandle,
 	} else {
 		if (lhandle == lhandle->loopback->play) {
 			val = bufsize + bufsize / 2;
-			if (val < (period_size * 3) / 4)
-				val = (period_size * 3) / 4;
 			if (val > (buffer_size * 3) / 4)
 				val = (buffer_size * 3) / 4;
 			val = buffer_size - val;
 		} else {
 			val = bufsize / 2;
-			if (val < period_size / 2)
-				val = period_size / 2;
 			if (val > buffer_size / 4)
 				val = buffer_size / 4;
 		}
