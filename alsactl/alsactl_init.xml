@@ -474,7 +474,15 @@
             <varlistentry>
               <term><option>INCLUDE</option></term>
               <listitem>
-                <para>Include specified filename or all files in specified directory</para>
+                <para>Include the specified filename or files in specified directory.
+		</para>
+		<para>
+		When a directory is specified, only the files with the
+		extension ".conf" are read.
+		Also they are read in the alphabetical order.
+		Thus it's highly recommended to use some number prefix
+		(e.g. "01-something.conf") to assure the order of execucions.
+		</para>
               </listitem>
             </varlistentry>
 

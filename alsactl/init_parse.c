@@ -1278,6 +1278,13 @@ static char *new_root_dir(const char *filename)
 	return res;
 }
 
+/* return non-zero if the file name has the extension ".conf" */
+static int conf_name_filter(const struct dirent *d)
+{
+	char *ext = strrchr(d->d_name, '.');
+	return ext && !strcmp(ext, ".conf");
+}
+
 static int parse_line(struct space *space, char *line, size_t linesize)
 {
 	char *linepos;
@@ -1480,8 +1487,7 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 		if (strcasecmp(key, "INCLUDE") == 0) {
 			char *rootdir, *go_to;
 			const char *filename;
-			struct dirent *dirent;
-			DIR *dir;
+			struct stat st;
 			int linenum;
 			if (op != KEY_OP_ASSIGN) {
 				Perror(space, "invalid INCLUDE operation");
@@ -1498,18 +1504,27 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 			go_to = space->go_to;
 			filename = space->filename;
 			linenum = space->linenum;
-			dir = opendir(string);
-			if (dir) {
+			if (stat(string, &st)) {
+				Perror(space, "invalid filename '%s'", string);
+				continue;
+			}
+			if (S_ISDIR(st.st_mode)) {
+				struct dirent **list;
+				int i, num;
+				num = scandir(string, &list, conf_name_filter,
+					      alphasort);
+				if (num < 0) {
+					Perror(space, "invalid directory '%s'", string);
+					continue;
+				}
 				count = strlen(string);
-				while ((dirent = readdir(dir)) != NULL) {
-					if (strcmp(dirent->d_name, ".") == 0 ||
-					    strcmp(dirent->d_name, "..") == 0)
-						continue;
+				for (i = 0; i < num; i++) {
 					string[count] = '\0';
 					strlcat(string, "/", sizeof(string));
-					strlcat(string, dirent->d_name, sizeof(string));
+					strlcat(string, list[i]->d_name, sizeof(string));
 					space->go_to = NULL;
 					space->rootdir = new_root_dir(string);
+					free(list[i]);
 					if (space->rootdir) {
 						err = parse(space, string);
 						free(space->rootdir);
@@ -1522,7 +1537,7 @@ static int parse_line(struct space *space, char *line, size_t linesize)
 					if (err)
 						break;
 				}
-				closedir(dir);
+				free(list);
 			} else {
 				space->go_to = NULL;
 				space->rootdir = new_root_dir(string);
