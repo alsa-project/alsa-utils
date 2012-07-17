@@ -42,10 +42,10 @@
 #include <alsa/asoundlib.h>
 #include <assert.h>
 #include <termios.h>
+#include <signal.h>
 #include <sys/poll.h>
 #include <sys/uio.h>
 #include <sys/time.h>
-#include <sys/signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <endian.h>
