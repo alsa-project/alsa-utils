@@ -2499,7 +2499,7 @@ static void playback(char *name)
 		name = "stdin";
 	} else {
 		init_stdin();
-		if ((fd = open64(name, O_RDONLY, 0)) == -1) {
+		if ((fd = open(name, O_RDONLY, 0)) == -1) {
 			perror(name);
 			prg_exit(EXIT_FAILURE);
 		}
@@ -2707,12 +2707,12 @@ static int safe_open(const char *name)
 {
 	int fd;
 
-	fd = open64(name, O_WRONLY | O_CREAT, 0644);
+	fd = open(name, O_WRONLY | O_CREAT, 0644);
 	if (fd == -1) {
 		if (errno != ENOENT || !use_strftime)
 			return -1;
 		if (create_path(name) == 0)
-			fd = open64(name, O_WRONLY | O_CREAT, 0644);
+			fd = open(name, O_WRONLY | O_CREAT, 0644);
 	}
 	return fd;
 }
