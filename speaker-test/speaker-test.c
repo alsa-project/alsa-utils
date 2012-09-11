@@ -60,6 +60,10 @@
 #include <locale.h>
 #endif
 
+#ifdef SND_CHMAP_API_VERSION
+#define CONFIG_SUPPORT_CHMAP	1
+#endif
+
 enum {
   TEST_PINK_NOISE = 1,
   TEST_SINE,
@@ -99,6 +103,11 @@ static snd_pcm_uframes_t  period_size;
 static const char *given_test_wav_file = NULL;
 static char *wav_file_dir = SOUNDSDIR;
 static int debug = 0;
+
+#ifdef CONFIG_SUPPORT_CHMAP
+static snd_pcm_chmap_t *channel_map;
+static int channel_map_set;
+#endif
 
 static const char *const channel_name[MAX_CHANNELS] = {
   /*  0 */ N_("Front Left"),
@@ -143,6 +152,65 @@ static const int	channels8[] = {
   6, /* Side Left   */
   5, /* LFE         */
 };
+
+static int get_mapped_channel(int chn)
+{
+#ifdef CONFIG_SUPPORT_CHMAP
+  static const int maps[MAX_CHANNELS] = {
+    SND_CHMAP_FL,
+    SND_CHMAP_FR,
+    SND_CHMAP_RL,
+    SND_CHMAP_RR,
+    SND_CHMAP_FC,
+    SND_CHMAP_LFE,
+    SND_CHMAP_SL,
+    SND_CHMAP_SR,
+  };
+
+  if (channel_map && maps[chn]) {
+    int i;
+    for (i = 0; i < channel_map->channels; i++) {
+      if (channel_map->pos[i] == maps[chn])
+	return i;
+    }
+  }
+#endif
+  return chn;
+}
+
+static int get_speaker_channel(int chn)
+{
+#ifdef CONFIG_SUPPORT_CHMAP
+  if (channel_map_set)
+    return chn;
+#endif
+
+  switch (channels) {
+  case 4:
+    chn = channels4[chn];
+    break;
+  case 6:
+    chn = channels6[chn];
+    break;
+  case 8:
+    chn = channels8[chn];
+    break;
+  }
+
+  return get_mapped_channel(chn);
+}
+
+static const char *get_channel_name(int chn)
+{
+#ifdef CONFIG_SUPPORT_CHMAP
+  if (channel_map_set && chn < channel_map->channels) {
+    const char *name = snd_pcm_chmap_long_name(channel_map->pos[chn]);
+    return name ? name : "Unknown";
+  }
+#endif
+  return gettext(channel_name[chn]);
+}
+
 static const int	supported_formats[] = {
   SND_PCM_FORMAT_S8,
   SND_PCM_FORMAT_S16_LE,
@@ -519,6 +587,31 @@ static int set_swparams(snd_pcm_t *handle, snd_pcm_sw_params_t *swparams) {
   return 0;
 }
 
+#ifdef CONFIG_SUPPORT_CHMAP
+static int config_chmap(snd_pcm_t *handle, const char *mapstr)
+{
+  int err;
+
+  if (mapstr) {
+    channel_map = snd_pcm_chmap_parse_string(mapstr);
+    if (!channel_map) {
+      fprintf(stderr, _("Unable to parse channel map string: %s\n"), mapstr);
+      return -EINVAL;
+    }
+    err = snd_pcm_set_chmap(handle, channel_map);
+    if (err < 0) {
+      fprintf(stderr, _("Unable to set channel map: %s\n"), mapstr);
+      return err;
+    }
+    channel_map_set = 1;
+    return 0;
+  }
+
+  channel_map = snd_pcm_get_chmap(handle);
+  return 0;
+}
+#endif
+
 /*
  *   Underrun and suspend recovery
  */
@@ -815,6 +908,7 @@ static void help(void)
 	   "-s,--speaker	single speaker test. Values 1=Left, 2=right, etc\n"
 	   "-w,--wavfile	Use the given WAV file as a test sound\n"
 	   "-W,--wavdir	Specify the directory containing WAV files\n"
+	   "-m,--chmap	Specify the channel map to override\n"
 	   "\n"));
   printf(_("Recognized sample formats are:"));
   for (fmt = supported_formats; *fmt >= 0; fmt++) {
@@ -837,6 +931,9 @@ int main(int argc, char *argv[]) {
   double		time1,time2,time3;
   unsigned int		n, nloops;
   struct   timeval	tv1,tv2;
+#ifdef CONFIG_SUPPORT_CHMAP
+  const char *chmap = NULL;
+#endif
 
   static const struct option long_option[] = {
     {"help",      0, NULL, 'h'},
@@ -854,6 +951,9 @@ int main(int argc, char *argv[]) {
     {"wavfile",   1, NULL, 'w'},
     {"wavdir",    1, NULL, 'W'},
     {"debug",	  0, NULL, 'd'},
+#ifdef CONFIG_SUPPORT_CHMAP
+    {"chmap",	  1, NULL, 'm'},
+#endif
     {NULL,        0, NULL, 0  },
   };
 
@@ -872,7 +972,11 @@ int main(int argc, char *argv[]) {
   while (1) {
     int c;
     
-    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:P:t:l:s:w:W:d", long_option, NULL)) < 0)
+    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:P:t:l:s:w:W:d"
+#ifdef CONFIG_SUPPORT_CHMAP
+			 "m:"
+#endif
+			 , long_option, NULL)) < 0)
       break;
     
     switch (c) {
@@ -963,6 +1067,11 @@ int main(int argc, char *argv[]) {
     case 'd':
       debug = 1;
       break;
+#ifdef CONFIG_SUPPORT_CHMAP
+    case 'm':
+      chmap = optarg;
+      break;
+#endif
     default:
       fprintf(stderr, _("Unknown option '%c'\n"), c);
       exit(EXIT_FAILURE);
@@ -1008,6 +1117,13 @@ int main(int argc, char *argv[]) {
     snd_pcm_close(handle);
     exit(EXIT_FAILURE);
   }
+
+#ifdef CONFIG_SUPPORT_CHMAP
+  err = config_chmap(handle, chmap);
+  if (err < 0)
+    exit(EXIT_FAILURE);
+#endif
+
   if (debug) {
     snd_output_t *log;
     err = snd_output_stdio_attach(&log, stderr, 0);
@@ -1038,17 +1154,8 @@ int main(int argc, char *argv[]) {
 
       gettimeofday(&tv1, NULL);
       for(chn = 0; chn < channels; chn++) {
-	int channel=chn;
-	if (channels == 4) {
-	    channel=channels4[chn];
-	}
-	if (channels == 6) {
-	    channel=channels6[chn];
-	}
-	if (channels == 8) {
-	    channel=channels8[chn];
-	}
-        printf(" %d - %s\n", channel, gettext(channel_name[channel]));
+	int channel = get_speaker_channel(chn);
+        printf(" %d - %s\n", channel, get_channel_name(channel));
 
         err = write_loop(handle, channel, ((rate*3)/period_size), frames);
 
@@ -1066,13 +1173,15 @@ int main(int argc, char *argv[]) {
       printf(_("Time per period = %lf\n"), time3 );
     }
   } else {
+    chn = get_speaker_channel(speaker - 1);
+
     if (test_type == TEST_WAV) {
-      if (setup_wav_file(speaker - 1) < 0)
+      if (setup_wav_file(chn) < 0)
 	exit(EXIT_FAILURE);
     }
 
-    printf("  - %s\n", gettext(channel_name[speaker-1]));
-    err = write_loop(handle, speaker-1, ((rate*5)/period_size), frames);
+    printf("  - %s\n", get_channel_name(chn));
+    err = write_loop(handle, chn, ((rate*5)/period_size), frames);
 
     if (err < 0) {
       fprintf(stderr, _("Transfer failed: %s\n"), snd_strerror(err));
