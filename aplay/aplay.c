@@ -54,6 +54,10 @@
 #include "formats.h"
 #include "version.h"
 
+#ifdef SND_CHMAP_API_VERSION
+#define CONFIG_SUPPORT_CHMAP	1
+#endif
+
 #ifndef LLONG_MAX
 #define LLONG_MAX    9223372036854775807LL
 #endif
@@ -139,6 +143,10 @@ static int vocmajor, vocminor;
 static char *pidfile_name = NULL;
 FILE *pidf = NULL;
 static int pidfile_written = 0;
+
+#ifdef CONFIG_SUPPORT_CHMAP
+static snd_pcm_chmap_t *channel_map = NULL;
+#endif
 
 /* needed prototypes */
 
@@ -227,7 +235,9 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "    --process-id-file   write the process ID here\n"
 "    --use-strftime      apply the strftime facility to the output file name\n"
 "    --dump-hw-params    dump hw_params of the device\n"
-"    --fatal-errors      treat all errors as fatal\n")
+"    --fatal-errors      treat all errors as fatal\n"
+"-m, --chmap=ch1,ch2,..  Give the channel map to override\n"
+  )
 		, command);
 	printf(_("Recognized sample formats are:"));
 	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
@@ -428,7 +438,11 @@ enum {
 int main(int argc, char *argv[])
 {
 	int option_index;
-	static const char short_options[] = "hnlLD:qt:c:f:r:d:MNF:A:R:T:B:vV:IPCi";
+	static const char short_options[] = "hnlLD:qt:c:f:r:d:MNF:A:R:T:B:vV:IPCi"
+#ifdef CONFIG_SUPPORT_CHMAP
+		"m:"
+#endif
+		;
 	static const struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"version", 0, 0, OPT_VERSION},
@@ -469,6 +483,9 @@ int main(int argc, char *argv[])
 		{"interactive", 0, 0, 'i'},
 		{"dump-hw-params", 0, 0, OPT_DUMP_HWPARAMS},
 		{"fatal-errors", 0, 0, OPT_FATAL_ERRORS},
+#ifdef CONFIG_SUPPORT_CHMAP
+		{"chmap", 1, 0, 'm'},
+#endif
 		{0, 0, 0, 0}
 	};
 	char *pcm_name = "default";
@@ -676,6 +693,15 @@ int main(int argc, char *argv[])
 		case OPT_FATAL_ERRORS:
 			fatal_errors = 1;
 			break;
+#ifdef CONFIG_SUPPORT_CHMAP
+		case 'm':
+			channel_map = snd_pcm_chmap_parse_string(optarg);
+			if (!channel_map) {
+				fprintf(stderr, _("Unable to parse channel map string: %s\n"), optarg);
+				return 1;
+			}
+			break;
+#endif
 		default:
 			fprintf(stderr, _("Try `%s --help' for more information.\n"), command);
 			return 1;
@@ -1205,6 +1231,16 @@ static void set_params(void)
 		snd_pcm_sw_params_dump(swparams, log);
 		prg_exit(EXIT_FAILURE);
 	}
+
+#ifdef CONFIG_SUPPORT_CHMAP
+	if (channel_map) {
+		err = snd_pcm_set_chmap(handle, channel_map);
+		if (err < 0) {
+			error(_("Unable to set channel map"));
+			prg_exit(EXIT_FAILURE);
+		}
+	}
+#endif
 
 	if (verbose)
 		snd_pcm_dump(handle, log);
