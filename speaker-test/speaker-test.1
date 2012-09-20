@@ -131,6 +131,11 @@ Use the given WAV file for the playback instead of pre-defined WAV files.
 Specify the directory containing WAV files for playback.
 The default path is \fI/usr/share/sounds/alsa\fP.
 
+.TP
+\fB\-m\fP | \fB\-\-chmap\fP
+Pass the channel map to override.
+If the playback in a specific channel order or channel positions is
+required, pass the channel position strings to this option.
 
 .SH USAGE EXAMPLES
 
@@ -159,6 +164,10 @@ To do a 2-speaker test using the spdif (coax or optical) output:
   speaker-test -Dplug:spdif -c2
 .EE
 
+Play in the order of front-right and front-left from the front PCM
+.EX
+  speaker-test -Dplug:front -c2 -mFR,FL
+.EE
 
 .SH SEE ALSO
 .BR aplay(1)
