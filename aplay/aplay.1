@@ -141,6 +141,17 @@ by typing arecord.
 Allow interactive operation via stdin.
 Currently only pause/resume via space or enter key is implemented.
 .TP
+\fI-m, \-\-chmap=ch1,ch2,...\fP
+Give the channel map to override or follow.  Pass channel position
+strings like \fIFL\fP, \fIFR\fP, etc.
+
+If a device supports the override of the channel map, \fBaplay\fP
+tries to pass the given channel map.
+If it doesn't support the channel map override but still it provides
+the channel map information, \fBaplay\fP tries to rearrange the
+channel order in the buffer to match with the returned channel map
+from the device.
+.TP
 \fI\-\-disable\-resample\fP
 Disable automatic rate resample.
 .TP

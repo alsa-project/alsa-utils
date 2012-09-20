@@ -145,7 +145,8 @@ FILE *pidf = NULL;
 static int pidfile_written = 0;
 
 #ifdef CONFIG_SUPPORT_CHMAP
-static snd_pcm_chmap_t *channel_map = NULL;
+static snd_pcm_chmap_t *channel_map = NULL; /* chmap to override */
+static unsigned int *hw_map = NULL; /* chmap to follow */
 #endif
 
 /* needed prototypes */
@@ -222,6 +223,7 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "-V, --vumeter=TYPE      enable VU meter (TYPE: mono or stereo)\n"
 "-I, --separate-channels one file for each channel\n"
 "-i, --interactive       allow interactive operation from stdin\n"
+"-m, --chmap=ch1,ch2,..  Give the channel map to override or follow\n"
 "    --disable-resample  disable automatic rate resample\n"
 "    --disable-channels  disable automatic channel conversions\n"
 "    --disable-format    disable automatic format conversions\n"
@@ -236,7 +238,6 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "    --use-strftime      apply the strftime facility to the output file name\n"
 "    --dump-hw-params    dump hw_params of the device\n"
 "    --fatal-errors      treat all errors as fatal\n"
-"-m, --chmap=ch1,ch2,..  Give the channel map to override\n"
   )
 		, command);
 	printf(_("Recognized sample formats are:"));
@@ -1083,6 +1084,74 @@ static void show_available_sample_formats(snd_pcm_hw_params_t* params)
 	}
 }
 
+#ifdef CONFIG_SUPPORT_CHMAP
+static int setup_chmap(void)
+{
+	snd_pcm_chmap_t *chmap = channel_map;
+	char mapped[hwparams.channels];
+	snd_pcm_chmap_t *hw_chmap;
+	unsigned int ch, i;
+	int err;
+
+	if (!chmap)
+		return 0;
+
+	if (chmap->channels != hwparams.channels) {
+		error(_("Channel numbers don't match between hw_params and channel map"));
+		return -1;
+	}
+	err = snd_pcm_set_chmap(handle, chmap);
+	if (!err)
+		return 0;
+
+	hw_chmap = snd_pcm_get_chmap(handle);
+	if (!hw_chmap) {
+		fprintf(stderr, _("Warning: unable to get channel map\n"));
+		return 0;
+	}
+
+	if (hw_chmap->channels == chmap->channels &&
+	    !memcmp(hw_chmap, chmap, 4 * (chmap->channels + 1))) {
+		/* maps are identical, so no need to convert */
+		free(hw_chmap);
+		return 0;
+	}
+
+	hw_map = calloc(hwparams.channels, sizeof(int));
+	if (!hw_map) {
+		error(_("not enough memory"));
+		return -1;
+	}
+
+	memset(mapped, 0, sizeof(mapped));
+	for (ch = 0; ch < hw_chmap->channels; ch++) {
+		if (chmap->pos[ch] == hw_chmap->pos[ch]) {
+			mapped[ch] = 1;
+			hw_map[ch] = ch;
+			continue;
+		}
+		for (i = 0; i < hw_chmap->channels; i++) {
+			if (!mapped[i] && chmap->pos[ch] == hw_chmap->pos[i]) {
+				mapped[i] = 1;
+				hw_map[ch] = i;
+				break;
+			}
+		}
+		if (i >= hw_chmap->channels) {
+			char buf[256];
+			error(_("Channel %d doesn't match with hw_parmas"), ch);
+			snd_pcm_chmap_print(hw_chmap, sizeof(buf), buf);
+			fprintf(stderr, "hardware chmap = %s\n", buf);
+			return -1;
+		}
+	}
+	free(hw_chmap);
+	return 0;
+}
+#else
+#define setup_chmap()	0
+#endif
+
 static void set_params(void)
 {
 	snd_pcm_hw_params_t *params;
@@ -1232,15 +1301,8 @@ static void set_params(void)
 		prg_exit(EXIT_FAILURE);
 	}
 
-#ifdef CONFIG_SUPPORT_CHMAP
-	if (channel_map) {
-		err = snd_pcm_set_chmap(handle, channel_map);
-		if (err < 0) {
-			error(_("Unable to set channel map"));
-			prg_exit(EXIT_FAILURE);
-		}
-	}
-#endif
+	if (setup_chmap())
+		prg_exit(EXIT_FAILURE);
 
 	if (verbose)
 		snd_pcm_dump(handle, log);
@@ -1743,6 +1805,69 @@ static void do_test_position(void)
 }
 
 /*
+ */
+#ifdef CONFIG_SUPPORT_CHMAP
+static u_char *remap_data(u_char *data, size_t count)
+{
+	static u_char *tmp, *src, *dst;
+	static size_t tmp_size;
+	size_t sample_bytes = bits_per_sample / 8;
+	size_t step = bits_per_frame / 8;
+	size_t chunk_bytes;
+	unsigned int ch, i;
+
+	if (!hw_map)
+		return data;
+
+	chunk_bytes = count * bits_per_frame / 8;
+	if (tmp_size < chunk_bytes) {
+		free(tmp);
+		tmp = malloc(chunk_bytes);
+		if (!tmp) {
+			error(_("not enough memory"));
+			exit(1);
+		}
+		tmp_size = count;
+	}
+
+	src = data;
+	dst = tmp;
+	for (i = 0; i < count; i++) {
+		for (ch = 0; ch < hwparams.channels; ch++) {
+			memcpy(dst, src + sample_bytes * hw_map[ch],
+			       sample_bytes);
+			dst += sample_bytes;
+		}
+		src += step;
+	}
+	return tmp;
+}
+
+static u_char **remap_datav(u_char **data, size_t count)
+{
+	static u_char **tmp;
+	unsigned int ch;
+
+	if (!hw_map)
+		return data;
+
+	if (!tmp) {
+		tmp = malloc(sizeof(*tmp) * hwparams.channels);
+		if (!tmp) {
+			error(_("not enough memory"));
+			exit(1);
+		}
+		for (ch = 0; ch < hwparams.channels; ch++)
+			tmp[ch] = data[hw_map[ch]];
+	}
+	return tmp;
+}
+#else
+#define remap_data(data, count)		(data)
+#define remapv_data(data, count)	(data)
+#endif
+
+/*
  *  write function
  */
 
@@ -1755,6 +1880,7 @@ static ssize_t pcm_write(u_char *data, size_t count)
 		snd_pcm_format_set_silence(hwparams.format, data + count * bits_per_frame / 8, (chunk_size - count) * hwparams.channels);
 		count = chunk_size;
 	}
+	data = remap_data(data, count);
 	while (count > 0) {
 		if (test_position)
 			do_test_position();
@@ -1797,6 +1923,7 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
 			snd_pcm_format_set_silence(hwparams.format, data[channel] + offset * bits_per_sample / 8, remaining);
 		count = chunk_size;
 	}
+	data = remap_datav(data, count);
 	while (count > 0) {
 		unsigned int channel;
 		void *bufs[channels];
