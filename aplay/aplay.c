@@ -1864,7 +1864,7 @@ static u_char **remap_datav(u_char **data, size_t count)
 }
 #else
 #define remap_data(data, count)		(data)
-#define remapv_data(data, count)	(data)
+#define remap_datav(data, count)	(data)
 #endif
 
 /*
@@ -2122,7 +2122,6 @@ static void voc_play(int fd, int ofs, char *name)
 	u_char *data, *buf;
 	char was_extended = 0, output = 0;
 	u_short *sp, repeat = 0;
-	size_t silence;
 	off64_t filepos = 0;
 
 #define COUNT(x)	nextblock -= x; in_buffer -= x; data += x
@@ -2226,9 +2225,12 @@ static void voc_play(int fd, int ofs, char *name)
 				COUNT1(1);
 				hwparams.rate = 1000000 / (256 - hwparams.rate);
 				set_params();
-				silence = (((size_t) * sp) * 1000) / hwparams.rate;
 #if 0
-				d_printf("Silence for %d ms\n", (int) silence);
+				{
+					size_t silence;
+					silence = (((size_t) * sp) * 1000) / hwparams.rate;
+					d_printf("Silence for %d ms\n", (int) silence);
+				}
 #endif
 				voc_write_silence(*sp);
 				break;
