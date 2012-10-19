@@ -657,7 +657,6 @@ void display_controls(void)
 		display_no_controls();
 	}
 	display_scroll_indicators();
-	controls_changed = FALSE;
 }
 
 void compute_controls_layout(void)

@@ -50,6 +50,7 @@ int focus_control_index;
 snd_mixer_selem_id_t *current_selem_id;
 unsigned int current_control_flags;
 
+bool control_values_changed;
 bool controls_changed;
 
 enum channel_mask {
@@ -59,20 +60,15 @@ enum channel_mask {
 
 static int elem_callback(snd_mixer_elem_t *elem, unsigned int mask)
 {
-	unsigned int i;
-
-	if (mask & (SND_CTL_EVENT_MASK_REMOVE |
-		    SND_CTL_EVENT_MASK_INFO |
-		    SND_CTL_EVENT_MASK_VALUE))
+	if (mask == SND_CTL_EVENT_MASK_REMOVE) {
 		controls_changed = TRUE;
+	} else {
+		if (mask & SND_CTL_EVENT_MASK_VALUE)
+			control_values_changed = TRUE;
 
-	if (mask & SND_CTL_EVENT_MASK_INFO)
-		for (i = 0; i < controls_count; ++i)
-			if (controls[i].elem == elem) {
-				controls[i].flags &= ~IS_ACTIVE;
-				if (snd_mixer_selem_is_active(controls[i].elem))
-					controls[i].flags |= IS_ACTIVE;
-			}
+		if (mask & SND_CTL_EVENT_MASK_INFO)
+			controls_changed = TRUE;
+	}
 
 	return 0;
 }

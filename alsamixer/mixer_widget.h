@@ -24,6 +24,7 @@ extern int focus_control_index;
 extern snd_mixer_selem_id_t *current_selem_id;
 extern unsigned int current_control_flags;
 
+extern bool control_values_changed;
 extern bool controls_changed;
 
 void create_mixer_object(struct snd_mixer_selem_regopt *selem_regopt);

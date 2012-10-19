@@ -128,8 +128,15 @@ void mainloop(void)
 		}
 		if (!active_widget)
 			break;
-		if (controls_changed)
+		if (controls_changed) {
+			controls_changed = FALSE;
+			create_controls();
+			control_values_changed = FALSE;
 			display_controls();
+		} else if (control_values_changed) {
+			control_values_changed = FALSE;
+			display_controls();
+		}
 	}
 	free(pollfds);
 }
