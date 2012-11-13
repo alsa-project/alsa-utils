@@ -425,10 +425,10 @@ static int set_volume_simple(snd_mixer_elem_t *elem,
 				invalid = 1;
 			if (*p == '+') {
 				val = orig + val;
-				correct = -1;
+				correct = 1;
 			} else {
 				val = orig - val;
-				correct = 1;
+				correct = -1;
 			}
 		}
 		p++;
