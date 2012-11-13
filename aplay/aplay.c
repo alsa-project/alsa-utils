@@ -493,6 +493,7 @@ int main(int argc, char *argv[])
 	int tmp, err, c;
 	int do_device_list = 0, do_pcm_list = 0;
 	snd_pcm_info_t *info;
+	FILE *direction;
 
 #ifdef ENABLE_NLS
 	setlocale(LC_ALL, "");
@@ -511,11 +512,18 @@ int main(int argc, char *argv[])
 		file_type = FORMAT_WAVE;
 		command = "arecord";
 		start_delay = 1;
+		direction = stdout;
 	} else if (strstr(argv[0], "aplay")) {
 		stream = SND_PCM_STREAM_PLAYBACK;
 		command = "aplay";
+		direction = stdin;
 	} else {
 		error(_("command should be named either arecord or aplay"));
+		return 1;
+	}
+
+	if (isatty(fileno(direction)) && (argc == 1)) {
+		usage(command);
 		return 1;
 	}
 
