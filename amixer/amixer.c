@@ -531,7 +531,7 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 				printf("TLV size error in compound!\n");
 				return;
 			}
-			decode_tlv(spaces + 2, tlv + idx, tlv[idx+1]);
+			decode_tlv(spaces + 2, tlv + idx, tlv[idx+1] + 8);
 			idx += 2 + (tlv[1] + sizeof(unsigned int) - 1) / sizeof(unsigned int);
 		}
 		break;
