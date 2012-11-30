@@ -389,7 +389,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output,
 	int arg_resample = 0;
 #ifdef USE_SAMPLERATE
 	int arg_samplerate = SRC_SINC_FASTEST + 1;
-#else
+#endif
 	int arg_sync = SYNC_TYPE_AUTO;
 	int arg_slave = SLAVE_TYPE_AUTO;
 	int arg_thread = 0;
