@@ -60,7 +60,14 @@ typedef struct voc_ext_block {
 #error "Wrong endian"
 #endif
 
+/* Note: the following macros evaluate the parameter v twice */
+#define TO_CPU_SHORT(v, be) \
+	((be) ? BE_SHORT(v) : LE_SHORT(v))
+#define TO_CPU_INT(v, be) \
+	((be) ? BE_INT(v) : LE_INT(v))
+
 #define WAV_RIFF		COMPOSE_ID('R','I','F','F')
+#define WAV_RIFX		COMPOSE_ID('R','I','F','X')
 #define WAV_WAVE		COMPOSE_ID('W','A','V','E')
 #define WAV_FMT			COMPOSE_ID('f','m','t',' ')
 #define WAV_DATA		COMPOSE_ID('d','a','t','a')

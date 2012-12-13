@@ -892,11 +892,20 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 	WaveFmtBody *f;
 	WaveChunkHeader *c;
 	u_int type, len;
+	unsigned short format, channels;
+	int big_endian, native_format;
 
 	if (size < sizeof(WaveHeader))
 		return -1;
-	if (h->magic != WAV_RIFF || h->type != WAV_WAVE)
+	if (h->magic == WAV_RIFF)
+		big_endian = 0;
+	else if (h->magic == WAV_RIFX)
+		big_endian = 1;
+	else
 		return -1;
+	if (h->type != WAV_WAVE)
+		return -1;
+
 	if (size > sizeof(WaveHeader)) {
 		check_wavefile_space(buffer, size - sizeof(WaveHeader), blimit);
 		memcpy(buffer, _buffer + sizeof(WaveHeader), size - sizeof(WaveHeader));
@@ -907,7 +916,7 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 		test_wavefile_read(fd, buffer, &size, sizeof(WaveChunkHeader), __LINE__);
 		c = (WaveChunkHeader*)buffer;
 		type = c->type;
-		len = LE_INT(c->length);
+		len = TO_CPU_INT(c->length, big_endian);
 		len += len % 2;
 		if (size > sizeof(WaveChunkHeader))
 			memmove(buffer, buffer + sizeof(WaveChunkHeader), size - sizeof(WaveChunkHeader));
@@ -929,7 +938,8 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 	check_wavefile_space(buffer, len, blimit);
 	test_wavefile_read(fd, buffer, &size, len, __LINE__);
 	f = (WaveFmtBody*) buffer;
-	if (LE_SHORT(f->format) == WAV_FMT_EXTENSIBLE) {
+	format = TO_CPU_SHORT(f->format, big_endian);
+	if (format == WAV_FMT_EXTENSIBLE) {
 		WaveFmtExtensibleBody *fe = (WaveFmtExtensibleBody*)buffer;
 		if (len < sizeof(WaveFmtExtensibleBody)) {
 			error(_("unknown length of extensible 'fmt ' chunk (read %u, should be %u at least)"),
@@ -940,19 +950,20 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 			error(_("wrong format tag in extensible 'fmt ' chunk"));
 			prg_exit(EXIT_FAILURE);
 		}
-		f->format = fe->guid_format;
+		format = TO_CPU_SHORT(fe->guid_format, big_endian);
 	}
-        if (LE_SHORT(f->format) != WAV_FMT_PCM &&
-            LE_SHORT(f->format) != WAV_FMT_IEEE_FLOAT) {
-                error(_("can't play WAVE-file format 0x%04x which is not PCM or FLOAT encoded"), LE_SHORT(f->format));
+	if (format != WAV_FMT_PCM &&
+	    format != WAV_FMT_IEEE_FLOAT) {
+                error(_("can't play WAVE-file format 0x%04x which is not PCM or FLOAT encoded"), format);
 		prg_exit(EXIT_FAILURE);
 	}
-	if (LE_SHORT(f->channels) < 1) {
-		error(_("can't play WAVE-files with %d tracks"), LE_SHORT(f->channels));
+	channels = TO_CPU_SHORT(f->channels, big_endian);
+	if (channels < 1) {
+		error(_("can't play WAVE-files with %d tracks"), channels);
 		prg_exit(EXIT_FAILURE);
 	}
-	hwparams.channels = LE_SHORT(f->channels);
-	switch (LE_SHORT(f->bit_p_spl)) {
+	hwparams.channels = channels;
+	switch (TO_CPU_SHORT(f->bit_p_spl, big_endian)) {
 	case 8:
 		if (hwparams.format != DEFAULT_FORMAT &&
 		    hwparams.format != SND_PCM_FORMAT_U8)
@@ -960,43 +971,69 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 		hwparams.format = SND_PCM_FORMAT_U8;
 		break;
 	case 16:
+		if (big_endian)
+			native_format = SND_PCM_FORMAT_S16_BE;
+		else
+			native_format = SND_PCM_FORMAT_S16_LE;
 		if (hwparams.format != DEFAULT_FORMAT &&
-		    hwparams.format != SND_PCM_FORMAT_S16_LE)
-			fprintf(stderr, _("Warning: format is changed to S16_LE\n"));
-		hwparams.format = SND_PCM_FORMAT_S16_LE;
+		    hwparams.format != native_format)
+			fprintf(stderr, _("Warning: format is changed to %s\n"),
+				snd_pcm_format_name(native_format));
+		hwparams.format = native_format;
 		break;
 	case 24:
-		switch (LE_SHORT(f->byte_p_spl) / hwparams.channels) {
+		switch (TO_CPU_SHORT(f->byte_p_spl, big_endian) / hwparams.channels) {
 		case 3:
+			if (big_endian)
+				native_format = SND_PCM_FORMAT_S24_3BE;
+			else
+				native_format = SND_PCM_FORMAT_S24_3LE;
 			if (hwparams.format != DEFAULT_FORMAT &&
-			    hwparams.format != SND_PCM_FORMAT_S24_3LE)
-				fprintf(stderr, _("Warning: format is changed to S24_3LE\n"));
-			hwparams.format = SND_PCM_FORMAT_S24_3LE;
+			    hwparams.format != native_format)
+				fprintf(stderr, _("Warning: format is changed to %s\n"),
+					snd_pcm_format_name(native_format));
+			hwparams.format = native_format;
 			break;
 		case 4:
+			if (big_endian)
+				native_format = SND_PCM_FORMAT_S24_BE;
+			else
+				native_format = SND_PCM_FORMAT_S24_LE;
 			if (hwparams.format != DEFAULT_FORMAT &&
-			    hwparams.format != SND_PCM_FORMAT_S24_LE)
-				fprintf(stderr, _("Warning: format is changed to S24_LE\n"));
-			hwparams.format = SND_PCM_FORMAT_S24_LE;
+			    hwparams.format != native_format)
+				fprintf(stderr, _("Warning: format is changed to %s\n"),
+					snd_pcm_format_name(native_format));
+			hwparams.format = native_format;
 			break;
 		default:
 			error(_(" can't play WAVE-files with sample %d bits in %d bytes wide (%d channels)"),
-			      LE_SHORT(f->bit_p_spl), LE_SHORT(f->byte_p_spl), hwparams.channels);
+			      TO_CPU_SHORT(f->bit_p_spl, big_endian),
+			      TO_CPU_SHORT(f->byte_p_spl, big_endian),
+			      hwparams.channels);
 			prg_exit(EXIT_FAILURE);
 		}
 		break;
 	case 32:
-                if (LE_SHORT(f->format) == WAV_FMT_PCM)
-                        hwparams.format = SND_PCM_FORMAT_S32_LE;
-                else if (LE_SHORT(f->format) == WAV_FMT_IEEE_FLOAT)
-                        hwparams.format = SND_PCM_FORMAT_FLOAT_LE;
+		if (format == WAV_FMT_PCM) {
+			if (big_endian)
+				native_format = SND_PCM_FORMAT_S32_BE;
+			else
+				native_format = SND_PCM_FORMAT_S32_LE;
+                        hwparams.format = native_format;
+		} else if (format == WAV_FMT_IEEE_FLOAT) {
+			if (big_endian)
+				native_format = SND_PCM_FORMAT_FLOAT_BE;
+			else
+				native_format = SND_PCM_FORMAT_FLOAT_LE;
+			hwparams.format = native_format;
+		}
 		break;
 	default:
 		error(_(" can't play WAVE-files with sample %d bits wide"),
-		      LE_SHORT(f->bit_p_spl));
+		      TO_CPU_SHORT(f->bit_p_spl, big_endian));
 		prg_exit(EXIT_FAILURE);
 	}
-	hwparams.rate = LE_INT(f->sample_fq);
+	hwparams.rate = TO_CPU_INT(f->sample_fq, big_endian);
 	
 	if (size > len)
 		memmove(buffer, buffer + len, size - len);
@@ -1009,7 +1046,7 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 		test_wavefile_read(fd, buffer, &size, sizeof(WaveChunkHeader), __LINE__);
 		c = (WaveChunkHeader*)buffer;
 		type = c->type;
-		len = LE_INT(c->length);
+		len = TO_CPU_INT(c->length, big_endian);
 		if (size > sizeof(WaveChunkHeader))
 			memmove(buffer, buffer + sizeof(WaveChunkHeader), size - sizeof(WaveChunkHeader));
 		size -= sizeof(WaveChunkHeader);
