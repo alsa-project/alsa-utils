@@ -290,7 +290,7 @@ AC_ARG_WITH(testsound,
   TESTSOUND="$dir/test.wav")
 AC_SUBST(TESTSOUND)
 
-AM_CONFIG_HEADER(include/aconfig.h)
+AC_CONFIG_HEADERS(include/aconfig.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
