@@ -999,7 +999,7 @@ int main(int argc, char *argv[]) {
     case 'r':
       rate = atoi(optarg);
       rate = rate < 4000 ? 4000 : rate;
-      rate = rate > 196000 ? 196000 : rate;
+      rate = rate > 384000 ? 384000 : rate;
       break;
     case 'c':
       channels = atoi(optarg);
