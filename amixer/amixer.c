@@ -560,9 +560,9 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 			}
 		} else {
 			printf("min=");
-			print_dB(tlv[2]);
+			print_dB((int)tlv[2]);
 			printf(",max=");
-			print_dB(tlv[3]);
+			print_dB((int)tlv[3]);
 		}
 		break;
 #endif
@@ -600,9 +600,9 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 			}
 		} else {
 			printf("min=");
-			print_dB(tlv[2]);
+			print_dB((int)tlv[2]);
 			printf(",max=");
-			print_dB(tlv[3]);
+			print_dB((int)tlv[3]);
 		}
 		break;
 #endif
