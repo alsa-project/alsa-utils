@@ -1394,6 +1394,10 @@ static void init_stdin(void)
 
 	if (!interactive)
 		return;
+	if (!isatty(fileno(stdin))) {
+		interactive = 0;
+		return;
+	}
 	tcgetattr(fileno(stdin), &term);
 	term_c_lflag = term.c_lflag;
 	if (fd == fileno(stdin))
