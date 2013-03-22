@@ -115,6 +115,9 @@ fail:
 
 int main(int argc, char *argv[])
 {
+	if (!isatty(fileno(stdin)))
+		return 0;
+
 	setlocale(LC_ALL, "");
 #ifdef ENABLE_NLS_IN_CURSES
 	textdomain(PACKAGE);
