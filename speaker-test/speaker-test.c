@@ -45,6 +45,7 @@
 #include <inttypes.h>
 #include <ctype.h>
 #include <byteswap.h>
+#include <signal.h>
 
 #define ALSA_PCM_NEW_HW_PARAMS_API
 #define ALSA_PCM_NEW_SW_PARAMS_API
@@ -103,6 +104,7 @@ static snd_pcm_uframes_t  period_size;
 static const char *given_test_wav_file = NULL;
 static char *wav_file_dir = SOUNDSDIR;
 static int debug = 0;
+static snd_pcm_t *pcm_handle = NULL;
 
 #ifdef CONFIG_SUPPORT_CHMAP
 static snd_pcm_chmap_t *channel_map;
@@ -888,6 +890,26 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
   return 0;
 }
 
+static int prg_exit(int code)
+{
+  if (pcm_handle)
+    snd_pcm_close(pcm_handle);
+  exit(code);
+  return code;
+}
+
+static void signal_handler(int sig)
+{
+  static int in_aborting;
+
+  if (in_aborting)
+    return;
+
+  in_aborting = 1;
+  
+  prg_exit(EXIT_FAILURE);
+}
+
 static void help(void)
 {
   const int *fmt;
@@ -1102,26 +1124,29 @@ int main(int argc, char *argv[]) {
 
   }
 
+  signal(SIGINT, signal_handler);
+  signal(SIGTERM, signal_handler);
+  signal(SIGABRT, signal_handler);
+
   if ((err = snd_pcm_open(&handle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
     printf(_("Playback open error: %d,%s\n"), err,snd_strerror(err));
-    exit(EXIT_FAILURE);
+    prg_exit(EXIT_FAILURE);
   }
+  pcm_handle = handle;
 
   if ((err = set_hwparams(handle, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
     printf(_("Setting of hwparams failed: %s\n"), snd_strerror(err));
-    snd_pcm_close(handle);
-    exit(EXIT_FAILURE);
+    prg_exit(EXIT_FAILURE);
   }
   if ((err = set_swparams(handle, swparams)) < 0) {
     printf(_("Setting of swparams failed: %s\n"), snd_strerror(err));
-    snd_pcm_close(handle);
-    exit(EXIT_FAILURE);
+    prg_exit(EXIT_FAILURE);
   }
 
 #ifdef CONFIG_SUPPORT_CHMAP
   err = config_chmap(handle, chmap);
   if (err < 0)
-    exit(EXIT_FAILURE);
+    prg_exit(EXIT_FAILURE);
 #endif
 
   if (debug) {
@@ -1139,14 +1164,15 @@ int main(int argc, char *argv[]) {
   
   if (frames == NULL) {
     fprintf(stderr, _("No enough memory\n"));
-    exit(EXIT_FAILURE);
+    prg_exit(EXIT_FAILURE);
   }
+
   if (speaker==0) {
 
     if (test_type == TEST_WAV) {
       for (chn = 0; chn < channels; chn++) {
 	if (setup_wav_file(chn) < 0)
-	  exit(EXIT_FAILURE);
+	  prg_exit(EXIT_FAILURE);
       }
     }
 
@@ -1161,9 +1187,7 @@ int main(int argc, char *argv[]) {
 
         if (err < 0) {
           fprintf(stderr, _("Transfer failed: %s\n"), snd_strerror(err));
-          free(frames);
-          snd_pcm_close(handle);
-          exit(EXIT_SUCCESS);
+          prg_exit(EXIT_SUCCESS);
         }
       }
       gettimeofday(&tv2, NULL);
@@ -1177,7 +1201,7 @@ int main(int argc, char *argv[]) {
 
     if (test_type == TEST_WAV) {
       if (setup_wav_file(chn) < 0)
-	exit(EXIT_FAILURE);
+	prg_exit(EXIT_FAILURE);
     }
 
     printf("  - %s\n", get_channel_name(chn));
@@ -1190,7 +1214,6 @@ int main(int argc, char *argv[]) {
 
 
   free(frames);
-  snd_pcm_close(handle);
 
-  exit(EXIT_SUCCESS);
+  return prg_exit(EXIT_SUCCESS);
 }
