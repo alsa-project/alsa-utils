@@ -176,6 +176,7 @@ int main(int argc, char *argv[])
 
 	if (!strcmp(argv[optind], "init")) {
 		res = init(initfile, cardname);
+		snd_config_update_free_global();
 	} else if (!strcmp(argv[optind], "store")) {
 		res = save_state(cfgfile, cardname);
 	} else if (!strcmp(argv[optind], "restore")) {
