@@ -185,11 +185,11 @@ static int add_tlv_comments(snd_ctl_t *handle, snd_ctl_elem_id_t *id,
 		char *s = tlv_to_str(tlv);
 		if (s) {
 			err = snd_config_string_add(comment, "tlv", s);
+			free(s);
 			if (err < 0) {
 				error("snd_config_string_add: %s", snd_strerror(err));
 				return err;
 			}
-			free(s);
 		}
 	}
 
