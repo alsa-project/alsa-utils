@@ -1562,6 +1562,8 @@ int save_state(const char *file, const char *cardname)
 		}
 		strcpy(nfile, file);
 		strcat(nfile, ".new");
+		if (state_lock(file, 1, 10) != 0)
+			goto out;
 	}
 	if (!stdio && (err = snd_input_stdio_open(&in, file, "r")) >= 0) {
 		err = snd_config_load(config, in);
@@ -1628,12 +1630,13 @@ int save_state(const char *file, const char *cardname)
 	if (err < 0) {
 		error("snd_config_save: %s", snd_strerror(err));
 	} else {
-		//unlink(file);
 		err = rename(nfile, file);
 		if (err < 0)
 			error("rename failed: %s (%s)", strerror(-err), file);
 	}
 out:
+	if (!stdio)
+		state_lock(file, 0, 10);
 	free(nfile);
 	snd_config_delete(config);
 	snd_config_update_free_global();
@@ -1646,7 +1649,7 @@ int load_state(const char *file, const char *initfile, const char *cardname,
 	int err, finalerr = 0;
 	snd_config_t *config;
 	snd_input_t *in;
-	int stdio;
+	int stdio, locked = 0;
 
 	err = snd_config_top(&config);
 	if (err < 0) {
@@ -1654,13 +1657,18 @@ int load_state(const char *file, const char *initfile, const char *cardname,
 		return err;
 	}
 	stdio = !strcmp(file, "-");
-	if (stdio)
+	if (stdio) {
 		err = snd_input_stdio_attach(&in, stdin, 0);
-	else
-		err = snd_input_stdio_open(&in, file, "r");
+	} else {
+		err = state_lock(file, 1, 10);
+		locked = err >= 0;
+		err = err >= 0 ? snd_input_stdio_open(&in, file, "r") : err;
+	}
 	if (err >= 0) {
 		err = snd_config_load(config, in);
 		snd_input_close(in);
+		if (locked)
+			state_lock(file, 0, 10);
 		if (err < 0) {
 			error("snd_config_load error: %s", snd_strerror(err));
 			goto out;

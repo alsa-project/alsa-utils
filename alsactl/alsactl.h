@@ -1,77 +1,37 @@
 extern int debugflag;
 extern int force_restore;
 extern int ignore_nocards;
+extern int do_lock;
+extern int use_syslog;
 extern char *command;
 extern char *statefile;
 
-#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
-#define info(...) do {\
-	fprintf(stdout, "%s: %s:%d: ", command, __FUNCTION__, __LINE__); \
-	fprintf(stdout, __VA_ARGS__); \
-	putc('\n', stdout); \
-} while (0)
-#else
-#define info(args...) do {\
-	fprintf(stdout, "%s: %s:%d: ", command, __FUNCTION__, __LINE__); \
-	fprintf(stdout, ##args); \
-	putc('\n', stdout); \
-} while (0)
-#endif	
+void info_(const char *fcn, long line, const char *fmt, ...);
+void error_(const char *fcn, long line, const char *fmt, ...);
+void cerror_(const char *fcn, long line, int cond, const char *fmt, ...);
+void dbg_(const char *fcn, long line, const char *fmt, ...);
 
 #if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
-#define error(...) do {\
-	fprintf(stderr, "%s: %s:%d: ", command, __FUNCTION__, __LINE__); \
-	fprintf(stderr, __VA_ARGS__); \
-	putc('\n', stderr); \
-} while (0)
+#define info(...) do { info_(__FUNCTION__, __LINE__, __VA_ARGS__); } while (0)
+#define error(...) do { error_(__FUNCTION__, __LINE__, __VA_ARGS__); } while (0)
+#define cerror(cond, ...) do { cerror_(__FUNCTION__, __LINE__, (cond) != 0, __VA_ARGS__); } while (0)
+#define dbg(...) do { dbg_(__FUNCTION__, __LINE__, __VA_ARGS__); } while (0)
 #else
-#define error(args...) do {\
-	fprintf(stderr, "%s: %s:%d: ", command, __FUNCTION__, __LINE__); \
-	fprintf(stderr, ##args); \
-	putc('\n', stderr); \
-} while (0)
-#endif	
-
-#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
-#define cerror(cond, ...) do {\
-	if (cond || debugflag) { \
-		fprintf(stderr, "%s%s: %s:%d: ", debugflag ? "WARNING: " : "", command, __FUNCTION__, __LINE__); \
-		fprintf(stderr, __VA_ARGS__); \
-		putc('\n', stderr); \
-	} \
-} while (0)
-#else
-#define cerror(cond, args...) do {\
-	if (cond || debugflag) { \
-		fprintf(stderr, "%s%s: %s:%d: ", debugflag ? "WARNING: " : "", command, __FUNCTION__, __LINE__); \
-		fprintf(stderr, ##args); \
-		putc('\n', stderr); \
-	} \
-} while (0)
-#endif	
-
-#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
-#define dbg(...) do {\
-	if (!debugflag) break; \
-	fprintf(stderr, "%s: %s:%d: ", command, __FUNCTION__, __LINE__); \
-	fprintf(stderr, __VA_ARGS__); \
-	putc('\n', stderr); \
-} while (0)
-#else
-#define dbg(args...) do {\
-	if (!debugflag) break; \
-	fprintf(stderr, "%s: %s:%d: ", command, __FUNCTION__, __LINE__); \
-	fprintf(stderr, ##args); \
-	putc('\n', stderr); \
-} while (0)
+#define info(args...) do { info_(__FUNCTION__, __LINE__, ##args); }  while (0)
+#define error(args...) do { error_(__FUNCTION__, __LINE__, ##args); }  while (0)
+#define cerror(cond, ...) do { error_(__FUNCTION__, __LINE__, (cond) != 0, ##args); } while (0)
+#define dbg(args...) do { dbg_(__FUNCTION__, __LINE__, ##args); }  while (0)
 #endif	
 
 int init(const char *file, const char *cardname);
+int state_lock(const char *file, int lock, int timeout);
 int save_state(const char *file, const char *cardname);
 int load_state(const char *file, const char *initfile, const char *cardname,
 	       int do_init);
 int power(const char *argv[], int argc);
-int generate_names(const char *cfgfile);
+int state_daemon(const char *file, const char *cardname, int period,
+		 const char *pidfile);
+int state_daemon_kill(const char *pidfile, const char *cmd);
 
 /* utils */
 

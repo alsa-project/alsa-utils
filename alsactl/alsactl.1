@@ -1,4 +1,4 @@
-.TH ALSACTL 1 "15 May 2001"
+.TH ALSACTL 1 "05 Apr 2013"
 .SH NAME
 alsactl \- advanced controls for ALSA soundcard driver
 
@@ -21,8 +21,18 @@ to the configuration file.
 configuration file. If restoring fails (eventually partly), the init
 action is called.
 
+\fInrestore\fP is like \fIrestore\fP, but it notifies also the daemon
+to do new rescan for available soundcards.
+
 \fIinit\fP tries to initialize all devices to a default state. If device
 is not known, error code 99 is returned.
+
+\fIdaemon\fP manages to save periodically the sound state.
+
+\fIrdaemon\fP like \fIdaemon\fP but restore the sound state at first.
+
+\fIkill\fP notifies the daemon to do the specified operation (quit,
+rescan, save_and_quit).
 
 If no soundcards are specified, setup for all cards will be saved or
 loaded.
@@ -85,9 +95,25 @@ ALSA_CONFIG_PATH to read different or optimized configuration - may be
 useful for "boot" scripts).
 
 .TP
-\fI\-i, \-\-initfile\fP #=#
+\fI\-i, \-\-initfile\fP
 The configuration file for init. By default, PREFIX/share/alsa/init/00main
 is used.
+
+.TP
+\fI\-p, \-\-period\fP
+The store period in seconds for the daemon command.
+
+.TP
+\fI\-e, \-\-pid-file\fP
+The pathname to store the process-id file in the HDB UUCP format (ASCII).
+
+.TP
+\fI\-b, \-\-background\fP
+Run the task in background.
+
+.TP
+\fI\-s, \-\-syslog\fP
+Use syslog for messages.
 
 .SH FILES
 \fI/var/lib/alsa/asound.state\fP (or whatever file you specify with the

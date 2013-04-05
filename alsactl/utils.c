@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <syslog.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 
@@ -99,4 +100,80 @@ void initfailed(int cardnumber, const char *reason, int exitcode)
 	write(fp, "\n", 1);
 	close(fp);
 	free(str);
+}
+
+static void syslog_(int prio, const char *fcn, long line,
+		    const char *fmt, va_list ap)
+{
+	char buf[1024];
+
+	snprintf(buf, sizeof(buf), "%s: %s:%ld", command, fcn, line);
+	buf[sizeof(buf)-1] = '\0';
+	vsnprintf(buf + strlen(buf), sizeof(buf)-strlen(buf), fmt, ap);
+	buf[sizeof(buf)-1] = '\0';
+	syslog(LOG_INFO, buf);
+}
+
+void info_(const char *fcn, long line, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	if (use_syslog) {
+		syslog_(LOG_INFO, fcn, line, fmt, ap);
+	} else {
+		fprintf(stdout, "%s: %s:%ld: ", command, fcn, line);
+		vfprintf(stdout, fmt, ap);
+		putc('\n', stdout);
+	}
+	va_end(ap);
+}
+
+void error_(const char *fcn, long line, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	if (use_syslog) {
+		syslog_(LOG_ERR, fcn, line, fmt, ap);
+	} else {
+		fprintf(stderr, "%s: %s:%ld: ", command, fcn, line);
+		vfprintf(stderr, fmt, ap);
+		putc('\n', stderr);
+	}
+	va_end(ap);
+}
+
+void cerror_(const char *fcn, long line, int cond, const char *fmt, ...)
+{
+	va_list ap;
+
+	if (!cond && !debugflag)
+		return;
+	if (use_syslog) {
+		syslog_(LOG_ERR, fcn, line, fmt, ap);
+	} else {
+		va_start(ap, fmt);
+		fprintf(stderr, "%s: %s:%ld: ", command, fcn, line);
+		vfprintf(stderr, fmt, ap);
+		putc('\n', stderr);
+		va_end(ap);
+	}
+}
+
+void dbg_(const char *fcn, long line, const char *fmt, ...)
+{
+	va_list ap;
+
+	if (!debugflag)
+		return;
+	if (use_syslog) {
+		syslog_(LOG_DEBUG, fcn, line, fmt, ap);
+	} else {
+		va_start(ap, fmt);
+		fprintf(stderr, "%s: %s:%ld: ", command, fcn, line);
+		vfprintf(stderr, fmt, ap);
+		putc('\n', stderr);
+		va_end(ap);
+	}
 }
