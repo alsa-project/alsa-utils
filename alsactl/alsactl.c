@@ -46,66 +46,102 @@ int use_syslog = 0;
 char *command;
 char *statefile = NULL;
 
+#define TITLE	0x0100
+#define HEADER	0x0200
+#define FILEARG 0x0400
+#define ENVARG	0x0800
+#define INTARG  0x1000
+#define EMPCMD	0x2000
+#define CARDCMD 0x4000
+#define KILLCMD 0x8000
+
+struct arg {
+	int sarg;
+	char *larg;
+	char *comment;
+};
+
+static struct arg args[] = {
+{ TITLE, NULL, "Usage: alsactl <options> command" },
+{ HEADER, NULL, "global options:" },
+{ 'h', "help", "this help" },
+{ 'd', "debug", "debug mode" },
+{ 'v', "version", "print version of this program" },
+{ HEADER, NULL, "Available state options:" },
+{ FILEARG | 'f', "file", "configuration file (default " SYS_ASOUNDRC ")" },
+{ 'l', "lock", "use file locking to serialize concurrent access" },
+{ 'F', "force", "try to restore the matching controls as much as possible" },
+{ 0, NULL, "  (default mode)" },
+{ 'g', "ignore", "ignore 'No soundcards found' error" },
+{ 'P', "pedantic", "do not restore mismatching controls (old default)" },
+{ 'I', "no-init-fallback", "" },
+{ 0, NULL, "don't initialize even if restore fails" },
+{ FILEARG | 'r', "runstate", "save restore and init state to this file (only errors)" },
+{ 0, NULL, "  default settings is 'no file set'" },
+{ 'R', "remove", "remove runstate file at first, otherwise append errors" },
+{ INTARG | 'p', "period", "store period in seconds for the daemon command" },
+{ FILEARG | 'e', "pid-file", "pathname for the process id (daemon mode)" },
+{ HEADER, NULL, "Available init options:" },
+{ ENVARG | 'E', "env", "set environment variable for init phase (NAME=VALUE)" },
+{ FILEARG | 'i', "initfile", "main configuation file for init phase" },
+{ 0, NULL, "  (default " DATADIR "/init/00main)" },
+{ 'b', "background", "run daemon in background" },
+{ 's', "syslog", "use syslog for messages" },
+{ HEADER, NULL, "Available commands:" },
+{ CARDCMD, "store", "save current driver setup for one or each soundcards" },
+{ EMPCMD, NULL, "  to configuration file" },
+{ CARDCMD, "restore", "load current driver setup for one or each soundcards" },
+{ EMPCMD, NULL, "  from configuration file" },
+{ CARDCMD, "nrestore", "like restore, but notify the daemon to rescan soundcards" },
+{ CARDCMD, "init", "initialize driver to a default state" },
+{ CARDCMD, "daemon", "store state periodically for one or each soundcards" },
+{ CARDCMD, "rdaemon", "like daemon but do the state restore at first" },
+{ KILLCMD, "kill", "notify daemon to quit, rescan or save_and_quit" },
+{ 0, NULL, NULL }
+};
+
 static void help(void)
 {
-	printf("Usage: alsactl <options> command\n");
-	printf("\nAvailable global options:\n");
-	printf("  -h,--help        this help\n");
-	printf("  -d,--debug       debug mode\n");
-	printf("  -v,--version     print version of this program\n");
-	printf("\nAvailable state options:\n");
-	printf("  -f,--file #      configuration file (default " SYS_ASOUNDRC ")\n");
-	printf("  -l,--lock        use file locking to serialize concurrent access\n");
-	printf("  -F,--force       try to restore the matching controls as much as possible\n");
-	printf("                   (default mode)\n");
-	printf("  -g,--ignore      ignore 'No soundcards found' error\n");
-	printf("  -P,--pedantic    do not restore mismatching controls (old default)\n");
-	printf("  -I,--no-init-fallback\n"
-	       "                   don't initialize even if restore fails\n");
-	printf("  -r,--runstate #  save restore and init state to this file (only errors)\n");
-	printf("                   default settings is 'no file set'\n");
-	printf("  -R,--remove      remove runstate file at first, otherwise append errors\n");
-	printf("  -p,--period      store period in seconds for the daemon command\n");
-	printf("  -e,--pid-file    pathname for the process id (daemon mode)\n");
-	printf("\nAvailable init options:\n");
-	printf("  -E,--env #=#	   set environment variable for init phase (NAME=VALUE)\n");
-	printf("  -i,--initfile #  main configuation file for init phase (default " DATADIR "/init/00main)\n");
-	printf("\n");
-	printf("\nAvailable commands:\n");
-	printf("  store    <card #> save current driver setup for one or each soundcards\n");
-	printf("                    to configuration file\n");
-	printf("  restore  <card #> load current driver setup for one or each soundcards\n");
-	printf("                    from configuration file\n");
-	printf("  nrestore <card #> like restore, but notify the daemon to rescan soundcards\n");
-	printf("  init	   <card #> initialize driver to a default state\n");
-	printf("  daemon   <card #> store state periodically for one or each soundcards\n");
-	printf("  rdaemon  <card #> like daemon but do the state restore at first\n");
-	printf("  kill     <cmd>    notify daemon to quit, rescan or save_and_quit\n");
+	struct arg *n = args, *a;
+	char *larg, sa[4], buf[32];
+	int sarg;
+
+	sa[0] = '-';
+	sa[2] = ',';
+	sa[3] = '\0';
+	while (n->comment) {
+		a = n;
+		n++;
+		sarg = a->sarg;
+		if (sarg & (HEADER|TITLE)) {
+			printf("%s%s\n", (sarg & HEADER) != 0 ? "\n" : "",
+								a->comment);
+			continue;
+		}
+		buf[0] = '\0';
+		larg = a->larg;
+		if (sarg & (EMPCMD|CARDCMD|KILLCMD)) {
+			if (sarg & CARDCMD)
+				strcat(buf, "<card>");
+			else if (sarg & KILLCMD)
+				strcat(buf, "<cmd>");
+			printf("  %-8s  %-6s  %s\n", larg ? larg : "",
+							buf, a->comment);
+			continue;
+		}
+		sa[1] = a->sarg;
+		sprintf(buf, "%s%s%s", sa[1] ? sa : "",
+				larg ? "--" : "", larg ? larg : "");
+		if (sarg & ENVARG)
+			strcat(buf, " #=#");
+		else if (sarg & (FILEARG|INTARG))
+			strcat(buf, " #");
+		printf("  %-15s  %s\n", buf, a->comment);
+	}
 }
 
 int main(int argc, char *argv[])
 {
-	static const struct option long_option[] =
-	{
-		{"help", 0, NULL, 'h'},
-		{"file", 1, NULL, 'f'},
-		{"lock", 0, NULL, 'l'},
-		{"env", 1, NULL, 'E'},
-		{"initfile", 1, NULL, 'i'},
-		{"no-init-fallback", 0, NULL, 'I'},
-		{"force", 0, NULL, 'F'},
-		{"ignore", 0, NULL, 'g'},
-		{"pedantic", 0, NULL, 'P'},
-		{"runstate", 0, NULL, 'r'},
-		{"remove", 0, NULL, 'R'},
-		{"period", 1, NULL, 'p'},
-		{"pid-file", 1, NULL, 'e'},
-		{"background", 0, NULL, 'b'},
-		{"syslog", 0, NULL, 's'},
-		{"debug", 0, NULL, 'd'},
-		{"version", 0, NULL, 'v'},
-		{NULL, 0, NULL, 0},
-	};
 	static const char *const devfiles[] = {
 		"/dev/snd/controlC",
 		"/dev/snd/pcmC",
@@ -123,18 +159,48 @@ int main(int argc, char *argv[])
 	int init_fallback = 1; /* new default behavior */
 	int period = 5*60;
 	int background = 0;
-	int res;
+	struct arg *a;
+	struct option *o;
+	int i, j, k, res;
+	struct option *long_option;
+	char *short_option;
 
+	long_option = calloc(ARRAY_SIZE(args), sizeof(struct option));
+	if (long_option == NULL)
+		exit(EXIT_FAILURE);
+	short_option = malloc(128);
+	if (short_option == NULL) {
+		free(long_option);
+		exit(EXIT_FAILURE);
+	}
+	for (i = j = k = 0; i < ARRAY_SIZE(args); i++) {
+		a = &args[i];
+		if ((a->sarg & 0xff) == 0)
+			continue;
+		o = &long_option[j];
+		o->name = args->larg;
+		o->has_arg = (a->sarg & (ENVARG|FILEARG|INTARG)) != 0;
+		o->flag = NULL;
+		o->val = a->sarg & 0xff;
+		j++;
+		short_option[k++] = o->val;
+		if (o->has_arg)
+			short_option[k++] = ':';
+	}
+	short_option[k] = '\0';
 	command = argv[0];
+	printf("short_option = '%s'\n", short_option);
 	while (1) {
 		int c;
 
-		if ((c = getopt_long(argc, argv, "hdvf:lFgE:i:IPr:Rp:e:bs", long_option, NULL)) < 0)
+		if ((c = getopt_long(argc, argv, short_option, long_option,
+								  NULL)) < 0)
 			break;
 		switch (c) {
 		case 'h':
 			help();
-			return EXIT_SUCCESS;
+			res = EXIT_SUCCESS;
+			goto out;
 		case 'f':
 			cfgfile = optarg;
 			break;
@@ -150,7 +216,8 @@ int main(int argc, char *argv[])
 		case 'E':
 			if (putenv(optarg)) {
 				fprintf(stderr, "environment string '%s' is wrong\n", optarg);
-				return EXIT_FAILURE;
+				res = EXIT_FAILURE;
+				goto out;
 			}
 			break;
 		case 'i':
@@ -189,19 +256,24 @@ int main(int argc, char *argv[])
 			break;
 		case 'v':
 			printf("alsactl version " SND_UTIL_VERSION_STR "\n");
-			return EXIT_SUCCESS;
+			res = EXIT_SUCCESS;
+			goto out;
 		case '?':		// error msg already printed
 			help();
-			return EXIT_FAILURE;
-			break;
+			res = EXIT_FAILURE;
+			goto out;
 		default:		// should never happen
 			fprintf(stderr, 
 			"Invalid option '%c' (%d) not handled??\n", c, c);
 		}
 	}
+	free(short_option);
+	free(long_option);
+	long_option = NULL;
 	if (argc - optind <= 0) {
 		fprintf(stderr, "alsactl: Specify command...\n");
-		return 0;
+		res = 0;
+		goto out;
 	}
 
 	cardname = argc - optind > 1 ? argv[optind + 1] : NULL;
@@ -261,4 +333,9 @@ int main(int argc, char *argv[])
 		closelog();
 	}
 	return res < 0 ? -res : 0;
+
+out:
+	free(short_option);
+	free(long_option);
+	return res;
 }

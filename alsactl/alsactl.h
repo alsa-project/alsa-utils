@@ -52,3 +52,5 @@ static inline int hextodigit(int c)
                 return -1;
         return c;
 }
+
+#define ARRAY_SIZE(a) (sizeof (a) / sizeof (a)[0])

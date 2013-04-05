@@ -31,9 +31,6 @@
 #include "alsactl.h"
 
 
-#define ARRAY_SIZE(a) (sizeof (a) / sizeof (a)[0])
-
-
 static char *id_str(snd_ctl_elem_id_t *id)
 {
 	static char str[128];
