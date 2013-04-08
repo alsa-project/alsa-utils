@@ -32,10 +32,17 @@
 #include <alsa/asoundlib.h>
 #include "alsactl.h"
 
+struct id_list {
+	snd_ctl_elem_id_t **list;
+	int size;
+};
+
 struct card {
 	int index;
 	int pfds;
 	snd_ctl_t *handle;
+	struct id_list whitelist;
+	struct id_list blacklist;
 };
 
 static int quit = 0;
@@ -60,9 +67,21 @@ static void signal_handler_rescan(int sig)
 	signal(sig, signal_handler_rescan);
 }
 
+static void free_list(struct id_list *list)
+{
+	int i;
+
+	for (i = 0; i < list->size; i++)
+		free(list->list[i]);
+	free(list->list);
+}
+
 static void card_free(struct card **card)
 {
 	struct card *c = *card;
+
+	free_list(&c->blacklist);
+	free_list(&c->whitelist);
 	if (c->handle)
 		snd_ctl_close(c->handle);
 	free(c);
@@ -135,18 +154,125 @@ static void add_cards(struct card ***cards, int *count)
 	}
 }
 
-int card_events(struct card *card)
+static int compare_ids(snd_ctl_elem_id_t *id1, snd_ctl_elem_id_t *id2)
+{
+	if (id1 == NULL || id2 == NULL)
+		return 0;
+	return snd_ctl_elem_id_get_interface(id1) == snd_ctl_elem_id_get_interface(id2) &&
+	       snd_ctl_elem_id_get_index(id1) == snd_ctl_elem_id_get_index(id2) &&
+	       strcmp(snd_ctl_elem_id_get_name(id1), snd_ctl_elem_id_get_name(id2)) == 0 &&
+	       snd_ctl_elem_id_get_device(id1) == snd_ctl_elem_id_get_device(id2) &&
+	       snd_ctl_elem_id_get_subdevice(id1) == snd_ctl_elem_id_get_subdevice(id2);
+}
+
+static int in_list(struct id_list *list, snd_ctl_elem_id_t *id)
+{
+	int i;
+	snd_ctl_elem_id_t *id1;
+
+	for (i = 0; i < list->size; i++) {
+		id1 = list->list[i];
+		if (id1 == NULL)
+			continue;
+		if (compare_ids(id, id1))
+			return 1;
+	}
+	return 0;
+}
+
+static void remove_from_list(struct id_list *list, snd_ctl_elem_id_t *id)
+{
+	int i;
+
+	for (i = 0; i < list->size; i++) {
+		if (compare_ids(id, list->list[i])) {
+			free(list->list[i]);
+			list->list[i] = NULL;
+		}
+	}
+}
+
+static void add_to_list(struct id_list *list, snd_ctl_elem_id_t *id)
+{
+	snd_ctl_elem_id_t *id1;
+	snd_ctl_elem_id_t **n;
+	int i;
+
+	if (snd_ctl_elem_id_malloc(&id1))
+		return;
+	snd_ctl_elem_id_copy(id1, id);
+	for (i = 0; i < list->size; i++) {
+		if (list->list[i] == NULL) {
+			list->list[i] = id1;
+			return;
+		}
+	}
+	n = realloc(list->list, sizeof(void *) * (list->size + 1));
+	if (n == NULL)
+		return;
+	n[list->size] = id1;
+	list->size++;
+	list->list = n;
+}
+
+static int check_lists(struct card *card, snd_ctl_elem_id_t *id)
+{
+	snd_ctl_elem_info_t *info;
+	snd_ctl_elem_info_alloca(&info);
+
+	if (in_list(&card->blacklist, id))
+		return 0;
+	if (in_list(&card->whitelist, id))
+		return 1;
+	snd_ctl_elem_info_set_id(info, id);
+	if (snd_ctl_elem_info(card->handle, info) < 0)
+		return 0;
+	if (snd_ctl_elem_info_is_writable(info) ||
+	    snd_ctl_elem_info_is_tlv_writable(info)) {
+		add_to_list(&card->whitelist, id);
+		return 1;
+	} else {
+		add_to_list(&card->blacklist, id);
+		return 0;
+	}
+}
+
+static int card_events(struct card *card)
 {
 	int res = 0;
 	snd_ctl_event_t *ev;
+	snd_ctl_event_type_t type;
+	unsigned int mask;
+	snd_ctl_elem_id_t *id;
 	snd_ctl_event_alloca(&ev);
+	snd_ctl_elem_id_alloca(&id);
 
-	while (snd_ctl_read(card->handle, ev) == 1)
-		res = 1;
+	while (snd_ctl_read(card->handle, ev) == 1) {
+		type = snd_ctl_event_get_type(ev);
+		if (type != SND_CTL_EVENT_ELEM)
+			continue;
+		mask = snd_ctl_event_elem_get_mask(ev);
+		snd_ctl_event_elem_get_id(ev, id);
+		if (mask == SND_CTL_EVENT_MASK_REMOVE) {
+			remove_from_list(&card->whitelist, id);
+			remove_from_list(&card->blacklist, id);
+			continue;
+		}
+		if (mask & SND_CTL_EVENT_MASK_INFO) {
+			remove_from_list(&card->whitelist, id);
+			remove_from_list(&card->blacklist, id);
+		}
+		if (mask & (SND_CTL_EVENT_MASK_VALUE|
+			    SND_CTL_EVENT_MASK_ADD|
+			    SND_CTL_EVENT_MASK_TLV)) {
+			if (check_lists(card, id))
+				res = 1;
+		}
+	}
 	return res;
 }
 
-long read_pid_file(const char *pidfile)
+static long read_pid_file(const char *pidfile)
 {
 	int fd, err;
 	char pid_txt[12];
@@ -164,7 +290,7 @@ long read_pid_file(const char *pidfile)
 	}
 }
 
-int write_pid_file(const char *pidfile)
+static int write_pid_file(const char *pidfile)
 {
 	int fd, err;
 	char pid_txt[12];
@@ -214,7 +340,7 @@ int state_daemon_kill(const char *pidfile, const char *cmd)
 	return 0;
 }
 
-int check_another_instance(const char *pidfile)
+static int check_another_instance(const char *pidfile)
 {
 	long pid;
 

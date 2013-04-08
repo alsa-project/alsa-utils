@@ -189,7 +189,6 @@ int main(int argc, char *argv[])
 	}
 	short_option[k] = '\0';
 	command = argv[0];
-	printf("short_option = '%s'\n", short_option);
 	while (1) {
 		int c;
 
