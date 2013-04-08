@@ -25,6 +25,7 @@ ABOUT-NLS
 
 alsactl/alsactl
 alsactl/alsactl_init.7
+alsactl/alsa-state.service
 alsaconf/alsaconf
 alsamixer/alsamixer
 amidi/amidi

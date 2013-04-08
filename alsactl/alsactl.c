@@ -159,6 +159,7 @@ int main(int argc, char *argv[])
 	int init_fallback = 1; /* new default behavior */
 	int period = 5*60;
 	int background = 0;
+	int daemoncmd = 0;
 	struct arg *a;
 	struct option *o;
 	int i, j, k, res;
@@ -178,7 +179,7 @@ int main(int argc, char *argv[])
 		if ((a->sarg & 0xff) == 0)
 			continue;
 		o = &long_option[j];
-		o->name = args->larg;
+		o->name = a->larg;
 		o->has_arg = (a->sarg & (ENVARG|FILEARG|INTARG)) != 0;
 		o->flag = NULL;
 		o->val = a->sarg & 0xff;
@@ -296,12 +297,15 @@ int main(int argc, char *argv[])
 		daemon(0, 0);
 	}
 
+	cmd = argv[optind];
+	daemoncmd = strcmp(cmd, "daemon") == 0 || strcmp(cmd, "rdaemon") == 0;
+
 	if (use_syslog) {
 		openlog("alsactl", LOG_CONS|LOG_PID, LOG_DAEMON);
-		syslog(LOG_INFO, "alsactl " SND_UTIL_VERSION_STR " daemon started");
+		if (daemoncmd)
+			syslog(LOG_INFO, "alsactl " SND_UTIL_VERSION_STR " daemon started");
 	}
 
-	cmd = argv[optind];
 	if (!strcmp(cmd, "init")) {
 		res = init(initfile, cardname);
 		snd_config_update_free_global();
@@ -328,7 +332,8 @@ int main(int argc, char *argv[])
 
 	snd_config_update_free_global();
 	if (use_syslog) {
-		syslog(LOG_INFO, "alsactl daemon stopped");
+		if (daemoncmd)
+			syslog(LOG_INFO, "alsactl daemon stopped");
 		closelog();
 	}
 	return res < 0 ? -res : 0;

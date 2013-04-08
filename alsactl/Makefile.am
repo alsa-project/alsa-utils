@@ -8,7 +8,7 @@ endif
 EXTRA_DIST=alsactl.1 alsactl_init.xml
 
 alsactl_SOURCES=alsactl.c state.c lock.c utils.c init_parse.c daemon.c
-alsactl_CFLAGS=$(AM_CFLAGS) -DSYS_ASOUNDRC=\"$(ASOUND_STATE_DIR)/asound.state\"
+alsactl_CFLAGS=$(AM_CFLAGS) -DSYS_ASOUNDRC=\"$(ASOUND_STATE_DIR)/asound.state\" -DSYS_PIDFILE=\"$(ALSACTL_PIDFILE_DIR)/alsactl.pid\"
 noinst_HEADERS=alsactl.h list.h init_sysdeps.c init_utils_string.c init_utils_run.c init_sysfs.c
 
 dist_udevrules_DATA = \
@@ -17,8 +17,7 @@ dist_udevrules_DATA = \
 if HAVE_SYSTEMD
 
 systemdsystemunit_DATA = \
-	alsa-store.service \
-	alsa-restore.service
+	alsa-state.service
 
 install-data-hook:
 	$(MKDIR_P) -m 0755 \
@@ -36,23 +35,18 @@ endif
 edit = \
 	$(SED) -r 's,@sbindir\@,$(sbindir),g' < $< > $@ || rm $@
 
-alsa-store.service: alsa-store.service.in
-	$(edit)
-
-alsa-restore.service: alsa-restore.service.in
+alsa-state.service: alsa-state.service.in
 	$(edit)
 
 90-alsa-restore.rules: 90-alsa-restore.rules.in
 	$(edit)
 
 EXTRA_DIST += \
-	alsa-store.service.in \
-	alsa-restore.service.in \
+	alsa-state.service.in \
 	90-alsa-restore.rules.in
 
 CLEANFILES = \
-	alsa-store.service \
-	alsa-restore.service \
+	alsa-state.service \
 	90-alsa-restore.rules
 
 %.7: %.xml

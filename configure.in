@@ -322,6 +322,12 @@ AC_ARG_WITH([asound-state-dir],
         [ASOUND_STATE_DIR="/var/lib/alsa"])
 AC_SUBST(ASOUND_STATE_DIR)
 
+AC_ARG_WITH([alsactl-pidfile-dir],
+        AS_HELP_STRING([--with-alsactl-pidfile-dir=DIR], [Directory to place alsactl.pid file in]),
+        [ALSACTL_PIDFILE_DIR="$withval"],
+        [ALSACTL_PIDFILE_DIR="/var/run"])
+AC_SUBST(ALSACTL_PIDFILE_DIR)
+
 AC_OUTPUT(Makefile alsactl/Makefile alsactl/init/Makefile \
 	  alsamixer/Makefile amidi/Makefile amixer/Makefile \
 	  m4/Makefile po/Makefile.in \
