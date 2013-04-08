@@ -104,6 +104,7 @@ static snd_pcm_uframes_t  period_size;
 static const char *given_test_wav_file = NULL;
 static char *wav_file_dir = SOUNDSDIR;
 static int debug = 0;
+static int in_aborting = 0;
 static snd_pcm_t *pcm_handle = NULL;
 
 #ifdef CONFIG_SUPPORT_CHMAP
@@ -779,6 +780,9 @@ static int read_wav(uint16_t *buf, int channel, int offset, int bufsize)
   static FILE *wavfp = NULL;
   int size;
 
+  if (in_aborting)
+    return -EFAULT;
+
   if (! wav_file[channel]) {
     fprintf(stderr, _("Undefined channel %d\n"), channel);
     return -EINVAL;
@@ -823,7 +827,7 @@ static int write_buffer(snd_pcm_t *handle, uint8_t *ptr, int cptr)
 {
   int err;
 
-  while (cptr > 0) {
+  while (cptr > 0 && !in_aborting) {
 
     err = snd_pcm_writei(handle, ptr, cptr);
 
@@ -832,9 +836,9 @@ static int write_buffer(snd_pcm_t *handle, uint8_t *ptr, int cptr)
 
     if (err < 0) {
       fprintf(stderr, _("Write error: %d,%s\n"), err, snd_strerror(err));
-      if (xrun_recovery(handle, err) < 0) {
+      if ((err = xrun_recovery(handle, err)) < 0) {
 	fprintf(stderr, _("xrun_recovery failed: %d,%s\n"), err, snd_strerror(err));
-	return -1;
+	return err;
       }
       break;	/* skip one period */
     }
@@ -855,13 +859,13 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
   if (test_type == TEST_WAV) {
     int bufsize = snd_pcm_frames_to_bytes(handle, period_size);
     n = 0;
-    while ((err = read_wav((uint16_t *)frames, channel, n, bufsize)) > 0) {
+    while ((err = read_wav((uint16_t *)frames, channel, n, bufsize)) > 0 && !in_aborting) {
       n += err;
       if ((err = write_buffer(handle, frames,
 			      snd_pcm_bytes_to_frames(handle, err * channels))) < 0)
 	break;
     }
-    if (buffer_size > n) {
+    if (buffer_size > n && !in_aborting) {
       snd_pcm_drain(handle);
       snd_pcm_prepare(handle);
     }
@@ -872,7 +876,7 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
   if (periods <= 0)
     periods = 1;
 
-  for(n = 0; n < periods; n++) {
+  for(n = 0; n < periods && !in_aborting; n++) {
     if (test_type == TEST_PINK_NOISE)
       generate_pink_noise(frames, channel, period_size);
     else if (test_type == TEST_PATTERN)
@@ -883,7 +887,7 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
     if ((err = write_buffer(handle, frames, period_size)) < 0)
       return err;
   }
-  if (buffer_size > n * period_size) {
+  if (buffer_size > n * period_size && !in_aborting) {
     snd_pcm_drain(handle);
     snd_pcm_prepare(handle);
   }
@@ -900,14 +904,18 @@ static int prg_exit(int code)
 
 static void signal_handler(int sig)
 {
-  static int in_aborting;
-
   if (in_aborting)
     return;
 
   in_aborting = 1;
-  
-  prg_exit(EXIT_FAILURE);
+
+  if (pcm_handle)
+    snd_pcm_abort(pcm_handle);
+  if (sig == SIGABRT) {
+    pcm_handle = NULL;
+    prg_exit(EXIT_FAILURE);
+  }
+  signal(sig, signal_handler);
 }
 
 static void help(void)
@@ -1176,7 +1184,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    for (n = 0; ! nloops || n < nloops; n++) {
+    for (n = 0; (! nloops || n < nloops) && !in_aborting; n++) {
 
       gettimeofday(&tv1, NULL);
       for(chn = 0; chn < channels; chn++) {
