@@ -107,6 +107,7 @@ static snd_pcm_stream_t stream = SND_PCM_STREAM_PLAYBACK;
 static int mmap_flag = 0;
 static int interleaved = 1;
 static int nonblock = 0;
+static int in_aborting = 0;
 static u_char *audiobuf = NULL;
 static snd_pcm_uframes_t chunk_size = 0;
 static unsigned period_time = 0;
@@ -383,8 +384,6 @@ static void prg_exit(int code)
 
 static void signal_handler(int sig)
 {
-	static int in_aborting;
-
 	if (in_aborting)
 		return;
 
@@ -393,22 +392,14 @@ static void signal_handler(int sig)
 		putchar('\n');
 	if (!quiet_mode)
 		fprintf(stderr, _("Aborted by signal %s...\n"), strsignal(sig));
-	if (stream == SND_PCM_STREAM_CAPTURE) {
-		if (fmt_rec_table[file_type].end) {
-			fmt_rec_table[file_type].end(fd);
-			fd = -1;
-		}
-		stream = -1;
-	}
-	if (fd > 1) {
-		close(fd);
-		fd = -1;
-	}
-	if (handle && sig != SIGABRT) {
-		snd_pcm_close(handle);
+	if (handle)
+		snd_pcm_abort(handle);
+	if (sig == SIGABRT) {
+		/* do not call snd_pcm_close() and abort immediately */
 		handle = NULL;
+		prg_exit(EXIT_FAILURE);
 	}
-	prg_exit(EXIT_FAILURE);
+	signal(sig, signal_handler);
 }
 
 /* call on SIGUSR1 signal. */
@@ -825,7 +816,7 @@ static ssize_t safe_read(int fd, void *buf, size_t count)
 {
 	ssize_t result = 0, res;
 
-	while (count > 0) {
+	while (count > 0 && !in_aborting) {
 		if ((res = read(fd, buf, count)) == 0)
 			break;
 		if (res < 0)
@@ -2133,7 +2124,7 @@ static void voc_write_silence(unsigned x)
 		return;		/* not fatal error */
 	}
 	snd_pcm_format_set_silence(hwparams.format, buf, chunk_size * hwparams.channels);
-	while (x > 0) {
+	while (x > 0 && !in_aborting) {
 		l = x;
 		if (l > chunk_size)
 			l = chunk_size;
@@ -2205,7 +2196,7 @@ static void voc_play(int fd, int ofs, char *name)
 	set_params();
 
 	in_buffer = nextblock = 0;
-	while (1) {
+	while (!in_aborting) {
 	      Fill_the_buffer:	/* need this for repeat */
 		if (in_buffer < 32) {
 			/* move the rest of buffer to pos 0 and fill the buf up */
@@ -2653,7 +2644,7 @@ static void playback_go(int fd, size_t loaded, off64_t count, int rtype, char *n
 	header(rtype, name);
 	set_params();
 
-	while (loaded > chunk_bytes && written < count) {
+	while (loaded > chunk_bytes && written < count && !in_aborting) {
 		if (pcm_write(audiobuf + written, chunk_size) <= 0)
 			return;
 		written += chunk_bytes;
@@ -2663,7 +2654,7 @@ static void playback_go(int fd, size_t loaded, off64_t count, int rtype, char *n
 		memmove(audiobuf, audiobuf + written, loaded);
 
 	l = loaded;
-	while (written < count) {
+	while (written < count && !in_aborting) {
 		do {
 			c = count - written;
 			if (c > chunk_bytes)
@@ -3003,7 +2994,7 @@ static void capture(char *orig_name)
 
 		/* capture */
 		fdcount = 0;
-		while (rest > 0 && recycle_capture_file == 0) {
+		while (rest > 0 && recycle_capture_file == 0 && !in_aborting) {
 			size_t c = (rest <= (off64_t)chunk_bytes) ?
 				(size_t)rest : chunk_bytes;
 			size_t f = c * 8 / bits_per_frame;
@@ -3055,7 +3046,7 @@ static void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t
 	for (channel = 0; channel < channels; ++channel)
 		bufs[channel] = audiobuf + vsize * channel;
 
-	while (count > 0) {
+	while (count > 0 && !in_aborting) {
 		size_t c = 0;
 		size_t expected = count / channels;
 		if (expected > vsize)
@@ -3104,7 +3095,7 @@ static void capturev_go(int* fds, unsigned int channels, off64_t count, int rtyp
 	for (channel = 0; channel < channels; ++channel)
 		bufs[channel] = audiobuf + vsize * channel;
 
-	while (count > 0) {
+	while (count > 0 && !in_aborting) {
 		size_t rv;
 		c = count;
 		if (c > chunk_bytes)
