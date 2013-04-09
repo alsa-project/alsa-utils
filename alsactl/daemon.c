@@ -431,7 +431,9 @@ int state_daemon(const char *file, const char *cardname, int period,
 				goto out;
 			}
 			j += cards[i]->pfds;
-			if (revents & POLLIN) {
+			if (revents & (POLLERR|POLLNVAL)) {
+				card_free(&cards[i]);
+			} else if (revents & POLLIN) {
 				if (card_events(cards[i])) {
 					/* delay the write */
 					if (!changed)
