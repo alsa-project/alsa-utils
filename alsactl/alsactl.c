@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <syslog.h>
+#include <sched.h>
 #include <alsa/asoundlib.h>
 #include "alsactl.h"
 
@@ -87,6 +88,8 @@ static struct arg args[] = {
 { 0, NULL, "  (default " DATADIR "/init/00main)" },
 { 'b', "background", "run daemon in background" },
 { 's', "syslog", "use syslog for messages" },
+{ INTARG | 'n', "nice", "set the process priority (see 'man nice')" },
+{ 'c', "sched-idle", "set the process scheduling policy to idle (SCHED_IDLE)" },
 { HEADER, NULL, "Available commands:" },
 { CARDCMD, "store", "save current driver setup for one or each soundcards" },
 { EMPCMD, NULL, "  to configuration file" },
@@ -140,6 +143,25 @@ static void help(void)
 	}
 }
 
+#define NO_NICE (-100000)
+
+static void do_nice(int use_nice, int sched_idle)
+{
+	struct sched_param sched_param;
+
+	if (use_nice != NO_NICE && nice(use_nice) < 0)
+		error("nice(%i): %s", use_nice, strerror(errno));
+	if (sched_idle) {
+		if (sched_getparam(0, &sched_param) >= 0) {
+			sched_param.sched_priority = 0;
+			if (!sched_setscheduler(0, SCHED_RR, &sched_param))
+				error("sched_setparam failed: %s", strerror(errno));
+		} else {
+			error("sched_getparam failed: %s", strerror(errno));
+		}
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	static const char *const devfiles[] = {
@@ -160,6 +182,8 @@ int main(int argc, char *argv[])
 	int period = 5*60;
 	int background = 0;
 	int daemoncmd = 0;
+	int use_nice = NO_NICE;
+	int sched_idle = 0;
 	struct arg *a;
 	struct option *o;
 	int i, j, k, res;
@@ -251,6 +275,16 @@ int main(int argc, char *argv[])
 		case 's':
 			use_syslog = 1;
 			break;
+		case 'n':
+			use_nice = atoi(optarg);
+			if (use_nice < -20)
+				use_nice = -20;
+			else if (use_nice > 19)
+				use_nice = 19;
+			break;
+		case 'c':
+			sched_idle = 1;
+			break;
 		case 'd':
 			debugflag = 1;
 			break;
@@ -268,6 +302,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	free(short_option);
+	short_option = NULL;
 	free(long_option);
 	long_option = NULL;
 	if (argc - optind <= 0) {
@@ -317,11 +352,14 @@ int main(int argc, char *argv[])
 		if (removestate)
 			remove(statefile);
 		res = load_state(cfgfile, initfile, cardname, init_fallback);
-		if (!strcmp(cmd, "rdaemon"))
+		if (!strcmp(cmd, "rdaemon")) {
+			do_nice(use_nice, sched_idle);
 			res = state_daemon(cfgfile, cardname, period, pidfile);
+		}
 		if (!strcmp(cmd, "nrestore"))
 			res = state_daemon_kill(pidfile, "rescan");
 	} else if (!strcmp(cmd, "daemon")) {
+		do_nice(use_nice, sched_idle);
 		res = state_daemon(cfgfile, cardname, period, pidfile);
 	} else if (!strcmp(cmd, "kill")) {
 		res = state_daemon_kill(pidfile, cardname);

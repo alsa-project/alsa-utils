@@ -115,6 +115,14 @@ Run the task in background.
 \fI\-s, \-\-syslog\fP
 Use syslog for messages.
 
+.TP
+\fI\-n, \-\-nice\fP
+Set the process priority (see 'man nice')
+
+.TP
+\fI\-c, \-\-sched-idle\fP
+Set the process scheduling policy to idle (SCHED_IDLE).
+
 .SH FILES
 \fI/var/lib/alsa/asound.state\fP (or whatever file you specify with the
 \fB\-f\fP flag) is used to store current settings for your
