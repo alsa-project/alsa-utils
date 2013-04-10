@@ -4,14 +4,14 @@
 #
 
 [Unit]
-Description=Manage Sound Card State (restore and store)
-ConditionPathExists=/etc/alsa/state-daemon.conf
+Description=Restore Sound Card State
+ConditionPathExists=!/etc/alsa/state-daemon.conf
 DefaultDependencies=no
-After=sysinit.target
+After=alsa-state.service
 Before=shutdown.target
 Conflicts=shutdown.target
 
 [Service]
-Type=simple
-ExecStart=-@sbindir@/alsactl -s -n 19 -c rdaemon
-ExecStop=-@sbindir@/alsactl -s rkill save_and_quit
+Type=oneshop
+ExecStart=-@sbindir@/alsactl restore
+StandardOutput=syslog

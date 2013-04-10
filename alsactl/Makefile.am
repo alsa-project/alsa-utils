@@ -17,15 +17,18 @@ dist_udevrules_DATA = \
 if HAVE_SYSTEMD
 
 systemdsystemunit_DATA = \
-	alsa-state.service
+	alsa-state.service \
+	alsa-restore.service \
+	alsa-store.service
 
 install-data-hook:
 	$(MKDIR_P) -m 0755 \
 		$(DESTDIR)$(systemdsystemunitdir)/basic.target.wants \
 		$(DESTDIR)$(systemdsystemunitdir)/shutdown.target.wants
 	( cd $(DESTDIR)$(systemdsystemunitdir)/basic.target.wants && \
-	        rm -f alsa-restore.service && \
-		$(LN_S) ../alsa-restore.service alsa-restore.service )
+		rm -f alsa-state.service alsa-restore.service && \
+		$(LN_S) ../alsa-state.service alsa-state.service && \
+		$(LN_S) ../alsa-restore.service alsa-restore.service)
 	( cd $(DESTDIR)$(systemdsystemunitdir)/shutdown.target.wants && \
 	        rm -f alsa-store.service && \
 		$(LN_S) ../alsa-store.service alsa-store.service )
@@ -38,15 +41,25 @@ edit = \
 alsa-state.service: alsa-state.service.in
 	$(edit)
 
+alsa-restore.service: alsa-restore.service.in
+	$(edit)
+
+alsa-store.service: alsa-store.service.in
+	$(edit)
+
 90-alsa-restore.rules: 90-alsa-restore.rules.in
 	$(edit)
 
 EXTRA_DIST += \
 	alsa-state.service.in \
+	alsa-restore.service.in \
+	alsa-store.service.in \
 	90-alsa-restore.rules.in
 
 CLEANFILES = \
 	alsa-state.service \
+	alsa-restore.service \
+	alsa-store.service \
 	90-alsa-restore.rules
 
 %.7: %.xml

@@ -1,0 +1,15 @@
+#
+# Note that two different ALSA card state management schemes exist and they
+# can be switched using a file exist check - /etc/alsa/state-daemon.conf .
+#
+
+[Unit]
+Description=Store Sound Card State
+ConditionPathExists=!/etc/alsa/state-daemon.conf
+DefaultDependencies=no
+Before=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=@sbindir@/alsactl store
+StandardOutput=syslog
