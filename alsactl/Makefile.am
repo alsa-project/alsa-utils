@@ -36,7 +36,9 @@ install-data-hook:
 endif
 
 edit = \
-	$(SED) -r 's,@sbindir\@,$(sbindir),g' < $< > $@ || rm $@
+	$(SED) -r -e 's,@sbindir\@,$(sbindir),g' \
+		  -e 's,@daemonswitch\@,$(ALSACTL_DAEMONSWITCH),g' \
+							< $< > $@ || rm $@
 
 alsa-state.service: alsa-state.service.in
 	$(edit)

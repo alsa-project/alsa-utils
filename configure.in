@@ -328,6 +328,12 @@ AC_ARG_WITH([alsactl-pidfile-dir],
         [ALSACTL_PIDFILE_DIR="/var/run"])
 AC_SUBST(ALSACTL_PIDFILE_DIR)
 
+AC_ARG_WITH([alsactl-daemonswitch],
+        AS_HELP_STRING([--with-alsactl-daemonswitch=FILE], [File to test for the daemon mode]),
+        [ALSACTL_DAEMONSWITCH="$withval"],
+        [ALSACTL_DAEMONSWITCH="/etc/alsa/state-daemon.conf"])
+AC_SUBST(ALSACTL_DAEMONSWITCH)
+
 AC_OUTPUT(Makefile alsactl/Makefile alsactl/init/Makefile \
 	  alsamixer/Makefile amidi/Makefile amixer/Makefile \
 	  m4/Makefile po/Makefile.in \

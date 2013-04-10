@@ -5,7 +5,7 @@
 
 [Unit]
 Description=Store Sound Card State
-ConditionPathExists=!/etc/alsa/state-daemon.conf
+ConditionPathExists=!@daemonswitch@
 DefaultDependencies=no
 Before=shutdown.target
 

@@ -5,7 +5,7 @@
 
 [Unit]
 Description=Manage Sound Card State (restore and store)
-ConditionPathExists=/etc/alsa/state-daemon.conf
+ConditionPathExists=@daemonswitch@
 DefaultDependencies=no
 After=sysinit.target
 Before=shutdown.target
