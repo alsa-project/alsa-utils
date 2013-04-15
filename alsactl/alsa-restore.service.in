@@ -12,6 +12,6 @@ Before=shutdown.target
 Conflicts=shutdown.target
 
 [Service]
-Type=oneshop
+Type=oneshot
 ExecStart=-@sbindir@/alsactl restore
 StandardOutput=syslog
