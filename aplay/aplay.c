@@ -3021,6 +3021,9 @@ static void capture(char *orig_name)
 			fd = -1;
 		}
 
+		if (in_aborting)
+			break;
+
 		/* repeat the loop when format is raw without timelimit or
 		 * requested counts of data are recorded
 		 */
