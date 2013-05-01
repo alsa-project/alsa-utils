@@ -53,9 +53,9 @@ static int state_lock_(const char *file, int lock, int timeout)
 	lck.l_len = 11;
 	lck.l_pid = 0;
 	if (lock) {
-		sprintf(lcktxt, "%10li\n", (long)getpid());
+		snprintf(lcktxt, sizeof(lcktxt), "%10li\n", (long)getpid());
 	} else {
-		sprintf(lcktxt, "%10s\n", "");
+		snprintf(lcktxt, sizeof(lcktxt), "%10s\n", "");
 	}
 	while (fd < 0 && timeout-- > 0) {
 		fd = open(nfile, O_RDWR);
