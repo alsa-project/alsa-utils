@@ -1,6 +1,6 @@
 .TH ALSALOOP 1 "5 Aug 2010"
 .SH NAME
-alsaloop \- command-line PCM loopback
+alsaloop \- command\-line PCM loopback
 .SH SYNOPSIS
 \fBalsaloop\fP [\fI\-option\fP] [\fIcmd\fP]
 .SH DESCRIPTION
@@ -27,10 +27,10 @@ Use given configuration file. The syntax of this file is simple: one line
 contains the command line options for one job. The '#' means comment and
 rest of line is ignored. Example:
 
-  # First line - comment, second line - first job
-  -C hw:1,0 -P hw:0,0 -t 50000 -T 1
-  # Third line - comment, fourth line - second job
-  -C hw:1,1 -P hw:0,1 -t 40000 -T 2
+  # First line \- comment, second line \- first job
+  \-C hw:1,0 \-P hw:0,0 \-t 50000 \-T 1
+  # Third line \- comment, fourth line \- second job
+  \-C hw:1,1 \-P hw:0,1 \-t 40000 \-T 2
 
 .TP
 \fI\-d\fP | \fI\-\-daemonize\fP
@@ -70,7 +70,7 @@ Requested latency in usec (1/1000000sec).
 .TP
 \fI\-f <format>\fP | \fI\-\-format=<format>\fP
 
-Format specification (usually S16_LE S32_LE). Use -h to list all formats.
+Format specification (usually S16_LE S32_LE). Use \-h to list all formats.
 Default format is S16_LE.
 
 .TP
@@ -86,19 +86,19 @@ Rate specification. Default value is 48000 (Hz).
 .TP
 \fI\-n\fP | \fI\-\-resample\fP
 
-Allow rate resampling using alsa-lib.
+Allow rate resampling using alsa\-lib.
 
 .TP
 \fI\-A <converter>\fP | \fI\-\-samplerate=<converter>\fP
 
 Use libsamplerate and choose a converter:
 
-  0 or sincbest     - best quality
-  1 or sincmedium   - medium quality
-  2 or sincfastest  - lowest quality
-  3 or zerohold     - hold zero samples
-  4 or linear       - worst quality - linear resampling
-  5 or auto         - choose best method
+  0 or sincbest     \- best quality
+  1 or sincmedium   \- medium quality
+  2 or sincfastest  \- lowest quality
+  3 or zerohold     \- hold zero samples
+  4 or linear       \- worst quality - linear resampling
+  5 or auto         \- choose best method
 
 .TP
 \fI\-B <size>\fP | \fI\-\-buffer=<size>\fP
@@ -118,30 +118,30 @@ Duration of loop in seconds.
 .TP
 \fI\-b\fP | \fI\-\-nblock\fP
 
-Non-block mode (very early process wakeup). Eats more CPU.
+Non\-block mode (very early process wakeup). Eats more CPU.
 
 .TP
 \fI\-S <mode>\fP | \fI\-\-sync=<mode>\fP
 
 Sync mode specification for capture to playback stream:
-  0 or none       - do not touch the stream
-  1 or simple     - add or remove samples to keep
+  0 or none       \- do not touch the stream
+  1 or simple     \- add or remove samples to keep
                     both streams synchronized
-  2 or captshift  - use driver for the capture device
+  2 or captshift  \- use driver for the capture device
                     (if supported) to compensate
                     the rate shift
-  3 or playshift  - use driver for the playback device
+  3 or playshift  \- use driver for the playback device
                     (if supported) to compensate
                     the rate shift
-  4 or samplerate - use samplerate library to do rate resampling
-  5 or auto       - automatically selects the best method
+  4 or samplerate \- use samplerate library to do rate resampling
+  5 or auto       \- automatically selects the best method
                     in this order: captshift, playshift,
                     samplerate, simple
 
 .TP
 \fI\-T <num>\fP | \fI\-\-thread=<num>\fP
 
-Thread number (-1 means create a unique thread). All jobs with same
+Thread number (\-1 means create a unique thread). All jobs with same
 thread numbers are run within one thread.
 
 .TP
@@ -155,12 +155,12 @@ Redirect mixer control from the playback card to the capture card. Format of
 
 Known attributes:
 
-  name      - control ID name
-  index     - control ID index
-  device    - control ID device
-  subdevice - control ID subdevice
-  iface     - control ID interface
-  numid     - control ID numid
+  name      \- control ID name
+  index     \- control ID index
+  device    \- control ID device
+  subdevice \- control ID subdevice
+  iface     \- control ID interface
+  numid     \- control ID numid
 
 .TP
 \fI\-O <ossmixid>\fP | \fI\-\-ossmixer=<midid>\fP

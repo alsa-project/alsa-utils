@@ -4,7 +4,7 @@ amixer \- command-line mixer for ALSA soundcard driver
 .SH SYNOPSIS
 \fBamixer\fP [\fI\-option\fP] [\fIcmd\fP]
 .SH DESCRIPTION
-\fBamixer\fP allows command-line control of the mixer for the ALSA
+\fBamixer\fP allows command\-line control of the mixer for the ALSA
 soundcard driver.
 \fBamixer\fP supports multiple soundcards.
 
@@ -34,7 +34,7 @@ Shows a complete list of simple mixer controls with their contents.
 \fIset\fP or \fIsset\fP <\fISCONTROL\fP> <\fIPARAMETER\fP> ...
 Sets the simple mixer control contents. The parameter can be the volume
 either as a percentage from 0% to 100% with \fI%\fP suffix,
-a dB gain with \fIdB\fP suffix (like -12.5dB), or an exact hardware value.
+a dB gain with \fIdB\fP suffix (like \-12.5dB), or an exact hardware value.
 The dB gain can be used only for the mixer elements with available
 dB information.
 When plus(+) or minus(\-) letter is appended after
@@ -96,7 +96,7 @@ Select the device name to control. The default control name is 'default'.
 \fI\-s\fP | \fI\-\-stdin\fP
 
 Read from stdin and execute the command on each line sequentially.
-When this option is given, the command in command-line arguments is ignored.
+When this option is given, the command in command\-line arguments is ignored.
 
 Only sset and cset are accepted.  Other commands are ignored.
 The commands to unmatched ids are ignored without errors too.
@@ -128,8 +128,8 @@ right line input to 40%, unmute it, and select it as a source for
 capture (recording).\fR
 
 .TP
-\fBamixer \-c 1 \-\- sset Master playback -20dB\fR
-will set the master volume of the second card to -20dB.  If the master
+\fBamixer \-c 1 \-\- sset Master playback \-20dB\fR
+will set the master volume of the second card to \-20dB.  If the master
 has multiple channels, all channels are set to the same value.
 
 .TP

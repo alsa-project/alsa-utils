@@ -1,6 +1,6 @@
 .TH APLAY 1 "1 January 2010"
 .SH NAME
-arecord, aplay \- command-line sound recorder and player for ALSA 
+arecord, aplay \- command\-line sound recorder and player for ALSA 
 soundcard driver
 .SH SYNOPSIS
 \fBarecord\fP [\fIflags\fP] [filename]
@@ -8,7 +8,7 @@ soundcard driver
 \fBaplay\fP [\fIflags\fP] [filename [filename]] ...
 
 .SH DESCRIPTION
-\fBarecord\fP is a command-line soundfile recorder for the ALSA soundcard
+\fBarecord\fP is a command\-line soundfile recorder for the ALSA soundcard
 driver. It supports several file formats and multiple soundcards with
 multiple devices. If recording with interleaved mode samples the file is
 automatically split before the 2GB filesize.
@@ -81,11 +81,11 @@ The default is zero, so if this option is omitted then the arecord process will 
 Min ticks to sleep. The default is not to sleep.
 .TP
 \fI\-M, \-\-mmap\fP            
-Use memory-mapped (mmap) I/O mode for the audio stream.
+Use memory\-mapped (mmap) I/O mode for the audio stream.
 If this option is not set, the read/write I/O mode will be used.
 .TP
 \fI\-N, \-\-nonblock\fP          
-Open the audio device in non-blocking mode. If the device is busy the program will exit immediately.
+Open the audio device in non\-blocking mode. If the device is busy the program will exit immediately.
 If this option is not set the program will block until the audio device is available again.
 .TP
 \fI\-F, \-\-period\-time=#\fP     
@@ -120,8 +120,8 @@ This option is accumulative.  The VU meter is displayed when this
 is given twice or three times.
 .TP
 \fI\-V, \-\-vumeter=TYPE\fP
-Specifies the VU-meter type, either \fIstereo\fP or \fImono\fP.
-The stereo VU-meter is available only for 2-channel stereo samples
+Specifies the VU\-meter type, either \fIstereo\fP or \fImono\fP.
+The stereo VU\-meter is available only for 2\-channel stereo samples
 with interleaved format.
 .TP
 \fI\-I, \-\-separate\-channels\fP 
@@ -173,7 +173,7 @@ Expression for validation is: coef * (buffer_size / 2).
 Minimum value is 1.
 .TP
 \fI\-\-test\-nowait\fP
-Do not wait for the ring buffer--eats the whole CPU.
+Do not wait for the ring buffer \(hy eats the whole CPU.
 .TP
 \fI\-\-max\-file\-time\fP
 While recording, when the output file has been accumulating
@@ -188,7 +188,7 @@ aplay writes its process ID here, so other programs can
 send signals to it.
 .TP
 \fI\-\-use\-strftime\fP
-When recording, interpret %-codes in the file name parameter using
+When recording, interpret %\-codes in the file name parameter using
 the strftime facility whenever the output file is opened.  The
 important strftime codes are: %Y is the year, %m month, %d day of
 the month, %H hour, %M minute and %S second.  In addition, %v is
@@ -218,11 +218,11 @@ and continue recording.  However, SIGUSR1 does not work with
 .TP
 \fBaplay \-c 1 \-t raw \-r 22050 \-f mu_law foobar\fR
 will play the raw file "foobar" as a
-22050-Hz, mono, 8-bit, Mu-Law .au file. 
+22050\-Hz, mono, 8\-bit, Mu\-Law .au file. 
 
 .TP
 \fBarecord \-d 10 \-f cd \-t wav \-D copy foobar.wav\fP
-will record foobar.wav as a 10-second, CD-quality wave file, using the
+will record foobar.wav as a 10\-second, CD\-quality wave file, using the
 PCM "copy" (which might be defined in the user's .asoundrc file as:
 .nf
 pcm.copy {
@@ -235,14 +235,14 @@ pcm.copy {
 .fi
 
 .TP
-\fBarecord \-t wav \-\-max-file-time 30 mon.wav\fP
+\fBarecord \-t wav \-\-max\-file\-time 30 mon.wav\fP
 Record from the default audio source in monaural, 8,000 samples
 per second, 8 bits per sample.  Start a new file every
-30 seconds.  File names are mon-nn.wav, where nn increases
-from 01.  The file after mon-99.wav is mon-100.wav.
+30 seconds.  File names are mon\-nn.wav, where nn increases
+from 01.  The file after mon\-99.wav is mon\-100.wav.
 
 .TP
-\fBarecord \-f cd \-t wav \-\-max-file-time 3600 --use-strftime %Y/%m/%d/listen-%H-%M-%v.wav\fP
+\fBarecord \-f cd \-t wav \-\-max\-file\-time 3600 \-\-use-strftime %Y/%m/%d/listen-%H-%M-%v.wav\fP
 Record in stereo from the default audio source.  Create a new file
 every hour.  The files are placed in directories based on their start dates
 and have names which include their start times and file numbers.
