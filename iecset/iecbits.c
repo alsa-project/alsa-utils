@@ -218,7 +218,7 @@ void dump_iec958(snd_aes_iec958_t *iec)
 			printf("user-defined\n");
 			break;
 		default:
-			printf("unkown\n");
+			printf("unknown\n");
 			break;
 		}
 		printf("Sample Bits: ");

@@ -248,7 +248,7 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 			printf(" %s", s);
 	}
 	printf(_("\nSome of these may not be available on selected hardware\n"));
-	printf(_("The availabled format shortcuts are:\n"));
+	printf(_("The available format shortcuts are:\n"));
 	printf(_("-f cd (16 bit little endian, 44100, stereo)\n"));
 	printf(_("-f cdr (16 bit big endian, 44100, stereo)\n"));
 	printf(_("-f dat (16 bit little endian, 48000, stereo)\n"));

@@ -167,7 +167,7 @@ static void usage(void)
 	printf(_("  server mode: aseqnet [-options]\n"));
 	printf(_("  client mode: aseqnet [-options] server_host\n"));
 	printf(_("options:\n"));
-	printf(_("  -p,--port # : sepcify TCP port (digit or service name)\n"));
+	printf(_("  -p,--port # : specify TCP port (digit or service name)\n"));
 	printf(_("  -s,--source addr : read from given addr (client:port)\n"));
 	printf(_("  -d,--dest addr : write to given addr (client:port)\n"));
 	printf(_("  -v, --verbose : print verbose messages\n"));
