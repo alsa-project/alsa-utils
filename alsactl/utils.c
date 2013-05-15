@@ -111,7 +111,7 @@ static void syslog_(int prio, const char *fcn, long line,
 	buf[sizeof(buf)-1] = '\0';
 	vsnprintf(buf + strlen(buf), sizeof(buf)-strlen(buf), fmt, ap);
 	buf[sizeof(buf)-1] = '\0';
-	syslog(LOG_INFO, buf);
+	syslog(LOG_INFO, "%s", buf);
 }
 
 void info_(const char *fcn, long line, const char *fmt, ...)
