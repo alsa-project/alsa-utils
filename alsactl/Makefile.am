@@ -11,9 +11,6 @@ alsactl_SOURCES=alsactl.c state.c lock.c utils.c init_parse.c daemon.c
 alsactl_CFLAGS=$(AM_CFLAGS) -D__USE_GNU -DSYS_ASOUNDRC=\"$(ASOUND_STATE_DIR)/asound.state\" -DSYS_PIDFILE=\"$(ALSACTL_PIDFILE_DIR)/alsactl.pid\"
 noinst_HEADERS=alsactl.h list.h init_sysdeps.c init_utils_string.c init_utils_run.c init_sysfs.c
 
-dist_udevrules_DATA = \
-	90-alsa-restore.rules
-
 if HAVE_SYSTEMD
 
 systemdsystemunit_DATA = \
