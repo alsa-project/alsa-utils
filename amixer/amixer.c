@@ -1105,6 +1105,7 @@ static int cset(int argc, char *argv[], int roflag, int keep_handle)
 		}
 		return err;
 	}
+	snd_ctl_elem_info_get_id(info, id);     /* FIXME: Remove it when hctl find works ok !!! */
 	if (!roflag) {
 		snd_ctl_elem_value_set_id(control, id);
 		if ((err = snd_ctl_elem_read(handle, control)) < 0) {
