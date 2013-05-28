@@ -431,7 +431,11 @@ static void print_spaces(unsigned int spaces)
 
 static void print_dB(long dB)
 {
-	printf("%li.%02lidB", dB / 100, (dB < 0 ? -dB : dB) % 100);
+	if (dB < 0) {
+		printf("-%li.%02lidB", -dB / 100, -dB % 100);
+	} else {
+		printf("%li.%02lidB", dB / 100, dB % 100);
+	}
 }
 
 static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_size)
