@@ -771,8 +771,16 @@ static int setup_wav_file(int chn)
 
   if (given_test_wav_file)
     return check_wav_file(chn, given_test_wav_file);
-  else
-    return check_wav_file(chn, wavs[chn]);
+
+#ifdef CONFIG_SUPPORT_CHMAP
+  if (channel_map_set && chn < channel_map->channels) {
+    int channel = channel_map->pos[chn] - SND_CHMAP_FL;
+    if (channel >= 0 && channel < MAX_CHANNELS)
+      return check_wav_file(chn, wavs[channel]);
+  }
+#endif
+
+  return check_wav_file(chn, wavs[chn]);
 }
 
 static int read_wav(uint16_t *buf, int channel, int offset, int bufsize)
@@ -1179,7 +1187,7 @@ int main(int argc, char *argv[]) {
 
     if (test_type == TEST_WAV) {
       for (chn = 0; chn < channels; chn++) {
-	if (setup_wav_file(chn) < 0)
+	if (setup_wav_file(get_speaker_channel(chn)) < 0)
 	  prg_exit(EXIT_FAILURE);
       }
     }
