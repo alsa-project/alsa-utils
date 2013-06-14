@@ -443,6 +443,7 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 	unsigned int type = tlv[0];
 	unsigned int size;
 	unsigned int idx = 0;
+	const char *chmap_type = NULL;
 
 	if (tlv_size < 2 * sizeof(unsigned int)) {
 		printf("TLV size error!\n");
@@ -538,6 +539,27 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 			print_dB((int)tlv[2]);
 			printf(",max=");
 			print_dB((int)tlv[3]);
+		}
+		break;
+#endif
+#ifdef SND_CTL_TLVT_CHMAP_FIXED
+	case SND_CTL_TLVT_CHMAP_FIXED:
+		chmap_type = "fixed";
+		/* Fall through */
+	case SND_CTL_TLVT_CHMAP_VAR:
+		if (!chmap_type)
+			chmap_type = "variable";
+		/* Fall through */
+	case SND_CTL_TLVT_CHMAP_PAIRED:
+		if (!chmap_type)
+			chmap_type = "paired";
+		printf("chmap-%s=", chmap_type);
+
+		while (size > 0) {
+			printf("%s", snd_pcm_chmap_name(tlv[idx++]));
+			size -= sizeof(unsigned int);
+			if (size > 0)
+				printf(",");
 		}
 		break;
 #endif
