@@ -14,4 +14,4 @@ Conflicts=shutdown.target
 [Service]
 Type=simple
 ExecStart=-@sbindir@/alsactl -s -n 19 -c rdaemon
-ExecStop=-@sbindir@/alsactl -s rkill save_and_quit
+ExecStop=-@sbindir@/alsactl -s kill save_and_quit
