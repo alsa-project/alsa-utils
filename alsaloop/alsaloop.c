@@ -31,7 +31,7 @@
 #include <math.h>
 #include <pthread.h>
 #include <syslog.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include "alsaloop.h"
 
 struct loopback_thread {
