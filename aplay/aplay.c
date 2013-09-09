@@ -242,7 +242,7 @@ _("Usage: %s [OPTION]... [FILE]...\n"
   )
 		, command);
 	printf(_("Recognized sample formats are:"));
-	for (k = 0; k < SND_PCM_FORMAT_LAST; ++k) {
+	for (k = 0; k <= SND_PCM_FORMAT_LAST; ++k) {
 		const char *s = snd_pcm_format_name(k);
 		if (s)
 			printf(" %s", s);
@@ -1114,7 +1114,7 @@ static void show_available_sample_formats(snd_pcm_hw_params_t* params)
 	snd_pcm_format_t format;
 
 	fprintf(stderr, "Available formats:\n");
-	for (format = 0; format < SND_PCM_FORMAT_LAST; format++) {
+	for (format = 0; format <= SND_PCM_FORMAT_LAST; format++) {
 		if (snd_pcm_hw_params_test_format(handle, params, format) == 0)
 			fprintf(stderr, "- %s\n", snd_pcm_format_name(format));
 	}
