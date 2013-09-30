@@ -468,7 +468,7 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 				return;
 			}
 			decode_tlv(spaces + 2, tlv + idx, tlv[idx+1] + 8);
-			idx += 2 + (tlv[1] + sizeof(unsigned int) - 1) / sizeof(unsigned int);
+			idx += 2 + (tlv[idx+1] + sizeof(unsigned int) - 1) / sizeof(unsigned int);
 		}
 		break;
 	case SND_CTL_TLVT_DB_SCALE:
