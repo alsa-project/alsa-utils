@@ -460,6 +460,7 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 	}
 	switch (type) {
 	case SND_CTL_TLVT_CONTAINER:
+		printf("container\n");
 		size += sizeof(unsigned int) -1;
 		size /= sizeof(unsigned int);
 		while (idx < size) {
