@@ -267,8 +267,10 @@ static int get_speaker_channel(int chn)
 static const char *get_channel_name(int chn)
 {
 #ifdef CONFIG_SUPPORT_CHMAP
-  if (channel_map && chn < channel_map->channels) {
-    const char *name = snd_pcm_chmap_long_name(channel_map->pos[chn]);
+  if (channel_map) {
+    const char *name = NULL;
+    if (chn < channel_map->channels)
+      name = snd_pcm_chmap_long_name(channel_map->pos[chn]);
     return name ? name : "Unknown";
   }
 #endif
