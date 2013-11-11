@@ -88,6 +88,8 @@ enum {
 #define BE_INT(v)		(v)
 #endif
 
+#define ARRAY_SIZE(x) (int)(sizeof(x)/sizeof(x[0]))
+
 static char              *device      = "default";       /* playback device */
 static snd_pcm_format_t   format      = SND_PCM_FORMAT_S16; /* sample format */
 static unsigned int       rate        = 48000;	            /* stream rate */
@@ -110,6 +112,7 @@ static snd_pcm_t *pcm_handle = NULL;
 #ifdef CONFIG_SUPPORT_CHMAP
 static snd_pcm_chmap_t *channel_map;
 static int channel_map_set;
+static unsigned int *ordered_channels;
 #endif
 
 static const char *const channel_name[MAX_CHANNELS] = {
@@ -156,36 +159,94 @@ static const int	channels8[] = {
   5, /* LFE         */
 };
 
-static int get_mapped_channel(int chn)
-{
 #ifdef CONFIG_SUPPORT_CHMAP
-  static const int maps[MAX_CHANNELS] = {
-    SND_CHMAP_FL,
-    SND_CHMAP_FR,
-    SND_CHMAP_RL,
-    SND_CHMAP_RR,
-    SND_CHMAP_FC,
-    SND_CHMAP_LFE,
-    SND_CHMAP_SL,
-    SND_CHMAP_SR,
-  };
+/* circular clockwise and bottom-to-top order */
+static const int channel_order[] = {
+  [SND_CHMAP_FLW]  =  10,
+  [SND_CHMAP_FL]   =  20,
+  [SND_CHMAP_TFL]  =  30,
+  [SND_CHMAP_FLC]  =  40,
+  [SND_CHMAP_TFLC] =  50,
+  [SND_CHMAP_FC]   =  60,
+  [SND_CHMAP_TFC]  =  70,
+  [SND_CHMAP_FRC]  =  80,
+  [SND_CHMAP_TFRC] =  90,
+  [SND_CHMAP_FR]   = 100,
+  [SND_CHMAP_TFR]  = 110,
+  [SND_CHMAP_FRW]  = 120,
+  [SND_CHMAP_SR]   = 130,
+  [SND_CHMAP_TSR]  = 140,
+  [SND_CHMAP_RR]   = 150,
+  [SND_CHMAP_TRR]  = 160,
+  [SND_CHMAP_RRC]  = 170,
+  [SND_CHMAP_RC]   = 180,
+  [SND_CHMAP_TRC]  = 190,
+  [SND_CHMAP_RLC]  = 200,
+  [SND_CHMAP_RL]   = 210,
+  [SND_CHMAP_TRL]  = 220,
+  [SND_CHMAP_SL]   = 230,
+  [SND_CHMAP_TSL]  = 240,
+  [SND_CHMAP_BC]   = 250,
+  [SND_CHMAP_TC]   = 260,
+  [SND_CHMAP_LLFE] = 270,
+  [SND_CHMAP_LFE]  = 280,
+  [SND_CHMAP_RLFE] = 290,
+  /* not in table  = 10000 */
+  [SND_CHMAP_UNKNOWN] = 20000,
+  [SND_CHMAP_NA]      = 30000,
+};
 
-  if (channel_map && maps[chn]) {
-    int i;
-    for (i = 0; i < channel_map->channels; i++) {
-      if (channel_map->pos[i] == maps[chn])
-	return i;
-    }
+static int chpos_cmp(const void *chnum1p, const void *chnum2p)
+{
+  int chnum1 = *(int *)chnum1p;
+  int chnum2 = *(int *)chnum2p;
+  int chpos1 = channel_map->pos[chnum1];
+  int chpos2 = channel_map->pos[chnum2];
+  int weight1 = 10000;
+  int weight2 = 10000;
+
+  if (chpos1 < ARRAY_SIZE(channel_order) && channel_order[chpos1])
+    weight1 = channel_order[chpos1];
+  if (chpos2 < ARRAY_SIZE(channel_order) && channel_order[chpos2])
+    weight2 = channel_order[chpos2];
+
+  if (weight1 == weight2) {
+    /* order by channel number if both have the same position (e.g. UNKNOWN)
+     * or if neither is in channel_order[] */
+    return chnum1 - chnum2;
   }
-#endif
-  return chn;
+
+  /* order according to channel_order[] */
+  return weight1 - weight2;
 }
+
+static int *order_channels(void)
+{
+  /* create a (playback order => channel number) table with channels ordered
+   * according to channel_order[] values */
+  int i;
+  int *ordered_chs;
+
+  ordered_chs = calloc(channel_map->channels, sizeof(*ordered_chs));
+  if (!ordered_chs)
+    return NULL;
+
+  for (i = 0; i < channel_map->channels; i++)
+    ordered_chs[i] = i;
+
+  qsort(ordered_chs, channel_map->channels, sizeof(*ordered_chs), chpos_cmp);
+
+  return ordered_chs;
+}
+#endif
 
 static int get_speaker_channel(int chn)
 {
 #ifdef CONFIG_SUPPORT_CHMAP
-  if (channel_map_set)
+  if (channel_map_set || (ordered_channels && chn >= channel_map->channels))
     return chn;
+  if (ordered_channels)
+    return ordered_channels[chn];
 #endif
 
   switch (channels) {
@@ -200,7 +261,7 @@ static int get_speaker_channel(int chn)
     break;
   }
 
-  return get_mapped_channel(chn);
+  return chn;
 }
 
 static const char *get_channel_name(int chn)
@@ -611,6 +672,11 @@ static int config_chmap(snd_pcm_t *handle, const char *mapstr)
   }
 
   channel_map = snd_pcm_get_chmap(handle);
+
+  /* create a channel order table for default layouts */
+  if (channel_map)
+    ordered_channels = order_channels();
+
   return 0;
 }
 #endif
@@ -1230,6 +1296,9 @@ int main(int argc, char *argv[]) {
 
 
   free(frames);
+#ifdef CONFIG_SUPPORT_CHMAP
+  free(ordered_channels);
+#endif
 
   return prg_exit(EXIT_SUCCESS);
 }
