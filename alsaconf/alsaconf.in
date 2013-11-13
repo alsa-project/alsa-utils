@@ -308,9 +308,11 @@ elif [ "$kernel" = "new" ]; then
     cfgout="/etc/modprobe.d/50-sound.conf"
     cfgoldout="/etc/modprobe.d/sound"
     if [ ! -f $cfgout ]; then
-	modver=$(modprobe -V | sed -e's/^module-init-tools version //')
-	case "$modver" in
-	3.[789]*)
+	case "$(modprobe -V)" in
+	"module-init-tools version "3.[789]*|\
+	"module-init-tools version "3.1[0-9]*)
+	  ;;
+	"kmod version "*)
 	  ;;
 	*)
 	  cfgout="/etc/modprobe.d/sound"
