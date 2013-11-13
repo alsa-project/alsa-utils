@@ -300,9 +300,7 @@ if [ -n "$cfgfile" ]; then
     exit 1
   fi
 else
-if [ "$distribution" = "gentoo" ]; then
-  cfgfile="/etc/modules.d/alsa"
-elif [ "$kernel" = "new" ]; then
+if [ "$kernel" = "new" ]; then
   cfgfile="/etc/modprobe.conf"
   if [ -d /etc/modprobe.d ]; then
     cfgout="/etc/modprobe.d/50-sound.conf"
