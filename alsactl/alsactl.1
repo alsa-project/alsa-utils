@@ -6,6 +6,8 @@ alsactl \- advanced controls for ALSA soundcard driver
 
 \fBalsactl\fP [\fIoptions\fP] [\fIstore\fP|\fIrestore\fP|\fIinit\fP] <card # or id or device>
 
+\fBalsactl\fP \fImonitor\fP <card # or id>
+
 .SH DESCRIPTION
 \fBalsactl\fP is used to control advanced settings for the ALSA
 soundcard drivers. It supports multiple soundcards. If your card has
@@ -34,8 +36,12 @@ is not known, error code 99 is returned.
 \fIkill\fP notifies the daemon to do the specified operation (quit,
 rescan, save_and_quit).
 
+\fImonitor\fP is for monitoring the events received from the given
+control device.
+
 If no soundcards are specified, setup for all cards will be saved or
-loaded.
+loaded (except for \fImonitor\fP command that can handle only a single
+card; it selects the card "default" when unspecified).
 
 .SH OPTIONS
 

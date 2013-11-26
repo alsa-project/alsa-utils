@@ -100,6 +100,7 @@ static struct arg args[] = {
 { CARDCMD, "daemon", "store state periodically for one or each soundcards" },
 { CARDCMD, "rdaemon", "like daemon but do the state restore at first" },
 { KILLCMD, "kill", "notify daemon to quit, rescan or save_and_quit" },
+{ CARDCMD, "monitor", "monitor control events" },
 { 0, NULL, NULL }
 };
 
@@ -363,6 +364,8 @@ int main(int argc, char *argv[])
 		res = state_daemon(cfgfile, cardname, period, pidfile);
 	} else if (!strcmp(cmd, "kill")) {
 		res = state_daemon_kill(pidfile, cardname);
+	} else if (!strcmp(cmd, "monitor")) {
+		res = monitor(cardname);
 	} else {
 		fprintf(stderr, "alsactl: Unknown command '%s'...\n", cmd);
 		res = -ENODEV;
