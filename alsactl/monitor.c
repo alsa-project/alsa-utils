@@ -22,14 +22,10 @@
 #include <stdio.h>
 #include <alsa/asoundlib.h>
 
-int monitor(const char *name)
+static int open_ctl(const char *name, snd_ctl_t **ctlp)
 {
 	snd_ctl_t *ctl;
-	snd_ctl_event_t *event;
 	int err;
-
-	if (!name)
-		name = "default";
 
 	err = snd_ctl_open(&ctl, name, SND_CTL_READONLY);
 	if (err < 0) {
@@ -42,36 +38,108 @@ int monitor(const char *name)
 		snd_ctl_close(ctl);
 		return err;
 	}
-	snd_ctl_event_alloca(&event);
-	while (snd_ctl_read(ctl, event) > 0) {
-		unsigned int mask;
-
-		if (snd_ctl_event_get_type(event) != SND_CTL_EVENT_ELEM)
-			continue;
-
-		printf("#%d (%i,%i,%i,%s,%i)",
-		       snd_ctl_event_elem_get_numid(event),
-		       snd_ctl_event_elem_get_interface(event),
-		       snd_ctl_event_elem_get_device(event),
-		       snd_ctl_event_elem_get_subdevice(event),
-		       snd_ctl_event_elem_get_name(event),
-		       snd_ctl_event_elem_get_index(event));
-
-		mask = snd_ctl_event_elem_get_mask(event);
-		if (mask == SND_CTL_EVENT_MASK_REMOVE) {
-			printf(" REMOVE\n");
-			continue;
-		}
-		if (mask & SND_CTL_EVENT_MASK_VALUE)
-			printf(" VALUE");
-		if (mask & SND_CTL_EVENT_MASK_INFO)
-			printf(" INFO");
-		if (mask & SND_CTL_EVENT_MASK_ADD)
-			printf(" ADD");
-		if (mask & SND_CTL_EVENT_MASK_TLV)
-			printf(" TLV");
-		printf("\n");
-	}
-	snd_ctl_close(ctl);
+	*ctlp = ctl;
 	return 0;
+}
+
+static int print_event(int card, snd_ctl_t *ctl)
+{
+	snd_ctl_event_t *event;
+	unsigned int mask;
+	int err;
+
+	snd_ctl_event_alloca(&event);
+	err = snd_ctl_read(ctl, event);
+	if (err < 0)
+		return err;
+
+	if (snd_ctl_event_get_type(event) != SND_CTL_EVENT_ELEM)
+		return 0;
+
+	if (card >= 0)
+		printf("card %d, ", card);
+	printf("#%d (%i,%i,%i,%s,%i)",
+	       snd_ctl_event_elem_get_numid(event),
+	       snd_ctl_event_elem_get_interface(event),
+	       snd_ctl_event_elem_get_device(event),
+	       snd_ctl_event_elem_get_subdevice(event),
+	       snd_ctl_event_elem_get_name(event),
+	       snd_ctl_event_elem_get_index(event));
+
+	mask = snd_ctl_event_elem_get_mask(event);
+	if (mask == SND_CTL_EVENT_MASK_REMOVE) {
+		printf(" REMOVE\n");
+		return 0;
+	}
+
+	if (mask & SND_CTL_EVENT_MASK_VALUE)
+		printf(" VALUE");
+	if (mask & SND_CTL_EVENT_MASK_INFO)
+		printf(" INFO");
+	if (mask & SND_CTL_EVENT_MASK_ADD)
+		printf(" ADD");
+	if (mask & SND_CTL_EVENT_MASK_TLV)
+		printf(" TLV");
+	printf("\n");
+	return 0;
+}
+
+#define MAX_CARDS	256
+
+int monitor(const char *name)
+{
+	snd_ctl_t *ctls[MAX_CARDS];
+	int ncards = 0;
+	int show_cards;
+	int i, err;
+
+	if (!name) {
+		int card = -1;
+		while (snd_card_next(&card) >= 0 && card >= 0) {
+			char cardname[16];
+			if (ncards >= MAX_CARDS) {
+				fprintf(stderr, "alsactl: too many cards\n");
+				err = -E2BIG;
+				goto error;
+			}
+			sprintf(cardname, "hw:%d", card);
+			err = open_ctl(cardname, &ctls[ncards]);
+			if (err < 0)
+				goto error;
+			ncards++;
+		}
+		show_cards = 1;
+	} else {
+		err = open_ctl(name, &ctls[0]);
+		if (err < 0)
+			goto error;
+		ncards++;
+		show_cards = 0;
+	}
+
+	for (;;) {
+		struct pollfd fds[ncards];
+
+		for (i = 0; i < ncards; i++)
+			snd_ctl_poll_descriptors(ctls[i], &fds[i], 1);
+
+		err = poll(fds, ncards, -1);
+		if (err <= 0) {
+			err = 0;
+			break;
+		}
+
+		for (i = 0; i < ncards; i++) {
+			unsigned short revents;
+			snd_ctl_poll_descriptors_revents(ctls[i], &fds[i], 1,
+							 &revents);
+			if (revents & POLLIN)
+				print_event(show_cards ? i : -1, ctls[i]);
+		}
+	}
+
+ error:
+	for (i = 0; i < ncards; i++)
+		snd_ctl_close(ctls[i]);
+	return err;
 }
