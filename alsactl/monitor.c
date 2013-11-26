@@ -58,6 +58,10 @@ int monitor(const char *name)
 		       snd_ctl_event_elem_get_index(event));
 
 		mask = snd_ctl_event_elem_get_mask(event);
+		if (mask == SND_CTL_EVENT_MASK_REMOVE) {
+			printf(" REMOVE\n");
+			continue;
+		}
 		if (mask & SND_CTL_EVENT_MASK_VALUE)
 			printf(" VALUE");
 		if (mask & SND_CTL_EVENT_MASK_INFO)
@@ -66,8 +70,6 @@ int monitor(const char *name)
 			printf(" ADD");
 		if (mask & SND_CTL_EVENT_MASK_TLV)
 			printf(" TLV");
-		if (mask == SND_CTL_EVENT_MASK_REMOVE)
-			printf(" REMOVE");
 		printf("\n");
 	}
 	snd_ctl_close(ctl);
