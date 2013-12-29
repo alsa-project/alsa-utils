@@ -150,10 +150,10 @@ void cerror_(const char *fcn, long line, int cond, const char *fmt, ...)
 
 	if (!cond && !debugflag)
 		return;
+	va_start(ap, fmt);
 	if (use_syslog) {
 		syslog_(LOG_ERR, fcn, line, fmt, ap);
 	} else {
-		va_start(ap, fmt);
 		fprintf(stderr, "%s: %s:%ld: ", command, fcn, line);
 		vfprintf(stderr, fmt, ap);
 		putc('\n', stderr);
@@ -167,10 +167,10 @@ void dbg_(const char *fcn, long line, const char *fmt, ...)
 
 	if (!debugflag)
 		return;
+	va_start(ap, fmt);
 	if (use_syslog) {
 		syslog_(LOG_DEBUG, fcn, line, fmt, ap);
 	} else {
-		va_start(ap, fmt);
 		fprintf(stderr, "%s: %s:%ld: ", command, fcn, line);
 		vfprintf(stderr, fmt, ap);
 		putc('\n', stderr);
