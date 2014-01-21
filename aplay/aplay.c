@@ -1509,7 +1509,7 @@ static void xrun(void)
 			timermsub(&now, &tstamp, &diff);
 			fprintf(stderr, _("%s!!! (at least %.3f ms long)\n"),
 				stream == SND_PCM_STREAM_PLAYBACK ? _("underrun") : _("overrun"),
-				diff.tv_sec * 1000 + diff.tv_nsec / 10000000.0);
+				diff.tv_sec * 1000 + diff.tv_nsec / 1000000.0);
 #else
 			fprintf(stderr, "%s !!!\n", _("underrun"));
 #endif
