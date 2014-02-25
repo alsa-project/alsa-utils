@@ -106,6 +106,7 @@ static snd_pcm_uframes_t  period_size;
 static const char *given_test_wav_file = NULL;
 static char *wav_file_dir = SOUNDSDIR;
 static int debug = 0;
+static int force_frequency = 0;
 static int in_aborting = 0;
 static snd_pcm_t *pcm_handle = NULL;
 
@@ -1015,6 +1016,7 @@ static void help(void)
 	   "-w,--wavfile	Use the given WAV file as a test sound\n"
 	   "-W,--wavdir	Specify the directory containing WAV files\n"
 	   "-m,--chmap	Specify the channel map to override\n"
+	   "-X,--force-frequency	force frequencies outside the 30-8000hz range\n"
 	   "\n"));
   printf(_("Recognized sample formats are:"));
   for (fmt = supported_formats; *fmt >= 0; fmt++) {
@@ -1057,6 +1059,7 @@ int main(int argc, char *argv[]) {
     {"wavfile",   1, NULL, 'w'},
     {"wavdir",    1, NULL, 'W'},
     {"debug",	  0, NULL, 'd'},
+    {"force-frequency",	  0, NULL, 'X'},
 #ifdef CONFIG_SUPPORT_CHMAP
     {"chmap",	  1, NULL, 'm'},
 #endif
@@ -1078,7 +1081,7 @@ int main(int argc, char *argv[]) {
   while (1) {
     int c;
     
-    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:P:t:l:s:w:W:d"
+    if ((c = getopt_long(argc, argv, "hD:r:c:f:F:b:p:P:t:l:s:w:W:d:X"
 #ifdef CONFIG_SUPPORT_CHMAP
 			 "m:"
 #endif
@@ -1114,8 +1117,6 @@ int main(int argc, char *argv[]) {
       break;
     case 'f':
       freq = atof(optarg);
-      freq = freq < 30.0 ? 30.0 : freq;
-      freq = freq > 5000.0 ? 5000.0 : freq;
       break;
     case 'b':
       buffer_time = atoi(optarg);
@@ -1173,6 +1174,9 @@ int main(int argc, char *argv[]) {
     case 'd':
       debug = 1;
       break;
+    case 'X':
+      force_frequency = 1;
+      break;
 #ifdef CONFIG_SUPPORT_CHMAP
     case 'm':
       chmap = optarg;
@@ -1188,6 +1192,13 @@ int main(int argc, char *argv[]) {
   if (morehelp) {
     help();
     exit(EXIT_SUCCESS);
+  }
+
+  if (!force_frequency) {
+    freq = freq < 30.0 ? 30.0 : freq;
+    freq = freq > 8000.0 ? 8000.0 : freq;
+  } else {
+    freq = freq < 1.0 ? 1.0 : freq;
   }
 
   if (test_type == TEST_WAV)
