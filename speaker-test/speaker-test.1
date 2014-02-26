@@ -13,7 +13,7 @@
 ..
 .TH SPEAKER\-TEST 1 "April 2nd, 2011" speaker\-test
 .SH NAME
-speaker\-test \- command\-line speaker test tone generator for ALSA 
+speaker\-test \- command\-line speaker test tone generator for ALSA
 .SH SYNOPSIS
 .B speaker\-test [\-options]
 
@@ -47,7 +47,7 @@ surround40:CARD=ICH5,DEV=0
 
 .P Each of the devices is listed in the beginning of the definition so,
 in the above example, there are four devices listed: null, default, front
-and surround40. So, if you want to test the last device you can 
+and surround40. So, if you want to test the last device you can
 run \fBspeaker\-test \-Dsurround40:ICH5 \-c 6\fR. The \fB\-c\fR option will
 indicate that the six audio channels in the device have to be tested.
 
@@ -86,7 +86,7 @@ When 0 is given, the periods given by \fB\-P\fP option is used.
 The default value is 0.
 
 .TP
-\fB\-P\fP | \fB\-\-nperiods\fP \fPPERIODS\fP
+\fB\-P\fP | \fB\-\-nperiods\fP \fIPERIODS\fP
 Use number of periods.  The default value is 4.
 
 .TP
@@ -106,7 +106,7 @@ Pink noise is perceptually uniform noise -- that is, it sounds like every freque
 You can pass the number from 1 to 3 as a backward compatibility.
 
 .TP
-\fB\-l\fP | \fB\-\-nloops\fP \fBCOUNT\fP
+\fB\-l\fP | \fB\-\-nloops\fP \fICOUNT\fP
 
 Specifies the number of loops.  Zero means to run infinitely.
 
@@ -114,7 +114,7 @@ When \fB\-s\fP option below with a valid channel is given, \fBspeaker\-test\fP w
 always a single-shot without looping.
 
 .TP
-\fB\-s\fP | \fB\-\-speaker\fP \fBCHANNEL\fP
+\fB\-s\fP | \fB\-\-speaker\fP \fICHANNEL\fP
 Do a single-shot speaker test for the given channel.  The channel number starts from 1.
 The channel number corresponds to left, right, rear-left, rear-right, center, LFE,
 side-left, side-right, and so on.
@@ -123,19 +123,23 @@ For example, when 1 is passed, it tests the left channel only once rather than b
 with looping.
 
 .TP
-\fB\-w\fP | \fB\-\-wavfile\fP
+\fB\-w\fP | \fB\-\-wavfile\fP \fIFILE\fP
 Use the given WAV file for the playback instead of pre-defined WAV files.
 
 .TP
-\fB\-W\fP | \fB\-\-wavdir\fP
+\fB\-W\fP | \fB\-\-wavdir\fP \fIDIRECTORY\fP
 Specify the directory containing WAV files for playback.
 The default path is \fI/usr/share/sounds/alsa\fP.
 
 .TP
-\fB\-m\fP | \fB\-\-chmap\fP
+\fB\-m\fP | \fB\-\-chmap\fP \fIMAP\fP
 Pass the channel map to override.
 If the playback in a specific channel order or channel positions is
 required, pass the channel position strings to this option.
+
+.TP
+\fB\-X\fP | \fB\-\-force-frequency\fP
+Allow supplied \fIFREQ\fP to be outside the default range of 30-8000Hz. A minimum of 1Hz is still enforced.
 
 .SH USAGE EXAMPLES
 
