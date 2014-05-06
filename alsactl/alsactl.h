@@ -5,6 +5,7 @@ extern int do_lock;
 extern int use_syslog;
 extern char *command;
 extern char *statefile;
+extern char *lockpath;
 
 void info_(const char *fcn, long line, const char *fmt, ...);
 void error_(const char *fcn, long line, const char *fmt, ...);

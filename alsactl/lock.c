@@ -36,17 +36,24 @@ static int state_lock_(const char *file, int lock, int timeout)
 	struct flock lck;
 	struct stat st;
 	char lcktxt[12];
+	char *filename;
 	char *nfile;
 
 	if (!do_lock)
 		return 0;
-	nfile = malloc(strlen(file) + 6);
+
+	/* only use the actual filename, not the path */
+	filename = strrchr(file, '/');
+	if (!filename)
+		filename = file;
+
+	nfile = malloc(strlen(lockpath) + strlen(filename) + 7);
 	if (nfile == NULL) {
 		error("No enough memory...");
 		return -ENOMEM;
 	}
-	strcpy(nfile, file);
-	strcat(nfile, ".lock");
+
+	sprintf(nfile, "%s/%s.lock", lockpath, filename);
 	lck.l_type = lock ? F_WRLCK : F_UNLCK;
 	lck.l_whence = SEEK_SET;
 	lck.l_start = 0;
