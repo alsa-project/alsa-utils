@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
 EXTRA_DIST = amidi.1
 
 bin_PROGRAMS = amidi

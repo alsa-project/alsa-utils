@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
 EXTRA_DIST = README.aconnect aconnect.1
 LDADD = $(LIBINTL)
 

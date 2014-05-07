@@ -19,7 +19,7 @@ alsamixer_SOURCES = card_select.c card_select.h \
 		widget.c widget.h
 man_MANS = alsamixer.1
 EXTRA_DIST = alsamixer.1
-alsamixer_INCLUDES = -I$(top_srcdir)/include
+alsamixer_CPPFLAGS = -I$(top_srcdir)/include
 
 #LDFLAGS = -static
 #CFLAGS += -g -Wall

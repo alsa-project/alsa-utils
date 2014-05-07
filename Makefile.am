@@ -1,4 +1,4 @@
-INCLUDES=-I$(top_srcdir)/include
+AM_CPPFLAGS=-I$(top_srcdir)/include
 
 SUBDIRS = include alsactl alsaucm utils m4 po
 if ALSAMIXER

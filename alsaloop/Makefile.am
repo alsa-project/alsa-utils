@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
 LDADD = -lm
 AM_CFLAGS = -D_GNU_SOURCE
 if HAVE_SAMPLERATE

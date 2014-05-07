@@ -22,4 +22,4 @@ stamp-vh: $(top_builddir)/configure.in
               echo timestamp > stamp-vh)
 	-@rm -f ver.tmp
 
-INCLUDES=-I$(top_srcdir)/include
+AM_CPPFLAGS=-I$(top_srcdir)/include
