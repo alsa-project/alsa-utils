@@ -6,11 +6,11 @@ fi
 aclocal $alsa_m4_flags $ACLOCAL_FLAGS
 # save original files to avoid stupid modifications by gettextize
 cp Makefile.am Makefile.am.ok
-cp configure.in configure.in.ok
+cp configure.ac configure.ac.ok
 gettextize -c -f --no-changelog
 echo "EXTRA_DIST = gettext.m4" > m4/Makefile.am
 cp Makefile.am.ok Makefile.am
-cp configure.in.ok configure.in
+cp configure.ac.ok configure.ac
 autoheader
 automake --foreign --copy --add-missing
 touch depcomp		# for older automake
