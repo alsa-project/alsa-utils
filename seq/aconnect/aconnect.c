@@ -292,6 +292,7 @@ int main(int argc, char **argv)
 			convert_real = 0;
 			break;
 		case 'l':
+			command = LIST;
 			list_subs = 1;
 			break;
 		case 'x':
