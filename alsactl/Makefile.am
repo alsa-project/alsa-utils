@@ -7,9 +7,16 @@ man_MANS += alsactl_init.7
 endif
 EXTRA_DIST=alsactl.1 alsactl_init.xml
 
-alsactl_SOURCES=alsactl.c state.c lock.c utils.c init_parse.c daemon.c monitor.c
-alsactl_CFLAGS=$(AM_CFLAGS) -D__USE_GNU -DSYS_ASOUNDRC=\"$(ASOUND_STATE_DIR)/asound.state\" -DSYS_PIDFILE=\"$(ALSACTL_PIDFILE_DIR)/alsactl.pid\"
-noinst_HEADERS=alsactl.h list.h init_sysdeps.c init_utils_string.c init_utils_run.c init_sysfs.c
+alsactl_SOURCES=alsactl.c state.c lock.c utils.c init_parse.c daemon.c \
+                monitor.c
+
+alsactl_CFLAGS=$(AM_CFLAGS) -D__USE_GNU \
+               -DSYS_ASOUNDRC=\"$(ASOUND_STATE_DIR)/asound.state\" \
+               -DSYS_LOCKPATH=\"$(ASOUND_LOCK_DIR)\" \
+               -DSYS_PIDFILE=\"$(ALSACTL_PIDFILE_DIR)/alsactl.pid\"
+
+noinst_HEADERS=alsactl.h list.h init_sysdeps.c init_utils_string.c \
+               init_utils_run.c init_sysfs.c
 
 udevrules_DATA = \
 	90-alsa-restore.rules

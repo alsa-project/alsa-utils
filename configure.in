@@ -330,6 +330,12 @@ AC_ARG_WITH([asound-state-dir],
         [ASOUND_STATE_DIR="/var/lib/alsa"])
 AC_SUBST(ASOUND_STATE_DIR)
 
+AC_ARG_WITH([alsactl-lock-dir],
+        AS_HELP_STRING([--with-alsactl-lock-dir=DIR], [Directory to place lock files in]),
+        [ASOUND_LOCK_DIR="$withval"],
+        [ASOUND_LOCK_DIR="/var/lock"])
+AC_SUBST(ASOUND_LOCK_DIR)
+
 AC_ARG_WITH([alsactl-pidfile-dir],
         AS_HELP_STRING([--with-alsactl-pidfile-dir=DIR], [Directory to place alsactl.pid file in]),
         [ALSACTL_PIDFILE_DIR="$withval"],
