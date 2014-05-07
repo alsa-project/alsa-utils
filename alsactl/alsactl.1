@@ -1,4 +1,4 @@
-.TH ALSACTL 1 "05 Apr 2013"
+.TH ALSACTL 1 "07 May 2014"
 .SH NAME
 alsactl \- advanced controls for ALSA soundcard driver
 
@@ -59,6 +59,20 @@ Print alsactl version number.
 .TP
 \fI\-f, \-\-file\fP
 Select the configuration file to use. The default is /var/lib/alsa/asound.state.
+
+.TP
+\fI\-l, \-\-lock\fP
+Use the file locking to serialize the concurrent access to the state file (this
+option is default for the global state file).
+
+.TP
+\fI\-L, \-\-no-lock\fP
+Do not use the file locking to serialize the concurrent access to the state
+file (including the global state file).
+
+.TP
+\fI\-O, \-\-lock-state-file\fP
+Select the state lock file path.
 
 .TP
 \fI\-F, \-\-force\fP

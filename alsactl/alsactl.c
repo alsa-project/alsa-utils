@@ -49,7 +49,7 @@ int do_lock = 0;
 int use_syslog = 0;
 char *command;
 char *statefile = NULL;
-char *lockpath = SYS_LOCKPATH;
+char *lockfile = SYS_LOCKFILE;
 
 #define TITLE	0x0100
 #define HEADER	0x0200
@@ -75,7 +75,8 @@ static struct arg args[] = {
 { HEADER, NULL, "Available state options:" },
 { FILEARG | 'f', "file", "configuration file (default " SYS_ASOUNDRC ")" },
 { 'l', "lock", "use file locking to serialize concurrent access" },
-{ FILEARG | 'D', "lock-dir", "directory to use for lock files (default " SYS_LOCKPATH ")" },
+{ 'L', "no-lock", "do not use file locking to serialize concurrent access" },
+{ FILEARG | 'O', "lock-state-file", "state lock file path (default " SYS_LOCKFILE ")" },
 { 'F', "force", "try to restore the matching controls as much as possible" },
 { 0, NULL, "  (default mode)" },
 { 'g', "ignore", "ignore 'No soundcards found' error" },
@@ -237,8 +238,12 @@ int main(int argc, char *argv[])
 		case 'l':
 			do_lock = 1;
 			break;
-		case 'D':
-			lockpath = optarg;
+		case 'L':
+			do_lock = -1;
+			break;
+		case 'O':
+			lockfile = optarg;
+			break;
 		case 'F':
 			force_restore = 1;
 			break;
@@ -331,7 +336,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* the global system file should be always locked */
-	if (strcmp(cfgfile, SYS_ASOUNDRC) == 0)
+	if (strcmp(cfgfile, SYS_ASOUNDRC) == 0 && do_lock >= 0)
 		do_lock = 1;
 
 	/* when running in background, use syslog for reports */
