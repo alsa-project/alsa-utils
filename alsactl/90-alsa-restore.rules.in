@@ -1,4 +1,4 @@
-ACTION=="add", SUBSYSTEM=="sound", KERNEL=="controlC*", KERNELS!="card*", TEST=="@sbindir@", TEST=="@datadir@", GOTO="alsa_restore_go"
+ACTION=="add", SUBSYSTEM=="sound", KERNEL=="controlC*", KERNELS!="card*", TEST=="@sbindir@", TEST=="@mydatadir@", GOTO="alsa_restore_go"
 GOTO="alsa_restore_end"
 
 LABEL="alsa_restore_go"

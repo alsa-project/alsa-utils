@@ -44,7 +44,7 @@ endif
 
 edit = \
 	$(SED) -r -e 's,@sbindir\@,$(sbindir),g' \
-		  -e 's,@datadir\@,$(mydatadir),g' \
+		  -e 's,@mydatadir\@,$(mydatadir),g' \
 		  -e 's,@daemonswitch\@,$(ALSACTL_DAEMONSWITCH),g' \
 							< $< > $@ || rm $@
 
