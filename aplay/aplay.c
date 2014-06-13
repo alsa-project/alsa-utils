@@ -1774,12 +1774,12 @@ static void compute_max_peak(u_char *data, size_t count)
 		fflush(stderr);
 	}
 	else if(verbose==3) {
-		printf(_("Max peak (%li samples): 0x%08x "), (long)ocount, max_peak[0]);
+		fprintf(stderr, _("Max peak (%li samples): 0x%08x "), (long)ocount, max_peak[0]);
 		for (val = 0; val < 20; val++)
 			if (val <= perc[0] / 5)
-				putchar('#');
+				putc('#', stderr);
 			else
-				putchar(' ');
+				putc(' ', stderr);
 		fprintf(stderr, " %i%%\n", perc[0]);
 		fflush(stderr);
 	}
