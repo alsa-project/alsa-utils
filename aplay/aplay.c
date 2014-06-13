@@ -1921,7 +1921,7 @@ static ssize_t pcm_write(u_char *data, size_t count)
 		count = chunk_size;
 	}
 	data = remap_data(data, count);
-	while (count > 0) {
+	while (count > 0 && !in_aborting) {
 		if (test_position)
 			do_test_position();
 		check_stdin();
@@ -1964,7 +1964,7 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
 		count = chunk_size;
 	}
 	data = remap_datav(data, count);
-	while (count > 0) {
+	while (count > 0 && !in_aborting) {
 		unsigned int channel;
 		void *bufs[channels];
 		size_t offset = result;
@@ -2013,7 +2013,7 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 		count = chunk_size;
 	}
 
-	while (count > 0) {
+	while (count > 0 && !in_aborting) {
 		if (test_position)
 			do_test_position();
 		check_stdin();
@@ -2052,7 +2052,7 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 		count = chunk_size;
 	}
 
-	while (count > 0) {
+	while (count > 0 && !in_aborting) {
 		unsigned int channel;
 		void *bufs[channels];
 		size_t offset = result;
