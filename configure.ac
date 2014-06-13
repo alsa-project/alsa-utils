@@ -292,6 +292,7 @@ AC_DEFINE_UNQUOTED(SOUNDSDIR, "$soundsdir", [directory containing sample data])
 
 mydatadir="$dir/alsa"
 AC_DEFINE_UNQUOTED(DATADIR, "$mydatadir", [directory containing alsa configuration])
+AC_SUBST(mydatadir)
 
 AC_ARG_WITH(testsound,
   AS_HELP_STRING([--with-testsound=file], [give the path of test sound file for alsaconf]),
