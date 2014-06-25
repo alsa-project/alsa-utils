@@ -29,6 +29,7 @@
 #include "widget.h"
 #include "mixer_widget.h"
 #include "mixer_display.h"
+#include "mixer_controls.h"
 #include "mainloop.h"
 
 static WINDOW *curses_initialized;
