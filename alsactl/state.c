@@ -1626,7 +1626,7 @@ int save_state(const char *file, const char *cardname)
 	snd_output_close(out);
 	if (err < 0) {
 		error("snd_config_save: %s", snd_strerror(err));
-	} else {
+	} else if (nfile) {
 		err = rename(nfile, file);
 		if (err < 0)
 			error("rename failed: %s (%s)", strerror(-err), file);
