@@ -14,4 +14,3 @@ Type=oneshot
 RemainAfterExit=true
 ExecStart=-@sbindir@/alsactl restore
 ExecStop=-@sbindir@/alsactl store
-StandardOutput=syslog
