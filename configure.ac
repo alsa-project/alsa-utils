@@ -360,4 +360,4 @@ AC_OUTPUT(Makefile alsactl/Makefile alsactl/init/Makefile \
 	  utils/alsa-utils.spec seq/Makefile seq/aconnect/Makefile \
 	  seq/aplaymidi/Makefile seq/aseqdump/Makefile seq/aseqnet/Makefile \
 	  speaker-test/Makefile speaker-test/samples/Makefile \
-	  alsaloop/Makefile)
+	  alsaloop/Makefile alsa-info/Makefile)
