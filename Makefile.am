@@ -1,6 +1,6 @@
 AM_CPPFLAGS=-I$(top_srcdir)/include
 
-SUBDIRS = include alsactl alsaucm utils m4 po
+SUBDIRS = include alsactl alsaucm utils m4 po alsa-info
 if ALSAMIXER
 SUBDIRS += alsamixer
 endif
