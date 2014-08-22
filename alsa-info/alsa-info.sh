@@ -661,6 +661,7 @@ if [ -n "$1" ]; then
 			shift
 			NFILE="$1"
 			KEEP_OUTPUT="yes"
+			withall
 			;;
 		--debug)
 			echo "Debugging enabled. $FILE and $TEMPDIR will not be deleted"
