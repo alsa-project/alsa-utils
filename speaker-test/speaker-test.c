@@ -1307,6 +1307,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  snd_pcm_drain(handle);
 
   free(frames);
 #ifdef CONFIG_SUPPORT_CHMAP
