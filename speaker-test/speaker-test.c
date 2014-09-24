@@ -113,7 +113,7 @@ static snd_pcm_t *pcm_handle = NULL;
 #ifdef CONFIG_SUPPORT_CHMAP
 static snd_pcm_chmap_t *channel_map;
 static int channel_map_set;
-static unsigned int *ordered_channels;
+static int *ordered_channels;
 #endif
 
 static const char *const channel_name[MAX_CHANNELS] = {
