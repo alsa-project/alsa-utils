@@ -157,8 +157,8 @@ void cerror_(const char *fcn, long line, int cond, const char *fmt, ...)
 		fprintf(stderr, "%s: %s:%ld: ", command, fcn, line);
 		vfprintf(stderr, fmt, ap);
 		putc('\n', stderr);
-		va_end(ap);
 	}
+	va_end(ap);
 }
 
 void dbg_(const char *fcn, long line, const char *fmt, ...)
@@ -174,6 +174,6 @@ void dbg_(const char *fcn, long line, const char *fmt, ...)
 		fprintf(stderr, "%s: %s:%ld: ", command, fcn, line);
 		vfprintf(stderr, fmt, ap);
 		putc('\n', stderr);
-		va_end(ap);
 	}
+	va_end(ap);
 }
