@@ -1544,6 +1544,7 @@ int save_state(const char *file, const char *cardname)
 	snd_output_t *out;
 	int stdio;
 	char *nfile = NULL;
+	int lock_fd = -EINVAL;
 
 	err = snd_config_top(&config);
 	if (err < 0) {
@@ -1555,12 +1556,16 @@ int save_state(const char *file, const char *cardname)
 		nfile = malloc(strlen(file) + 5);
 		if (nfile == NULL) {
 			error("No enough memory...");
+			err = -ENOMEM;
 			goto out;
 		}
 		strcpy(nfile, file);
 		strcat(nfile, ".new");
-		if (state_lock(file, 1, 10) != 0)
+		lock_fd = state_lock(file, 10);
+		if (lock_fd < 0) {
+			err = lock_fd;
 			goto out;
+		}
 	}
 	if (!stdio && (err = snd_input_stdio_open(&in, file, "r")) >= 0) {
 		err = snd_config_load(config, in);
@@ -1632,8 +1637,8 @@ int save_state(const char *file, const char *cardname)
 			error("rename failed: %s (%s)", strerror(-err), file);
 	}
 out:
-	if (!stdio)
-		state_lock(file, 0, 10);
+	if (!stdio && lock_fd >= 0)
+		state_unlock(lock_fd, file);
 	free(nfile);
 	snd_config_delete(config);
 	snd_config_update_free_global();
@@ -1646,7 +1651,7 @@ int load_state(const char *file, const char *initfile, const char *cardname,
 	int err, finalerr = 0;
 	snd_config_t *config;
 	snd_input_t *in;
-	int stdio, locked = 0;
+	int stdio, lock_fd = -EINVAL;
 
 	err = snd_config_top(&config);
 	if (err < 0) {
@@ -1657,15 +1662,14 @@ int load_state(const char *file, const char *initfile, const char *cardname,
 	if (stdio) {
 		err = snd_input_stdio_attach(&in, stdin, 0);
 	} else {
-		err = state_lock(file, 1, 10);
-		locked = err >= 0;
-		err = err >= 0 ? snd_input_stdio_open(&in, file, "r") : err;
+		lock_fd = state_lock(file, 10);
+		err = lock_fd >= 0 ? snd_input_stdio_open(&in, file, "r") : lock_fd;
 	}
 	if (err >= 0) {
 		err = snd_config_load(config, in);
 		snd_input_close(in);
-		if (locked)
-			state_lock(file, 0, 10);
+		if (lock_fd >= 0)
+			state_unlock(lock_fd, file);
 		if (err < 0) {
 			error("snd_config_load error: %s", snd_strerror(err));
 			goto out;

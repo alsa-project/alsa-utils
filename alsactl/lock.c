@@ -30,7 +30,7 @@
 #include <sys/stat.h>
 #include "alsactl.h"
 
-static int state_lock_(const char *file, int lock, int timeout)
+static int state_lock_(const char *file, int lock, int timeout, int _fd)
 {
 	int fd = -1, err = 0;
 	struct flock lck;
@@ -50,9 +50,14 @@ static int state_lock_(const char *file, int lock, int timeout)
 		snprintf(lcktxt, sizeof(lcktxt), "%10li\n", (long)getpid());
 	} else {
 		snprintf(lcktxt, sizeof(lcktxt), "%10s\n", "");
+		fd = _fd;
 	}
 	while (fd < 0 && timeout-- > 0) {
 		fd = open(nfile, O_RDWR);
+		if (!lock && fd < 0) {
+			err = -EIO;
+			goto out;
+		}
 		if (fd < 0) {
 			fd = open(nfile, O_RDWR|O_CREAT|O_EXCL, 0644);
 			if (fd < 0) {
@@ -74,12 +79,12 @@ static int state_lock_(const char *file, int lock, int timeout)
 		err = -errno;
 		goto out;
 	}
-	if (st.st_size != 11) {
+	if (st.st_size != 11 || !lock) {
 		if (write(fd, lcktxt, 11) != 11) {
 			err = -EIO;
 			goto out;
 		}
-		if (lseek(fd, 0, SEEK_SET)) {
+		if (lock && lseek(fd, 0, SEEK_SET)) {
 			err = -errno;
 			goto out;
 		}
@@ -96,21 +101,37 @@ static int state_lock_(const char *file, int lock, int timeout)
 		err = -EBUSY;
 		goto out;
 	}
-	if (write(fd, lcktxt, 11) != 11) {
-		err = -EIO;
-		goto out;
+	if (lock) {
+		if (write(fd, lcktxt, 11) != 11) {
+			err = -EIO;
+			goto out;
+		}
+		return fd;
 	}
+	err = 0;
+
 out:
+	if (fd >= 0)
+		close(fd);
 	return err;
 }
 
-int state_lock(const char *file, int lock, int timeout)
+int state_lock(const char *file, int timeout)
 {
 	int err;
 
-	err = state_lock_(file, lock, timeout);
+	err = state_lock_(file, 1, timeout, -1);
 	if (err < 0)
-		error("file %s %slock error: %s", file,
-				lock ? "" : "un", strerror(-err));
+		error("file %s lock error: %s", file, strerror(-err));
+	return err;
+}
+
+int state_unlock(int _fd, const char *file)
+{
+	int err;
+
+	err = state_lock_(file, 0, 10, _fd);
+	if (err < 0)
+		error("file %s unlock error: %s", file, strerror(-err));
 	return err;
 }
