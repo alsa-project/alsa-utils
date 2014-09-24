@@ -91,7 +91,7 @@ int monitor(const char *name)
 	snd_ctl_t *ctls[MAX_CARDS];
 	int ncards = 0;
 	int show_cards;
-	int i, err;
+	int i, err = 0;
 
 	if (!name) {
 		int card = -1;
@@ -117,7 +117,7 @@ int monitor(const char *name)
 		show_cards = 0;
 	}
 
-	for (;;) {
+	for (;ncards > 0;) {
 		struct pollfd fds[ncards];
 
 		for (i = 0; i < ncards; i++)
