@@ -31,6 +31,7 @@ int save_state(const char *file, const char *cardname);
 int load_state(const char *file, const char *initfile, const char *cardname,
 	       int do_init);
 int power(const char *argv[], int argc);
+int monitor(const char *name);
 int state_daemon(const char *file, const char *cardname, int period,
 		 const char *pidfile);
 int state_daemon_kill(const char *pidfile, const char *cmd);
