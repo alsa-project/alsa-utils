@@ -2039,7 +2039,7 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 			data += r * bits_per_frame / 8;
 		}
 	}
-	return result;
+	return rcount;
 }
 
 static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
@@ -2084,7 +2084,7 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 			count -= r;
 		}
 	}
-	return result;
+	return rcount;
 }
 
 /*
