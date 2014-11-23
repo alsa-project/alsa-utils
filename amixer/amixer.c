@@ -346,7 +346,7 @@ static int set_volume_simple(snd_mixer_elem_t *elem,
 	if (*p == '%') {
 		percent = 1;
 		p++;
-	} else if (p[0] == 'd' && p[1] == 'B') {
+	} else if (toupper(p[0]) == 'D' && toupper(p[1]) == 'B') {
 		vol_type = VOL_DB;
 		p += 2;
 		scale = 100;
