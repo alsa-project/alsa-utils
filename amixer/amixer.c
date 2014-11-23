@@ -325,7 +325,7 @@ static int set_volume_simple(snd_mixer_elem_t *elem,
 	long val, orig, pmin, pmax;
 	char *p = *ptr, *s;
 	int invalid = 0, percent = 0, err = 0;
-	int vol_type = std_vol_type;
+	int vol_type;
 	double scale = 1.0;
 	int correct = 0;
 
@@ -344,14 +344,19 @@ static int set_volume_simple(snd_mixer_elem_t *elem,
 		strtol(p, &p, 10);
 	}
 	if (*p == '%') {
+		vol_type = std_vol_type;
 		percent = 1;
 		p++;
 	} else if (toupper(p[0]) == 'D' && toupper(p[1]) == 'B') {
 		vol_type = VOL_DB;
 		p += 2;
 		scale = 100;
-	} else
+	} else {
 		vol_type = VOL_RAW;
+	}
+
+	if (*p && !strchr(",:+-", *p))
+		invalid = 1;
 
 	val = (long)(strtod(s, NULL) * scale);
 	if (vol_ops[dir].v[vol_type].get_range(elem, &pmin, &pmax) < 0)
@@ -372,6 +377,10 @@ static int set_volume_simple(snd_mixer_elem_t *elem,
 		}
 		p++;
 	}
+
+	if (*p && !strchr(",:", *p))
+		invalid = 1;
+
 	if (! invalid) {
 		val = check_range(val, pmin, pmax);
 		err = vol_ops[dir].v[vol_type].set(elem, chn, val, correct);
