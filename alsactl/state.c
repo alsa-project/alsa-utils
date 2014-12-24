@@ -1678,6 +1678,8 @@ int load_state(const char *file, const char *initfile, const char *cardname,
 		int card, first = 1;
 		char cardname1[16];
 
+		if (lock_fd >= 0)
+		        state_unlock(lock_fd, file);
 		error("Cannot open %s for reading: %s", file, snd_strerror(err));
 		finalerr = err;
 		if (cardname) {
