@@ -3,7 +3,7 @@
 #
 # Basic rules are:
 #  - keep volumes at minimal level, but sound should be hearable
-#  - enable just main speakers for playback and main microphone for recording
+#  - enable standard outputs for playback and main microphone for recording
 #
 
 # **************************************************************************
