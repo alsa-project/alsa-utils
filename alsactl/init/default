@@ -43,6 +43,16 @@ CTL{name}="Master Digital Playback Switch",CTL{do_search}=="1", \
   CTL{values}="on"
 
 CTL{reset}="mixer"
+CTL{name}="Line Out Playback Volume",PROGRAM!="__ctl_search",GOTO=""
+# if master volume control is present, turn line out volume to max
+ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO=""
+ENV{has_pmaster_vol}=="true",CTL{write}=="100%",GOTO=""
+CTL{write}!="$env{pvolume}",CTL{values}="$env{ppercent}"
+LABEL=""
+CTL{name}="Line Out Playback Switch",CTL{do_search}=="1", \
+  CTL{values}="on"
+
+CTL{reset}="mixer"
 CTL{name}="Front Playback Volume",PROGRAM!="__ctl_search",GOTO=""
 # if master volume control is present, turn front volume to max
 ENV{has_pmaster_vol}=="true",CTL{write}=="0dB",GOTO=""
