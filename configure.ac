@@ -48,6 +48,8 @@ AC_CHECK_HEADERS([alsa/rawmidi.h], [have_rawmidi="yes"], [have_rawmidi="no"],
   [#include <alsa/asoundlib.h>])
 AC_CHECK_HEADERS([alsa/seq.h], [have_seq="yes"], [have_seq="no"],
   [#include <alsa/asoundlib.h>])
+AC_CHECK_HEADERS([alsa/use-case.h], [have_ucm="yes"], [have_ucm="no"],
+  [#include <alsa/asoundlib.h>])
 AC_CHECK_HEADERS([samplerate.h], [have_samplerate="yes"], [have_samplerate="no"],
   [#include <samplerate.h>])
 
@@ -55,6 +57,7 @@ AM_CONDITIONAL(HAVE_PCM, test "$have_pcm" = "yes")
 AM_CONDITIONAL(HAVE_MIXER, test "$have_mixer" = "yes")
 AM_CONDITIONAL(HAVE_RAWMIDI, test "$have_rawmidi" = "yes")
 AM_CONDITIONAL(HAVE_SEQ, test "$have_seq" = "yes")
+AM_CONDITIONAL(HAVE_UCM, test "$have_ucm" = "yes")
 AM_CONDITIONAL(HAVE_SAMPLERATE, test "$have_samplerate" = "yes")
 
 dnl Check for librt

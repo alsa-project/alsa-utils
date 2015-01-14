@@ -1,6 +1,6 @@
 AM_CPPFLAGS=-I$(top_srcdir)/include
 
-SUBDIRS = include alsactl alsaucm utils m4 po alsa-info
+SUBDIRS = include alsactl utils m4 po alsa-info
 if ALSAMIXER
 SUBDIRS += alsamixer
 endif
@@ -21,6 +21,9 @@ endif
 endif
 if HAVE_SEQ
 SUBDIRS += seq
+endif
+if HAVE_UCM
+SUBDIRS += alsaucm
 endif
 
 EXTRA_DIST= TODO gitcompile
