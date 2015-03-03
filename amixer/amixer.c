@@ -1278,7 +1278,7 @@ static int get_enum_item_index(snd_mixer_elem_t *elem, char **ptrp)
 
 static int sset_enum(snd_mixer_elem_t *elem, unsigned int argc, char **argv)
 {
-	unsigned int idx, chn = 0;
+	unsigned int idx, item = 0;
 	int check_flag = ignore_error ? 0 : -1;
 
 	for (idx = 1; idx < argc; idx++) {
@@ -1287,7 +1287,7 @@ static int sset_enum(snd_mixer_elem_t *elem, unsigned int argc, char **argv)
 			int ival = get_enum_item_index(elem, &ptr);
 			if (ival < 0)
 				return check_flag;
-			if (snd_mixer_selem_set_enum_item(elem, chn, ival) >= 0)
+			if (snd_mixer_selem_set_enum_item(elem, item++, ival) >= 0)
 				check_flag = 1;
 			/* skip separators */
 			while (*ptr == ',' || isspace(*ptr))
