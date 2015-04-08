@@ -812,7 +812,11 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 		if (snd_mixer_selem_is_enumerated(elem)) {
 			int i, items;
 			unsigned int idx;
-			char itemname[40];
+			/*
+			 * See snd_ctl_elem_init_enum_names() in
+			 * sound/core/control.c.
+			 */
+			char itemname[64];
 			items = snd_mixer_selem_get_enum_items(elem);
 			printf("  Items:");
 			for (i = 0; i < items; i++) {
@@ -1255,7 +1259,9 @@ static int get_enum_item_index(snd_mixer_elem_t *elem, char **ptrp)
 {
 	char *ptr = *ptrp;
 	int items, i, len;
-	char name[40];
+
+	/* See snd_ctl_elem_init_enum_names() in sound/core/control.c. */
+	char name[64];
 	
 	items = snd_mixer_selem_get_enum_items(elem);
 	if (items <= 0)
@@ -1264,6 +1270,7 @@ static int get_enum_item_index(snd_mixer_elem_t *elem, char **ptrp)
 	for (i = 0; i < items; i++) {
 		if (snd_mixer_selem_get_enum_item_name(elem, i, sizeof(name)-1, name) < 0)
 			continue;
+
 		len = strlen(name);
 		if (! strncmp(name, ptr, len)) {
 			if (! ptr[len] || ptr[len] == ',' || ptr[len] == '\n') {
