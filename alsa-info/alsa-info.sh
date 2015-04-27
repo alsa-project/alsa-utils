@@ -35,6 +35,8 @@ BGTITLE="ALSA-Info v $SCRIPT_VERSION"
 PASTEBINKEY="C9cRIO8m/9y8Cs0nVs0FraRx7U0pHsuc"
 #Define some simple functions
 
+WGET=$(which wget 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null)
+
 pbcheck(){
 	[[ $UPLOAD = "no" ]] && return
 
@@ -46,10 +48,12 @@ pbcheck(){
 }
 
 update() {
+	test -z "$WGET" -o ! -x "$WGET" && return
+
 	SHFILE=`mktemp -t alsa-info.XXXXXXXXXX` || exit 1
 	wget -O $SHFILE "http://www.alsa-project.org/alsa-info.sh" >/dev/null 2>&1
 	REMOTE_VERSION=`grep SCRIPT_VERSION $SHFILE |head -n1 |sed 's/.*=//'`
-	if [ "$REMOTE_VERSION" != "$SCRIPT_VERSION" ]; then
+	if [ -s "$SHFILE" -a "$REMOTE_VERSION" != "$SCRIPT_VERSION" ]; then
 		if [[ -n $DIALOG ]]
 		then
 			OVERWRITE=
@@ -831,8 +835,7 @@ if [ "$UPLOAD" = "no" ]; then
 fi # UPLOAD
 
 #Test that wget is installed, and supports --post-file. Upload $FILE if it does, and prompt user to upload file if it doesnt. 
-if
-WGET=$(which wget 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null); [[ -n "${WGET}" ]] && [[ -x "${WGET}" ]] && [[ `wget --help |grep post-file` ]]
+if [[ -n "${WGET}" ]] && [[ -x "${WGET}" ]] && [[ `wget --help |grep post-file` ]]
 then
 
 if [[ -n $DIALOG ]]
