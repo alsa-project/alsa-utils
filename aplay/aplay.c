@@ -399,7 +399,7 @@ static void signal_handler(int sig)
 		handle = NULL;
 		prg_exit(EXIT_FAILURE);
 	}
-	signal(sig, signal_handler);
+	signal(sig, SIG_DFL);
 }
 
 /* call on SIGUSR1 signal. */
