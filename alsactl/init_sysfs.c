@@ -108,11 +108,11 @@ static char *sysfs_attr_get_value(const char *devpath, const char *attr_name)
 
 	if (S_ISLNK(statbuf.st_mode)) {
 		/* links return the last element of the target path */
-		char link_target[PATH_SIZE];
+		char link_target[PATH_SIZE + 1];
 		int len;
 		const char *pos;
 
-		len = readlink(path_full, link_target, sizeof(link_target));
+		len = readlink(path_full, link_target, sizeof(link_target) - 1);
 		if (len > 0) {
 			link_target[len] = '\0';
 			pos = strrchr(link_target, '/');
