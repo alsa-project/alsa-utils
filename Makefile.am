@@ -25,6 +25,9 @@ endif
 if HAVE_UCM
 SUBDIRS += alsaucm
 endif
+if HAVE_TOPOLOGY
+SUBDIRS += topology
+endif
 
 EXTRA_DIST= TODO gitcompile
 AUTOMAKE_OPTIONS=foreign
