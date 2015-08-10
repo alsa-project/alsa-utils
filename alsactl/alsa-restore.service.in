@@ -6,6 +6,7 @@
 [Unit]
 Description=Restore Sound Card State
 ConditionPathExists=!@daemonswitch@
+ConditionPathExistsGlob=/dev/snd/control*
 DefaultDependencies=no
 After=alsa-state.service
 Before=shutdown.target

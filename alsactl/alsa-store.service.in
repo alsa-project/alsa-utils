@@ -6,6 +6,7 @@
 [Unit]
 Description=Store Sound Card State
 ConditionPathExists=!@daemonswitch@
+ConditionPathExistsGlob=/dev/snd/control*
 DefaultDependencies=no
 Before=shutdown.target
 
