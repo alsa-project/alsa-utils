@@ -124,7 +124,7 @@ static int fatal_errors = 0;
 static int verbose = 0;
 static int vumeter = VUMETER_NONE;
 static int buffer_pos = 0;
-static size_t bits_per_sample, bits_per_frame;
+static size_t significant_bits_per_sample, bits_per_sample, bits_per_frame;
 static size_t chunk_bytes;
 static int test_position = 0;
 static int test_coef = 8;
@@ -1344,6 +1344,7 @@ static void set_params(void)
 		snd_pcm_dump(handle, log);
 
 	bits_per_sample = snd_pcm_format_physical_width(hwparams.format);
+	significant_bits_per_sample = snd_pcm_format_width(hwparams.format);
 	bits_per_frame = bits_per_sample * hwparams.channels;
 	chunk_bytes = chunk_size * bits_per_frame / 8;
 	audiobuf = realloc(audiobuf, chunk_bytes);
@@ -1745,7 +1746,7 @@ static void compute_max_peak(u_char *data, size_t count)
 		}
 		return;
 	}
-	max = 1 << (bits_per_sample-1);
+	max = 1 << (significant_bits_per_sample-1);
 	if (max <= 0)
 		max = 0x7fffffff;
 
