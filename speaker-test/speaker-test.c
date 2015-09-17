@@ -1041,6 +1041,7 @@ int main(int argc, char *argv[]) {
   double		time1,time2,time3;
   unsigned int		n, nloops;
   struct   timeval	tv1,tv2;
+  int			speakeroptset = 0;
 #ifdef CONFIG_SUPPORT_CHMAP
   const char *chmap = NULL;
 #endif
@@ -1162,11 +1163,7 @@ int main(int argc, char *argv[]) {
     case 's':
       speaker = atoi(optarg);
       speaker = speaker < 1 ? 0 : speaker;
-      speaker = speaker > channels ? 0 : speaker;
-      if (speaker==0) {
-        fprintf(stderr, _("Invalid parameter for -s option.\n"));
-        exit(EXIT_FAILURE);
-      }  
+      speakeroptset = 1;
       break;
     case 'w':
       given_test_wav_file = optarg;
@@ -1198,6 +1195,14 @@ int main(int argc, char *argv[]) {
   if (morehelp) {
     help();
     exit(EXIT_SUCCESS);
+  }
+
+  if (speakeroptset) {
+    speaker = speaker > channels ? 0 : speaker;
+    if (speaker==0) {
+      fprintf(stderr, _("Invalid parameter for -s option.\n"));
+      exit(EXIT_FAILURE);
+    }
   }
 
   if (!force_frequency) {
