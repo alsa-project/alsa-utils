@@ -2929,6 +2929,7 @@ static void capture(char *orig_name)
 	char *name = orig_name;	/* current filename */
 	char namebuf[PATH_MAX+1];
 	off64_t count, rest;		/* number of bytes to capture */
+	struct stat statbuf;
 
 	/* get number of bytes to capture */
 	count = calc_count();
@@ -2973,7 +2974,10 @@ static void capture(char *orig_name)
 			}
 			
 			/* open a new file */
-			remove(name);
+			if (!lstat(name, &statbuf)) {
+				if (S_ISREG(statbuf.st_mode))
+					remove(name);
+			}
 			fd = safe_open(name);
 			if (fd < 0) {
 				perror(name);
