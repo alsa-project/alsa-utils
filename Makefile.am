@@ -18,6 +18,9 @@ SUBDIRS += aplay iecset speaker-test
 if ALSALOOP
 SUBDIRS += alsaloop
 endif
+if BAT
+SUBDIRS += bat
+endif
 endif
 if HAVE_SEQ
 SUBDIRS += seq
