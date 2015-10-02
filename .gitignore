@@ -12,6 +12,7 @@ Makefile
 Makefile.in
 version
 autom4te.cache
+compile
 depcomp
 missing
 install-sh
