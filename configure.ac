@@ -12,20 +12,6 @@ AM_GNU_GETTEXT_VERSION([0.15])
 
 dnl Checks for programs.
 
-dnl try to gues cross-compiler if not set
-if test "x$target" != "x$host" -a -z "`echo $CC | grep -e '-gcc'`";
-then
-  AC_MSG_CHECKING(for cross-compiler)
-
-  which ${program_prefix}gcc >/dev/null 2>&1 && CC=${program_prefix}gcc
-  which ${target_cpu}-${target_os}-gcc >/dev/null 2>&1 \
-  && CC=${target_cpu}-${target-os}-gcc
-  which ${target_cpu}-${target_vendor}-${target_os}-gcc >/dev/null 2>&1 \
-  && CC=${target_cpu}-${target_vendor}-${target_os}-gcc
-
-  AC_MSG_RESULT($CC)
-fi
-
 AC_PROG_CC
 dnl AC_PROG_CXX
 AC_PROG_INSTALL
