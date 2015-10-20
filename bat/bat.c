@@ -268,28 +268,27 @@ static void test_capture(struct bat *bat)
 	}
 }
 
-static void usage(struct bat *bat, char *argv[])
+static void usage(struct bat *bat)
 {
 	fprintf(bat->log,
-_("Usage:%s [Option]...\n"
+_("Usage: bat [-options]...\n"
 "\n"
-"-h, --help             help\n"
-"-D                     sound card\n"
-"-P                     playback pcm\n"
-"-C                     capture pcm\n"
-"-f                     sample size\n"
-"-c                     number of channels\n"
-"-r                     sampling rate\n"
-"-n                     frames to capture\n"
-"-k                     sigma k\n"
-"-F                     target frequency\n"
-"-p                     total number of periods to play/capture\n"
-"    --log=#            path of log file. if not set, logs be put to stdout,\n"
-"                       and errors be put to stderr.\n"
-"    --file=#           input file\n"
-"    --saveplay=#       save playback content to target file, for debug\n"
-"    --local            internal loop, bypass hardware\n"
-), argv[0]);
+"  -h, --help             this help\n"
+"  -D                     pcm device for both playback and capture\n"
+"  -P                     pcm device for playback\n"
+"  -C                     pcm device for capture\n"
+"  -f                     sample format\n"
+"  -c                     number of channels\n"
+"  -r                     sampling rate\n"
+"  -n                     frames to playback or capture\n"
+"  -k                     parameter for frequency detecting threshold\n"
+"  -F                     target frequency\n"
+"  -p                     total number of periods to play/capture\n"
+"      --log=#            file that both stdout and strerr redirecting to\n"
+"      --file=#           file for playback\n"
+"      --saveplay=#       file that storing playback content, for debug\n"
+"      --local            internal loop, set to bypass pcm hardware devices\n"
+));
 	fprintf(bat->log, _("Recognized sample formats are: %s %s %s %s\n"),
 			snd_pcm_format_name(SND_PCM_FORMAT_U8),
 			snd_pcm_format_name(SND_PCM_FORMAT_S16_LE),
@@ -401,7 +400,7 @@ static void parse_arguments(struct bat *bat, int argc, char *argv[])
 			break;
 		case 'h':
 		default:
-			usage(bat, argv);
+			usage(bat);
 			exit(EXIT_SUCCESS);
 		}
 	}
