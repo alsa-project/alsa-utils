@@ -41,43 +41,33 @@ static int get_duration(struct bat *bat)
 	char *ptrf, *ptri;
 
 	duration_f = strtof(bat->narg, &ptrf);
-	if (duration_f == HUGE_VALF || duration_f == -HUGE_VALF) {
-		fprintf(bat->err, _("duration float overflow: %f %d\n"),
-				duration_f, -errno);
-		return -errno;
-	} else if (duration_f == 0.0 && errno != 0) {
-		fprintf(bat->err, _("duration float underflow: %f %d\n"),
-				duration_f, -errno);
-		return -errno;
-	}
+	if (duration_f == HUGE_VALF || duration_f == -HUGE_VALF
+			|| (duration_f == 0.0 && errno != 0))
+		goto err_exit;
 
 	duration_i = strtol(bat->narg, &ptri, 10);
-	if (duration_i == LONG_MAX) {
-		fprintf(bat->err, _("duration long overflow: %ld %d\n"),
-				duration_i, -errno);
-		return -errno;
-	} else if (duration_i == LONG_MIN) {
-		fprintf(bat->err, _("duration long underflow: %ld %d\n"),
-				duration_i, -errno);
-		return -errno;
-	}
+	if (duration_i == LONG_MAX || duration_i == LONG_MIN)
+		goto err_exit;
 
-	if (*ptrf == 's') {
+	if (*ptrf == 's')
 		bat->frames = duration_f * bat->rate;
-	} else if (*ptri == 0) {
+	else if (*ptri == 0)
 		bat->frames = duration_i;
-	} else {
-		fprintf(bat->err, _("invalid duration: %s\n"), bat->narg);
-		return -EINVAL;
-	}
+	else
+		bat->frames = -1;
 
 	if (bat->frames <= 0 || bat->frames > MAX_FRAMES) {
-		fprintf(bat->err, _("duration out of range: (0, %d(%ds))\n"),
-				MAX_FRAMES, (bat->frames / bat->rate));
+		fprintf(bat->err, _("Invalid duration. Range: (0, %d(%fs))\n"),
+				MAX_FRAMES, (double)MAX_FRAMES / bat->rate);
 		return -EINVAL;
 	}
 
 	return 0;
+
+err_exit:
+	fprintf(bat->err, _("Duration overflow/underflow: %d\n"), -errno);
+
+	return -errno;
 }
 
 static void get_sine_frequencies(struct bat *bat, char *freq)
