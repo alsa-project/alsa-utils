@@ -450,6 +450,7 @@ static int validate_options(struct bat *bat)
 static int bat_init(struct bat *bat)
 {
 	int err = 0;
+	char name[] = TEMP_RECORD_FILE_NAME;
 
 	/* Determine logging to a file or stdout and stderr */
 	if (bat->logarg) {
@@ -472,10 +473,23 @@ static int bat_init(struct bat *bat)
 	}
 
 	/* Determine capture file */
-	if (bat->local)
+	if (bat->local) {
 		bat->capture.file = bat->playback.file;
-	else
-		bat->capture.file = TEMP_RECORD_FILE_NAME;
+	} else {
+		/* create temp file for sound record and analysis */
+		err = mkstemp(name);
+		if (err == -1) {
+			fprintf(bat->err, _("Fail to create record file: %d\n"),
+					-errno);
+			return -errno;
+		}
+		/* store file name which is dynamically created */
+		bat->capture.file = strdup(name);
+		if (bat->capture.file == NULL)
+			return -errno;
+		/* close temp file */
+		close(err);
+	}
 
 	/* Initial for playback */
 	if (bat->playback.file == NULL) {
@@ -585,8 +599,11 @@ analyze:
 	err = analyze_capture(&bat);
 out:
 	fprintf(bat.log, _("\nReturn value is %d\n"), err);
+
 	if (bat.logarg)
 		fclose(bat.log);
+	if (!bat.local)
+		free(bat.capture.file);
 
 	return err;
 }

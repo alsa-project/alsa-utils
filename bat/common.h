@@ -15,7 +15,7 @@
 
 #include <alsa/asoundlib.h>
 
-#define TEMP_RECORD_FILE_NAME		"/tmp/bat.wav"
+#define TEMP_RECORD_FILE_NAME		"/tmp/bat.wav.XXXXXX"
 
 #define OPT_BASE			300
 #define OPT_LOG				(OPT_BASE + 1)
