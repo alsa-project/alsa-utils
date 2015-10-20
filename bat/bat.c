@@ -74,7 +74,7 @@ static void get_sine_frequencies(struct bat *bat, char *freq)
 {
 	char *tmp1;
 
-	tmp1 = strchr(freq, ',');
+	tmp1 = strchr(freq, ':');
 	if (tmp1 == NULL) {
 		bat->target_freq[1] = bat->target_freq[0] = atof(optarg);
 	} else {
