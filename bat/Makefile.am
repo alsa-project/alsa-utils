@@ -1,4 +1,7 @@
 bin_PROGRAMS = bat
+man_MANS = bat.1
+
+EXTRA_DIST = bat.1
 
 bat_SOURCES = \
 	bat.c \
