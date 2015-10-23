@@ -23,6 +23,7 @@
 #include <getopt.h>
 #include <math.h>
 #include <limits.h>
+#include <locale.h>
 
 #include "aconfig.h"
 #include "gettext.h"
