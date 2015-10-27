@@ -12,7 +12,11 @@ bat_SOURCES = \
 	alsa.c
 
 noinst_HEADERS = \
-	common.h
+	common.h \
+	signal.h \
+	alsa.h \
+	convert.h \
+	analyze.h
 
 AM_CPPFLAGS = \
 	      -Wall -I$(top_srcdir)/include
