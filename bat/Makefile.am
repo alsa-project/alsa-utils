@@ -11,7 +11,10 @@ bat_SOURCES = \
 	convert.c \
 	alsa.c
 
+noinst_HEADERS = \
+	common.h
+
 AM_CPPFLAGS = \
 	      -Wall -I$(top_srcdir)/include
 
-bat_LDADD = -lasound
+bat_LDADD = @FFTW_LIB@

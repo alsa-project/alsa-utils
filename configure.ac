@@ -64,9 +64,23 @@ AM_CONDITIONAL(BAT, test x$bat = xtrue)
 
 if test x$bat = xtrue; then
 
+  saved_CFLAGS="$CFLAGS"
+  saved_LDFLAGS="$LDFLAGS"
+  saved_LIBS="$LIBS"
+  FFTW_INC=""
+  FFTW_LIB=""
+  FFTW_CFLAGS=""
   AC_CHECK_LIB([fftw3], [fftw_malloc], , [AC_MSG_ERROR([Error: need FFTW3 library])])
   AC_CHECK_LIB([m], [sqrtf], , [AC_MSG_ERROR([Error: Need sqrtf])])
   AC_CHECK_LIB([pthread], [pthread_create], , [AC_MSG_ERROR([Error: need PTHREAD library])])
+  FFTW_CFLAGS="$CFLAGS"
+  FFTW_LIB="$LIBS"
+  CFLAGS="$saved_CFLAGS"
+  LDFLAGS="$saved_LDFLAGS"
+  LIBS="$saved_LIBS"
+  AC_SUBST(FFTW_INC)
+  AC_SUBST(FFTW_LIB)
+  AC_SUBST(FFTW_CFLAGS)
 
 fi
 
