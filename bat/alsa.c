@@ -505,6 +505,16 @@ static int read_from_pcm_loop(FILE *fp, int count,
 	return 0;
 }
 
+static void pcm_cleanup(void *p)
+{
+	snd_pcm_close(p);
+}
+
+static void file_cleanup(void *p)
+{
+	fclose(p);
+}
+
 /**
  * Record
  */
@@ -557,9 +567,9 @@ void *record_alsa(struct bat *bat)
 
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 	pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
-	pthread_cleanup_push(snd_pcm_close, sndpcm.handle);
+	pthread_cleanup_push(pcm_cleanup, sndpcm.handle);
 	pthread_cleanup_push(free, sndpcm.buffer);
-	pthread_cleanup_push(fclose, fp);
+	pthread_cleanup_push(file_cleanup, fp);
 
 	err = write_wav_header(fp, &wav, bat);
 	if (err != 0) {
