@@ -13,7 +13,7 @@ bat_SOURCES = \
 
 noinst_HEADERS = \
 	common.h \
-	signal.h \
+	bat-signal.h \
 	alsa.h \
 	convert.h \
 	analyze.h

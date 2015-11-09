@@ -27,7 +27,7 @@
 
 #include "common.h"
 #include "alsa.h"
-#include "signal.h"
+#include "bat-signal.h"
 
 struct pcm_container {
 	snd_pcm_t *handle;
