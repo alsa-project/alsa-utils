@@ -682,6 +682,14 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 	      __skip_read:
 		if (!snd_ctl_elem_info_is_tlv_readable(info))
 			goto __skip_tlv;
+		/* skip ASoC ext bytes controls that may have huge binary TLV data */
+		if (type == SND_CTL_ELEM_TYPE_BYTES &&
+				!snd_ctl_elem_info_is_readable(info) &&
+				!snd_ctl_elem_info_is_writable(info)) {
+			printf("%s; ASoC TLV Byte control, skipping bytes dump\n", space);
+			goto __skip_tlv;
+		}
+
 		tlv = malloc(4096);
 		if ((err = snd_hctl_elem_tlv_read(elem, tlv, 4096)) < 0) {
 			error("Control %s element TLV read error: %s\n", card, snd_strerror(err));
