@@ -36,7 +36,7 @@ amixer/amixer
 aplay/aplay
 aplay/arecord
 aplay/arecord.1
-bat/bat
+bat/alsabat
 iecset/iecset
 seq/aconnect/aconnect
 seq/aplaymidi/aplaymidi
