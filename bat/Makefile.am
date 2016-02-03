@@ -1,9 +1,9 @@
-bin_PROGRAMS = bat
-man_MANS = bat.1
+bin_PROGRAMS = alsabat
+man_MANS = alsabat.1
 
-EXTRA_DIST = bat.1
+EXTRA_DIST = alsabat.1
 
-bat_SOURCES = \
+alsabat_SOURCES = \
 	bat.c \
 	common.c \
 	analyze.c \
@@ -21,4 +21,4 @@ noinst_HEADERS = \
 AM_CPPFLAGS = \
 	      -Wall -I$(top_srcdir)/include
 
-bat_LDADD = @FFTW_LIB@
+alsabat_LDADD = @FFTW_LIB@

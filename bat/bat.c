@@ -272,7 +272,7 @@ static void test_capture(struct bat *bat)
 static void usage(struct bat *bat)
 {
 	fprintf(bat->log,
-_("Usage: bat [-options]...\n"
+_("Usage: alsabat [-options]...\n"
 "\n"
 "  -h, --help             this help\n"
 "  -D                     pcm device for both playback and capture\n"

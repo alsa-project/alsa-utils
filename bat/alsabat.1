@@ -1,23 +1,23 @@
-.TH BAT 1 "20th October 2015"
+.TH ALSABAT 1 "20th October 2015"
 .SH NAME
-bat \- command\-line sound tester for ALSA sound card driver
+alsabat \- command\-line sound tester for ALSA sound card driver
 
 .SH SYNOPSIS
-\fBbat\fP [\fIflags\fP]
+\fBalsabat\fP [\fIflags\fP]
 
 .SH DESCRIPTION
-\fBBAT(Basic Audio Tester)\fP is a simple command\-line utility intended
-to help automate audio driver and sound server testing with little human
-interaction. BAT can be used to test audio quality, stress test features
-and test audio before and after PM state changes.
+\fBALSABAT(ALSA Basic Audio Tester)\fP is a simple command\-line utility
+intended to help automate audio driver and sound server testing with little
+human interaction. ALSABAT can be used to test audio quality, stress test
+features and test audio before and after PM state changes.
 
-BAT's design is relatively simple. BAT plays an audio stream and captures
-the same stream in either a digital or analog loop back. It then compares
-the captured stream using a FFT to the original to determine if the test
-case passes or fails.
+ALSABAT's design is relatively simple. ALSABAT plays an audio stream and
+captures the same stream in either a digital or analog loop back. It then
+compares the captured stream using a FFT to the original to determine if
+the test case passes or fails.
 
-BAT can either run wholly on the target machine being tested (standalone
-mode) or can run as a client/server mode where by bat client runs on the
+ALSABAT can either run wholly on the target machine being tested (standalone
+mode) or can run as a client/server mode where by alsabat client runs on the
 target and runs as a server on a separate tester machine. The client/server
 mode still requires some manual interaction for synchronization, but this
 is actively being developed for future releases.
@@ -93,8 +93,8 @@ Frequencies with amplitude larger than threshold will be recognized as a
 peak, and the frequency with largest peak value will be recognized as a
 detected frequency.
 .br
-BAT then compares the detected frequency to target frequency, to decide
-if the detecting passes or fails.
+ALSABAT then compares the detected frequency to target frequency, to
+decide if the detecting passes or fails.
 .br
 The default value is 3.0.
 .TP
@@ -117,18 +117,19 @@ Target WAV file to save capture test content.
 .TP
 \fI\-\-local\fP
 Internal loopback mode.
-Playback, capture and analysis internal to BAT only. This is intended for
-developers to test new BAT features as no audio is routed outside of BAT.
+Playback, capture and analysis internal to ALSABAT only. This is intended
+for developers to test new ALSABAT features as no audio is routed outside
+of ALSABAT.
 
 .SH EXAMPLES
 
 .TP
-\fBbat \-P plughw:0,0 \-C plughw:0,0 \-c 2 \-f S32_LE \-F 250\fR
+\fBalsabat \-P plughw:0,0 \-C plughw:0,0 \-c 2 \-f S32_LE \-F 250\fR
 Generate and play a sine wave of 250 Hertz with 2 channel and S32_LE format,
 and then capture and analyze.
 
 .TP
-\fBbat \-P plughw:0,0 \-C plughw:0,0 \-\-file 500Hz.wav\fR
+\fBalsabat \-P plughw:0,0 \-C plughw:0,0 \-\-file 500Hz.wav\fR
 Play the RIFF WAV file "500Hz.wav" which contains 500 Hertz waveform LPCM
 data, and then capture and analyze.
 
@@ -152,7 +153,7 @@ Currently only support RIFF WAV format with PCM data. Please report any bugs to
 the alsa-devel mailing list.
 
 .SH AUTHOR
-\fBbat\fP is by Liam Girdwood <liam.r.girdwood@linux.intel.com>, Bernard Gautier
-<bernard.gautier@intel.com> and Han Lu <han.lu@intel.com>.
+\fBalsabat\fP is by Liam Girdwood <liam.r.girdwood@linux.intel.com>, Bernard
+Gautier <bernard.gautier@intel.com> and Han Lu <han.lu@intel.com>.
 This document is by Liam Girdwood <liam.r.girdwood@linux.intel.com> and Han Lu
 <han.lu@intel.com>.
