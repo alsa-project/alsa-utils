@@ -63,6 +63,12 @@
 #define FOUND_DC			(1<<1)
 #define FOUND_WRONG_PEAK		(1<<0)
 
+/* Truncate sample frames to (1 << N), for faster FFT analysis process. The
+ * valid range of N is (SHIFT_MIN, SHIFT_MAX). When N increases, the analysis
+ * will be more time-consuming, and the result will be more accurate. */
+#define SHIFT_MAX			(sizeof(int) * 8 - 2)
+#define SHIFT_MIN			8
+
 struct wav_header {
 	unsigned int magic; /* 'RIFF' */
 	unsigned int length; /* file len */

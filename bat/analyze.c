@@ -256,12 +256,33 @@ static int reorder_data(struct bat *bat)
 	return 0;
 }
 
+/* truncate sample frames for faster FFT analysis process */
+static int truncate_frames(struct bat *bat)
+{
+	int shift = SHIFT_MAX;
+
+	for (; shift > SHIFT_MIN; shift--)
+		if (bat->frames & (1 << shift)) {
+			bat->frames = 1 << shift;
+			return 0;
+		}
+
+	return -EINVAL;
+}
+
 int analyze_capture(struct bat *bat)
 {
 	int err = 0;
 	size_t items;
 	int c;
 	struct analyze a;
+
+	err = truncate_frames(bat);
+	if (err < 0) {
+		fprintf(bat->err, _("Invalid frame number for analysis: %d\n"),
+				bat->frames);
+		return err;
+	}
 
 	fprintf(bat->log, _("\nBAT analysis: signal has %d frames at %d Hz,"),
 			bat->frames, bat->rate);
