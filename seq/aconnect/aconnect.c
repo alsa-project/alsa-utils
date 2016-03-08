@@ -166,11 +166,26 @@ static void print_port(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
 		       snd_seq_port_info_t *pinfo, int count)
 {
 	if (! count) {
-		printf(_("client %d: '%s' [type=%s]\n"),
+		int card = -1, pid = -1;
+
+		printf(_("client %d: '%s' [type=%s"),
 		       snd_seq_client_info_get_client(cinfo),
 		       snd_seq_client_info_get_name(cinfo),
 		       (snd_seq_client_info_get_type(cinfo) == SND_SEQ_USER_CLIENT ?
 			_("user") : _("kernel")));
+
+#ifdef HAVE_SEQ_CLIENT_INFO_GET_CARD
+		card = snd_seq_client_info_get_card(cinfo);
+#endif
+		if (card != -1)
+			printf(",card=%d", card);
+
+#ifdef HAVE_SEQ_CLIENT_INFO_GET_PID
+		pid = snd_seq_client_info_get_pid(cinfo);
+#endif
+		if (pid != -1)
+			printf(",pid=%d", pid);
+		printf("]\n");
 	}
 	printf("  %3d '%-16s'\n",
 	       snd_seq_port_info_get_port(pinfo),
