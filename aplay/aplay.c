@@ -427,6 +427,22 @@ enum {
 	OPT_FATAL_ERRORS,
 };
 
+static long parse_long(const char *str, int *err)
+{
+	long val;
+	char *endptr;
+
+	errno = 0;
+	val = strtol(str, &endptr, 0);
+
+	if (errno != 0 || *endptr != '\0')
+		*err = -1;
+	else
+		*err = 0;
+
+	return val;
+}
+
 int main(int argc, char *argv[])
 {
 	int option_index;
@@ -558,7 +574,11 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'c':
-			rhwparams.channels = strtol(optarg, NULL, 0);
+			rhwparams.channels = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid channels argument '%s'"), optarg);
+				return 1;
+			}
 			if (rhwparams.channels < 1 || rhwparams.channels > 256) {
 				error(_("value %i for channels is invalid"), rhwparams.channels);
 				return 1;
@@ -585,7 +605,11 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'r':
-			tmp = strtol(optarg, NULL, 0);
+			tmp = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid rate argument '%s'"), optarg);
+				return 1;
+			}
 			if (tmp < 300)
 				tmp *= 1000;
 			rhwparams.rate = tmp;
@@ -595,32 +619,64 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'd':
-			timelimit = strtol(optarg, NULL, 0);
+			timelimit = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid duration argument '%s'"), optarg);
+				return 1;
+			}
 			break;
 		case 'N':
 			nonblock = 1;
 			open_mode |= SND_PCM_NONBLOCK;
 			break;
 		case 'F':
-			period_time = strtol(optarg, NULL, 0);
+			period_time = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid period time argument '%s'"), optarg);
+				return 1;
+			}
 			break;
 		case 'B':
-			buffer_time = strtol(optarg, NULL, 0);
+			buffer_time = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid buffer time argument '%s'"), optarg);
+				return 1;
+			}
 			break;
 		case OPT_PERIOD_SIZE:
-			period_frames = strtol(optarg, NULL, 0);
+			period_frames = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid period size argument '%s'"), optarg);
+				return 1;
+			}
 			break;
 		case OPT_BUFFER_SIZE:
-			buffer_frames = strtol(optarg, NULL, 0);
+			buffer_frames = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid buffer size argument '%s'"), optarg);
+				return 1;
+			}
 			break;
 		case 'A':
-			avail_min = strtol(optarg, NULL, 0);
+			avail_min = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid min available space argument '%s'"), optarg);
+				return 1;
+			}
 			break;
 		case 'R':
-			start_delay = strtol(optarg, NULL, 0);
+			start_delay = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid start delay argument '%s'"), optarg);
+				return 1;
+			}
 			break;
 		case 'T':
-			stop_delay = strtol(optarg, NULL, 0);
+			stop_delay = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid stop delay argument '%s'"), optarg);
+				return 1;
+			}
 			break;
 		case 'v':
 			verbose++;
@@ -671,7 +727,11 @@ int main(int argc, char *argv[])
 			test_position = 1;
 			break;
 		case OPT_TEST_COEF:
-			test_coef = strtol(optarg, NULL, 0);
+			test_coef = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid test coef argument '%s'"), optarg);
+				return 1;
+			}
 			if (test_coef < 1)
 				test_coef = 1;
 			break;
@@ -679,7 +739,11 @@ int main(int argc, char *argv[])
 			test_nowait = 1;
 			break;
 		case OPT_MAX_FILE_TIME:
-			max_file_time = strtol(optarg, NULL, 0);
+			max_file_time = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid max file time argument '%s'"), optarg);
+				return 1;
+			}
 			break;
 		case OPT_PROCESS_ID_FILE:
 			pidfile_name = optarg;
