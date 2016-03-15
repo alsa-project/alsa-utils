@@ -79,7 +79,9 @@ if test x$bat = xtrue; then
   FFTW_INC=""
   FFTW_LIB=""
   FFTW_CFLAGS=""
-  AC_CHECK_LIB([fftw3], [fftw_malloc], , [AC_MSG_ERROR([Error: need FFTW3 library])])
+  dnl Check for libfftw3
+  have_libfftw3="yes"
+  AC_CHECK_LIB([fftw3], [fftw_malloc], , [have_libfftw3="no"])
   AC_CHECK_LIB([m], [sqrtf], , [AC_MSG_ERROR([Error: Need sqrtf])])
   AC_CHECK_LIB([pthread], [pthread_create], , [AC_MSG_ERROR([Error: need PTHREAD library])])
   FFTW_CFLAGS="$CFLAGS"
@@ -92,6 +94,7 @@ if test x$bat = xtrue; then
   AC_SUBST(FFTW_CFLAGS)
 
 fi
+AM_CONDITIONAL(HAVE_LIBFFTW3, test "$have_libfftw3" = "yes")
 
 dnl Check for librt
 LIBRT=""

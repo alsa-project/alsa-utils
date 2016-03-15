@@ -33,7 +33,9 @@
 
 #include "alsa.h"
 #include "convert.h"
+#ifdef HAVE_LIBFFTW3
 #include "analyze.h"
+#endif
 
 static int get_duration(struct bat *bat)
 {
@@ -289,6 +291,7 @@ _("Usage: alsabat [-options]...\n"
 "      --file=#           file for playback\n"
 "      --saveplay=#       file that storing playback content, for debug\n"
 "      --local            internal loop, set to bypass pcm hardware devices\n"
+"      --standalone       standalone mode, to bypass analysis\n"
 ));
 	fprintf(bat->log, _("Recognized sample formats are: %s %s %s %s\n"),
 			snd_pcm_format_name(SND_PCM_FORMAT_U8),
@@ -339,6 +342,7 @@ static void parse_arguments(struct bat *bat, int argc, char *argv[])
 		{"file",     1, 0, OPT_READFILE},
 		{"saveplay", 1, 0, OPT_SAVEPLAY},
 		{"local",    0, 0, OPT_LOCAL},
+		{"standalone", 0, 0, OPT_STANDALONE},
 		{0, 0, 0, 0}
 	};
 
@@ -356,6 +360,9 @@ static void parse_arguments(struct bat *bat, int argc, char *argv[])
 			break;
 		case OPT_LOCAL:
 			bat->local = true;
+			break;
+		case OPT_STANDALONE:
+			bat->standalone = true;
 			break;
 		case 'D':
 			if (bat->playback.device == NULL)
@@ -601,7 +608,12 @@ int main(int argc, char *argv[])
 		test_loopback(&bat);
 
 analyze:
-	err = analyze_capture(&bat);
+#ifdef HAVE_LIBFFTW3
+	if (!bat.standalone)
+		err = analyze_capture(&bat);
+#else
+	fprintf(bat.log, _("No libfftw3 library. Exit without analysis.\n"));
+#endif
 out:
 	fprintf(bat.log, _("\nReturn value is %d\n"), err);
 

@@ -23,6 +23,7 @@
 #define OPT_READFILE			(OPT_BASE + 2)
 #define OPT_SAVEPLAY			(OPT_BASE + 3)
 #define OPT_LOCAL			(OPT_BASE + 4)
+#define OPT_STANDALONE			(OPT_BASE + 5)
 
 #define COMPOSE(a, b, c, d)		((a) | ((b)<<8) | ((c)<<16) | ((d)<<24))
 #define WAV_RIFF			COMPOSE('R', 'I', 'F', 'F')
@@ -150,6 +151,7 @@ struct bat {
 	char *narg;			/* argument string of duration */
 	char *logarg;			/* path name of log file */
 	char *debugplay;		/* path name to store playback signal */
+	bool standalone;		/* enable to bypass analysis */
 
 	struct pcm playback;
 	struct pcm capture;
