@@ -473,6 +473,10 @@ static int bat_init(struct bat *bat)
 			return err;
 	}
 
+	/* Set default playback and capture devices */
+	if (bat->playback.device == NULL && bat->capture.device == NULL)
+		bat->playback.device = bat->capture.device = DEFAULT_DEV_NAME;
+
 	/* Determine capture file */
 	if (bat->local) {
 		bat->capture.file = bat->playback.file;

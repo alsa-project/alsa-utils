@@ -377,12 +377,6 @@ void *playback_alsa(struct bat *bat)
 	retval_play = 0;
 	memset(&sndpcm, 0, sizeof(sndpcm));
 
-	if (bat->playback.device == NULL) {
-		fprintf(bat->err, _("No PCM device for playback: exit\n"));
-		retval_play = 1;
-		goto exit1;
-	}
-
 	err = snd_pcm_open(&sndpcm.handle, bat->playback.device,
 			SND_PCM_STREAM_PLAYBACK, 0);
 	if (err != 0) {
@@ -532,12 +526,6 @@ void *record_alsa(struct bat *bat)
 
 	retval_record = 0;
 	memset(&sndpcm, 0, sizeof(sndpcm));
-
-	if (bat->capture.device == NULL) {
-		fprintf(bat->err, _("No PCM device for capture: exit\n"));
-		retval_record = 1;
-		goto exit1;
-	}
 
 	err = snd_pcm_open(&sndpcm.handle, bat->capture.device,
 			SND_PCM_STREAM_CAPTURE, 0);
