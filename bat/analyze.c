@@ -296,7 +296,7 @@ int analyze_capture(struct bat *bat)
 	bat->fp = fopen(bat->capture.file, "rb");
 	err = -errno;
 	if (bat->fp == NULL) {
-		fprintf(bat->err, _("Cannot open file for capture: %s %d\n"),
+		fprintf(bat->err, _("Cannot open file: %s %d\n"),
 				bat->capture.file, err);
 		goto exit1;
 	}

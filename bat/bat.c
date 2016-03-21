@@ -469,8 +469,8 @@ static int bat_init(struct bat *bat)
 		bat->log = fopen(bat->logarg, "wb");
 		err = -errno;
 		if (bat->log == NULL) {
-			fprintf(bat->err, _("Cannot open file for capture:"));
-			fprintf(bat->err, _(" %s %d\n"), bat->logarg, err);
+			fprintf(bat->err, _("Cannot open file: %s %d\n"),
+					bat->logarg, err);
 			return err;
 		}
 		bat->err = bat->log;
@@ -533,8 +533,7 @@ static int bat_init(struct bat *bat)
 		bat->fp = fopen(bat->playback.file, "rb");
 		err = -errno;
 		if (bat->fp == NULL) {
-			fprintf(bat->err, _("Cannot open file for playback:"));
-			fprintf(bat->err, _(" %s %d\n"),
+			fprintf(bat->err, _("Cannot open file: %s %d\n"),
 					bat->playback.file, err);
 			return err;
 		}

@@ -303,8 +303,8 @@ static int write_to_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
 		fp = fopen(bat->debugplay, "wb");
 		err = -errno;
 		if (fp == NULL) {
-			fprintf(bat->err, _("Cannot open file for capture: "));
-			fprintf(bat->err, _("%s %d\n"), bat->debugplay, err);
+			fprintf(bat->err, _("Cannot open file: %s %d\n"),
+					bat->debugplay, err);
 			return err;
 		}
 		/* leave space for wav header */
@@ -404,8 +404,7 @@ void *playback_alsa(struct bat *bat)
 		bat->fp = fopen(bat->playback.file, "rb");
 		err = -errno;
 		if (bat->fp == NULL) {
-			fprintf(bat->err, _("Cannot open file for capture: "));
-			fprintf(bat->err, _("%s %d\n"),
+			fprintf(bat->err, _("Cannot open file: %s %d\n"),
 					bat->playback.file, err);
 			retval_play = 1;
 			goto exit3;
@@ -545,10 +544,10 @@ void *record_alsa(struct bat *bat)
 	}
 
 	remove(bat->capture.file);
-	fp = fopen(bat->capture.file, "w+");
+	fp = fopen(bat->capture.file, "wb");
 	err = -errno;
 	if (fp == NULL) {
-		fprintf(bat->err, _("Cannot open file for capture: %s %d\n"),
+		fprintf(bat->err, _("Cannot open file: %s %d\n"),
 				bat->capture.file, err);
 		retval_record = 1;
 		goto exit3;
