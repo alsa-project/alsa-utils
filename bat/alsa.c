@@ -19,6 +19,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <pthread.h>
+#include <errno.h>
 
 #include <alsa/asoundlib.h>
 
@@ -300,17 +301,17 @@ static int write_to_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
 
 	if (bat->debugplay) {
 		fp = fopen(bat->debugplay, "wb");
+		err = -errno;
 		if (fp == NULL) {
 			fprintf(bat->err, _("Cannot open file for capture: "));
-			fprintf(bat->err, _("%s %d\n"), bat->debugplay, -errno);
-			return -errno;
+			fprintf(bat->err, _("%s %d\n"), bat->debugplay, err);
+			return err;
 		}
 		/* leave space for wav header */
-		err = fseek(fp, sizeof(wav), SEEK_SET);
-		if (err != 0) {
-			fprintf(bat->err, _("Seek file error: %d %d\n"),
-					err, -errno);
-			return -errno;
+		if (fseek(fp, sizeof(wav), SEEK_SET) != 0) {
+			err = -errno;
+			fclose(fp);
+			return err;
 		}
 	}
 
@@ -401,10 +402,11 @@ void *playback_alsa(struct bat *bat)
 		fprintf(bat->log, _("Playing input audio file: %s\n"),
 				bat->playback.file);
 		bat->fp = fopen(bat->playback.file, "rb");
+		err = -errno;
 		if (bat->fp == NULL) {
 			fprintf(bat->err, _("Cannot open file for capture: "));
 			fprintf(bat->err, _("%s %d\n"),
-					bat->playback.file, -errno);
+					bat->playback.file, err);
 			retval_play = 1;
 			goto exit3;
 		}
@@ -544,9 +546,10 @@ void *record_alsa(struct bat *bat)
 
 	remove(bat->capture.file);
 	fp = fopen(bat->capture.file, "w+");
+	err = -errno;
 	if (fp == NULL) {
 		fprintf(bat->err, _("Cannot open file for capture: %s %d\n"),
-				bat->capture.file, -errno);
+				bat->capture.file, err);
 		retval_record = 1;
 		goto exit3;
 	}
