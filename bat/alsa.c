@@ -383,13 +383,13 @@ void *playback_alsa(struct bat *bat)
 	if (err != 0) {
 		fprintf(bat->err, _("Cannot open PCM playback device: "));
 		fprintf(bat->err, _("%s(%d)\n"), snd_strerror(err), err);
-		retval_play = 1;
+		retval_play = err;
 		goto exit1;
 	}
 
 	err = set_snd_pcm_params(bat, &sndpcm);
 	if (err != 0) {
-		retval_play = 1;
+		retval_play = err;
 		goto exit2;
 	}
 
@@ -406,20 +406,20 @@ void *playback_alsa(struct bat *bat)
 		if (bat->fp == NULL) {
 			fprintf(bat->err, _("Cannot open file: %s %d\n"),
 					bat->playback.file, err);
-			retval_play = 1;
+			retval_play = err;
 			goto exit3;
 		}
 		/* Skip header */
 		err = read_wav_header(bat, bat->playback.file, bat->fp, true);
 		if (err != 0) {
-			retval_play = 1;
+			retval_play = err;
 			goto exit4;
 		}
 	}
 
 	err = write_to_pcm_loop(&sndpcm, bat);
 	if (err != 0) {
-		retval_play = 1;
+		retval_play = err;
 		goto exit4;
 	}
 
@@ -533,13 +533,13 @@ void *record_alsa(struct bat *bat)
 	if (err != 0) {
 		fprintf(bat->err, _("Cannot open PCM capture device: "));
 		fprintf(bat->err, _("%s(%d)\n"), snd_strerror(err), err);
-		retval_record = 1;
+		retval_record = err;
 		goto exit1;
 	}
 
 	err = set_snd_pcm_params(bat, &sndpcm);
 	if (err != 0) {
-		retval_record = 1;
+		retval_record = err;
 		goto exit2;
 	}
 
@@ -549,7 +549,7 @@ void *record_alsa(struct bat *bat)
 	if (fp == NULL) {
 		fprintf(bat->err, _("Cannot open file: %s %d\n"),
 				bat->capture.file, err);
-		retval_record = 1;
+		retval_record = err;
 		goto exit3;
 	}
 
@@ -563,7 +563,7 @@ void *record_alsa(struct bat *bat)
 
 	err = write_wav_header(fp, &wav, bat);
 	if (err != 0) {
-		retval_record = 1;
+		retval_record = err;
 		goto exit4;
 	}
 
@@ -571,7 +571,7 @@ void *record_alsa(struct bat *bat)
 	fprintf(bat->log, _("Recording ...\n"));
 	err = read_from_pcm_loop(fp, count, &sndpcm, bat);
 	if (err != 0) {
-		retval_record = 1;
+		retval_record = err;
 		goto exit4;
 	}
 
