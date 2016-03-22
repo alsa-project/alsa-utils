@@ -480,7 +480,6 @@ static int set_ctl_value(struct space *space, const char *value, int all)
 	}
 	return 0;
   missing:
-  	printf("%i %i\n", type, count);
   	Perror(space, "missing some ctl values (line %i)", space->linenum);
   	return -EINVAL;
 }
