@@ -292,11 +292,10 @@ static int write_to_pcm(const struct pcm_container *sndpcm,
 
 static int write_to_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
 {
-	int err;
+	int err = 0;
 	int bytes = sndpcm->period_bytes; /* playback buffer size */
 	int frames = bytes * 8 / sndpcm->frame_bits; /* frame count */
 	FILE *fp = NULL;
-	struct wav_container wav;
 	int bytes_total = 0;
 
 	if (bat->debugplay) {
@@ -308,7 +307,7 @@ static int write_to_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
 			return err;
 		}
 		/* leave space for wav header */
-		if (fseek(fp, sizeof(wav), SEEK_SET) != 0) {
+		if (fseek(fp, sizeof(struct wav_container), SEEK_SET) != 0) {
 			err = -errno;
 			fclose(fp);
 			return err;
@@ -344,19 +343,7 @@ static int write_to_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
 	}
 
 	if (bat->debugplay) {
-		/* update wav header */
-		prepare_wav_info(&wav, bat);
-		wav.chunk.length = bytes_total;
-		wav.header.length = (wav.chunk.length) + sizeof(wav.chunk)
-			+ sizeof(wav.format) + sizeof(wav.header) - 8;
-
-		rewind(fp);
-		err = write_wav_header(fp, &wav, bat);
-		if (err != 0) {
-			fprintf(bat->err, _("Write file error: %s %s(%d)\n"),
-					bat->debugplay, snd_strerror(err), err);
-			return err;
-		}
+		update_wav_header(bat, fp, bytes_total);
 		fclose(fp);
 	}
 
