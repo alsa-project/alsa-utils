@@ -40,14 +40,48 @@ struct pcm_container {
 	char *buffer;
 };
 
+struct format_map_table {
+	enum _bat_pcm_format format_bat;
+	snd_pcm_format_t format_alsa;
+};
+
+static struct format_map_table map_tables[] = {
+	{ BAT_PCM_FORMAT_UNKNOWN, SND_PCM_FORMAT_UNKNOWN },
+	{ BAT_PCM_FORMAT_U8, SND_PCM_FORMAT_U8 },
+	{ BAT_PCM_FORMAT_S16_LE, SND_PCM_FORMAT_S16_LE },
+	{ BAT_PCM_FORMAT_S24_3LE, SND_PCM_FORMAT_S24_3LE },
+	{ BAT_PCM_FORMAT_S32_LE, SND_PCM_FORMAT_S32_LE },
+	{ BAT_PCM_FORMAT_MAX, },
+};
+
+static int format_convert(struct bat *bat, snd_pcm_format_t *fmt)
+{
+	struct format_map_table *t = map_tables;
+
+	for (; t->format_bat != BAT_PCM_FORMAT_MAX; t++) {
+		if (t->format_bat == bat->format) {
+			*fmt = t->format_alsa;
+			return 0;
+		}
+	}
+	fprintf(bat->err, _("Invalid format!\n"));
+	return -EINVAL;
+}
+
 static int set_snd_pcm_params(struct bat *bat, struct pcm_container *sndpcm)
 {
 	snd_pcm_hw_params_t *params;
+	snd_pcm_format_t format;
 	unsigned int buffer_time = 0;
 	unsigned int period_time = 0;
 	unsigned int rate;
 	int err;
 	const char *device_name = snd_pcm_name(sndpcm->handle);
+
+	/* Convert common format to ALSA format */
+	err = format_convert(bat, &format);
+	if (err != 0)
+		return err;
 
 	/* Allocate a hardware parameters object. */
 	snd_pcm_hw_params_alloca(&params);
@@ -72,11 +106,10 @@ static int set_snd_pcm_params(struct bat *bat, struct pcm_container *sndpcm)
 	}
 
 	/* Set format */
-	err = snd_pcm_hw_params_set_format(sndpcm->handle, params, bat->format);
+	err = snd_pcm_hw_params_set_format(sndpcm->handle, params, format);
 	if (err < 0) {
 		fprintf(bat->err, _("Set parameter to device error: "));
-		fprintf(bat->err, _("PCM format: %d %s: %s(%d)\n"),
-				bat->format,
+		fprintf(bat->err, _("PCM format: %d %s: %s(%d)\n"), format,
 				device_name, snd_strerror(err), err);
 		return err;
 	}
@@ -181,7 +214,7 @@ static int set_snd_pcm_params(struct bat *bat, struct pcm_container *sndpcm)
 		return -EINVAL;
 	}
 
-	err = snd_pcm_format_physical_width(bat->format);
+	err = snd_pcm_format_physical_width(format);
 	if (err < 0) {
 		fprintf(bat->err, _("Invalid parameters: "));
 		fprintf(bat->err, _("snd_pcm_format_physical_width: %d\n"),

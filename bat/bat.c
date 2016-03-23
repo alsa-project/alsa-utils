@@ -92,37 +92,30 @@ static void get_sine_frequencies(struct bat *bat, char *freq)
 static void get_format(struct bat *bat, char *optarg)
 {
 	if (strcasecmp(optarg, "cd") == 0) {
-		bat->format = SND_PCM_FORMAT_S16_LE;
+		bat->format = BAT_PCM_FORMAT_S16_LE;
 		bat->rate = 44100;
 		bat->channels = 2;
+		bat->sample_size = 2;
 	} else if (strcasecmp(optarg, "dat") == 0) {
-		bat->format = SND_PCM_FORMAT_S16_LE;
+		bat->format = BAT_PCM_FORMAT_S16_LE;
 		bat->rate = 48000;
 		bat->channels = 2;
-	} else {
-		bat->format = snd_pcm_format_value(optarg);
-		if (bat->format == SND_PCM_FORMAT_UNKNOWN) {
-			fprintf(bat->err, _("wrong extended format '%s'\n"),
-					optarg);
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	switch (bat->format) {
-	case SND_PCM_FORMAT_U8:
-		bat->sample_size = 1;
-		break;
-	case SND_PCM_FORMAT_S16_LE:
 		bat->sample_size = 2;
-		break;
-	case SND_PCM_FORMAT_S24_3LE:
+	} else if (strcasecmp(optarg, "U8") == 0) {
+		bat->format = BAT_PCM_FORMAT_U8;
+		bat->sample_size = 1;
+	} else if (strcasecmp(optarg, "S16_LE") == 0) {
+		bat->format = BAT_PCM_FORMAT_S16_LE;
+		bat->sample_size = 2;
+	} else if (strcasecmp(optarg, "S24_3LE") == 0) {
+		bat->format = BAT_PCM_FORMAT_S24_3LE;
 		bat->sample_size = 3;
-		break;
-	case SND_PCM_FORMAT_S32_LE:
+	} else if (strcasecmp(optarg, "S32_LE") == 0) {
+		bat->format = BAT_PCM_FORMAT_S32_LE;
 		bat->sample_size = 4;
-		break;
-	default:
-		fprintf(bat->err, _("unsupported format: %d\n"), bat->format);
+	} else {
+		bat->format = BAT_PCM_FORMAT_UNKNOWN;
+		fprintf(bat->err, _("wrong extended format '%s'\n"), optarg);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -295,11 +288,8 @@ _("Usage: alsabat [-options]...\n"
 "      --local            internal loop, set to bypass pcm hardware devices\n"
 "      --standalone       standalone mode, to bypass analysis\n"
 ));
-	fprintf(bat->log, _("Recognized sample formats are: %s %s %s %s\n"),
-			snd_pcm_format_name(SND_PCM_FORMAT_U8),
-			snd_pcm_format_name(SND_PCM_FORMAT_S16_LE),
-			snd_pcm_format_name(SND_PCM_FORMAT_S24_3LE),
-			snd_pcm_format_name(SND_PCM_FORMAT_S32_LE));
+	fprintf(bat->log, _("Recognized sample formats are: "));
+	fprintf(bat->log, _("U8 S16_LE S24_3LE S32_LE\n"));
 	fprintf(bat->log, _("The available format shotcuts are:\n"));
 	fprintf(bat->log, _("-f cd (16 bit little endian, 44100, stereo)\n"));
 	fprintf(bat->log, _("-f dat (16 bit little endian, 48000, stereo)\n"));
@@ -314,7 +304,7 @@ static void set_defaults(struct bat *bat)
 	bat->channels = 1;
 	bat->frame_size = 2;
 	bat->sample_size = 2;
-	bat->format = SND_PCM_FORMAT_S16_LE;
+	bat->format = BAT_PCM_FORMAT_S16_LE;
 	bat->convert_float_to_sample = convert_float_to_int16;
 	bat->convert_sample_to_double = convert_int16_to_double;
 	bat->frames = bat->rate * 2;

@@ -23,9 +23,11 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #include "gettext.h"
 #include "common.h"
@@ -113,22 +115,21 @@ static int adjust_waveform(struct bat *bat, float *val, int frames)
 	float factor, offset = 0.0;
 
 	switch (bat->format) {
-	case SND_PCM_FORMAT_U8:
+	case BAT_PCM_FORMAT_U8:
 		max = INT8_MAX;
 		offset = max;	/* shift for unsigned format */
 		break;
-	case SND_PCM_FORMAT_S16_LE:
+	case BAT_PCM_FORMAT_S16_LE:
 		max  = INT16_MAX;
 		break;
-	case SND_PCM_FORMAT_S24_3LE:
+	case BAT_PCM_FORMAT_S24_3LE:
 		max = (1 << 23) - 1;
 		break;
-	case SND_PCM_FORMAT_S32_LE:
+	case BAT_PCM_FORMAT_S32_LE:
 		max = INT32_MAX;
 		break;
 	default:
-		fprintf(bat->err, _("Invalid PCM format: %s\n"),
-				snd_pcm_format_name(bat->format));
+		fprintf(bat->err, _("Invalid PCM format: %d\n"), bat->format);
 		return -EINVAL;
 	}
 

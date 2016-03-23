@@ -13,8 +13,6 @@
  *
  */
 
-#include <alsa/asoundlib.h>
-
 #define TEMP_RECORD_FILE_NAME		"/tmp/bat.wav.XXXXXX"
 #define DEFAULT_DEV_NAME		"default"
 
@@ -110,6 +108,15 @@ struct wav_container {
 
 struct bat;
 
+enum _bat_pcm_format {
+	BAT_PCM_FORMAT_UNKNOWN = -1,
+	BAT_PCM_FORMAT_S16_LE = 0,
+	BAT_PCM_FORMAT_S32_LE,
+	BAT_PCM_FORMAT_U8,
+	BAT_PCM_FORMAT_S24_3LE,
+	BAT_PCM_FORMAT_MAX
+};
+
 enum _bat_op_mode {
 	MODE_UNKNOWN = -1,
 	MODE_SINGLE = 0,
@@ -142,7 +149,7 @@ struct bat {
 	int frames;			/* nb of frames */
 	int frame_size;			/* size of frame */
 	int sample_size;		/* size of sample */
-	snd_pcm_format_t format;	/* PCM format */
+	enum _bat_pcm_format format;	/* PCM format */
 
 	float sigma_k;			/* threshold for peak detection */
 	float target_freq[MAX_CHANNELS];
