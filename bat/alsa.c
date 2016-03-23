@@ -316,18 +316,13 @@ static int write_to_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
 
 	while (1) {
 		err = generate_input_data(sndpcm, bytes, bat);
-		if (err < 0)
-			return err;
-		else if (err > 0)
+		if (err != 0)
 			break;
 
 		if (bat->debugplay) {
-			err = fwrite(sndpcm->buffer, 1, bytes, fp);
-			if (err != bytes) {
-				fprintf(bat->err, _("Write file error: "));
-				fprintf(bat->err, _("%s(%d)\n"),
-						snd_strerror(err), err);
-				return -EIO;
+			if (fwrite(sndpcm->buffer, 1, bytes, fp) != bytes) {
+				err = -EIO;
+				break;
 			}
 			bytes_total += bytes;
 		}
@@ -339,7 +334,7 @@ static int write_to_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
 
 		err = write_to_pcm(sndpcm, frames, bat);
 		if (err != 0)
-			return err;
+			break;
 	}
 
 	if (bat->debugplay) {
@@ -349,7 +344,7 @@ static int write_to_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
 
 	snd_pcm_drain(sndpcm->handle);
 
-	return 0;
+	return err;
 }
 
 /**
@@ -405,7 +400,7 @@ void *playback_alsa(struct bat *bat)
 	}
 
 	err = write_to_pcm_loop(&sndpcm, bat);
-	if (err != 0) {
+	if (err < 0) {
 		retval_play = err;
 		goto exit4;
 	}
@@ -484,14 +479,12 @@ static int read_from_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
 		/* read a chunk from pcm device */
 		err = read_from_pcm(sndpcm, frames, bat);
 		if (err != 0)
-			return err;
+			break;
 
 		/* write the chunk to file */
-		err = fwrite(sndpcm->buffer, 1, size, fp);
-		if (err != size) {
-			fprintf(bat->err, _("Write file error: %s(%d)\n"),
-					snd_strerror(err), err);
-			return -EIO;
+		if (fwrite(sndpcm->buffer, 1, size, fp) != size) {
+			err = -EIO;
+			break;
 		}
 
 		bytes_read += size;
@@ -506,7 +499,7 @@ static int read_from_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
 	update_wav_header(bat, fp, bytes_read);
 
 	fclose(fp);
-	return 0;
+	return err;
 }
 
 static void pcm_cleanup(void *p)
