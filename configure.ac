@@ -58,6 +58,16 @@ AM_CONDITIONAL(HAVE_UCM, test "$have_ucm" = "yes")
 AM_CONDITIONAL(HAVE_TOPOLOGY, test "$have_topology" = "yes")
 AM_CONDITIONAL(HAVE_SAMPLERATE, test "$have_samplerate" = "yes")
 
+dnl Use tinyalsa
+alsabat_backend_tiny=
+AC_ARG_ENABLE(alsabat_backend_tiny,
+    AS_HELP_STRING([--enable-alsabat-backend-tiny], [Use tinyalsa for alsabat backend]),
+    [case "${enableval}" in
+      yes) alsabat_backend_tiny=true ;;
+      no) alsabat_backend_tiny=false ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-alsabat-backend-tiny) ;;
+    esac],[alsabat_backend_tiny=false])
+
 dnl Disable bat
 bat=
 if test "$have_pcm" = "yes"; then
@@ -82,6 +92,12 @@ if test x$bat = xtrue; then
   dnl Check for libfftw3
   have_libfftw3="yes"
   AC_CHECK_LIB([fftw3], [fftw_malloc], , [have_libfftw3="no"])
+  dnl Check for libtinyalsa
+  have_libtinyalsa=
+  if test x$alsabat_backend_tiny = xtrue; then
+    have_libtinyalsa="yes"
+    AC_CHECK_LIB([tinyalsa], [pcm_open], , [have_libtinyalsa="no"])
+  fi
   AC_CHECK_LIB([m], [sqrtf], , [AC_MSG_ERROR([Error: Need sqrtf])])
   AC_CHECK_LIB([pthread], [pthread_create], , [AC_MSG_ERROR([Error: need PTHREAD library])])
   FFTW_CFLAGS="$CFLAGS"
@@ -95,6 +111,7 @@ if test x$bat = xtrue; then
 
 fi
 AM_CONDITIONAL(HAVE_LIBFFTW3, test "$have_libfftw3" = "yes")
+AM_CONDITIONAL(HAVE_LIBTINYALSA, test "$have_libtinyalsa" = "yes")
 
 dnl Check for librt
 LIBRT=""

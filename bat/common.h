@@ -125,6 +125,8 @@ enum _bat_op_mode {
 };
 
 struct pcm {
+	unsigned int card_tiny;
+	unsigned int device_tiny;
 	char *device;
 	char *file;
 	enum _bat_op_mode mode;

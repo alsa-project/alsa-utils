@@ -31,7 +31,11 @@
 
 #include "common.h"
 
+#ifdef HAVE_LIBTINYALSA
+#include "tinyalsa.h"
+#else
 #include "alsa.h"
+#endif
 #include "convert.h"
 #ifdef HAVE_LIBFFTW3
 #include "analyze.h"
@@ -301,7 +305,6 @@ static void set_defaults(struct bat *bat)
 
 	/* Set default values */
 	bat->rate = 44100;
-	bat->channels = 1;
 	bat->frame_size = 2;
 	bat->sample_size = 2;
 	bat->format = BAT_PCM_FORMAT_S16_LE;
@@ -315,8 +318,15 @@ static void set_defaults(struct bat *bat)
 	bat->capture.device = NULL;
 	bat->buf = NULL;
 	bat->local = false;
+#ifdef HAVE_LIBTINYALSA
+	bat->channels = 2;
+	bat->playback.fct = &playback_tinyalsa;
+	bat->capture.fct = &record_tinyalsa;
+#else
+	bat->channels = 1;
 	bat->playback.fct = &playback_alsa;
 	bat->capture.fct = &record_alsa;
+#endif
 	bat->playback.mode = MODE_LOOPBACK;
 	bat->capture.mode = MODE_LOOPBACK;
 	bat->period_is_limited = false;
