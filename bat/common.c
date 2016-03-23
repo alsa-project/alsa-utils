@@ -195,3 +195,19 @@ int write_wav_header(FILE *fp, struct wav_container *wav, struct bat *bat)
 
 	return 0;
 }
+
+/* update wav header when data size changed */
+int update_wav_header(struct bat *bat, FILE *fp, int bytes)
+{
+	int err = 0;
+	struct wav_container wav;
+
+	prepare_wav_info(&wav, bat);
+	wav.chunk.length = bytes;
+	wav.header.length = (wav.chunk.length) + sizeof(wav.chunk)
+		+ sizeof(wav.format) + sizeof(wav.header) - 8;
+	rewind(fp);
+	err = write_wav_header(fp, &wav, bat);
+
+	return err;
+}

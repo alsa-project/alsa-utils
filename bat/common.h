@@ -183,3 +183,4 @@ struct analyze {
 void prepare_wav_info(struct wav_container *, struct bat *);
 int read_wav_header(struct bat *, char *, FILE *, bool);
 int write_wav_header(FILE *, struct wav_container *, struct bat *);
+int update_wav_header(struct bat *, FILE *, int);
