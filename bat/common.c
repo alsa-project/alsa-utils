@@ -23,6 +23,7 @@
 
 #include "common.h"
 #include "alsa.h"
+#include "bat-signal.h"
 
 int retval_play;
 int retval_record;
@@ -210,4 +211,54 @@ int update_wav_header(struct bat *bat, FILE *fp, int bytes)
 	err = write_wav_header(fp, &wav, bat);
 
 	return err;
+}
+
+/*
+ * Generate buffer to be played either from input file or from generated data
+ * Return value
+ * <0 error
+ * 0 ok
+ * >0 break
+ */
+int generate_input_data(struct bat *bat, void *buffer, int bytes, int frames)
+{
+	int err;
+	static int load;
+
+	if (bat->playback.file != NULL) {
+		/* From input file */
+		load = 0;
+
+		while (1) {
+			err = fread(buffer + load, 1, bytes - load, bat->fp);
+			if (0 == err) {
+				if (feof(bat->fp)) {
+					fprintf(bat->log,
+							_("End of playing.\n"));
+					return 1;
+				}
+			} else if (err < bytes - load) {
+				if (ferror(bat->fp)) {
+					fprintf(bat->err, _("Read file error"));
+					fprintf(bat->err, _(": %d\n"), err);
+					return -EIO;
+				}
+				load += err;
+			} else {
+				break;
+			}
+		}
+	} else {
+		/* Generate sine wave */
+		if ((bat->sinus_duration) && (load > bat->sinus_duration))
+			return 1;
+
+		err = generate_sine_wave(bat, frames, buffer);
+		if (err != 0)
+			return err;
+
+		load += frames;
+	}
+
+	return 0;
 }

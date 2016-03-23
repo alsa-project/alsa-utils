@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-#include <math.h>
 #include <stdint.h>
 #include <pthread.h>
 #include <errno.h>
@@ -28,7 +27,6 @@
 
 #include "common.h"
 #include "alsa.h"
-#include "bat-signal.h"
 
 struct pcm_container {
 	snd_pcm_t *handle;
@@ -206,59 +204,6 @@ static int set_snd_pcm_params(struct bat *bat, struct pcm_container *sndpcm)
 	return 0;
 }
 
-/*
- * Generate buffer to be played either from input file or from generated data
- * Return value
- * <0 error
- * 0 ok
- * >0 break
- */
-static int generate_input_data(struct pcm_container *sndpcm, int bytes,
-		struct bat *bat)
-{
-	int err;
-	static int load;
-	int frames = bytes * 8 / sndpcm->frame_bits;
-
-	if (bat->playback.file != NULL) {
-		/* From input file */
-		load = 0;
-
-		while (1) {
-			err = fread(sndpcm->buffer + load, 1,
-					bytes - load, bat->fp);
-			if (0 == err) {
-				if (feof(bat->fp)) {
-					fprintf(bat->log,
-							_("End of playing.\n"));
-					return 1;
-				}
-			} else if (err < bytes - load) {
-				if (ferror(bat->fp)) {
-					fprintf(bat->err, _("Read file error"));
-					fprintf(bat->err, _(": %d\n"), err);
-					return -EIO;
-				}
-				load += err;
-			} else {
-				break;
-			}
-		}
-	} else {
-		/* Generate sine wave */
-		if ((bat->sinus_duration) && (load > bat->sinus_duration))
-			return 1;
-
-		err = generate_sine_wave(bat, frames, (void *)sndpcm->buffer);
-		if (err != 0)
-			return err;
-
-		load += frames;
-	}
-
-	return 0;
-}
-
 static int write_to_pcm(const struct pcm_container *sndpcm,
 		int frames, struct bat *bat)
 {
@@ -315,7 +260,7 @@ static int write_to_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
 	}
 
 	while (1) {
-		err = generate_input_data(sndpcm, bytes, bat);
+		err = generate_input_data(bat, sndpcm->buffer, bytes, frames);
 		if (err != 0)
 			break;
 
