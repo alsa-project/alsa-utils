@@ -3067,11 +3067,14 @@ static void capture(char *orig_name)
 			size_t c = (rest <= (off64_t)chunk_bytes) ?
 				(size_t)rest : chunk_bytes;
 			size_t f = c * 8 / bits_per_frame;
-			if (pcm_read(audiobuf, f) != f)
+			if (pcm_read(audiobuf, f) != f) {
+				in_aborting = 1;
 				break;
+			}
 			if (write(fd, audiobuf, c) != c) {
 				perror(name);
-				prg_exit(EXIT_FAILURE);
+				in_aborting = 1;
+				break;
 			}
 			count -= c;
 			rest -= c;
@@ -3091,7 +3094,7 @@ static void capture(char *orig_name)
 		}
 
 		if (in_aborting)
-			break;
+			prg_exit(EXIT_FAILURE);
 
 		/* repeat the loop when format is raw without timelimit or
 		 * requested counts of data are recorded
