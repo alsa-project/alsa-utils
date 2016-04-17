@@ -192,6 +192,12 @@ static void test_loopback(struct bat *bat)
 		exit(EXIT_FAILURE);
 	}
 
+	/* check if capture thread is canceled or not */
+	if (thread_result_capture == PTHREAD_CANCELED) {
+		fprintf(bat->log, _("Capture canceled.\n"));
+		return;
+	}
+
 	/* check capture status */
 	if (*thread_result_capture != 0) {
 		fprintf(bat->err, _("Exit capture thread fail: %d\n"),
