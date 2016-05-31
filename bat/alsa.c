@@ -74,6 +74,8 @@ static int set_snd_pcm_params(struct bat *bat, struct pcm_container *sndpcm)
 	snd_pcm_format_t format;
 	unsigned int buffer_time = 0;
 	unsigned int period_time = 0;
+	snd_pcm_uframes_t buffer_size = 0;
+	snd_pcm_uframes_t period_size = 0;
 	unsigned int rate;
 	int err;
 	const char *device_name = snd_pcm_name(sndpcm->handle);
@@ -145,39 +147,71 @@ static int set_snd_pcm_params(struct bat *bat, struct pcm_container *sndpcm)
 		return -EINVAL;
 	}
 
-	if (snd_pcm_hw_params_get_buffer_time_max(params,
-			&buffer_time, 0) < 0) {
-		fprintf(bat->err, _("Get parameter from device error: "));
-		fprintf(bat->err, _("buffer time: %d %s: %s(%d)\n"),
-				buffer_time,
-				device_name, snd_strerror(err), err);
-		return -EINVAL;
-	}
+	if (bat->buffer_size > 0 && bat->period_size == 0)
+		bat->period_size = bat->buffer_size / DIV_BUFFERTIME;
 
-	if (buffer_time > MAX_BUFFERTIME)
-		buffer_time = MAX_BUFFERTIME;
+	if (bat->buffer_size > 0) {
+		buffer_size = bat->buffer_size;
+		period_size = bat->period_size;
 
-	period_time = buffer_time / DIV_BUFFERTIME;
+		fprintf(bat->log, _("Set period size: %d  buffer size: %d\n"),
+				(int) period_size, (int) buffer_size);
 
-	/* Set buffer time and period time */
-	err = snd_pcm_hw_params_set_buffer_time_near(sndpcm->handle, params,
-			&buffer_time, 0);
-	if (err < 0) {
-		fprintf(bat->err, _("Set parameter to device error: "));
-		fprintf(bat->err, _("buffer time: %d %s: %s(%d)\n"),
-				buffer_time,
-				device_name, snd_strerror(err), err);
-		return err;
-	}
+		err = snd_pcm_hw_params_set_buffer_size_near(sndpcm->handle,
+				params, &buffer_size);
+		if (err < 0) {
+			fprintf(bat->err, _("Set parameter to device error: "));
+			fprintf(bat->err, _("buffer size: %d %s: %s(%d)\n"),
+					(int) buffer_size,
+					device_name, snd_strerror(err), err);
+			return err;
+		}
 
-	err = snd_pcm_hw_params_set_period_time_near(sndpcm->handle, params,
-			&period_time, 0);
-	if (err < 0) {
-		fprintf(bat->err, _("Set parameter to device error: "));
-		fprintf(bat->err, _("period time: %d %s: %s(%d)\n"),
-				period_time,
-				device_name, snd_strerror(err), err);
-		return err;
+		err = snd_pcm_hw_params_set_period_size_near(sndpcm->handle,
+				params, &period_size, 0);
+		if (err < 0) {
+			fprintf(bat->err, _("Set parameter to device error: "));
+			fprintf(bat->err, _("period size: %d %s: %s(%d)\n"),
+					(int) period_size,
+					device_name, snd_strerror(err), err);
+			return err;
+		}
+	} else {
+		if (snd_pcm_hw_params_get_buffer_time_max(params,
+				&buffer_time, 0) < 0) {
+			fprintf(bat->err,
+					_("Get parameter from device error: "));
+			fprintf(bat->err, _("buffer time: %d %s: %s(%d)\n"),
+					buffer_time,
+					device_name, snd_strerror(err), err);
+			return -EINVAL;
+		}
+
+		if (buffer_time > MAX_BUFFERTIME)
+			buffer_time = MAX_BUFFERTIME;
+
+		period_time = buffer_time / DIV_BUFFERTIME;
+
+		/* Set buffer time and period time */
+		err = snd_pcm_hw_params_set_buffer_time_near(sndpcm->handle,
+				params, &buffer_time, 0);
+		if (err < 0) {
+			fprintf(bat->err, _("Set parameter to device error: "));
+			fprintf(bat->err, _("buffer time: %d %s: %s(%d)\n"),
+					buffer_time,
+					device_name, snd_strerror(err), err);
+			return err;
+		}
+
+		err = snd_pcm_hw_params_set_period_time_near(sndpcm->handle,
+				params, &period_time, 0);
+		if (err < 0) {
+			fprintf(bat->err, _("Set parameter to device error: "));
+			fprintf(bat->err, _("period time: %d %s: %s(%d)\n"),
+					period_time,
+					device_name, snd_strerror(err), err);
+			return err;
+		}
 	}
 
 	/* Write the parameters to the driver */
@@ -213,6 +247,9 @@ static int set_snd_pcm_params(struct bat *bat, struct pcm_container *sndpcm)
 				sndpcm->period_size);
 		return -EINVAL;
 	}
+
+	fprintf(bat->log, _("Get period size: %d  buffer size: %d\n"),
+			(int) sndpcm->period_size, (int) sndpcm->buffer_size);
 
 	err = snd_pcm_format_physical_width(format);
 	if (err < 0) {

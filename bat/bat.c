@@ -292,6 +292,8 @@ _("Usage: alsabat [-options]...\n"
 "  -k                     parameter for frequency detecting threshold\n"
 "  -F                     target frequency\n"
 "  -p                     total number of periods to play/capture\n"
+"  -B                     buffer size in frames\n"
+"  -E                     period size in frames\n"
 "      --log=#            file that both stdout and strerr redirecting to\n"
 "      --file=#           file for playback\n"
 "      --saveplay=#       file that storing playback content, for debug\n"
@@ -324,6 +326,8 @@ static void set_defaults(struct bat *bat)
 	bat->capture.device = NULL;
 	bat->buf = NULL;
 	bat->local = false;
+	bat->buffer_size = 0;
+	bat->period_size = 0;
 #ifdef HAVE_LIBTINYALSA
 	bat->channels = 2;
 	bat->playback.fct = &playback_tinyalsa;
@@ -342,8 +346,8 @@ static void set_defaults(struct bat *bat)
 
 static void parse_arguments(struct bat *bat, int argc, char *argv[])
 {
-	int c, option_index;
-	static const char short_options[] = "D:P:C:f:n:F:c:r:s:k:p:lth";
+	int c, option_index, err;
+	static const char short_options[] = "D:P:C:f:n:F:c:r:s:k:p:B:E:lth";
 	static const struct option long_options[] = {
 		{"help",     0, 0, 'h'},
 		{"log",      1, 0, OPT_LOG},
@@ -413,6 +417,16 @@ static void parse_arguments(struct bat *bat, int argc, char *argv[])
 		case 'p':
 			bat->periods_total = atoi(optarg);
 			bat->period_is_limited = true;
+			break;
+		case 'B':
+			err = atoi(optarg);
+			bat->buffer_size = err >= MIN_BUFFERSIZE
+					&& err < MAX_BUFFERSIZE ? err : 0;
+			break;
+		case 'E':
+			err = atoi(optarg);
+			bat->period_size = err >= MIN_PERIODSIZE
+					&& err < MAX_PERIODSIZE ? err : 0;
 			break;
 		case 'h':
 		default:

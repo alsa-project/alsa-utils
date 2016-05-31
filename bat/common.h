@@ -46,6 +46,12 @@
 #define DIV_BUFFERTIME			8
 /* margin to avoid sign inversion when generate sine wav */
 #define RANGE_FACTOR			0.95
+#define MAX_BUFFERSIZE			200000
+#define MIN_BUFFERSIZE			32
+#define MAX_PERIODSIZE			200000
+#define MIN_PERIODSIZE			32
+/* default period size for tinyalsa */
+#define TINYALSA_PERIODSIZE			1024
 
 #define EBATBASE			1000
 #define ENOPEAK				(EBATBASE + 1)
@@ -152,6 +158,8 @@ struct bat {
 	int frame_size;			/* size of frame */
 	int sample_size;		/* size of sample */
 	enum _bat_pcm_format format;	/* PCM format */
+	int buffer_size;		/* buffer size in frames */
+	int period_size;		/* period size in frames */
 
 	float sigma_k;			/* threshold for peak detection */
 	float target_freq[MAX_CHANNELS];

@@ -57,7 +57,10 @@ static int init_config(struct bat *bat, struct pcm_config *config)
 {
 	config->channels = bat->channels;
 	config->rate = bat->rate;
-	config->period_size = 1024;
+	if (bat->period_size > 0)
+		config->period_size = bat->period_size;
+	else
+		config->period_size = TINYALSA_PERIODSIZE;
 	config->period_count = 4;
 	config->start_threshold = 0;
 	config->stop_threshold = 0;
