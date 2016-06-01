@@ -168,16 +168,17 @@ int generate_sine_wave(struct bat *bat, int frames, void *buf)
 	/* reorder samples to interleaved mode */
 	err = reorder(bat, sinus_f, frames);
 	if (err != 0)
-		return err;
+		goto exit;
 
 	/* adjust amplitude and offset of waveform */
 	err = adjust_waveform(bat, sinus_f, frames);
 	if (err != 0)
-		return err;
+		goto exit;
 
 	bat->convert_float_to_sample(sinus_f, buf, frames, bat->channels);
 
+exit:
 	free(sinus_f);
 
-	return 0;
+	return err;
 }
