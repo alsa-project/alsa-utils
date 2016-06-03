@@ -22,6 +22,7 @@
 #define OPT_SAVEPLAY			(OPT_BASE + 3)
 #define OPT_LOCAL			(OPT_BASE + 4)
 #define OPT_STANDALONE			(OPT_BASE + 5)
+#define OPT_ROUNDTRIPLATENCY		(OPT_BASE + 6)
 
 #define COMPOSE(a, b, c, d)		((a) | ((b)<<8) | ((c)<<16) | ((d)<<24))
 #define WAV_RIFF			COMPOSE('R', 'I', 'F', 'F')
@@ -52,6 +53,10 @@
 #define MIN_PERIODSIZE			32
 /* default period size for tinyalsa */
 #define TINYALSA_PERIODSIZE			1024
+
+#define LATENCY_TEST_NUMBER			5
+#define LATENCY_TEST_TIME_LIMIT			25
+#define DIV_BUFFERSIZE			2
 
 #define EBATBASE			1000
 #define ENOPEAK				(EBATBASE + 1)
@@ -130,6 +135,14 @@ enum _bat_op_mode {
 	MODE_LAST
 };
 
+enum latency_state {
+	LATENCY_STATE_COMPLETE_FAILURE = -1,
+	LATENCY_STATE_COMPLETE_SUCCESS = 0,
+	LATENCY_STATE_MEASURE_FOR_1_SECOND,
+	LATENCY_STATE_PLAY_AND_LISTEN,
+	LATENCY_STATE_WAITING,
+};
+
 struct pcm {
 	unsigned int card_tiny;
 	unsigned int device_tiny;
@@ -151,6 +164,20 @@ struct sin_generator {
 	float magnitude;
 };
 
+struct roundtrip_latency {
+	int number;
+	enum latency_state state;
+	float result[LATENCY_TEST_NUMBER];
+	int final_result;
+	int samples;
+	float sum;
+	int threshold;
+	int error;
+	bool is_capturing;
+	bool is_playing;
+	bool xrun_error;
+};
+
 struct bat {
 	unsigned int rate;		/* sampling rate */
 	int channels;			/* nb of channels */
@@ -169,9 +196,11 @@ struct bat {
 	char *logarg;			/* path name of log file */
 	char *debugplay;		/* path name to store playback signal */
 	bool standalone;		/* enable to bypass analysis */
+	bool roundtriplatency;		/* enable round trip latency */
 
 	struct pcm playback;
 	struct pcm capture;
+	struct roundtrip_latency latency;
 
 	unsigned int periods_played;
 	unsigned int periods_total;

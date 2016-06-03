@@ -27,6 +27,7 @@
 
 #include "common.h"
 #include "tinyalsa.h"
+#include "latencytest.h"
 
 struct format_map_table {
 	enum _bat_pcm_format format_bat;
@@ -151,6 +152,40 @@ static int check_playback_params(struct bat *bat,
 
 exit:
 	pcm_params_free(params);
+
+	return err;
+}
+
+/**
+ * Process output data for latency test
+ */
+static int latencytest_process_output(struct bat *bat, struct pcm *pcm,
+		void *buffer, int bytes)
+{
+	int err = 0;
+	int frames = bytes / bat->frame_size;
+
+	fprintf(bat->log, _("Play sample with %d frames buffer\n"), frames);
+
+	bat->latency.is_playing = true;
+
+	while (1) {
+		/* generate output data */
+		err = handleoutput(bat, buffer, bytes, frames);
+		if (err != 0)
+			break;
+
+		err = pcm_write(pcm, buffer, bytes);
+		if (err != 0)
+			break;
+
+		if (bat->latency.state == LATENCY_STATE_COMPLETE_SUCCESS)
+			break;
+
+		bat->periods_played++;
+	}
+
+	bat->latency.is_playing = false;
 
 	return err;
 }
@@ -322,7 +357,10 @@ void *playback_tinyalsa(struct bat *bat)
 		}
 	}
 
-	err = play_sample(bat, pcm, buffer, bufbytes);
+	if (bat->roundtriplatency)
+		err = latencytest_process_output(bat, pcm, buffer, bufbytes);
+	else
+		err = play_sample(bat, pcm, buffer, bufbytes);
 	if (err < 0) {
 		retval_play = err;
 		goto exit4;
@@ -377,6 +415,56 @@ static int capture_sample(struct bat *bat, struct pcm *pcm,
 				&& bat->periods_played >= bat->periods_total)
 			break;
 	}
+
+	err = update_wav_header(bat, fp, bytes_read);
+
+	fclose(fp);
+	return err;
+}
+
+/**
+ * Process input data for latency test
+ */
+static int latencytest_process_input(struct bat *bat, struct pcm *pcm,
+		void *buffer, unsigned int bytes)
+{
+	int err = 0;
+	FILE *fp = NULL;
+	unsigned int bytes_read = 0;
+	unsigned int bytes_count = bat->frames * bat->frame_size;
+
+	remove(bat->capture.file);
+	fp = fopen(bat->capture.file, "wb");
+	err = -errno;
+	if (fp == NULL) {
+		fprintf(bat->err, _("Cannot open file: %s %d\n"),
+				bat->capture.file, err);
+		return err;
+	}
+	/* leave space for file header */
+	if (fseek(fp, sizeof(struct wav_container), SEEK_SET) != 0) {
+		err = -errno;
+		fclose(fp);
+		return err;
+	}
+
+	bat->latency.is_capturing = true;
+
+	while (bytes_read < bytes_count && !pcm_read(pcm, buffer, bytes)) {
+		if (fwrite(buffer, 1, bytes, fp) != bytes)
+			break;
+
+		err = handleinput(bat, buffer, bytes / bat->frame_size);
+		if (err != 0)
+			break;
+
+		if (bat->latency.is_playing == false)
+			break;
+
+		bytes_read += bytes;
+	}
+
+	bat->latency.is_capturing = false;
 
 	err = update_wav_header(bat, fp, bytes_read);
 
@@ -441,7 +529,10 @@ void *record_tinyalsa(struct bat *bat)
 	pthread_cleanup_push(free, buffer);
 
 	fprintf(bat->log, _("Recording ...\n"));
-	err = capture_sample(bat, pcm, buffer, bufbytes);
+	if (bat->roundtriplatency)
+		err = latencytest_process_input(bat, pcm, buffer, bufbytes);
+	else
+		err = capture_sample(bat, pcm, buffer, bufbytes);
 	if (err != 0) {
 		retval_record = err;
 		goto exit3;

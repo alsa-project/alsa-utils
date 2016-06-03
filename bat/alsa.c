@@ -27,6 +27,7 @@
 
 #include "common.h"
 #include "alsa.h"
+#include "latencytest.h"
 
 struct pcm_container {
 	snd_pcm_t *handle;
@@ -148,7 +149,33 @@ static int set_snd_pcm_params(struct bat *bat, struct pcm_container *sndpcm)
 	}
 
 	if (bat->buffer_size > 0 && bat->period_size == 0)
-		bat->period_size = bat->buffer_size / DIV_BUFFERTIME;
+		bat->period_size = bat->buffer_size / DIV_BUFFERSIZE;
+
+	if (bat->roundtriplatency && bat->buffer_size == 0) {
+		/* Set to minimum buffer size and period size
+		   for latency test */
+		if (snd_pcm_hw_params_get_buffer_size_min(params,
+				&buffer_size) < 0) {
+			fprintf(bat->err,
+					_("Get parameter from device error: "));
+			fprintf(bat->err, _("buffer size min: %d %s: %s(%d)\n"),
+					(int) buffer_size,
+					device_name, snd_strerror(err), err);
+			return -EINVAL;
+		}
+
+		if (snd_pcm_hw_params_get_period_size_min(params,
+				&period_size, 0) < 0) {
+			fprintf(bat->err,
+					_("Get parameter from device error: "));
+			fprintf(bat->err, _("period size min: %d %s: %s(%d)\n"),
+					(int) period_size,
+					device_name, snd_strerror(err), err);
+			return -EINVAL;
+		}
+		bat->buffer_size = (int) buffer_size;
+		bat->period_size = (int) period_size;
+	}
 
 	if (bat->buffer_size > 0) {
 		buffer_size = bat->buffer_size;
@@ -289,6 +316,8 @@ static int write_to_pcm(const struct pcm_container *sndpcm,
 		} else if (err == -EPIPE) {
 			fprintf(bat->err, _("Underrun: %s(%d)\n"),
 					snd_strerror(err), err);
+			if (bat->roundtriplatency)
+				bat->latency.xrun_error = true;
 			snd_pcm_prepare(sndpcm->handle);
 		} else if (err < 0) {
 			fprintf(bat->err, _("Write PCM device error: %s(%d)\n"),
@@ -303,6 +332,43 @@ static int write_to_pcm(const struct pcm_container *sndpcm,
 	}
 
 	return 0;
+}
+
+/**
+ * Process output data for latency test
+ */
+static int latencytest_process_output(struct pcm_container *sndpcm,
+		struct bat *bat)
+{
+	int err = 0;
+	int bytes = sndpcm->period_bytes; /* playback buffer size */
+	int frames = sndpcm->period_size; /* frame count */
+
+	bat->latency.is_playing = true;
+
+	while (1) {
+		/* generate output data */
+		err = handleoutput(bat, sndpcm->buffer, bytes, frames);
+		if (err != 0)
+			break;
+
+		err = write_to_pcm(sndpcm, frames, bat);
+		if (err != 0)
+			break;
+
+		/* Xrun error, terminate the playback thread*/
+		if (bat->latency.xrun_error == true)
+			break;
+
+		if (bat->latency.state == LATENCY_STATE_COMPLETE_SUCCESS)
+			break;
+
+		bat->periods_played++;
+	}
+
+	bat->latency.is_playing = false;
+
+	return err;
 }
 
 static int write_to_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
@@ -414,7 +480,10 @@ void *playback_alsa(struct bat *bat)
 		}
 	}
 
-	err = write_to_pcm_loop(&sndpcm, bat);
+	if (bat->roundtriplatency)
+		err = latencytest_process_output(&sndpcm, bat);
+	else
+		err = write_to_pcm_loop(&sndpcm, bat);
 	if (err < 0) {
 		retval_play = err;
 		goto exit4;
@@ -447,6 +516,8 @@ static int read_from_pcm(struct pcm_container *sndpcm,
 			snd_pcm_prepare(sndpcm->handle);
 			fprintf(bat->err, _("Overrun: %s(%d)\n"),
 					snd_strerror(err), err);
+			if (bat->roundtriplatency)
+				bat->latency.xrun_error = true;
 		} else if (err < 0) {
 			fprintf(bat->err, _("Read PCM device error: %s(%d)\n"),
 					snd_strerror(err), err);
@@ -517,6 +588,70 @@ static int read_from_pcm_loop(struct pcm_container *sndpcm, struct bat *bat)
 	return err;
 }
 
+/**
+ * Process input data for latency test
+ */
+static int latencytest_process_input(struct pcm_container *sndpcm,
+		struct bat *bat)
+{
+	int err = 0;
+	FILE *fp = NULL;
+	int bytes_read = 0;
+	int frames = sndpcm->period_size;
+	int size = sndpcm->period_bytes;
+	int bytes_count = bat->frames * bat->frame_size;
+
+	remove(bat->capture.file);
+	fp = fopen(bat->capture.file, "wb");
+	err = -errno;
+	if (fp == NULL) {
+		fprintf(bat->err, _("Cannot open file: %s %d\n"),
+				bat->capture.file, err);
+		return err;
+	}
+	/* leave space for file header */
+	if (fseek(fp, sizeof(struct wav_container), SEEK_SET) != 0) {
+		fclose(fp);
+		return err;
+	}
+
+	bat->latency.is_capturing = true;
+
+	while (bytes_read < bytes_count) {
+		/* read a chunk from pcm device */
+		err = read_from_pcm(sndpcm, frames, bat);
+		if (err != 0)
+			break;
+
+		/* Xrun error, terminate the capture thread*/
+		if (bat->latency.xrun_error == true)
+			break;
+
+		err = handleinput(bat, sndpcm->buffer, frames);
+		if (err != 0)
+			break;
+
+		if (bat->latency.is_playing == false)
+			break;
+
+		/* write the chunk to file */
+		if (fwrite(sndpcm->buffer, 1, size, fp) != size) {
+			err = -EIO;
+			break;
+		}
+
+		bytes_read += size;
+	}
+
+	bat->latency.is_capturing = false;
+
+	update_wav_header(bat, fp, bytes_read);
+
+	fclose(fp);
+	return err;
+}
+
+
 static void pcm_cleanup(void *p)
 {
 	snd_pcm_close(p);
@@ -558,7 +693,10 @@ void *record_alsa(struct bat *bat)
 	pthread_cleanup_push(free, sndpcm.buffer);
 
 	fprintf(bat->log, _("Recording ...\n"));
-	err = read_from_pcm_loop(&sndpcm, bat);
+	if (bat->roundtriplatency)
+		err = latencytest_process_input(&sndpcm, bat);
+	else
+		err = read_from_pcm_loop(&sndpcm, bat);
 	if (err != 0) {
 		retval_record = err;
 		goto exit3;

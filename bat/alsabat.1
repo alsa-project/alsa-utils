@@ -132,6 +132,12 @@ just like in normal mode, but will not be analyzed.
 The ALSABAT being built without libfftw3 support is always in standalone mode.
 The ALSABAT in normal mode can also bypass data analysis using option
 "--standalone".
+.TP
+\fI\-\-roundtriplatency\fP
+Round trip latency test.
+Audio latency is the time delay as an audio signal passes through a system.
+There are many kinds of audio latency metrics. One useful metric is the
+round trip latency, which is the sum of output latency and input latency.
 
 .SH EXAMPLES
 

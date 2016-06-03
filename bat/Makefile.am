@@ -7,11 +7,13 @@ alsabat_SOURCES = \
 	bat.c \
 	common.c \
 	signal.c \
+	latencytest.c \
 	convert.c
 
 noinst_HEADERS = \
 	common.h \
 	bat-signal.h \
+	latencytest.h \
 	convert.h
 
 if HAVE_LIBFFTW3

@@ -81,6 +81,8 @@ feature_list_test () {
 	latestfile=`ls -t1 /tmp/bat.wav.* | head -n 1`
 	feature_test "--local -F $maxfreq --file $latestfile" \
 			"local mode: analyze local file"
+	feature_test "--roundtriplatency" \
+			"round trip latency test"
 
 	print_result
 }

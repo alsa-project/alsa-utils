@@ -40,6 +40,7 @@
 #ifdef HAVE_LIBFFTW3
 #include "analyze.h"
 #endif
+#include "latencytest.h"
 
 static int get_duration(struct bat *bat)
 {
@@ -299,6 +300,7 @@ _("Usage: alsabat [-options]...\n"
 "      --saveplay=#       file that storing playback content, for debug\n"
 "      --local            internal loop, set to bypass pcm hardware devices\n"
 "      --standalone       standalone mode, to bypass analysis\n"
+"      --roundtriplatency round trip latency mode\n"
 ));
 	fprintf(bat->log, _("Recognized sample formats are: "));
 	fprintf(bat->log, _("U8 S16_LE S24_3LE S32_LE\n"));
@@ -328,6 +330,7 @@ static void set_defaults(struct bat *bat)
 	bat->local = false;
 	bat->buffer_size = 0;
 	bat->period_size = 0;
+	bat->roundtriplatency = false;
 #ifdef HAVE_LIBTINYALSA
 	bat->channels = 2;
 	bat->playback.fct = &playback_tinyalsa;
@@ -355,6 +358,7 @@ static void parse_arguments(struct bat *bat, int argc, char *argv[])
 		{"saveplay", 1, 0, OPT_SAVEPLAY},
 		{"local",    0, 0, OPT_LOCAL},
 		{"standalone", 0, 0, OPT_STANDALONE},
+		{"roundtriplatency", 0, 0, OPT_ROUNDTRIPLATENCY},
 		{0, 0, 0, 0}
 	};
 
@@ -375,6 +379,9 @@ static void parse_arguments(struct bat *bat, int argc, char *argv[])
 			break;
 		case OPT_STANDALONE:
 			bat->standalone = true;
+			break;
+		case OPT_ROUNDTRIPLATENCY:
+			bat->roundtriplatency = true;
 			break;
 		case 'D':
 			if (bat->playback.device == NULL)
@@ -615,6 +622,35 @@ int main(int argc, char *argv[])
 	err = validate_options(&bat);
 	if (err < 0)
 		goto out;
+
+	/* round trip latency test thread */
+	if (bat.roundtriplatency) {
+		while (1) {
+			fprintf(bat.log,
+				_("\nStart round trip latency\n"));
+			roundtrip_latency_init(&bat);
+			test_loopback(&bat);
+
+			if (bat.latency.xrun_error == false)
+				break;
+			else {
+				/* Xrun error in playback or capture,
+				increase period size and try again */
+				bat.period_size += bat.rate / 1000;
+				bat.buffer_size =
+					bat.period_size * DIV_BUFFERSIZE;
+
+				/* terminate the test if period_size is
+				large enough */
+				if (bat.period_size > bat.rate * 0.2)
+					break;
+			}
+
+			/* Waiting 500ms and start the next round */
+			usleep(CAPTURE_DELAY * 1000);
+		}
+		goto out;
+	}
 
 	/* single line playback thread: playback only, no capture */
 	if (bat.playback.mode == MODE_SINGLE) {
