@@ -226,6 +226,169 @@ out1:
 	return err;
 }
 
+static int calculate_noise_one_period(struct bat *bat,
+		struct noise_analyzer *na, float *src,
+		int length, int channel)
+{
+	int i, shift = 0;
+	float tmp, rms, gain, residual;
+	float a = 0.0, b = 1.0;
+
+	/* step 1. phase compensation */
+
+	if (length < 2 * na->nsamples)
+		return -EINVAL;
+
+	/* search for the beginning of a sine period */
+	for (i = 0, tmp = 0.0, shift = -1; i < na->nsamples; i++) {
+		/* find i where src[i] >= 0 && src[i+1] < 0 */
+		if (src[i] < 0.0)
+			continue;
+		if (src[i + 1] < 0.0) {
+			tmp = src[i] - src[i + 1];
+			a = src[i] / tmp;
+			b = -src[i + 1] / tmp;
+			shift = i;
+			break;
+		}
+	}
+
+	/* didn't find the beginning of a sine period */
+	if (shift == -1)
+		return -EINVAL;
+
+	/* shift sine waveform to source[0] = 0.0 */
+	for (i = 0; i < na->nsamples; i++)
+		na->source[i] = a * src[i + shift + 1] + b * src[i + shift];
+
+	/* step 2. gain compensation */
+
+	/* calculate rms of signal amplitude */
+	for (i = 0, tmp = 0.0; i < na->nsamples; i++)
+		tmp += na->source[i] * na->source[i];
+	rms = sqrtf(tmp / na->nsamples);
+
+	gain = na->rms_tgt / rms;
+
+	for (i = 0; i < na->nsamples; i++)
+		na->source[i] *= gain;
+
+	/* step 3. calculate snr in dB */
+
+	for (i = 0, tmp = 0.0, residual = 0.0; i < na->nsamples; i++) {
+		tmp = fabsf(na->target[i] - na->source[i]);
+		residual += tmp * tmp;
+	}
+
+	tmp = na->rms_tgt / sqrtf(residual / na->nsamples);
+	na->snr_db = 20.0 * log10f(tmp);
+
+	return 0;
+}
+
+static int calculate_noise(struct bat *bat, float *src, int channel)
+{
+	int err = 0;
+	struct noise_analyzer na;
+	float freq = bat->target_freq[channel];
+	float tmp, sum_snr_pc, avg_snr_pc, avg_snr_db;
+	int offset, i, cnt_noise, cnt_clean;
+	/* num of samples in each sine period */
+	int nsamples = (int) ceilf(bat->rate / freq);
+	/* each section has 2 sine periods, the first one for locating
+	 * and the second one for noise calculating */
+	int nsamples_per_section = nsamples * 2;
+	/* all sine periods will be calculated except the first one */
+	int nsection = bat->frames / nsamples - 1;
+
+	fprintf(bat->log, _("samples per period: %d\n"), nsamples);
+	fprintf(bat->log, _("total sections to detect: %d\n"), nsection);
+	na.source = (float *)malloc(sizeof(float) * nsamples);
+	if (!na.source) {
+		err = -ENOMEM;
+		goto out1;
+	}
+
+	na.target = (float *)malloc(sizeof(float) * nsamples);
+	if (!na.target) {
+		err = -ENOMEM;
+		goto out2;
+	}
+
+	/* generate standard single-tone signal */
+	err = generate_sine_wave_raw_mono(bat, na.target, freq, nsamples);
+	if (err < 0)
+		goto out3;
+
+	na.nsamples = nsamples;
+
+	/* calculate rms of standard signal */
+	for (i = 0, tmp = 0.0; i < nsamples; i++)
+		tmp += na.target[i] * na.target[i];
+	na.rms_tgt = sqrtf(tmp / nsamples);
+
+	/* calculate average noise level */
+	sum_snr_pc = 0.0;
+	cnt_clean = cnt_noise = 0;
+	for (i = 0, offset = 0; i < nsection; i++) {
+		na.snr_db = SNR_DB_INVALID;
+
+		err = calculate_noise_one_period(bat, &na, src + offset,
+				nsamples_per_section, channel);
+		if (err < 0)
+			goto out3;
+
+		if (na.snr_db > bat->snr_thd_db) {
+			cnt_clean++;
+			sum_snr_pc += 100.0 / powf(10.0, na.snr_db / 20.0);
+		} else {
+			cnt_noise++;
+		}
+		offset += nsamples;
+	}
+
+	if (cnt_noise > 0) {
+		fprintf(bat->err, _("Noise detected at %d points.\n"),
+				cnt_noise);
+		err = -cnt_noise;
+		if (cnt_clean == 0)
+			goto out3;
+	} else {
+		fprintf(bat->log, _("No noise detected.\n"));
+	}
+
+	avg_snr_pc = sum_snr_pc / cnt_clean;
+	avg_snr_db = 20.0 * log10f(100.0 / avg_snr_pc);
+	fprintf(bat->log, _("Average SNR is %.2f dB (%.2f %%) at %d points.\n"),
+			avg_snr_db, avg_snr_pc, cnt_clean);
+
+out3:
+	free(na.target);
+out2:
+	free(na.source);
+out1:
+	return err;
+}
+
+static int find_and_check_noise(struct bat *bat, void *buf, int channel)
+{
+	int err = 0;
+	float *source;
+
+	source = (float *)malloc(sizeof(float) * bat->frames);
+	if (!source)
+		return -ENOMEM;
+
+	/* convert source PCM to floats */
+	bat->convert_sample_to_float(buf, source, bat->frames);
+
+	/* adjust waveform and calculate noise */
+	err = calculate_noise(bat, source, channel);
+
+	free(source);
+	return err;
+}
+
 /**
  * Convert interleaved samples from channels in samples from a single channel
  */
@@ -324,7 +487,21 @@ int analyze_capture(struct bat *bat)
 		a.buf = bat->buf +
 				c * bat->frames * bat->frame_size
 				/ bat->channels;
-		err = find_and_check_harmonics(bat, &a, c);
+		if (!bat->standalone) {
+			err = find_and_check_harmonics(bat, &a, c);
+			if (err != 0)
+				goto exit2;
+		}
+
+		if (snr_is_valid(bat->snr_thd_db)) {
+			fprintf(bat->log, _("\nChecking for SNR: "));
+			fprintf(bat->log, _("Threshold is %.2f dB (%.2f%%)\n"),
+					bat->snr_thd_db, 100.0
+					/ powf(10.0, bat->snr_thd_db / 20.0));
+			err = find_and_check_noise(bat, a.buf, c);
+			if (err != 0)
+				goto exit2;
+		}
 	}
 
 exit2:

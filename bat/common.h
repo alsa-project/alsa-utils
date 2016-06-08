@@ -23,6 +23,8 @@
 #define OPT_LOCAL			(OPT_BASE + 4)
 #define OPT_STANDALONE			(OPT_BASE + 5)
 #define OPT_ROUNDTRIPLATENCY		(OPT_BASE + 6)
+#define OPT_SNRTHD_DB			(OPT_BASE + 7)
+#define OPT_SNRTHD_PC			(OPT_BASE + 8)
 
 #define COMPOSE(a, b, c, d)		((a) | ((b)<<8) | ((c)<<16) | ((d)<<24))
 #define WAV_RIFF			COMPOSE('R', 'I', 'F', 'F')
@@ -79,6 +81,23 @@
  * will be more time-consuming, and the result will be more accurate. */
 #define SHIFT_MAX			(sizeof(int) * 8 - 2)
 #define SHIFT_MIN			8
+
+/* Define SNR range in dB.
+ * if the noise is equal to signal, SNR = 0.0dB;
+ * if the noise is zero, SNR is limited by RIFF wav data width:
+ *     8 bit  -->  20.0 * log10f (powf(2.0, 8.0))  = 48.16 dB
+ *    16 bit  -->  20.0 * log10f (powf(2.0, 16.0)) = 96.33 dB
+ *    24 bit  -->  20.0 * log10f (powf(2.0, 24.0)) = 144.49 dB
+ *    32 bit  -->  20.0 * log10f (powf(2.0, 32.0)) = 192.66 dB
+ * so define the SNR range (0.0, 200.0) dB, value out of range is invalid. */
+#define SNR_DB_INVALID			-1.0
+#define SNR_DB_MIN			0.0
+#define SNR_DB_MAX			200.0
+
+inline bool snr_is_valid(float db)
+{
+	return (db > SNR_DB_MIN && db < SNR_DB_MAX);
+}
 
 struct wav_header {
 	unsigned int magic; /* 'RIFF' */
@@ -178,6 +197,14 @@ struct roundtrip_latency {
 	bool xrun_error;
 };
 
+struct noise_analyzer {
+	int nsamples;			/* number of sample */
+	float *source;			/* single-tone to be analyzed */
+	float *target;			/* target single-tone as standard */
+	float rms_tgt;			/* rms of target single-tone */
+	float snr_db;			/* snr in dB */
+};
+
 struct bat {
 	unsigned int rate;		/* sampling rate */
 	int channels;			/* nb of channels */
@@ -189,6 +216,7 @@ struct bat {
 	int period_size;		/* period size in frames */
 
 	float sigma_k;			/* threshold for peak detection */
+	float snr_thd_db;		/* threshold for noise detection (dB) */
 	float target_freq[MAX_CHANNELS];
 
 	int sinus_duration;		/* number of frames for playback */

@@ -138,6 +138,14 @@ Round trip latency test.
 Audio latency is the time delay as an audio signal passes through a system.
 There are many kinds of audio latency metrics. One useful metric is the
 round trip latency, which is the sum of output latency and input latency.
+.TP
+\fI\-\-snr\-db=#\fP
+Noise detection threshold in SNR (dB). 26dB indicates 5% noise in amplitude.
+ALSABAT will return error if signal SNR is smaller than the threshold.
+.TP
+\fI\-\-snr\-pc=#\fP
+Noise detection threshold in percentage of noise amplitude (%).
+ALSABAT will return error if the noise amplitude is larger than the threshold.
 
 .SH EXAMPLES
 

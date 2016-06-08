@@ -24,6 +24,7 @@
 #include <math.h>
 #include <limits.h>
 #include <locale.h>
+#include <math.h>
 
 #include "aconfig.h"
 #include "gettext.h"
@@ -41,6 +42,38 @@
 #include "analyze.h"
 #endif
 #include "latencytest.h"
+
+/* get snr threshold in dB */
+static void get_snr_thd_db(struct bat *bat, char *thd)
+{
+	int err;
+	float thd_db;
+	char *ptrf;
+
+	thd_db = strtof(thd, &ptrf);
+	err = -errno;
+	if (!snr_is_valid(thd_db)) {
+		fprintf(bat->err, _("Invalid threshold '%s':%d\n"), thd, err);
+		exit(EXIT_FAILURE);
+	}
+	bat->snr_thd_db = thd_db;
+}
+
+/* get snr threshold in %, and convert to dB */
+static void get_snr_thd_pc(struct bat *bat, char *thd)
+{
+	int err;
+	float thd_pc;
+	char *ptrf;
+
+	thd_pc = strtof(thd, &ptrf);
+	err = -errno;
+	if (thd_pc <= 0.0 || thd_pc >= 100.0) {
+		fprintf(bat->err, _("Invalid threshold '%s':%d\n"), thd, err);
+		exit(EXIT_FAILURE);
+	}
+	bat->snr_thd_db = 20.0 * log10f(100.0 / thd_pc);
+}
 
 static int get_duration(struct bat *bat)
 {
@@ -301,6 +334,8 @@ _("Usage: alsabat [-options]...\n"
 "      --local            internal loop, set to bypass pcm hardware devices\n"
 "      --standalone       standalone mode, to bypass analysis\n"
 "      --roundtriplatency round trip latency mode\n"
+"      --snr-db=#         noise detect threshold, in SNR(dB)\n"
+"      --snr-pc=#         noise detect threshold, in noise percentage(%%)\n"
 ));
 	fprintf(bat->log, _("Recognized sample formats are: "));
 	fprintf(bat->log, _("U8 S16_LE S24_3LE S32_LE\n"));
@@ -324,6 +359,7 @@ static void set_defaults(struct bat *bat)
 	bat->target_freq[0] = 997.0;
 	bat->target_freq[1] = 997.0;
 	bat->sigma_k = 3.0;
+	bat->snr_thd_db = SNR_DB_INVALID;
 	bat->playback.device = NULL;
 	bat->capture.device = NULL;
 	bat->buf = NULL;
@@ -359,6 +395,8 @@ static void parse_arguments(struct bat *bat, int argc, char *argv[])
 		{"local",    0, 0, OPT_LOCAL},
 		{"standalone", 0, 0, OPT_STANDALONE},
 		{"roundtriplatency", 0, 0, OPT_ROUNDTRIPLATENCY},
+		{"snr-db",   1, 0, OPT_SNRTHD_DB},
+		{"snr-pc",   1, 0, OPT_SNRTHD_PC},
 		{0, 0, 0, 0}
 	};
 
@@ -382,6 +420,11 @@ static void parse_arguments(struct bat *bat, int argc, char *argv[])
 			break;
 		case OPT_ROUNDTRIPLATENCY:
 			bat->roundtriplatency = true;
+		case OPT_SNRTHD_DB:
+			get_snr_thd_db(bat, optarg);
+			break;
+		case OPT_SNRTHD_PC:
+			get_snr_thd_pc(bat, optarg);
 			break;
 		case 'D':
 			if (bat->playback.device == NULL)
@@ -670,7 +713,7 @@ int main(int argc, char *argv[])
 
 analyze:
 #ifdef HAVE_LIBFFTW3F
-	if (!bat.standalone)
+	if (!bat.standalone || snr_is_valid(bat.snr_thd_db))
 		err = analyze_capture(&bat);
 #else
 	fprintf(bat.log, _("No libfftw3 library. Exit without analysis.\n"));

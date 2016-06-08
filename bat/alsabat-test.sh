@@ -83,6 +83,10 @@ feature_list_test () {
 			"local mode: analyze local file"
 	feature_test "--roundtriplatency" \
 			"round trip latency test"
+	feature_test "--snr-db 26" \
+			"noise detect threshold in SNR(dB)"
+	feature_test "--snr-pc 5" \
+			"noise detect threshold in noise percentage(%)"
 
 	print_result
 }
