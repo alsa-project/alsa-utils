@@ -26,10 +26,11 @@
 #include "gettext.h"
 
 #include "common.h"
+#include "bat-signal.h"
 
-static void check_amplitude(struct bat *bat, double *buf)
+static void check_amplitude(struct bat *bat, float *buf)
 {
-	double sum, average, amplitude;
+	float sum, average, amplitude;
 	int i, percent;
 
 	/* calculate average value */
@@ -39,7 +40,7 @@ static void check_amplitude(struct bat *bat, double *buf)
 
 	/* calculate peak-to-average amplitude */
 	for (i = 0, sum = 0.0; i < bat->frames; i++)
-		sum += abs(buf[i] - average);
+		sum += fabsf(buf[i] - average);
 	amplitude = sum / bat->frames * M_PI / 2.0;
 
 	/* calculate amplitude percentage against full range */
@@ -71,9 +72,9 @@ int check_peak(struct bat *bat, struct analyze *a, int end, int peak, float hz,
 	float tolerance = (delta_rate > delta_HZ) ? delta_rate : delta_HZ;
 
 	fprintf(bat->log, _("Detected peak at %2.2f Hz of %2.2f dB\n"), hz_peak,
-			10.0 * log10(a->mag[peak] / mean));
+			10.0 * log10f(a->mag[peak] / mean));
 	fprintf(bat->log, _(" Total %3.1f dB from %2.2f to %2.2f Hz\n"),
-			10.0 * log10(p / mean), start * hz, end * hz);
+			10.0 * log10f(p / mean), start * hz, end * hz);
 
 	if (hz_peak < DC_THRESHOLD) {
 		fprintf(bat->err, _(" WARNING: Found low peak %2.2f Hz,"),
@@ -161,7 +162,7 @@ static int check(struct bat *bat, struct analyze *a, int channel)
 
 static void calc_magnitude(struct bat *bat, struct analyze *a, int N)
 {
-	double r2, i2;
+	float r2, i2;
 	int i;
 
 	for (i = 1; i < N / 2; i++) {
@@ -176,36 +177,36 @@ static void calc_magnitude(struct bat *bat, struct analyze *a, int N)
 static int find_and_check_harmonics(struct bat *bat, struct analyze *a,
 		int channel)
 {
-	fftw_plan p;
+	fftwf_plan p;
 	int err = -ENOMEM, N = bat->frames;
 
 	/* Allocate FFT buffers */
-	a->in = (double *) fftw_malloc(sizeof(double) * bat->frames);
+	a->in = (float *) fftwf_malloc(sizeof(float) * bat->frames);
 	if (a->in == NULL)
 		goto out1;
 
-	a->out = (double *) fftw_malloc(sizeof(double) * bat->frames);
+	a->out = (float *) fftwf_malloc(sizeof(float) * bat->frames);
 	if (a->out == NULL)
 		goto out2;
 
-	a->mag = (double *) fftw_malloc(sizeof(double) * bat->frames);
+	a->mag = (float *) fftwf_malloc(sizeof(float) * bat->frames);
 	if (a->mag == NULL)
 		goto out3;
 
 	/* create FFT plan */
-	p = fftw_plan_r2r_1d(N, a->in, a->out, FFTW_R2HC,
+	p = fftwf_plan_r2r_1d(N, a->in, a->out, FFTW_R2HC,
 			FFTW_MEASURE | FFTW_PRESERVE_INPUT);
 	if (p == NULL)
 		goto out4;
 
-	/* convert source PCM to doubles */
-	bat->convert_sample_to_double(a->buf, a->in, bat->frames);
+	/* convert source PCM to floats */
+	bat->convert_sample_to_float(a->buf, a->in, bat->frames);
 
 	/* check amplitude */
 	check_amplitude(bat, a->in);
 
 	/* run FFT */
-	fftw_execute(p);
+	fftwf_execute(p);
 
 	/* FFT out is real and imaginary numbers - calc magnitude for each */
 	calc_magnitude(bat, a, N);
@@ -213,14 +214,14 @@ static int find_and_check_harmonics(struct bat *bat, struct analyze *a,
 	/* check data */
 	err = check(bat, a, channel);
 
-	fftw_destroy_plan(p);
+	fftwf_destroy_plan(p);
 
 out4:
-	fftw_free(a->mag);
+	fftwf_free(a->mag);
 out3:
-	fftw_free(a->out);
+	fftwf_free(a->out);
 out2:
-	fftw_free(a->in);
+	fftwf_free(a->in);
 out1:
 	return err;
 }

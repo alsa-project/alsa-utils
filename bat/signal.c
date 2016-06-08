@@ -75,7 +75,7 @@ float sin_generator_next_sample(struct sin_generator *sg)
 	sg->state_real = sr * pr - si * pi;
 	sg->state_imag = sr * pi + pr * si;
 	/* return the input value so sine wave starts at exactly 0.0 */
-	return sr;
+	return (float)sr;
 }
 
 /* fills a vector with a sine wave */

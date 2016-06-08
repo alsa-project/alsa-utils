@@ -211,7 +211,7 @@ struct bat {
 	FILE *log;
 	FILE *err;
 
-	void (*convert_sample_to_double)(void *, double *, int);
+	void (*convert_sample_to_float)(void *, float *, int);
 	void (*convert_float_to_sample)(float *, void *, int, int);
 
 	void *buf;			/* PCM Buffer */
@@ -221,9 +221,9 @@ struct bat {
 
 struct analyze {
 	void *buf;
-	double *in;
-	double *out;
-	double *mag;
+	float *in;
+	float *out;
+	float *mag;
 };
 
 void prepare_wav_info(struct wav_container *, struct bat *);

@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-void convert_uint8_to_double(void *buf, double *val, int samples)
+void convert_uint8_to_float(void *buf, float *val, int samples)
 {
 	int i;
 
@@ -26,7 +26,7 @@ void convert_uint8_to_double(void *buf, double *val, int samples)
 		val[i] = ((uint8_t *) buf)[i];
 }
 
-void convert_int16_to_double(void *buf, double *val, int samples)
+void convert_int16_to_float(void *buf, float *val, int samples)
 {
 	int i;
 
@@ -34,7 +34,7 @@ void convert_int16_to_double(void *buf, double *val, int samples)
 		val[i] = ((int16_t *) buf)[i];
 }
 
-void convert_int24_to_double(void *buf, double *val, int samples)
+void convert_int24_to_float(void *buf, float *val, int samples)
 {
 	int i;
 	int32_t tmp;
@@ -48,7 +48,7 @@ void convert_int24_to_double(void *buf, double *val, int samples)
 	}
 }
 
-void convert_int32_to_double(void *buf, double *val, int samples)
+void convert_int32_to_float(void *buf, float *val, int samples)
 {
 	int i;
 

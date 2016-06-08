@@ -13,10 +13,10 @@
  *
  */
 
-void convert_uint8_to_double(void *, double *, int);
-void convert_int16_to_double(void *, double *, int);
-void convert_int24_to_double(void *, double *, int);
-void convert_int32_to_double(void *, double *, int);
+void convert_uint8_to_float(void *, float *, int);
+void convert_int16_to_float(void *, float *, int);
+void convert_int24_to_float(void *, float *, int);
+void convert_int32_to_float(void *, float *, int);
 void convert_float_to_uint8(float *, void *, int, int);
 void convert_float_to_int16(float *, void *, int, int);
 void convert_float_to_int24(float *, void *, int, int);

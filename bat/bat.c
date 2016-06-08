@@ -37,7 +37,7 @@
 #include "alsa.h"
 #endif
 #include "convert.h"
-#ifdef HAVE_LIBFFTW3
+#ifdef HAVE_LIBFFTW3F
 #include "analyze.h"
 #endif
 #include "latencytest.h"
@@ -68,7 +68,7 @@ static int get_duration(struct bat *bat)
 
 	if (bat->frames <= 0 || bat->frames > MAX_FRAMES) {
 		fprintf(bat->err, _("Invalid duration. Range: (0, %d(%fs))\n"),
-				MAX_FRAMES, (double)MAX_FRAMES / bat->rate);
+				MAX_FRAMES, (float)MAX_FRAMES / bat->rate);
 		return -EINVAL;
 	}
 
@@ -319,7 +319,7 @@ static void set_defaults(struct bat *bat)
 	bat->sample_size = 2;
 	bat->format = BAT_PCM_FORMAT_S16_LE;
 	bat->convert_float_to_sample = convert_float_to_int16;
-	bat->convert_sample_to_double = convert_int16_to_double;
+	bat->convert_sample_to_float = convert_int16_to_float;
 	bat->frames = bat->rate * 2;
 	bat->target_freq[0] = 997.0;
 	bat->target_freq[1] = 997.0;
@@ -576,19 +576,19 @@ static int bat_init(struct bat *bat)
 	switch (bat->sample_size) {
 	case 1:
 		bat->convert_float_to_sample = convert_float_to_uint8;
-		bat->convert_sample_to_double = convert_uint8_to_double;
+		bat->convert_sample_to_float = convert_uint8_to_float;
 		break;
 	case 2:
 		bat->convert_float_to_sample = convert_float_to_int16;
-		bat->convert_sample_to_double = convert_int16_to_double;
+		bat->convert_sample_to_float = convert_int16_to_float;
 		break;
 	case 3:
 		bat->convert_float_to_sample = convert_float_to_int24;
-		bat->convert_sample_to_double = convert_int24_to_double;
+		bat->convert_sample_to_float = convert_int24_to_float;
 		break;
 	case 4:
 		bat->convert_float_to_sample = convert_float_to_int32;
-		bat->convert_sample_to_double = convert_int32_to_double;
+		bat->convert_sample_to_float = convert_int32_to_float;
 		break;
 	default:
 		fprintf(bat->err, _("Invalid PCM format: size=%d\n"),
@@ -669,7 +669,7 @@ int main(int argc, char *argv[])
 		test_loopback(&bat);
 
 analyze:
-#ifdef HAVE_LIBFFTW3
+#ifdef HAVE_LIBFFTW3F
 	if (!bat.standalone)
 		err = analyze_capture(&bat);
 #else

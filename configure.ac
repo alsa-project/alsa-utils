@@ -91,7 +91,7 @@ if test x$bat = xtrue; then
   FFTW_CFLAGS=""
   dnl Check for libfftw3
   have_libfftw3="yes"
-  AC_CHECK_LIB([fftw3], [fftw_malloc], , [have_libfftw3="no"])
+  AC_CHECK_LIB([fftw3f], [fftwf_malloc], , [have_libfftw3="no"])
   dnl Check for libtinyalsa
   have_libtinyalsa=
   if test x$alsabat_backend_tiny = xtrue; then
