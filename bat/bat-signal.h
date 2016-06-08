@@ -28,3 +28,4 @@ int sin_generator_init(struct sin_generator *, float, float, float);
 float sin_generator_next_sample(struct sin_generator *);
 void sin_generator_vfill(struct sin_generator *, float *, int);
 int generate_sine_wave(struct bat *, int, void *);
+int generate_sine_wave_raw_mono(struct bat *, float *, float, int);

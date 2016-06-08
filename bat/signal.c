@@ -183,3 +183,21 @@ exit:
 
 	return err;
 }
+
+/* generate single channel sine waveform without sample conversion */
+int generate_sine_wave_raw_mono(struct bat *bat, float *buf,
+		float freq, int nsamples)
+{
+	int err = 0;
+	struct sin_generator sg;
+
+	err = sin_generator_init(&sg, 1.0, freq, bat->rate);
+	if (err < 0)
+		return err;
+	sin_generator_vfill(&sg, buf, nsamples);
+
+	/* adjust amplitude and offset of waveform */
+	err = adjust_waveform(bat, buf, nsamples, 1);
+
+	return err;
+}
