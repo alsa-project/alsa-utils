@@ -109,7 +109,8 @@ static int reorder(struct bat *bat, float *val, int frames)
 	return 0;
 }
 
-static int adjust_waveform(struct bat *bat, float *val, int frames)
+static int adjust_waveform(struct bat *bat, float *val, int frames,
+		int channels)
 {
 	int i, nsamples, max;
 	float factor, offset = 0.0;
@@ -134,7 +135,7 @@ static int adjust_waveform(struct bat *bat, float *val, int frames)
 	}
 
 	factor = max * RANGE_FACTOR;
-	nsamples = bat->channels * frames;
+	nsamples = channels * frames;
 
 	for (i = 0; i < nsamples; i++)
 		val[i] = val[i] * factor + offset;
@@ -171,7 +172,7 @@ int generate_sine_wave(struct bat *bat, int frames, void *buf)
 		goto exit;
 
 	/* adjust amplitude and offset of waveform */
-	err = adjust_waveform(bat, sinus_f, frames);
+	err = adjust_waveform(bat, sinus_f, frames, bat->channels);
 	if (err != 0)
 		goto exit;
 
