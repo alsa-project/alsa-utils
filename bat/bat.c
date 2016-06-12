@@ -420,6 +420,7 @@ static void parse_arguments(struct bat *bat, int argc, char *argv[])
 			break;
 		case OPT_ROUNDTRIPLATENCY:
 			bat->roundtriplatency = true;
+			break;
 		case OPT_SNRTHD_DB:
 			get_snr_thd_db(bat, optarg);
 			break;
