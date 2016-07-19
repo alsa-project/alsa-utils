@@ -94,7 +94,7 @@
 #define SNR_DB_MIN			0.0
 #define SNR_DB_MAX			200.0
 
-inline bool snr_is_valid(float db)
+static inline bool snr_is_valid(float db)
 {
 	return (db > SNR_DB_MIN && db < SNR_DB_MAX);
 }
