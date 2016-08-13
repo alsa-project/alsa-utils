@@ -1,4 +1,4 @@
-.TH AMIDI 1 "26 Jun 2006"
+.TH AMIDI 1 "16 Apr 2016"
 
 .SH NAME
 amidi \- read from and write to ALSA RawMIDI ports
@@ -80,9 +80,11 @@ to record a Standard MIDI (.mid) file, use
 .B arecordmidi(1).
 
 .B amidi
-will filter out any Active Sensing bytes (FEh), unless the
+will filter out any Active Sensing and Clock bytes (FEh, F8h), unless the
 .I \-a
-option has been given.
+or
+.I \-c
+options have been given.
 
 .TP
 .I \-S, \-\-send\-hex="..."
@@ -91,9 +93,11 @@ Sends the bytes specified as hexadecimal numbers to the MIDI port.
 .TP
 .I \-d, \-\-dump
 Prints data received from the MIDI port as hexadecimal bytes.
-Active Sensing bytes (FEh) will not be shown, unless the
+Active Sensing and Clock bytes (FEh, F8h) will not be shown, unless the
 .I \-a
-option has been given.
+or
+.I \-c
+options have been given.
 
 This option is useful for debugging.
 
@@ -110,6 +114,11 @@ to stop receiving data.
 .I \-a, \-\-active\-sensing
 Does not ignore Active Sensing bytes (FEh) when saving or printing
 received MIDI commands.
+
+.TP
+.I \-c, \-\-clock
+Does not ignore Clock bytes (F8h) when saving or printing received
+MIDI commands.
 
 .SH EXAMPLES
 

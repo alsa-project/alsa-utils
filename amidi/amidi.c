@@ -77,7 +77,8 @@ static void usage(void)
 		"-d, --dump             print received data as hexadecimal bytes\n"
 		"-t, --timeout=seconds  exits when no data has been received\n"
 		"                       for the specified duration\n"
-		"-a, --active-sensing   don't ignore active sensing bytes\n");
+		"-a, --active-sensing   include active sensing bytes\n"
+		"-c, --clock            include clock bytes\n");
 }
 
 static void version(void)
@@ -406,7 +407,7 @@ static void add_send_hex_data(const char *str)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hVlLp:s:r:S::dt:a";
+	static const char short_options[] = "hVlLp:s:r:S::dt:ac";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
@@ -419,10 +420,12 @@ int main(int argc, char *argv[])
 		{"dump", 0, NULL, 'd'},
 		{"timeout", 1, NULL, 't'},
 		{"active-sensing", 0, NULL, 'a'},
+		{"clock", 0, NULL, 'c'},
 		{ }
 	};
 	int c, err, ok = 0;
 	int ignore_active_sensing = 1;
+	int ignore_clock = 1;
 	int do_send_hex = 0;
 
 	while ((c = getopt_long(argc, argv, short_options,
@@ -462,6 +465,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'a':
 			ignore_active_sensing = 0;
+			break;
+		case 'c':
+			ignore_clock = 0;
 			break;
 		default:
 			error("Try `amidi --help' for more information.");
@@ -589,7 +595,10 @@ int main(int argc, char *argv[])
 			}
 			length = 0;
 			for (i = 0; i < err; ++i)
-				if (!ignore_active_sensing || buf[i] != 0xfe)
+				if ((buf[i] != MIDI_CMD_COMMON_CLOCK &&
+				     buf[i] != MIDI_CMD_COMMON_SENSING) ||
+				    (buf[i] == MIDI_CMD_COMMON_CLOCK   && !ignore_clock) ||
+				    (buf[i] == MIDI_CMD_COMMON_SENSING && !ignore_active_sensing))
 					buf[length++] = buf[i];
 			if (length == 0)
 				continue;
