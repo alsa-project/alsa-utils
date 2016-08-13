@@ -25,9 +25,11 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 #include <getopt.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/timerfd.h>
 #include <sys/types.h>
 #include <sys/poll.h>
 #include <sys/stat.h>
@@ -36,6 +38,8 @@
 #include <alsa/asoundlib.h>
 #include "aconfig.h"
 #include "version.h"
+
+#define NSEC_PER_SEC 1000000000L
 
 static int do_device_list, do_rawmidi_list;
 static char *port_name = "default";
@@ -46,7 +50,7 @@ static char *send_data;
 static int send_data_length;
 static int receive_file;
 static int dump;
-static int timeout;
+static float timeout;
 static int stop;
 static snd_rawmidi_t *input, **inputp;
 static snd_rawmidi_t *output, **outputp;
@@ -427,6 +431,7 @@ int main(int argc, char *argv[])
 	int ignore_active_sensing = 1;
 	int ignore_clock = 1;
 	int do_send_hex = 0;
+	struct itimerspec itimerspec = { .it_interval = { 0, 0 } };
 
 	while ((c = getopt_long(argc, argv, short_options,
 		     		long_options, NULL)) != -1) {
@@ -461,7 +466,7 @@ int main(int argc, char *argv[])
 			dump = 1;
 			break;
 		case 't':
-			timeout = atoi(optarg);
+			timeout = atof(optarg);
 			break;
 		case 'a':
 			ignore_active_sensing = 0;
@@ -552,40 +557,64 @@ int main(int argc, char *argv[])
 
 	if (inputp) {
 		int read = 0;
-		int npfds, time = 0;
+		int npfds;
 		struct pollfd *pfds;
 
-		timeout *= 1000;
-		npfds = snd_rawmidi_poll_descriptors_count(input);
+		npfds = 1 + snd_rawmidi_poll_descriptors_count(input);
 		pfds = alloca(npfds * sizeof(struct pollfd));
-		snd_rawmidi_poll_descriptors(input, pfds, npfds);
+
+		if (timeout > 0) {
+			pfds[0].fd = timerfd_create(CLOCK_MONOTONIC, 0);
+			if (pfds[0].fd == -1) {
+				error("cannot create timer: %s", strerror(errno));
+				goto _exit;
+			}
+			pfds[0].events = POLLIN;
+		} else {
+			pfds[0].fd = -1;
+		}
+
+		snd_rawmidi_poll_descriptors(input, &pfds[1], npfds - 1);
+
 		signal(SIGINT, sig_handler);
+
+		if (timeout > 0) {
+			float timeout_int;
+
+			itimerspec.it_value.tv_nsec = modff(timeout, &timeout_int) * NSEC_PER_SEC;
+			itimerspec.it_value.tv_sec = timeout_int;
+			err = timerfd_settime(pfds[0].fd, 0, &itimerspec, NULL);
+			if (err < 0) {
+				error("cannot set timer: %s", strerror(errno));
+				goto _exit;
+			}
+		}
 		for (;;) {
 			unsigned char buf[256];
 			int i, length;
 			unsigned short revents;
 
-			err = poll(pfds, npfds, 200);
+			err = poll(pfds, npfds, -1);
 			if (stop || (err < 0 && errno == EINTR))
 				break;
 			if (err < 0) {
 				error("poll failed: %s", strerror(errno));
 				break;
 			}
-			if (err == 0) {
-				time += 200;
-				if (timeout && time >= timeout)
-					break;
-				continue;
-			}
-			if ((err = snd_rawmidi_poll_descriptors_revents(input, pfds, npfds, &revents)) < 0) {
+
+			err = snd_rawmidi_poll_descriptors_revents(input, &pfds[1], npfds - 1, &revents);
+			if (err < 0) {
 				error("cannot get poll events: %s", snd_strerror(errno));
 				break;
 			}
 			if (revents & (POLLERR | POLLHUP))
 				break;
-			if (!(revents & POLLIN))
+			if (!(revents & POLLIN)) {
+				if (pfds[0].revents & POLLIN)
+					break;
 				continue;
+			}
+
 			err = snd_rawmidi_read(input, buf, sizeof(buf));
 			if (err == -EAGAIN)
 				continue;
@@ -603,13 +632,21 @@ int main(int argc, char *argv[])
 			if (length == 0)
 				continue;
 			read += length;
-			time = 0;
+
 			if (receive_file != -1)
 				write(receive_file, buf, length);
 			if (dump) {
 				for (i = 0; i < length; ++i)
 					print_byte(buf[i]);
 				fflush(stdout);
+			}
+
+			if (timeout > 0) {
+				err = timerfd_settime(pfds[0].fd, 0, &itimerspec, NULL);
+				if (err < 0) {
+					error("cannot set timer: %s", strerror(errno));
+					break;
+				}
 			}
 		}
 		if (isatty(fileno(stdout)))
