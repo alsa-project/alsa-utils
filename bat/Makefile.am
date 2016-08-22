@@ -1,3 +1,4 @@
+SUBDIRS=tests
 bin_PROGRAMS = alsabat
 man_MANS = alsabat.1
 EXTRA_DIST = alsabat.1 alsabat-test.sh

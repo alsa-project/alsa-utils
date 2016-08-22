@@ -1,0 +1,8 @@
+# Analog audio basic test
+verify_Analog_audio_playback_and_capture="$ABAT_TEST_PATH/analog_audio_playback_and_capture.sh"
+
+# Display audio basic test cases - for HDMI
+verify_HDMI_audio_playback="$ABAT_TEST_PATH/hdmi_audio_playback.sh"
+
+# Display audio basic test cases - for DP
+verify_DP_audio_playback="$ABAT_TEST_PATH/dp_audio_playback.sh"

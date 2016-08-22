@@ -1,0 +1,32 @@
+
+	automated test scripts for linux audio driver
+	based on alsa-lib interface by using alsabat
+===============================================================================
+
+This package contains the test scripts for linux audio driver based on
+alsa-lib interface by using alsabat.
+It supports analog and display(HDMI/DP) audio test.
+The package needs  the alsa-utils, alsa-lib installed environment.
+
+alsabat_main.sh
+	- the main entrance test script,
+	it will call the other scripts to run the tests
+	(test result will save in the ./log/ folder)
+analog_audio_playback_and_capture.sh
+	- analog audio test script (please to loopback the
+	analog audio output to analog audio input)
+hdmi_audio_playback.sh
+	- hdmi audio test script (please to loopback the hdmi audio output
+	to analog audio input)
+dp_audio_playback.sh
+	- dp audio test script (please to loopback the dp audio
+	output to analog audio input)
+map_test_case
+	- to map the test suite/cases to a test script
+asound_state/
+	- some asound.state config reference files
+	based on different platforms
+
+				Focus Luo <focus.luo@linux.intel.com>
+				Wang,Jinliang <jinliang.wang@intel.com>
+				Zhang,Keqiao <keqiao.zhang@intel.com>
