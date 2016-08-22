@@ -1,0 +1,437 @@
+state.PCH {
+	control.1 {
+		iface MIXER
+		name 'Master Playback Volume'
+		value.0 57
+		value.1 57
+		comment {
+			access 'read write'
+			type INTEGER
+			count 2
+			range '0 - 87'
+			dbmin -6525
+			dbmax 0
+			dbvalue.0 -2250
+			dbvalue.1 -2250
+		}
+	}
+	control.2 {
+		iface MIXER
+		name 'Master Playback Switch'
+		value.0 true
+		value.1 true
+		comment {
+			access 'read write'
+			type BOOLEAN
+			count 2
+		}
+	}
+	control.3 {
+		iface MIXER
+		name 'Loopback Mixing'
+		value Enabled
+		comment {
+			access 'read write'
+			type ENUMERATED
+			count 1
+			item.0 Disabled
+			item.1 Enabled
+		}
+	}
+	control.4 {
+		iface MIXER
+		name 'Mic Playback Volume'
+		value.0 15
+		value.1 15
+		comment {
+			access 'read write'
+			type INTEGER
+			count 2
+			range '0 - 31'
+			dbmin -3450
+			dbmax 1200
+			dbvalue.0 -1200
+			dbvalue.1 -1200
+		}
+	}
+	control.5 {
+		iface MIXER
+		name 'Mic Playback Switch'
+		value.0 true
+		value.1 true
+		comment {
+			access 'read write'
+			type BOOLEAN
+			count 2
+		}
+	}
+	control.6 {
+		iface MIXER
+		name 'Capture Volume'
+		value.0 27
+		value.1 27
+		comment {
+			access 'read write'
+			type INTEGER
+			count 2
+			range '0 - 63'
+			dbmin -1725
+			dbmax 3000
+			dbvalue.0 300
+			dbvalue.1 300
+		}
+	}
+	control.7 {
+		iface MIXER
+		name 'Capture Switch'
+		value.0 true
+		value.1 true
+		comment {
+			access 'read write'
+			type BOOLEAN
+			count 2
+		}
+	}
+	control.8 {
+		iface MIXER
+		name 'Mic Boost Volume'
+		value.0 0
+		value.1 0
+		comment {
+			access 'read write'
+			type INTEGER
+			count 2
+			range '0 - 3'
+			dbmin 0
+			dbmax 3600
+			dbvalue.0 0
+			dbvalue.1 0
+		}
+	}
+	control.9 {
+		iface CARD
+		name 'Mic Jack'
+		value true
+		comment {
+			access read
+			type BOOLEAN
+			count 1
+		}
+	}
+	control.10 {
+		iface CARD
+		name 'Headphone Jack'
+		value true
+		comment {
+			access read
+			type BOOLEAN
+			count 1
+		}
+	}
+	control.11 {
+		iface PCM
+		name 'Playback Channel Map'
+		value.0 0
+		value.1 0
+		comment {
+			access read
+			type INTEGER
+			count 2
+			range '0 - 36'
+		}
+	}
+	control.12 {
+		iface PCM
+		name 'Capture Channel Map'
+		value.0 0
+		value.1 0
+		comment {
+			access read
+			type INTEGER
+			count 2
+			range '0 - 36'
+		}
+	}
+	control.13 {
+		iface CARD
+		name 'HDMI/DP,pcm=3 Jack'
+		value true
+		comment {
+			access read
+			type BOOLEAN
+			count 1
+		}
+	}
+	control.14 {
+		iface MIXER
+		name 'IEC958 Playback Con Mask'
+		value '0fff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access read
+			type IEC958
+			count 1
+		}
+	}
+	control.15 {
+		iface MIXER
+		name 'IEC958 Playback Pro Mask'
+		value '0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access read
+			type IEC958
+			count 1
+		}
+	}
+	control.16 {
+		iface MIXER
+		name 'IEC958 Playback Default'
+		value '0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access 'read write'
+			type IEC958
+			count 1
+		}
+	}
+	control.17 {
+		iface MIXER
+		name 'IEC958 Playback Switch'
+		value true
+		comment {
+			access 'read write'
+			type BOOLEAN
+			count 1
+		}
+	}
+	control.18 {
+		iface PCM
+		device 3
+		name ELD
+		value '100008006a10000100000000000000000469d22341535553205653323339091707000000'
+		comment {
+			access 'read volatile'
+			type BYTES
+			count 36
+		}
+	}
+	control.19 {
+		iface CARD
+		name 'HDMI/DP,pcm=7 Jack'
+		value true
+		comment {
+			access read
+			type BOOLEAN
+			count 1
+		}
+	}
+	control.20 {
+		iface MIXER
+		name 'IEC958 Playback Con Mask'
+		index 1
+		value '0fff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access read
+			type IEC958
+			count 1
+		}
+	}
+	control.21 {
+		iface MIXER
+		name 'IEC958 Playback Pro Mask'
+		index 1
+		value '0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access read
+			type IEC958
+			count 1
+		}
+	}
+	control.22 {
+		iface MIXER
+		name 'IEC958 Playback Default'
+		index 1
+		value '0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access 'read write'
+			type IEC958
+			count 1
+		}
+	}
+	control.23 {
+		iface MIXER
+		name 'IEC958 Playback Switch'
+		index 1
+		value true
+		comment {
+			access 'read write'
+			type BOOLEAN
+			count 1
+		}
+	}
+	control.24 {
+		iface PCM
+		device 7
+		name ELD
+		value '100008006a14000100000000000000000469b12341535553205041323338091707000000'
+		comment {
+			access 'read volatile'
+			type BYTES
+			count 36
+		}
+	}
+	control.25 {
+		iface CARD
+		name 'HDMI/DP,pcm=8 Jack'
+		value false
+		comment {
+			access read
+			type BOOLEAN
+			count 1
+		}
+	}
+	control.26 {
+		iface MIXER
+		name 'IEC958 Playback Con Mask'
+		index 2
+		value '0fff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access read
+			type IEC958
+			count 1
+		}
+	}
+	control.27 {
+		iface MIXER
+		name 'IEC958 Playback Pro Mask'
+		index 2
+		value '0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access read
+			type IEC958
+			count 1
+		}
+	}
+	control.28 {
+		iface MIXER
+		name 'IEC958 Playback Default'
+		index 2
+		value '0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access 'read write'
+			type IEC958
+			count 1
+		}
+	}
+	control.29 {
+		iface MIXER
+		name 'IEC958 Playback Switch'
+		index 2
+		value true
+		comment {
+			access 'read write'
+			type BOOLEAN
+			count 1
+		}
+	}
+	control.30 {
+		iface PCM
+		device 8
+		name ELD
+		value ''
+		comment {
+			access 'read volatile'
+			type BYTES
+			count 0
+		}
+	}
+	control.31 {
+		iface PCM
+		device 3
+		name 'Playback Channel Map'
+		value.0 0
+		value.1 0
+		value.2 0
+		value.3 0
+		value.4 0
+		value.5 0
+		value.6 0
+		value.7 0
+		comment {
+			access 'read write'
+			type INTEGER
+			count 8
+			range '0 - 36'
+		}
+	}
+	control.32 {
+		iface PCM
+		device 7
+		name 'Playback Channel Map'
+		value.0 0
+		value.1 0
+		value.2 0
+		value.3 0
+		value.4 0
+		value.5 0
+		value.6 0
+		value.7 0
+		comment {
+			access 'read write'
+			type INTEGER
+			count 8
+			range '0 - 36'
+		}
+	}
+	control.33 {
+		iface PCM
+		device 8
+		name 'Playback Channel Map'
+		value.0 0
+		value.1 0
+		value.2 0
+		value.3 0
+		value.4 0
+		value.5 0
+		value.6 0
+		value.7 0
+		comment {
+			access 'read write'
+			type INTEGER
+			count 8
+			range '0 - 36'
+		}
+	}
+	control.34 {
+		iface MIXER
+		name 'PCM Playback Volume'
+		value.0 158
+		value.1 158
+		comment {
+			access 'read write user'
+			type INTEGER
+			count 2
+			range '0 - 255'
+			tlv '0000000100000008ffffec1400000014'
+			dbmin -5100
+			dbmax 0
+			dbvalue.0 -1940
+			dbvalue.1 -1940
+		}
+	}
+	control.35 {
+		iface MIXER
+		name 'Digital Capture Volume'
+		value.0 60
+		value.1 60
+		comment {
+			access 'read write user'
+			type INTEGER
+			count 2
+			range '0 - 120'
+			tlv '0000000100000008fffff44800000032'
+			dbmin -3000
+			dbmax 3000
+			dbvalue.0 0
+			dbvalue.1 0
+		}
+	}
+}

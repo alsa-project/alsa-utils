@@ -1,3 +1,4 @@
+SUBDIRS=asound_state
 alsabat_script_files = analog_audio_playback_and_capture.sh \
 	dp_audio_playback.sh \
 	dp_audio_subdevice_number.sh \
