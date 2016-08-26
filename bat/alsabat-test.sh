@@ -15,6 +15,10 @@ logdir="tmp"
 maxfreq=16547
 minfreq=17
 
+# sleep time and pause time
+sleep_time=5
+pause_time=2
+
 # features passes vs. features all
 feature_pass=0
 feature_cnt=0
@@ -44,6 +48,35 @@ feature_test () {
 	echo "-------------------------------------------"
 	echo "$commands $1 --log=$logdir/$feature_cnt.log"
 	$commands $1 --log=$logdir/$feature_cnt.log
+	evaluate_result $?
+	echo "$commands $1" >> $logdir/$((feature_cnt-1)).log
+}
+
+feature_test_power () {
+	echo "============================================"
+	echo "$feature_cnt: ALSA $2"
+	echo "-------------------------------------------"
+	echo "$commands $1 --log=$logdir/$feature_cnt.log"
+
+	# run alsabat in the background
+	nohup $commands $1 > $logdir/$feature_cnt.log 2>&1 &
+	sleep $pause_time
+	pid=`ps -aux |grep alsabat|head -1 |awk -F ' ' '{print $2}'`
+
+	# stop the alsabat thread
+	kill -STOP $pid > /dev/null
+	sleep 4
+
+	# do system S3
+	rtcwake -m mem -s $sleep_time
+	sleep $pause_time
+
+	# resume the alasbat thread to run
+	kill -CONT $pid > /dev/null
+
+	# wait for alsabat to complete the analysis
+	sleep $pause_time
+	cat $logdir/$feature_cnt.log |grep -i "Return value is 0" > /dev/null
 	evaluate_result $?
 	echo "$commands $1" >> $logdir/$((feature_cnt-1)).log
 }
@@ -87,6 +120,7 @@ feature_list_test () {
 			"noise detect threshold in SNR(dB)"
 	feature_test "--snr-pc 5" \
 			"noise detect threshold in noise percentage(%)"
+	feature_test_power "-n5s" "power management: S3 test"
 
 	print_result
 }
