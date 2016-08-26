@@ -319,6 +319,11 @@ static int write_to_pcm(const struct pcm_container *sndpcm,
 			if (bat->roundtriplatency)
 				bat->latency.xrun_error = true;
 			snd_pcm_prepare(sndpcm->handle);
+		} else if (err == -ESTRPIPE) {
+			while ((err = snd_pcm_resume(sndpcm->handle)) == -EAGAIN)
+				sleep(1);  /* wait until resume flag is released */
+			if (err < 0)
+				snd_pcm_prepare(sndpcm->handle);
 		} else if (err < 0) {
 			fprintf(bat->err, _("Write PCM device error: %s(%d)\n"),
 					snd_strerror(err), err);
@@ -518,6 +523,11 @@ static int read_from_pcm(struct pcm_container *sndpcm,
 					snd_strerror(err), err);
 			if (bat->roundtriplatency)
 				bat->latency.xrun_error = true;
+		} else if (err == -ESTRPIPE) {
+			while ((err = snd_pcm_resume(sndpcm->handle)) == -EAGAIN)
+				sleep(1);  /* wait until resume flag is released */
+			if (err < 0)
+				snd_pcm_prepare(sndpcm->handle);
 		} else if (err < 0) {
 			fprintf(bat->err, _("Read PCM device error: %s(%d)\n"),
 					snd_strerror(err), err);
