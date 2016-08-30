@@ -52,6 +52,7 @@ static int receive_file;
 static int dump;
 static float timeout;
 static int stop;
+static int sysex_interval;
 static snd_rawmidi_t *input, **inputp;
 static snd_rawmidi_t *output, **outputp;
 
@@ -70,19 +71,20 @@ static void usage(void)
 	printf(
 		"Usage: amidi options\n"
 		"\n"
-		"-h, --help             this help\n"
-		"-V, --version          print current version\n"
-		"-l, --list-devices     list all hardware ports\n"
-		"-L, --list-rawmidis    list all RawMIDI definitions\n"
-		"-p, --port=name        select port by name\n"
-		"-s, --send=file        send the contents of a (.syx) file\n"
-		"-r, --receive=file     write received data into a file\n"
-		"-S, --send-hex=\"...\"   send hexadecimal bytes\n"
-		"-d, --dump             print received data as hexadecimal bytes\n"
-		"-t, --timeout=seconds  exits when no data has been received\n"
-		"                       for the specified duration\n"
-		"-a, --active-sensing   include active sensing bytes\n"
-		"-c, --clock            include clock bytes\n");
+		"-h, --help                      this help\n"
+		"-V, --version                   print current version\n"
+		"-l, --list-devices              list all hardware ports\n"
+		"-L, --list-rawmidis             list all RawMIDI definitions\n"
+		"-p, --port=name                 select port by name\n"
+		"-s, --send=file                 send the contents of a (.syx) file\n"
+		"-r, --receive=file              write received data into a file\n"
+		"-S, --send-hex=\"...\"            send hexadecimal bytes\n"
+		"-d, --dump                      print received data as hexadecimal bytes\n"
+		"-t, --timeout=seconds           exits when no data has been received\n"
+		"                                for the specified duration\n"
+		"-a, --active-sensing            include active sensing bytes\n"
+		"-c, --clock                     include clock bytes\n"
+		"-i, --sysex-interval=mseconds   delay in between each SysEx message\n");
 }
 
 static void version(void)
@@ -228,6 +230,47 @@ static void rawmidi_list(void)
 		snd_config_save(config, output);
 	}
 	snd_output_close(output);
+}
+
+static int send_midi_interleaved(void)
+{
+	int err;
+	char *data = send_data;
+	size_t buffer_size;
+	snd_rawmidi_params_t *param;
+	snd_rawmidi_status_t *st;
+
+	snd_rawmidi_status_alloca(&st);
+
+	snd_rawmidi_params_alloca(&param);
+	snd_rawmidi_params_current(output, param);
+	buffer_size = snd_rawmidi_params_get_buffer_size(param);
+
+	while (data < (send_data + send_data_length)) {
+		int len = send_data + send_data_length - data;
+		char *temp;
+
+		if (data > send_data) {
+			snd_rawmidi_status(output, st);
+			do {
+				/* 320 µs per byte as noted in Page 1 of MIDI spec */
+				usleep((buffer_size - snd_rawmidi_status_get_avail(st)) * 320);
+				snd_rawmidi_status(output, st);
+			} while(snd_rawmidi_status_get_avail(st) < buffer_size);
+			usleep(sysex_interval * 1000);
+		}
+
+		/* find end of SysEx */
+		if ((temp = memchr(data, 0xf7, len)) != NULL)
+			len = temp - data + 1;
+
+		if ((err = snd_rawmidi_write(output, data, len)) < 0)
+			return err;
+
+		data += len;
+	}
+
+	return 0;
 }
 
 static void load_file(void)
@@ -411,7 +454,7 @@ static void add_send_hex_data(const char *str)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hVlLp:s:r:S::dt:ac";
+	static const char short_options[] = "hVlLp:s:r:S::dt:aci:";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
@@ -425,6 +468,7 @@ int main(int argc, char *argv[])
 		{"timeout", 1, NULL, 't'},
 		{"active-sensing", 0, NULL, 'a'},
 		{"clock", 0, NULL, 'c'},
+		{"sysex-interval", 1, NULL, 'i'},
 		{ }
 	};
 	int c, err, ok = 0;
@@ -473,6 +517,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'c':
 			ignore_clock = 0;
+			break;
+		case 'i':
+			sysex_interval = atoi(optarg);
 			break;
 		default:
 			error("Try `amidi --help' for more information.");
@@ -549,9 +596,16 @@ int main(int argc, char *argv[])
 			error("cannot set blocking mode: %s", snd_strerror(err));
 			goto _exit;
 		}
-		if ((err = snd_rawmidi_write(output, send_data, send_data_length)) < 0) {
-			error("cannot send data: %s", snd_strerror(err));
-			goto _exit;
+		if (!sysex_interval) {
+			if ((err = snd_rawmidi_write(output, send_data, send_data_length)) < 0) {
+				error("cannot send data: %s", snd_strerror(err));
+				return err;
+			}
+		} else {
+			if ((err = send_midi_interleaved()) < 0) {
+				error("cannot send data: %s", snd_strerror(err));
+				return err;
+			}
 		}
 	}
 

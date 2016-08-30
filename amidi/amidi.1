@@ -1,4 +1,4 @@
-.TH AMIDI 1 "16 Apr 2016"
+.TH AMIDI 1 "30 Aug 2016"
 
 .SH NAME
 amidi \- read from and write to ALSA RawMIDI ports
@@ -120,6 +120,12 @@ received MIDI commands.
 Does not ignore Clock bytes (F8h) when saving or printing received
 MIDI commands.
 
+.TP
+.I \-i, \-\-sysex-interval=mseconds
+Adds a delay in between each SysEx message sent to a device. It is
+useful when sending firmware updates via SysEx messages to a remote
+device.
+
 .SH EXAMPLES
 
 .TP
@@ -128,6 +134,14 @@ will send the MIDI commands in
 .I my_settings.syx
 to port
 .I hw:0.
+
+.TP
+.B amidi \-p hw:1,0,0 -s firmware.syx \-i 100
+will send the MIDI commands in
+.I firmware.syx
+to port
+.I hw:1,0,0
+with 100 milliseconds delay in between each SysEx message.
 
 .TP
 .B amidi \-S 'F0 43 10 4C 00 00 7E 00 F7'
