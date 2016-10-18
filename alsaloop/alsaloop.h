@@ -109,6 +109,7 @@ struct loopback_handle {
 	snd_pcm_uframes_t buf_count;	/* filled samples */
 	snd_pcm_uframes_t buf_size;	/* buffer size in frames */
 	snd_pcm_uframes_t buf_over;	/* capture buffer overflow */
+	int stall;
 	/* statistics */
 	snd_pcm_uframes_t max;
 	unsigned long long counter;

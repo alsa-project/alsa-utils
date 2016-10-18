@@ -282,6 +282,35 @@ static int setparams_set(struct loopback_handle *lhandle,
 	return 0;
 }
 
+static int increase_playback_avail_min(struct loopback_handle *lhandle)
+{
+	snd_pcm_t *handle = lhandle->handle;
+	snd_pcm_sw_params_t *swparams;
+	int err;
+
+	snd_pcm_sw_params_alloca(&swparams);
+	err = snd_pcm_sw_params_current(handle, swparams);
+	if (err < 0) {
+		logit(LOG_CRIT, "Unable to determine current swparams for %s: %s\n", lhandle->id, snd_strerror(err));
+		return err;
+	}
+	err = snd_pcm_sw_params_set_avail_min(handle, swparams, lhandle->avail_min + 4);
+	if (err < 0) {
+		logit(LOG_CRIT, "Unable to set avail min for %s: %s\n", lhandle->id, snd_strerror(err));
+		return err;
+	}
+	snd_pcm_sw_params_get_avail_min(swparams, &lhandle->avail_min);
+	if (verbose > 6)
+		snd_output_printf(lhandle->loopback->output, "%s: change avail_min=%li\n", lhandle->id, lhandle->avail_min);
+	printf("%s: change avail_min=%li\n", lhandle->id, lhandle->avail_min);
+	err = snd_pcm_sw_params(handle, swparams);
+	if (err < 0) {
+		logit(LOG_CRIT, "Unable to set sw params for %s: %s\n", lhandle->id, snd_strerror(err));
+		return err;
+	}
+	return 0;
+}
+
 static int setparams(struct loopback *loop, snd_pcm_uframes_t bufsize)
 {
 	int err;
@@ -1763,7 +1792,7 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 	struct loopback_handle *capt = loop->capt;
 	unsigned short prevents, crevents, events;
 	snd_pcm_uframes_t ccount, pcount;
-	int err, loopcount = 10, idx;
+	int err, loopcount = 0, idx;
 
 	if (verbose > 11)
 		snd_output_printf(loop->output, "%s: pollfds handle\n", loop->id);
@@ -1843,6 +1872,18 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 		goto __pcm_end;
 	do {
 		ccount = readit(capt);
+		if (prevents != 0 && crevents == 0 &&
+		    ccount == 0 && loopcount == 0) {
+			if (play->stall > 20) {
+				play->stall = 0;
+				increase_playback_avail_min(play);
+				break;
+			}
+			play->stall++;
+			break;
+		}
+		if (ccount > 0)
+			play->stall = 0;
 		buf_add(loop, ccount);
 		if (capt->xrun_pending || loop->reinit)
 			break;
@@ -1850,10 +1891,12 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 		   buffer, feed them there */
 		pcount = writeit(play);
 		buf_remove(loop, pcount);
+		if (pcount > 0)
+			play->stall = 0;
 		if (play->xrun_pending || loop->reinit)
 			break;
-		loopcount--;
-	} while ((ccount > 0 || pcount > 0) && loopcount > 0);
+		loopcount++;
+	} while ((ccount > 0 || pcount > 0) && loopcount > 10);
 	if (play->xrun_pending || capt->xrun_pending) {
 		if ((err = xrun_sync(loop)) < 0)
 			return err;
