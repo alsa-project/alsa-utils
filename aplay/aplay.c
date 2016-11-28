@@ -166,6 +166,8 @@ static void end_wave(int fd);
 static void begin_au(int fd, size_t count);
 static void end_au(int fd);
 
+static void suspend(void);
+
 static const struct fmt_capture {
 	void (*start) (int fd, size_t count);
 	void (*end) (int fd);
@@ -1487,6 +1489,9 @@ static void do_pause(void)
 		fprintf(stderr, _("\rPAUSE command ignored (no hw support)\n"));
 		return;
 	}
+	if (snd_pcm_state(handle) == SND_PCM_STATE_SUSPENDED)
+		suspend();
+
 	err = snd_pcm_pause(handle, 1);
 	if (err < 0) {
 		error(_("pause push error: %s"), snd_strerror(err));
@@ -1496,6 +1501,8 @@ static void do_pause(void)
 		while (read(fileno(stdin), &b, 1) != 1);
 		if (b == ' ' || b == '\r') {
 			while (read(fileno(stdin), &b, 1) == 1);
+			if (snd_pcm_state(handle) == SND_PCM_STATE_SUSPENDED)
+				suspend();
 			err = snd_pcm_pause(handle, 0);
 			if (err < 0)
 				error(_("pause release error: %s"), snd_strerror(err));
