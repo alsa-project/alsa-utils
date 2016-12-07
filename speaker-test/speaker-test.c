@@ -843,7 +843,7 @@ static int setup_wav_file(int chn)
     return check_wav_file(chn, given_test_wav_file);
 
 #ifdef CONFIG_SUPPORT_CHMAP
-  if (channel_map_set && chn < channel_map->channels) {
+  if (channel_map && chn < channel_map->channels) {
     int channel = channel_map->pos[chn] - SND_CHMAP_FL;
     if (channel >= 0 && channel < MAX_CHANNELS)
       return check_wav_file(chn, wavs[channel]);
