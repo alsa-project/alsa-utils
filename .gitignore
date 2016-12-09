@@ -46,6 +46,7 @@ seq/aseqnet/aseqnet
 speaker-test/speaker-test
 alsaloop/alsaloop
 alsaucm/alsaucm
+alsaucm/alsaucm.1
 topology/alsatplg
 
 include/aconfig.h*
