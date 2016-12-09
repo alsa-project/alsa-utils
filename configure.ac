@@ -175,6 +175,15 @@ if test "$xmlto" = "yes"; then
 fi
 AM_CONDITIONAL(USE_XMLTO, test x"$xmlto_available" = xyes)
 
+rst2man_available=""
+AC_ARG_ENABLE(rst2man,
+ AS_HELP_STRING([--disable-rst2man], [Disable man page creation via rst2man]),
+ rst2man="$enableval", rst2man="yes")
+if test "$rst2man" = "yes"; then
+  AC_CHECK_PROG([rst2man_available], [rst2man], [yes])
+fi
+AM_CONDITIONAL(USE_RST2MAN, test x"$rst2man_available" = xyes)
+
 AC_ARG_WITH(
         [udev-rules-dir],
         AS_HELP_STRING([--with-udev-rules-dir=DIR],[Directory where to install udev rules to (default=auto)]),
