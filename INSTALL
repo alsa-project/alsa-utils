@@ -42,5 +42,12 @@ For compilation you can use these commands:
 
 The included gitcompile script does this job for you.
 
+To configure the build to install in a local directory, a command like the
+following can be used:
+
+	./gitcompile --prefix="$PWD/build" \
+	  --with-systemdsystemunitdir="$PWD/build/$(pkg-config systemd --variable=systemdsystemunitdir)" \
+	  --with-udev-rules-dir="$PWD/build/$(pkg-config udev --variable=udevdir)"
+
 Note: Some automake packages have missing aclocal program. Use newer version
       in the case.
