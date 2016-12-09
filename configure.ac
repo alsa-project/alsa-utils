@@ -166,14 +166,14 @@ AC_ARG_ENABLE(alsaloop,
      esac],[alsaloop=true])
 AM_CONDITIONAL(ALSALOOP, test x$alsaloop = xtrue)
 
-xmlto=""
+xmlto_available=""
 AC_ARG_ENABLE(xmlto,
  AS_HELP_STRING([--disable-xmlto], [Disable man page creation via xmlto]),
  xmlto="$enableval", xmlto="yes")
 if test "$xmlto" = "yes"; then
-  AC_CHECK_PROG([xmlto], [xmlto], [yes])
+  AC_CHECK_PROG([xmlto_available], [xmlto], [yes])
 fi
-AM_CONDITIONAL(USE_XMLTO, test x"$xmlto" = xyes)
+AM_CONDITIONAL(USE_XMLTO, test x"$xmlto_available" = xyes)
 
 AC_ARG_WITH(
         [udev-rules-dir],
