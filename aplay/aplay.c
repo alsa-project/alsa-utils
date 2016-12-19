@@ -2187,7 +2187,7 @@ static ssize_t voc_pcm_write(u_char *data, size_t count)
 	ssize_t result = count, r;
 	size_t size;
 
-	while (count > 0) {
+	while (count > 0 && !in_aborting) {
 		size = count;
 		if (size > chunk_bytes - buffer_pos)
 			size = chunk_bytes - buffer_pos;
