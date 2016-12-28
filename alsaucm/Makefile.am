@@ -14,3 +14,5 @@ alsaucm_LDADD = -lasound
 
 %.1: %.rst
 	rst2man $< > $@
+
+EXTRA_DIST = alsaucm.rst
