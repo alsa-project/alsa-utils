@@ -441,6 +441,16 @@ elif [ -x $DMIDECODE ]; then
     DMI_BOARD_NAME=$($DMIDECODE -s baseboard-product-name 2>/dev/null)
 fi
 
+# Check for ACPI device status
+if [ -d /sys/bus/acpi/devices ]; then
+    for f in /sys/bus/acpi/devices/*/status; do
+	ACPI_STATUS=$(cat $f 2>/dev/null);
+	if [[ "$ACPI_STATUS" -ne 0 ]]; then
+	    echo $f $'\t' $ACPI_STATUS >>$TEMPDIR/acpidevicestatus.tmp;
+	fi
+    done
+fi
+
 cat /proc/asound/modules 2>/dev/null|awk {'print $2'}>$TEMPDIR/alsamodules.tmp
 cat /proc/asound/cards >$TEMPDIR/alsacards.tmp
 if [[ ! -z "$LSPCI" ]]; then
@@ -485,6 +495,12 @@ echo "Product Version:   $DMI_SYSTEM_PRODUCT_VERSION" >> $FILE
 echo "Firmware Version:  $DMI_SYSTEM_FIRMWARE_VERSION" >> $FILE
 echo "Board Vendor:      $DMI_BOARD_VENDOR" >> $FILE
 echo "Board Name:        $DMI_BOARD_NAME" >> $FILE
+echo "" >> $FILE
+echo "" >> $FILE
+echo "!!ACPI Device Status Information" >> $FILE
+echo "!!---------------" >> $FILE
+echo "" >> $FILE
+cat $TEMPDIR/acpidevicestatus.tmp >> $FILE
 echo "" >> $FILE
 echo "" >> $FILE
 echo "!!Kernel Information" >> $FILE
