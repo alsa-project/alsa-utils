@@ -510,7 +510,8 @@ int main(int argc, char *argv[])
 			dump = 1;
 			break;
 		case 't':
-			timeout = atof(optarg);
+			if (optarg)
+				timeout = atof(optarg);
 			break;
 		case 'a':
 			ignore_active_sensing = 0;
