@@ -108,6 +108,7 @@ int main(int argc, char *argv[])
 	if (err < 0) {
 		fprintf(stderr, _("failed to compile context %s\n"), source_file);
 		snd_tplg_free(snd_tplg);
+		unlink(output_file);
 		return 1;
 	}
 
