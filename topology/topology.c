@@ -54,10 +54,10 @@ int main(int argc, char *argv[])
 	snd_tplg_t *snd_tplg;
 	static const char short_options[] = "hc:v:o:";
 	static const struct option long_options[] = {
-		{"help", 0, 0, 'h'},
-		{"verbose", 0, 0, 'v'},
-		{"compile", 0, 0, 'c'},
-		{"output", 0, 0, 'o'},
+		{"help", 0, NULL, 'h'},
+		{"verbose", 1, NULL, 'v'},
+		{"compile", 1, NULL, 'c'},
+		{"output", 1, NULL, 'o'},
 		{0, 0, 0, 0},
 	};
 	char *source_file = NULL, *output_file = NULL;
