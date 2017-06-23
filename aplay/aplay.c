@@ -3027,7 +3027,7 @@ static void capture(char *orig_name)
 	if (count == 0)
 		count = LLONG_MAX;
 	/* compute the number of bytes per file */
-	max_file_size = max_file_time *
+	max_file_size = (long long) max_file_time *
 		snd_pcm_format_size(hwparams.format,
 				    hwparams.rate * hwparams.channels);
 	/* WAVE-file should be even (I'm not sure), but wasting one byte
