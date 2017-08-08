@@ -100,6 +100,7 @@ static struct {
 	unsigned int rate;
 } hwparams, rhwparams;
 static int timelimit = 0;
+static int sampleslimit = 0;
 static int quiet_mode = 0;
 static int file_type = FORMAT_DEFAULT;
 static int open_mode = 0;
@@ -212,6 +213,7 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "-f, --format=FORMAT     sample format (case insensitive)\n"
 "-r, --rate=#            sample rate\n"
 "-d, --duration=#        interrupt after # seconds\n"
+"-s, --samples=#         interrupt after # samples per channel\n"
 "-M, --mmap              mmap stream\n"
 "-N, --nonblock          nonblocking mode\n"
 "-F, --period-time=#     distance between interrupts is # microseconds\n"
@@ -466,8 +468,9 @@ static long parse_long(const char *str, int *err)
 
 int main(int argc, char *argv[])
 {
+	int duration_or_sample = 0;
 	int option_index;
-	static const char short_options[] = "hnlLD:qt:c:f:r:d:MNF:A:R:T:B:vV:IPCi"
+	static const char short_options[] = "hnlLD:qt:c:f:r:d:s:MNF:A:R:T:B:vV:IPCi"
 #ifdef CONFIG_SUPPORT_CHMAP
 		"m:"
 #endif
@@ -485,6 +488,7 @@ int main(int argc, char *argv[])
 		{"format", 1, 0, 'f'},
 		{"rate", 1, 0, 'r'},
 		{"duration", 1, 0 ,'d'},
+		{"samples", 1, 0, 's'},
 		{"mmap", 0, 0, 'M'},
 		{"nonblock", 0, 0, 'N'},
 		{"period-time", 1, 0, 'F'},
@@ -640,11 +644,28 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'd':
+			if (duration_or_sample) {
+				error(_("duration and samples arguments cannot be used together"));
+				return 1;
+			}
 			timelimit = parse_long(optarg, &err);
 			if (err < 0) {
 				error(_("invalid duration argument '%s'"), optarg);
 				return 1;
 			}
+			duration_or_sample = 1;
+			break;
+		case 's':
+			if (duration_or_sample) {
+				error(_("samples and duration arguments cannot be used together"));
+				return 1;
+			}
+			sampleslimit = parse_long(optarg, &err);
+			if (err < 0) {
+				error(_("invalid samples argument '%s'"), optarg);
+				return 1;
+			}
+			duration_or_sample = 1;
 			break;
 		case 'N':
 			nonblock = 1;
@@ -2477,9 +2498,12 @@ static off64_t calc_count(void)
 {
 	off64_t count;
 
-	if (timelimit == 0) {
-		count = pbrec_count;
-	} else {
+	if (timelimit == 0)
+		if (sampleslimit == 0)
+			count = pbrec_count;
+		else
+			count = snd_pcm_format_size(hwparams.format, sampleslimit * hwparams.channels);
+	else {
 		count = snd_pcm_format_size(hwparams.format, hwparams.rate * hwparams.channels);
 		count *= (off64_t)timelimit;
 	}
@@ -3125,7 +3149,7 @@ static void capture(char *orig_name)
 		/* repeat the loop when format is raw without timelimit or
 		 * requested counts of data are recorded
 		 */
-	} while ((file_type == FORMAT_RAW && !timelimit) || count > 0);
+	} while ((file_type == FORMAT_RAW && !timelimit && !sampleslimit) || count > 0);
 }
 
 static void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t count, int rtype, char **names)
