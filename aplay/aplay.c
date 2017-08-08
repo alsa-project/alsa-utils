@@ -2774,6 +2774,13 @@ static void playback_go(int fd, size_t loaded, off64_t count, int rtype, char *n
 			c = count - written;
 			if (c > chunk_bytes)
 				c = chunk_bytes;
+
+			/* c < l, there is more data loaded
+			 * then we actually need to write
+			 */
+			if (c < l)
+				l = c;
+
 			c -= l;
 
 			if (c == 0)
