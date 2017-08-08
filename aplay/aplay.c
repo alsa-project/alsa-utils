@@ -2801,6 +2801,89 @@ static void playback_go(int fd, size_t loaded, off64_t count, int rtype, char *n
 	snd_pcm_nonblock(handle, nonblock);
 }
 
+static int read_header(int *loaded, int header_size)
+{
+	int ret;
+	struct stat buf;
+
+	ret = fstat(fd, &buf);
+	if (ret < 0) {
+		perror("fstat");
+		prg_exit(EXIT_FAILURE);
+	}
+
+	/* don't be adventurous, get out if file size is smaller than
+	 * requested header size */
+	if (buf.st_size < header_size)
+		return -1;
+
+	if (*loaded < header_size) {
+		header_size -= *loaded;
+		ret = safe_read(fd, audiobuf + *loaded, header_size);
+		if (ret != header_size) {
+			error(_("read error"));
+			prg_exit(EXIT_FAILURE);
+		}
+		*loaded += header_size;
+	}
+	return 0;
+}
+
+static int playback_au(char *name, int *loaded)
+{
+	if (read_header(loaded, sizeof(AuHeader)) < 0)
+		return -1;
+
+	if (test_au(fd, audiobuf) < 0)
+		return -1;
+
+	rhwparams.format = hwparams.format;
+	pbrec_count = calc_count();
+	playback_go(fd, *loaded - sizeof(AuHeader), pbrec_count, FORMAT_AU, name);
+
+	return 0;
+}
+
+static int playback_voc(char *name, int *loaded)
+{
+	int ofs;
+
+	if (read_header(loaded, sizeof(VocHeader)) < 0)
+		return -1;
+
+	if ((ofs = test_vocfile(audiobuf)) < 0)
+		return -1;
+
+	pbrec_count = calc_count();
+	voc_play(fd, ofs, name);
+
+	return 0;
+}
+
+static int playback_wave(char *name, int *loaded)
+{
+	ssize_t dtawave;
+
+	if (read_header(loaded, sizeof(WaveHeader)) < 0)
+		return -1;
+
+	if ((dtawave = test_wavefile(fd, audiobuf, *loaded)) < 0)
+		return -1;
+
+	pbrec_count = calc_count();
+	playback_go(fd, dtawave, pbrec_count, FORMAT_WAVE, name);
+
+	return 0;
+}
+
+static int playback_raw(char *name, int *loaded)
+{
+	init_raw_data();
+	pbrec_count = calc_count();
+	playback_go(fd, *loaded, pbrec_count, FORMAT_RAW, name);
+
+	return 0;
+}
 
 /*
  *  let's play or capture it (capture_type says VOC/WAVE/raw)
@@ -2808,9 +2891,7 @@ static void playback_go(int fd, size_t loaded, off64_t count, int rtype, char *n
 
 static void playback(char *name)
 {
-	int ofs;
-	size_t dta;
-	ssize_t dtawave;
+	int loaded = 0;
 
 	pbrec_count = LLONG_MAX;
 	fdcount = 0;
@@ -2824,40 +2905,29 @@ static void playback(char *name)
 			prg_exit(EXIT_FAILURE);
 		}
 	}
-	/* read the file header */
-	dta = sizeof(AuHeader);
-	if ((size_t)safe_read(fd, audiobuf, dta) != dta) {
-		error(_("read error"));
-		prg_exit(EXIT_FAILURE);
-	}
-	if (test_au(fd, audiobuf) >= 0) {
-		rhwparams.format = hwparams.format;
-		pbrec_count = calc_count();
-		playback_go(fd, 0, pbrec_count, FORMAT_AU, name);
-		goto __end;
-	}
-	dta = sizeof(VocHeader);
-	if ((size_t)safe_read(fd, audiobuf + sizeof(AuHeader),
-		 dta - sizeof(AuHeader)) != dta - sizeof(AuHeader)) {
-		error(_("read error"));
-		prg_exit(EXIT_FAILURE);;
-	}
-	if ((ofs = test_vocfile(audiobuf)) >= 0) {
-		pbrec_count = calc_count();
-		voc_play(fd, ofs, name);
-		goto __end;
-	}
-	/* read bytes for WAVE-header */
-	if ((dtawave = test_wavefile(fd, audiobuf, dta)) >= 0) {
-		pbrec_count = calc_count();
-		playback_go(fd, dtawave, pbrec_count, FORMAT_WAVE, name);
-	} else {
-		/* should be raw data */
-		init_raw_data();
-		pbrec_count = calc_count();
-		playback_go(fd, dta, pbrec_count, FORMAT_RAW, name);
-	}
-      __end:
+
+	switch(file_type) {
+	case FORMAT_AU:
+		playback_au(name, &loaded);
+		break;
+	case FORMAT_VOC:
+		playback_voc(name, &loaded);
+		break;
+	case FORMAT_WAVE:
+		playback_wave(name, &loaded);
+		break;
+	case FORMAT_RAW:
+		playback_raw(name, &loaded);
+		break;
+	default:
+		/* parse the file header */
+		if (playback_au(name, &loaded) < 0 &&
+		    playback_voc(name, &loaded) < 0 &&
+		    playback_wave(name, &loaded) < 0)
+			playback_raw(name, &loaded); /* should be raw data */
+		break;
+        }
+
 	if (fd != 0)
 		close(fd);
 }
