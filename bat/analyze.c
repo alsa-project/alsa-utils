@@ -34,7 +34,7 @@ static void check_amplitude(struct bat *bat, float *buf)
 	int i, percent;
 
 	/* calculate average value */
-	for (i = 0, sum = 0.0; i < bat->frames; i++)
+	for (i = 0, sum = 0.0, average = 0.0; i < bat->frames; i++)
 		sum += buf[i];
 	average = sum / bat->frames;
 
