@@ -10,6 +10,9 @@ the develop package additionally to link with this library.
 
 alsaconf requires dialog or whiptail program to run properly.
 
+If systemd (minimum version 18) is installed it will be used to run
+alsactl to store and restore settings.
+
 Installation
 ------------
 

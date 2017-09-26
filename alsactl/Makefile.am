@@ -29,8 +29,8 @@ systemdsystemunit_DATA = \
 
 install-data-hook:
 	$(MKDIR_P) -m 0755 \
-		$(DESTDIR)$(systemdsystemunitdir)/basic.target.wants
-	( cd $(DESTDIR)$(systemdsystemunitdir)/basic.target.wants && \
+		$(DESTDIR)$(systemdsystemunitdir)/sound.target.wants
+	( cd $(DESTDIR)$(systemdsystemunitdir)/sound.target.wants && \
 		rm -f alsa-state.service alsa-restore.service && \
 		$(LN_S) ../alsa-state.service alsa-state.service && \
 		$(LN_S) ../alsa-restore.service alsa-restore.service)

@@ -6,7 +6,6 @@
 [Unit]
 Description=Manage Sound Card State (restore and store)
 ConditionPathExists=@daemonswitch@
-After=sysinit.target
 
 [Service]
 Type=simple
