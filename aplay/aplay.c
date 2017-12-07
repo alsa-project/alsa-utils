@@ -635,10 +635,10 @@ int main(int argc, char *argv[])
 				error(_("invalid rate argument '%s'"), optarg);
 				return 1;
 			}
-			if (tmp < 300)
+			if (tmp < 1000)
 				tmp *= 1000;
 			rhwparams.rate = tmp;
-			if (tmp < 2000 || tmp > 192000) {
+			if (tmp < 2000 || tmp > 768000) {
 				error(_("bad speed value %i"), tmp);
 				return 1;
 			}
