@@ -41,6 +41,7 @@ edit = \
 	$(SED) -r -e 's,@sbindir\@,$(sbindir),g' \
 		  -e 's,@mydatadir\@,$(mydatadir),g' \
 		  -e 's,@daemonswitch\@,$(ALSACTL_DAEMONSWITCH),g' \
+		  -e 's,@asoundrcfile\@,$(ASOUND_STATE_DIR)/asound.state,g' \
 							< $< > $@ || rm $@
 
 alsa-state.service: alsa-state.service.in
