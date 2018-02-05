@@ -1479,7 +1479,7 @@ __again:
 	if (loop->play->access == loop->capt->access &&
 	    loop->play->format == loop->capt->format &&
 	    loop->play->rate == loop->capt->rate &&
-	    loop->play->channels == loop->play->channels &&
+	    loop->play->channels == loop->capt->channels &&
 	    loop->sync != SYNC_TYPE_SAMPLERATE) {
 		if (verbose > 1)
 			snd_output_printf(loop->output, "shared buffer!!!\n");
