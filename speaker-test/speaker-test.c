@@ -101,7 +101,6 @@ static unsigned int       nperiods    = 4;                  /* number of periods
 static double             freq        = 440.0;              /* sinusoidal wave frequency in Hz */
 static int                test_type   = TEST_PINK_NOISE;    /* Test type. 1 = noise, 2 = sine wave */
 static float              generator_scale  = 0.8;           /* Scale to use for sine volume */
-static pink_noise_t pink;
 static snd_pcm_uframes_t  buffer_size;
 static snd_pcm_uframes_t  period_size;
 static const char *given_test_wav_file = NULL;
@@ -289,12 +288,15 @@ static const int	supported_formats[] = {
   -1
 };
 
-static void generate_sine(uint8_t *frames, int channel, int count, double *_phase) {
-  double phase = *_phase;
-  double max_phase = 1.0 / freq;
-  double step = 1.0 / (double)rate;
-  double res;
-  float fres;
+typedef union {
+  float f;
+  int32_t i;
+} value_t;
+
+static void do_generate(uint8_t *frames, int channel, int count,
+			value_t (*generate)(void *), void *arg)
+{
+  value_t res;
   int    chn;
   int32_t  ires;
   int8_t *samp8 = (int8_t*) frames;
@@ -304,134 +306,30 @@ static void generate_sine(uint8_t *frames, int channel, int count, double *_phas
 
   while (count-- > 0) {
     for(chn=0;chn<channels;chn++) {
+      if (chn==channel) {
+	res = generate(arg);
+      } else {
+	res.i = 0;
+      }
+
       switch (format) {
       case SND_PCM_FORMAT_S8:
-        if (chn==channel) {
-          res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * generator_scale * 0x7fffffff;
-          ires = res;
-          *samp8++ = ires >> 24;
-        } else {
-          *samp8++ = 0;
-        }
+	*samp8++ = res.i >> 24;
         break;
       case SND_PCM_FORMAT_S16_LE:
-        if (chn==channel) {
-          res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * generator_scale * 0x7fffffff;
-          ires = res;
-          *samp16++ = LE_SHORT(ires >> 16);
-        } else {
-          *samp16++ = 0;
-        }
+	*samp16++ = LE_SHORT(res.i >> 16);
         break;
       case SND_PCM_FORMAT_S16_BE:
-        if (chn==channel) {
-          res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * generator_scale * 0x7fffffff;
-          ires = res;
-          *samp16++ = BE_SHORT(ires >> 16);
-        } else {
-          *samp16++ = 0;
-        }
+	*samp16++ = BE_SHORT(res.i >> 16);
         break;
       case SND_PCM_FORMAT_FLOAT_LE:
-        if (chn==channel) {
-          res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * generator_scale;
-          fres = res;
-	  *samp_f++ = fres;
-        } else {
-	  *samp_f++ = 0.0;
-        }
+	*samp_f++ = res.f;
         break;
       case SND_PCM_FORMAT_S32_LE:
-        if (chn==channel) {
-          res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * generator_scale * 0x7fffffff;
-          ires = res;
-          *samp32++ = LE_INT(ires);
-        } else {
-          *samp32++ = 0;
-        }
+	*samp32++ = LE_INT(res.i);
         break;
       case SND_PCM_FORMAT_S32_BE:
-        if (chn==channel) {
-          res = (sin((phase * 2 * M_PI) / max_phase - M_PI)) * generator_scale * 0x7fffffff;
-          ires = res;
-          *samp32++ = BE_INT(ires);
-        } else {
-          *samp32++ = 0;
-        }
-        break;
-      default:
-        ;
-      }
-    }
-
-    phase += step;
-    if (phase >= max_phase)
-      phase -= max_phase;
-  }
-
-  *_phase = phase;
-}
-
-/* Pink noise is a better test than sine wave because we can tell
- * where pink noise is coming from more easily that a sine wave.
- */
-
-
-static void generate_pink_noise( uint8_t *frames, int channel, int count) {
-  double   res;
-  int      chn;
-  int32_t  ires;
-  int8_t  *samp8 = (int8_t*) frames;
-  int16_t *samp16 = (int16_t*) frames;
-  int32_t *samp32 = (int32_t*) frames;
-
-  while (count-- > 0) {
-    for(chn=0;chn<channels;chn++) {
-      switch (format) {
-      case SND_PCM_FORMAT_S8:
-        if (chn==channel) {
-	  res = generate_pink_noise_sample(&pink) * generator_scale * 0x07fffffff;
-	  ires = res;
-	  *samp8++ = ires >> 24;
-        } else {
-	  *samp8++ = 0;
-        }
-        break;
-      case SND_PCM_FORMAT_S16_LE:
-        if (chn==channel) {
-	  res = generate_pink_noise_sample(&pink) * generator_scale * 0x07fffffff;
-	  ires = res;
-          *samp16++ = LE_SHORT(ires >> 16);
-        } else {
-	  *samp16++ = 0;
-        }
-        break;
-      case SND_PCM_FORMAT_S16_BE:
-        if (chn==channel) {
-          res = generate_pink_noise_sample(&pink) * generator_scale * 0x07fffffff;
-          ires = res;
-          *samp16++ = BE_SHORT(ires >> 16);
-        } else {
-          *samp16++ = 0;
-        }
-        break;
-      case SND_PCM_FORMAT_S32_LE:
-        if (chn==channel) {
-          res = generate_pink_noise_sample(&pink) * generator_scale * 0x07fffffff;
-          ires = res;
-          *samp32++ = LE_INT(ires);
-        } else {
-          *samp32++ = 0;
-        }
-        break;
-      case SND_PCM_FORMAT_S32_BE:
-        if (chn==channel) {
-	  res = generate_pink_noise_sample(&pink) * generator_scale * 0x07fffffff;
-	  ires = res;
-	  *samp32++ = BE_INT(ires);
-        } else {
-	  *samp32++ = 0;
-        }
+	*samp32++ = BE_INT(res.i);
         break;
       default:
         ;
@@ -441,68 +339,62 @@ static void generate_pink_noise( uint8_t *frames, int channel, int count) {
 }
 
 /*
+ * Sine generator
+ */
+typedef struct {
+  double phase;
+  double max_phase;
+  double step;
+} sine_t;
+
+static void init_sine(sine_t *sine)
+{
+  sine->phase = 0;
+  sine->max_phase = 1.0 / freq;
+  sine->step = 1.0 / (double)rate;
+}
+
+static value_t generate_sine(void *arg)
+{
+  sine_t *sine = arg;
+  value_t res;
+
+  res.f = sin((sine->phase * 2 * M_PI) / sine->max_phase - M_PI);
+  res.f *= generator_scale;
+  if (format != SND_PCM_FORMAT_FLOAT_LE)
+    res.i = res.f * INT32_MAX;
+  sine->phase += sine->step;
+  if (sine->phase >= sine->max_phase)
+    sine->phase -= sine->max_phase;
+  return res;
+}
+
+/* Pink noise is a better test than sine wave because we can tell
+ * where pink noise is coming from more easily that a sine wave.
+ */
+static value_t generate_pink_noise(void *arg)
+{
+  pink_noise_t *pink = arg;
+  value_t res;
+
+  res.f = generate_pink_noise_sample(pink) * generator_scale;
+  if (format != SND_PCM_FORMAT_FLOAT_LE)
+    res.i = res.f * INT32_MAX;
+  return res;
+}
+
+/*
  * useful for tests
  */
-static void generate_pattern(uint8_t *frames, int channel, int count, int *_pattern) {
-  int pattern = *_pattern;
-  int    chn;
-  int8_t *samp8 = (int8_t*) frames;
-  int16_t *samp16 = (int16_t*) frames;
-  int32_t *samp32 = (int32_t*) frames;
-  float   *samp_f = (float*) frames;
+static value_t generate_pattern(void *arg)
+{
+  value_t res;
 
-  while (count-- > 0) {
-    for(chn=0;chn<channels;chn++,pattern++) {
-      switch (format) {
-      case SND_PCM_FORMAT_S8:
-        if (chn==channel) {
-          *samp8++ = pattern & 0xff;
-        } else {
-          *samp8++ = 0;
-        }
-        break;
-      case SND_PCM_FORMAT_S16_LE:
-        if (chn==channel) {
-          *samp16++ = LE_SHORT(pattern & 0xfffff);
-        } else {
-          *samp16++ = 0;
-        }
-        break;
-      case SND_PCM_FORMAT_S16_BE:
-        if (chn==channel) {
-          *samp16++ = BE_SHORT(pattern & 0xffff);
-        } else {
-          *samp16++ = 0;
-        }
-        break;
-      case SND_PCM_FORMAT_FLOAT_LE:
-        if (chn==channel) {
-	  *samp_f++ = LE_INT(((double)pattern) / INT32_MAX);
-        } else {
-	  *samp_f++ = 0.0;
-        }
-        break;
-      case SND_PCM_FORMAT_S32_LE:
-        if (chn==channel) {
-          *samp32++ = LE_INT(pattern);
-        } else {
-          *samp32++ = 0;
-        }
-        break;
-      case SND_PCM_FORMAT_S32_BE:
-        if (chn==channel) {
-          *samp32++ = BE_INT(pattern);
-        } else {
-          *samp32++ = 0;
-        }
-        break;
-      default:
-        ;
-      }
-    }
-  }
-
-  *_pattern = pattern;
+  res.i = *(int *)arg;
+  *(int *)arg = res.i + 1;
+  if (format != SND_PCM_FORMAT_FLOAT_LE)
+    res.f = (float)res.i / (float)INT32_MAX;
+  return res;
 }
 
 static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_access_t access) {
@@ -927,10 +819,27 @@ static int write_buffer(snd_pcm_t *handle, uint8_t *ptr, int cptr)
   return 0;
 }
 
+static int pattern;
+static sine_t sine;
+static pink_noise_t pink;
+
+static void init_loop(void)
+{
+  switch (test_type) {
+  case TEST_PINK_NOISE:
+    initialize_pink_noise(&pink, 16);
+    break;
+  case TEST_SINE:
+    init_sine(&sine);
+    break;
+  case TEST_PATTERN:
+    pattern = 0;
+    break;
+  }
+}
+
 static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *frames)
 {
-  double phase = 0;
-  int	 pattern = 0;
   int    err, n;
 
   fflush(stdout);
@@ -956,11 +865,11 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
 
   for(n = 0; n < periods && !in_aborting; n++) {
     if (test_type == TEST_PINK_NOISE)
-      generate_pink_noise(frames, channel, period_size);
+      do_generate(frames, channel, period_size, generate_pink_noise, &pink);
     else if (test_type == TEST_PATTERN)
-      generate_pattern(frames, channel, period_size, &pattern);
+      do_generate(frames, channel, period_size, generate_pattern, &pattern);
     else
-      generate_sine(frames, channel, period_size, &phase);
+      do_generate(frames, channel, period_size, generate_sine, &sine);
 
     if ((err = write_buffer(handle, frames, period_size)) < 0)
       return err;
@@ -1265,13 +1174,12 @@ int main(int argc, char *argv[]) {
   }
 
   frames = malloc(snd_pcm_frames_to_bytes(handle, period_size));
-  if (test_type == TEST_PINK_NOISE)
-    initialize_pink_noise(&pink, 16);
-  
   if (frames == NULL) {
     fprintf(stderr, _("No enough memory\n"));
     prg_exit(EXIT_FAILURE);
   }
+
+  init_loop();
 
   if (speaker==0) {
 
