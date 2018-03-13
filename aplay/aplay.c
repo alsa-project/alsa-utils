@@ -27,6 +27,7 @@
  */
 
 #define _GNU_SOURCE
+#include "aconfig.h"
 #include <stdio.h>
 #include <malloc.h>
 #include <unistd.h>
@@ -49,7 +50,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <endian.h>
-#include "aconfig.h"
 #include "gettext.h"
 #include "formats.h"
 #include "version.h"
