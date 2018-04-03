@@ -707,6 +707,10 @@ void *record_alsa(struct bat *bat)
 		err = latencytest_process_input(&sndpcm, bat);
 	else
 		err = read_from_pcm_loop(&sndpcm, bat);
+
+	pthread_cleanup_pop(0);
+	pthread_cleanup_pop(0);
+
 	if (err != 0) {
 		retval_record = err;
 		goto exit3;
@@ -715,9 +719,6 @@ void *record_alsa(struct bat *bat)
 	/* Normally we will never reach this part of code (unless error in
 	 * previous call) (before exit3) as this thread will be cancelled
 	 * by end of play thread. Except in single line mode. */
-	pthread_cleanup_pop(0);
-	pthread_cleanup_pop(0);
-
 	snd_pcm_drain(sndpcm.handle);
 	pthread_exit(&retval_record);
 

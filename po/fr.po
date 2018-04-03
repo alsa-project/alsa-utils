@@ -7,35 +7,36 @@ msgid ""
 msgstr ""
 "Project-Id-Version: alsa-utils 1.0.23\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-07 06:23+0100\n"
+"POT-Creation-Date: 2018-01-10 09:07+0100\n"
 "PO-Revision-Date: 2011-01-07 06:23+0100\n"
 "Last-Translator: Christoph J. Thompson <cjsthompson@gmail.com>\n"
 "Language-Team: French <fr@li.org>\n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../alsamixer/card_select.c:126 ../alsamixer/device_name.c:126
+#: alsamixer/card_select.c:126 alsamixer/device_name.c:126
 msgid "Sound Card"
 msgstr "Carte Son"
 
-#: ../alsamixer/card_select.c:181
+#: alsamixer/card_select.c:181
 msgid "(default)"
 msgstr "(par défaut)"
 
-#: ../alsamixer/card_select.c:191
+#: alsamixer/card_select.c:191
 msgid "cannot enumerate sound cards"
 msgstr "les cartes son n'ont pas pu être énumérées"
 
-#: ../alsamixer/card_select.c:215
+#: alsamixer/card_select.c:215
 msgid "enter device name..."
 msgstr "entrez le nom du périphérique..."
 
-#: ../alsamixer/cli.c:40
+#: alsamixer/cli.c:40
 msgid "Usage: alsamixer [options]"
 msgstr "Utilisation: alsamixer [options]"
 
-#: ../alsamixer/cli.c:41
+#: alsamixer/cli.c:41
 msgid ""
 "Useful options:\n"
 "  -h, --help              this help\n"
@@ -49,7 +50,7 @@ msgstr ""
 "  -D, --device=NOM     nom du périphérique de mixage\n"
 "  -V, --view=MODE      mode de visualisation par défaut: lecture/capture/tous"
 
-#: ../alsamixer/cli.c:46
+#: alsamixer/cli.c:46
 msgid ""
 "Debugging options:\n"
 "  -g, --no-color          toggle using of colors\n"
@@ -59,330 +60,328 @@ msgstr ""
 "  -g, --no-color          supprimer la couleur\n"
 "  -a, --abstraction=NOM   niveau d'abstraction du mixeur: aucun/basique"
 
-#: ../alsamixer/cli.c:77
+#: alsamixer/cli.c:77
 #, c-format
 msgid "invalid card index: %s\n"
 msgstr "index de carte invalide: %s\n"
 
-#: ../alsamixer/cli.c:103
+#: alsamixer/cli.c:103
 #, c-format
 msgid "unknown abstraction level: %s\n"
 msgstr "niveau d'abstraction inconnu: %s\n"
 
-#: ../alsamixer/cli.c:108
+#: alsamixer/cli.c:108
 #, c-format
 msgid "unknown option: %c\n"
 msgstr "option inconnue: %c\n"
 
-#: ../alsamixer/cli.c:110
+#: alsamixer/cli.c:110
 msgid "try `alsamixer --help' for more information\n"
 msgstr "essayez `alsamixer --help' pour plus d'information\n"
 
-#: ../alsamixer/device_name.c:177
+#: alsamixer/device_name.c:177
 msgid "Device name:"
 msgstr "Nom du périphérique:"
 
-#: ../alsamixer/die.c:37
+#: alsamixer/die.c:37
 #, c-format
 msgid "%s: %s\n"
 msgstr "%s: %s\n"
 
-#: ../alsamixer/mixer_display.c:95
+#: alsamixer/mixer_display.c:98
 msgid "Card:"
 msgstr "Carte:"
 
-#: ../alsamixer/mixer_display.c:96
+#: alsamixer/mixer_display.c:99
 msgid "Chip:"
 msgstr "Puce:"
 
-#: ../alsamixer/mixer_display.c:97
+#: alsamixer/mixer_display.c:100
 msgid "View:"
 msgstr "Vue:"
 
-#: ../alsamixer/mixer_display.c:98
+#: alsamixer/mixer_display.c:101
 msgid "Item:"
 msgstr "Contrôle:"
 
-#: ../alsamixer/mixer_display.c:101
+#: alsamixer/mixer_display.c:104
 msgid "F1:  Help"
 msgstr "F1:  Aide"
 
-#: ../alsamixer/mixer_display.c:102
+#: alsamixer/mixer_display.c:105
 msgid "F2:  System information"
 msgstr "F2:  Informations Système"
 
-#: ../alsamixer/mixer_display.c:103
+#: alsamixer/mixer_display.c:106
 msgid "F6:  Select sound card"
 msgstr "F6:  Choisir la carte son"
 
-#: ../alsamixer/mixer_display.c:104
+#: alsamixer/mixer_display.c:107
 msgid "Esc: Exit"
 msgstr "Esc: Quitter"
 
-#: ../alsamixer/mixer_display.c:171
+#: alsamixer/mixer_display.c:174
 msgid "(unplugged)"
 msgstr "(non branché)"
 
-#: ../alsamixer/mixer_display.c:189
+#: alsamixer/mixer_display.c:192
 msgid "Playback"
 msgstr "Lecture"
 
-#: ../alsamixer/mixer_display.c:190
+#: alsamixer/mixer_display.c:193
 msgid "Capture"
 msgstr "Capture"
 
-#: ../alsamixer/mixer_display.c:191
+#: alsamixer/mixer_display.c:194
 msgid "All"
 msgstr "Tout"
 
-#: ../alsamixer/mixer_display.c:231
+#: alsamixer/mixer_display.c:234
 msgid "mute"
 msgstr "muet"
 
-#: ../alsamixer/mixer_display.c:272 ../alsamixer/mixer_display.c:282
+#: alsamixer/mixer_display.c:275 alsamixer/mixer_display.c:285
 msgid "dB gain:"
 msgstr "gain dB:"
 
-#: ../alsamixer/mixer_display.c:282
+#: alsamixer/mixer_display.c:285
 #, c-format
 msgid " [%s %s, %s]"
 msgstr " [%s %s, %s]"
 
-#: ../alsamixer/mixer_display.c:291 ../alsamixer/mixer_display.c:297
-#: ../alsamixer/mixer_display.c:303 ../alsamixer/mixer_display.c:309
+#: alsamixer/mixer_display.c:294 alsamixer/mixer_display.c:300
+#: alsamixer/mixer_display.c:306 alsamixer/mixer_display.c:312
 msgid "Off"
 msgstr "Fermé"
 
-#: ../alsamixer/mixer_display.c:297 ../alsamixer/mixer_display.c:309
+#: alsamixer/mixer_display.c:300 alsamixer/mixer_display.c:312
 msgid "On"
 msgstr "Ouvert"
 
-#: ../alsamixer/mixer_display.c:360
+#: alsamixer/mixer_display.c:363
 msgid "The sound device was unplugged."
 msgstr "Le périphérique a été débranché"
 
-#: ../alsamixer/mixer_display.c:361
+#: alsamixer/mixer_display.c:364
 msgid "Press F6 to select another sound card."
 msgstr "Appuyez sur F6 pour choisir une autre carte son."
 
-#: ../alsamixer/mixer_display.c:376
+#: alsamixer/mixer_display.c:379
 msgid "This sound device does not have any playback controls."
 msgstr "Ce périphérique n'a pas de commandes de lecture."
 
-#: ../alsamixer/mixer_display.c:378
+#: alsamixer/mixer_display.c:381
 msgid "This sound device does not have any capture controls."
 msgstr "Ce périphérique n'a pas de commandes de capture."
 
-#: ../alsamixer/mixer_display.c:380
+#: alsamixer/mixer_display.c:383
 msgid "This sound device does not have any controls."
 msgstr "Ce périphérique n'a pas de commandes."
 
 #. TRANSLATORS: playback on; one character
-#: ../alsamixer/mixer_display.c:537 ../alsamixer/mixer_display.c:542
+#: alsamixer/mixer_display.c:516 alsamixer/mixer_display.c:521
 msgid "O"
 msgstr "O"
 
 #. TRANSLATORS: playback muted; one character
-#: ../alsamixer/mixer_display.c:539 ../alsamixer/mixer_display.c:543
+#: alsamixer/mixer_display.c:518 alsamixer/mixer_display.c:522
 msgid "M"
 msgstr "M"
 
 #. TRANSLATORS: "left"; no more than two characters
-#: ../alsamixer/mixer_display.c:557
+#: alsamixer/mixer_display.c:536
 msgid "L"
 msgstr "G"
 
 #. TRANSLATORS: "right"; no more than two characters
-#: ../alsamixer/mixer_display.c:561
+#: alsamixer/mixer_display.c:540
 msgid "R"
 msgstr "D"
 
 #. TRANSLATORS: no more than eight characters
-#: ../alsamixer/mixer_display.c:563
+#: alsamixer/mixer_display.c:542
 msgid "CAPTURE"
 msgstr "CAPTURE"
 
-#: ../alsamixer/mixer_display.c:613
+#: alsamixer/mixer_display.c:592
 msgid "Front"
 msgstr "Avant"
 
-#: ../alsamixer/mixer_display.c:616
+#: alsamixer/mixer_display.c:595
 msgid "Rear"
 msgstr "Arrière"
 
-#. 4
-#: ../alsamixer/mixer_display.c:619 ../speaker-test/speaker-test.c:107
+#: alsamixer/mixer_display.c:598 speaker-test/speaker-test.c:125
 msgid "Center"
 msgstr "Centre"
 
-#: ../alsamixer/mixer_display.c:622
+#: alsamixer/mixer_display.c:601
 msgid "Woofer"
 msgstr "Basses"
 
-#: ../alsamixer/mixer_display.c:625
+#: alsamixer/mixer_display.c:604
 msgid "Side"
 msgstr "Côté"
 
-#: ../alsamixer/mixer_widget.c:83 ../alsamixer/mixer_widget.c:88
+#: alsamixer/mixer_widget.c:91 alsamixer/mixer_widget.c:96
 msgid "cannot open mixer"
 msgstr "le mixeur ne peut pas être ouvert"
 
-#: ../alsamixer/mixer_widget.c:94 ../alsamixer/mixer_widget.c:171
+#: alsamixer/mixer_widget.c:102 alsamixer/mixer_widget.c:179
 msgid "cannot load mixer controls"
 msgstr "les commandes de mixage ne peuvent pas être chargés"
 
-#: ../alsamixer/mixer_widget.c:161
+#: alsamixer/mixer_widget.c:169
 #, c-format
 msgid "Cannot open mixer device '%s'."
 msgstr "Le périphérique de mixage '%s' ne peut pas être ouvert."
 
-#: ../alsamixer/mixer_widget.c:182
+#: alsamixer/mixer_widget.c:190
 msgid "Esc     Exit"
 msgstr "Esc     Quitter"
 
-#: ../alsamixer/mixer_widget.c:183
+#: alsamixer/mixer_widget.c:191
 msgid "F1 ? H  Help"
 msgstr "F1 ? H  Aide"
 
-#: ../alsamixer/mixer_widget.c:184
+#: alsamixer/mixer_widget.c:192
 msgid "F2 /    System information"
 msgstr "F2 /    Informations système"
 
-#: ../alsamixer/mixer_widget.c:185
+#: alsamixer/mixer_widget.c:193
 msgid "F3      Show playback controls"
 msgstr "F3      Afficher les commandes de lecture"
 
-#: ../alsamixer/mixer_widget.c:186
+#: alsamixer/mixer_widget.c:194
 msgid "F4      Show capture controls"
 msgstr "F4      Afficher les commandes de capture"
 
-#: ../alsamixer/mixer_widget.c:187
+#: alsamixer/mixer_widget.c:195
 msgid "F5      Show all controls"
 msgstr "F5      Afficher toutes les commandes"
 
-#: ../alsamixer/mixer_widget.c:188
+#: alsamixer/mixer_widget.c:196
 msgid "Tab     Toggle view mode (F3/F4/F5)"
 msgstr "Tab     Choisir le mode de visualisation (F3/F4/F5)"
 
-#: ../alsamixer/mixer_widget.c:189
+#: alsamixer/mixer_widget.c:197
 msgid "F6 S    Select sound card"
 msgstr "F6 S    Choisir la carte son"
 
-#: ../alsamixer/mixer_widget.c:190
+#: alsamixer/mixer_widget.c:198
 msgid "L       Redraw screen"
 msgstr "L       Actualiser l'écran"
 
-#: ../alsamixer/mixer_widget.c:192
+#: alsamixer/mixer_widget.c:200
 msgid "Left    Move to the previous control"
 msgstr "Gauche  Aller à la commande précédente"
 
-#: ../alsamixer/mixer_widget.c:193
+#: alsamixer/mixer_widget.c:201
 msgid "Right   Move to the next control"
 msgstr "Droite  Aller à la commande suivante"
 
-#: ../alsamixer/mixer_widget.c:195
+#: alsamixer/mixer_widget.c:203
 msgid "Up/Down    Change volume"
 msgstr "Haut/Bas   Ajuster le volume"
 
-#: ../alsamixer/mixer_widget.c:196
+#: alsamixer/mixer_widget.c:204
 msgid "+ -        Change volume"
 msgstr "+ -        Ajuster le volume"
 
-#: ../alsamixer/mixer_widget.c:197
+#: alsamixer/mixer_widget.c:205
 msgid "Page Up/Dn Change volume in big steps"
 msgstr "Page Préc./Suiv. Ajuster le volume en grandes intervalles"
 
-#: ../alsamixer/mixer_widget.c:198
+#: alsamixer/mixer_widget.c:206
 msgid "End        Set volume to 0%"
 msgstr "Fin        Couper le volume"
 
-#: ../alsamixer/mixer_widget.c:199
+#: alsamixer/mixer_widget.c:207
 msgid "0-9        Set volume to 0%-90%"
 msgstr "0-9        Ajuster le volume entre 0 et 90%"
 
-#: ../alsamixer/mixer_widget.c:200
+#: alsamixer/mixer_widget.c:208
 msgid "Q W E      Increase left/both/right volumes"
 msgstr "Q W E      Augmenter les volumes de gauche/centre/droite"
 
 #. TRANSLATORS: or Y instead of Z
-#: ../alsamixer/mixer_widget.c:202
+#: alsamixer/mixer_widget.c:210
 msgid "Z X C      Decrease left/both/right volumes"
 msgstr "Z X C      Baisser les volumes de gauche/centre/droite"
 
-#: ../alsamixer/mixer_widget.c:203
+#: alsamixer/mixer_widget.c:211
 msgid "B          Balance left and right volumes"
 msgstr "B          Égaliser les volumes de gauche et droite"
 
-#: ../alsamixer/mixer_widget.c:205
+#: alsamixer/mixer_widget.c:213
 msgid "M          Toggle mute"
 msgstr "M          (Dés)activer le mode muet"
 
 #. TRANSLATORS: or , .
-#: ../alsamixer/mixer_widget.c:207
+#: alsamixer/mixer_widget.c:215
 msgid "< >        Toggle left/right mute"
 msgstr "< >        (Dés)activer le mode muet à gauche et à droite"
 
-#: ../alsamixer/mixer_widget.c:209
+#: alsamixer/mixer_widget.c:217
 msgid "Space      Toggle capture"
 msgstr "Espace     (Dés)activer la capture"
 
 #. TRANSLATORS: or Insert Delete
-#: ../alsamixer/mixer_widget.c:211
+#: alsamixer/mixer_widget.c:219
 msgid "; '        Toggle left/right capture"
 msgstr ";          (Dés)activer la capture à gauche et à droite"
 
-#: ../alsamixer/mixer_widget.c:213
+#: alsamixer/mixer_widget.c:221
 msgid "Authors:"
 msgstr "Auteurs:"
 
-#: ../alsamixer/mixer_widget.c:214
-msgid "  Tim Janik <timj@gtk.org>"
+#: alsamixer/mixer_widget.c:222
+msgid "  Tim Janik"
 msgstr ""
 
-#: ../alsamixer/mixer_widget.c:215
+#: alsamixer/mixer_widget.c:223
 msgid "  Jaroslav Kysela <perex@perex.cz>"
 msgstr ""
 
-#: ../alsamixer/mixer_widget.c:216
+#: alsamixer/mixer_widget.c:224
 msgid "  Clemens Ladisch <clemens@ladisch.de>"
 msgstr ""
 
-#: ../alsamixer/mixer_widget.c:218
+#: alsamixer/mixer_widget.c:226
 msgid "Help"
 msgstr "Aide"
 
-#: ../alsamixer/proc_files.c:103
+#: alsamixer/proc_files.c:103
 msgid "Select File"
 msgstr "Choisir un Fichier"
 
-#: ../alsamixer/textbox.c:52 ../alsamixer/textbox.c:66
+#: alsamixer/textbox.c:52 alsamixer/textbox.c:66
 msgid "Error"
 msgstr "Erreur"
 
-#: ../alsamixer/textbox.c:80
+#: alsamixer/textbox.c:80
 #, c-format
 msgid "Cannot open file \"%s\"."
 msgstr "Le fichier \"%s\" n'a pas pu être ouvert."
 
-#: ../aplay/aplay.c:147
+#: aplay/aplay.c:178
 msgid "raw data"
 msgstr "données brutes"
 
-#: ../aplay/aplay.c:148
+#: aplay/aplay.c:179
 msgid "VOC"
 msgstr ""
 
-#. FIXME: can WAV handle exactly 2GB or less than it?
-#: ../aplay/aplay.c:150
+#: aplay/aplay.c:181
 msgid "WAVE"
 msgstr ""
 
-#: ../aplay/aplay.c:151
+#: aplay/aplay.c:182
 msgid "Sparc Audio"
 msgstr ""
 
-#: ../aplay/aplay.c:172
-#, c-format
+#: aplay/aplay.c:203
+#, fuzzy, c-format
 msgid ""
 "Usage: %s [OPTION]... [FILE]...\n"
 "\n"
@@ -397,6 +396,7 @@ msgid ""
 "-f, --format=FORMAT     sample format (case insensitive)\n"
 "-r, --rate=#            sample rate\n"
 "-d, --duration=#        interrupt after # seconds\n"
+"-s, --samples=#         interrupt after # samples per channel\n"
 "-M, --mmap              mmap stream\n"
 "-N, --nonblock          nonblocking mode\n"
 "-F, --period-time=#     distance between interrupts is # microseconds\n"
@@ -411,12 +411,15 @@ msgid ""
 "-v, --verbose           show PCM structure and setup (accumulative)\n"
 "-V, --vumeter=TYPE      enable VU meter (TYPE: mono or stereo)\n"
 "-I, --separate-channels one file for each channel\n"
+"-i, --interactive       allow interactive operation from stdin\n"
+"-m, --chmap=ch1,ch2,..  Give the channel map to override or follow\n"
 "    --disable-resample  disable automatic rate resample\n"
 "    --disable-channels  disable automatic channel conversions\n"
 "    --disable-format    disable automatic format conversions\n"
 "    --disable-softvol   disable software volume control (softvol)\n"
 "    --test-position     test ring buffer position\n"
-"    --test-coef=#\t test coeficient for ring buffer position (default 8)\n"
+"    --test-coef=#       test coefficient for ring buffer position (default "
+"8)\n"
 "                        expression for validation is: coef * (buffer_size / "
 "2)\n"
 "    --test-nowait       do not wait for ring buffer - eats whole CPU\n"
@@ -425,6 +428,8 @@ msgid ""
 "                        for this many seconds\n"
 "    --process-id-file   write the process ID here\n"
 "    --use-strftime      apply the strftime facility to the output file name\n"
+"    --dump-hw-params    dump hw_params of the device\n"
+"    --fatal-errors      treat all errors as fatal\n"
 msgstr ""
 "Utilisation: %s [OPTION]... [FICHIER]...\n"
 "\n"
@@ -445,9 +450,11 @@ msgstr ""
 "-B, --buffer-time=#     la durée du tampon est de # microsecondes\n"
 "    --period-size=#     # trames entre chaque interruption\n"
 "    --buffer-size=#     la durée du tampon est de # trames\n"
-"-A, --avail-min=#       # microsecondes min. disponibles entre chaque réveil\n"
+"-A, --avail-min=#       # microsecondes min. disponibles entre chaque "
+"réveil\n"
 "-R, --start-delay=#     # microsecondes de délai avant le démarrage\n"
-"                        automatique du périphérique PCM (relatif à la taille\n"
+"                        automatique du périphérique PCM (relatif à la "
+"taille\n"
 "                        du tampon si <= 0)\n"
 "-T, --stop-delay=#      # microsecondes de délai depuis xrun avant l'arrêt\n"
 "                        automatique du périphérique PCM \n"
@@ -466,17 +473,18 @@ msgstr ""
 "                        validation est : coef * (taille_tampon / 2)\n"
 "    --test-nowait       ne pas attendre le tampon circulaire - prend toutes\n"
 "                        les resources du processeur\n"
-"    --max-file-time=#   commencer un autre fichier de capture quand l'ancien\n"
+"    --max-file-time=#   commencer un autre fichier de capture quand "
+"l'ancien\n"
 "                        fichier a enregistré pendant # secondes\n"
 "    --process-id-file   écrire l'identifiant du processus ici\n"
 "    --use-strftime      utiliser strftime pour le nom du fichier de capture\n"
 
-#: ../aplay/aplay.c:211 ../speaker-test/speaker-test.c:750
+#: aplay/aplay.c:248 speaker-test/speaker-test.c:1023
 #, c-format
 msgid "Recognized sample formats are:"
 msgstr "Les formats d'échantillonage connus sont:"
 
-#: ../aplay/aplay.c:217
+#: aplay/aplay.c:254
 #, c-format
 msgid ""
 "\n"
@@ -485,979 +493,1100 @@ msgstr ""
 "\n"
 "Certains de ceux-ci ne sont peut être pas disponibles avec ce matériel\n"
 
-#: ../aplay/aplay.c:218
-#, c-format
-msgid "The availabled format shortcuts are:\n"
+#: aplay/aplay.c:255
+#, fuzzy, c-format
+msgid "The available format shortcuts are:\n"
 msgstr "Les raccourcis format disponibles sont:\n"
 
-#: ../aplay/aplay.c:219
+#: aplay/aplay.c:256
 #, c-format
 msgid "-f cd (16 bit little endian, 44100, stereo)\n"
 msgstr "-f cd (16 bit petit boutiste, 44100, stéréo)\n"
 
-#: ../aplay/aplay.c:220
+#: aplay/aplay.c:257
 #, c-format
 msgid "-f cdr (16 bit big endian, 44100, stereo)\n"
 msgstr "-f cdr (16 bit gros boutiste, 44100, stéréo)\n"
 
-#: ../aplay/aplay.c:221
+#: aplay/aplay.c:258
 #, c-format
 msgid "-f dat (16 bit little endian, 48000, stereo)\n"
 msgstr "-f dat (16 bit petit boutiste, 48000, stéréo)\n"
 
-#: ../aplay/aplay.c:235
+#: aplay/aplay.c:272
 msgid "no soundcards found..."
 msgstr "aucune carte son n'a été trouvée..."
 
-#: ../aplay/aplay.c:238
+#: aplay/aplay.c:275
 #, c-format
 msgid "**** List of %s Hardware Devices ****\n"
 msgstr "**** Liste des Périphériques Matériels %s ****\n"
 
-#: ../aplay/aplay.c:267
+#: aplay/aplay.c:304
 #, c-format
 msgid "card %i: %s [%s], device %i: %s [%s]\n"
 msgstr "carte %i: %s [%s], périphérique %i: %s [%s]\n"
 
-#: ../aplay/aplay.c:273
+#: aplay/aplay.c:310
 #, c-format
 msgid "  Subdevices: %i/%i\n"
 msgstr "  Sous-périphériques: %i/%i\n"
 
-#: ../aplay/aplay.c:280
+#: aplay/aplay.c:317
 #, c-format
 msgid "  Subdevice #%i: %s\n"
 msgstr "  Sous-périphérique #%i: %s\n"
 
-#: ../aplay/aplay.c:356
+#: aplay/aplay.c:398
 #, c-format
 msgid "Aborted by signal %s...\n"
 msgstr "Interrompu par le signal %s...\n"
 
-#: ../aplay/aplay.c:467
+#: aplay/aplay.c:553
 msgid "command should be named either arecord or aplay"
 msgstr "la commande doit être nommée arecord ou aplay"
 
-#: ../aplay/aplay.c:506
+#: aplay/aplay.c:597
 #, c-format
 msgid "unrecognized file format %s"
 msgstr "format de fichier inconnu %s"
 
-#: ../aplay/aplay.c:513
+#: aplay/aplay.c:604
+#, fuzzy, c-format
+msgid "invalid channels argument '%s'"
+msgstr "l'addresse envoyeur %s est incorrecte\n"
+
+#: aplay/aplay.c:608
 #, c-format
 msgid "value %i for channels is invalid"
 msgstr "la valeur %i pour les canaux est incorrecte"
 
-#: ../aplay/aplay.c:532
+#: aplay/aplay.c:627
 #, c-format
 msgid "wrong extended format '%s'"
 msgstr "format étendu '%s' erronné"
 
-#: ../aplay/aplay.c:543
+#: aplay/aplay.c:635
+#, fuzzy, c-format
+msgid "invalid rate argument '%s'"
+msgstr "addresse source %s incorrecte\n"
+
+#: aplay/aplay.c:642
 #, c-format
 msgid "bad speed value %i"
 msgstr "mauvaise valeur de vitesse %i"
 
-#: ../aplay/aplay.c:638
+#: aplay/aplay.c:648
+msgid "duration and samples arguments cannot be used together"
+msgstr ""
+
+#: aplay/aplay.c:653
+#, fuzzy, c-format
+msgid "invalid duration argument '%s'"
+msgstr "l'addresse destinataire %s est incorrecte\n"
+
+#: aplay/aplay.c:660
+msgid "samples and duration arguments cannot be used together"
+msgstr ""
+
+#: aplay/aplay.c:665
+#, fuzzy, c-format
+msgid "invalid samples argument '%s'"
+msgstr "l'addresse envoyeur %s est incorrecte\n"
+
+#: aplay/aplay.c:677
+#, fuzzy, c-format
+msgid "invalid period time argument '%s'"
+msgstr "l'addresse envoyeur %s est incorrecte\n"
+
+#: aplay/aplay.c:684
+#, fuzzy, c-format
+msgid "invalid buffer time argument '%s'"
+msgstr "addresse source %s incorrecte\n"
+
+#: aplay/aplay.c:691
+#, fuzzy, c-format
+msgid "invalid period size argument '%s'"
+msgstr "l'addresse envoyeur %s est incorrecte\n"
+
+#: aplay/aplay.c:698
+#, fuzzy, c-format
+msgid "invalid buffer size argument '%s'"
+msgstr "addresse source %s incorrecte\n"
+
+#: aplay/aplay.c:705
+#, c-format
+msgid "invalid min available space argument '%s'"
+msgstr ""
+
+#: aplay/aplay.c:712
+#, fuzzy, c-format
+msgid "invalid start delay argument '%s'"
+msgstr "l'addresse envoyeur %s est incorrecte\n"
+
+#: aplay/aplay.c:719
+#, fuzzy, c-format
+msgid "invalid stop delay argument '%s'"
+msgstr "l'addresse envoyeur %s est incorrecte\n"
+
+#: aplay/aplay.c:774
+#, fuzzy, c-format
+msgid "invalid test coef argument '%s'"
+msgstr "addresse source %s incorrecte\n"
+
+#: aplay/aplay.c:786
+#, c-format
+msgid "invalid max file time argument '%s'"
+msgstr ""
+
+#: aplay/aplay.c:806 speaker-test/speaker-test.c:666
+#, c-format
+msgid "Unable to parse channel map string: %s\n"
+msgstr ""
+
+#: aplay/aplay.c:812
 #, c-format
 msgid "Try `%s --help' for more information.\n"
 msgstr "Essayez `%s --help' pour plus d'informations.\n"
 
-#: ../aplay/aplay.c:654
+#: aplay/aplay.c:828
 #, c-format
 msgid "audio open error: %s"
 msgstr "erreur à l'ouverture audio: %s"
 
-#: ../aplay/aplay.c:659
+#: aplay/aplay.c:833
 #, c-format
 msgid "info error: %s"
 msgstr "erreur info: %s"
 
-#: ../aplay/aplay.c:666
+#: aplay/aplay.c:840
 #, c-format
 msgid "nonblock setting error: %s"
 msgstr "paramètre de non-blocage erronné: %s"
 
-#: ../aplay/aplay.c:676 ../aplay/aplay.c:800 ../aplay/aplay.c:1167
+#: aplay/aplay.c:850 aplay/aplay.c:974 aplay/aplay.c:1264 aplay/aplay.c:1458
+#: aplay/aplay.c:1979 aplay/aplay.c:2009
 msgid "not enough memory"
 msgstr "pas assez de mémoire"
 
-#: ../aplay/aplay.c:700
+#: aplay/aplay.c:874
 #, c-format
 msgid "Cannot create process ID file %s: %s"
 msgstr "Le fichier de numéro de processus %s n'a pas pu être créé: %s"
 
-#: ../aplay/aplay.c:790
+#: aplay/aplay.c:964
 #, c-format
 msgid "read error (called from line %i)"
 msgstr "erreur de lecture (appelé à la ligne %i)"
 
-#: ../aplay/aplay.c:848
+#: aplay/aplay.c:1031
 #, c-format
 msgid "unknown length of 'fmt ' chunk (read %u, should be %u at least)"
 msgstr "longueur du morceau 'fmt ' inconnue (lu %u, devrait être au moins %u)"
 
-#: ../aplay/aplay.c:858
+#: aplay/aplay.c:1042
 #, c-format
 msgid ""
 "unknown length of extensible 'fmt ' chunk (read %u, should be %u at least)"
 msgstr ""
-"longueur du morceau 'fmt ' extensible inconnue (lu %u, devrait être au moins %u)"
+"longueur du morceau 'fmt ' extensible inconnue (lu %u, devrait être au moins "
+"%u)"
 
-#: ../aplay/aplay.c:863
+#: aplay/aplay.c:1047
 msgid "wrong format tag in extensible 'fmt ' chunk"
 msgstr "libellé de format erronné dans le morceau extensible 'fmt '"
 
-#: ../aplay/aplay.c:870
+#: aplay/aplay.c:1054
 #, c-format
 msgid "can't play WAVE-file format 0x%04x which is not PCM or FLOAT encoded"
-msgstr "Les formats de ficher WAVE 0x%04x qui ne sont pas encodés en PCM ou"
-       "FLOAT ne sont pas supportés"
+msgstr ""
+"Les formats de ficher WAVE 0x%04x qui ne sont pas encodés en PCM ouFLOAT ne "
+"sont pas supportés"
 
-#: ../aplay/aplay.c:874
+#: aplay/aplay.c:1059
 #, c-format
 msgid "can't play WAVE-files with %d tracks"
 msgstr "Les fichiers WAVE avec %d pistes ne sont pas supportés"
 
-#: ../aplay/aplay.c:882 ../aplay/aplay.c:982
+#: aplay/aplay.c:1067 aplay/aplay.c:1193
 #, c-format
 msgid "Warning: format is changed to U8\n"
 msgstr "Avertissement: le format est changé en U8\n"
 
-#: ../aplay/aplay.c:888
-#, c-format
-msgid "Warning: format is changed to S16_LE\n"
-msgstr "Avertissement: le format est changé en S16_LE\n"
+#: aplay/aplay.c:1077 aplay/aplay.c:1090 aplay/aplay.c:1101
+#, fuzzy, c-format
+msgid "Warning: format is changed to %s\n"
+msgstr "Avertissement: le format est changé en U8\n"
 
-#: ../aplay/aplay.c:896
-#, c-format
-msgid "Warning: format is changed to S24_3LE\n"
-msgstr "Avertissement: le format est changé en S24_3LE\n"
-
-#: ../aplay/aplay.c:902
-#, c-format
-msgid "Warning: format is changed to S24_LE\n"
-msgstr "Avertissement: le format est changé en S24_LE\n"
-
-#: ../aplay/aplay.c:906
+#: aplay/aplay.c:1106
 #, c-format
 msgid ""
 " can't play WAVE-files with sample %d bits in %d bytes wide (%d channels)"
 msgstr ""
-" les fichiers WAVE échantillonés %d bits par %d octets en largeur (%d canaux)"
-"ne sont pas supportés"
+" les fichiers WAVE échantillonés %d bits par %d octets en largeur (%d "
+"canaux)ne sont pas supportés"
 
-#: ../aplay/aplay.c:918
+#: aplay/aplay.c:1129
 #, c-format
 msgid " can't play WAVE-files with sample %d bits wide"
-msgstr " les fichiers WAVES échantillonés %d bits en largeur ne sont pas"
-"supportés"
+msgstr ""
+" les fichiers WAVES échantillonés %d bits en largeur ne sont passupportés"
 
-#: ../aplay/aplay.c:976
+#: aplay/aplay.c:1187
 #, c-format
 msgid "Warning: format is changed to MU_LAW\n"
 msgstr "Avertissement: le format est changé en MU_LAW\n"
 
-#: ../aplay/aplay.c:988
+#: aplay/aplay.c:1199
 #, c-format
 msgid "Warning: format is changed to S16_BE\n"
 msgstr "Avertissement: le format est changé en S16_BE\n"
 
-#: ../aplay/aplay.c:1001 ../aplay/aplay.c:1843 ../aplay/aplay.c:1850
-#: ../aplay/aplay.c:2372 ../aplay/aplay.c:2384
+#: aplay/aplay.c:1212 aplay/aplay.c:2294 aplay/aplay.c:2301 aplay/aplay.c:2831
 msgid "read error"
 msgstr "erreur de lecture"
 
-#: ../aplay/aplay.c:1031
+#: aplay/aplay.c:1242
+msgid "Channel numbers don't match between hw_params and channel map"
+msgstr ""
+
+#: aplay/aplay.c:1251
+#, c-format
+msgid "Warning: unable to get channel map\n"
+msgstr ""
+
+#: aplay/aplay.c:1284
+#, c-format
+msgid "Channel %d doesn't match with hw_parmas"
+msgstr ""
+
+#: aplay/aplay.c:1310
 msgid "Broken configuration for this PCM: no configurations available"
 msgstr "Configuration erronée pour ce périphérique PCM: pas de configuration"
 
-#: ../aplay/aplay.c:1048
+#: aplay/aplay.c:1314
+#, c-format
+msgid "HW Params of device \"%s\":\n"
+msgstr ""
+
+#: aplay/aplay.c:1334
 msgid "Access type not available"
 msgstr "Ce type d'accès n'est pas disponible"
 
-#: ../aplay/aplay.c:1053
+#: aplay/aplay.c:1339
 msgid "Sample format non available"
 msgstr "Ce format d'échantillonage n'est pas disponible"
 
-#: ../aplay/aplay.c:1059
+#: aplay/aplay.c:1345
 msgid "Channels count non available"
 msgstr "Nombre de canaux non disponible"
 
-#: ../aplay/aplay.c:1074
+#: aplay/aplay.c:1360
 #, c-format
 msgid "Warning: rate is not accurate (requested = %iHz, got = %iHz)\n"
-msgstr "Avertissement: la fréquence n'est pas précise (demandé = %iHz,\n"
-       "obtenu = %iHz)\n"
+msgstr ""
+"Avertissement: la fréquence n'est pas précise (demandé = %iHz,\n"
+"obtenu = %iHz)\n"
 
-#: ../aplay/aplay.c:1080
+#: aplay/aplay.c:1366
 #, c-format
 msgid "         please, try the plug plugin %s\n"
 msgstr "         veuillez essayez le greffon de branchement %s\n"
 
-#: ../aplay/aplay.c:1116
+#: aplay/aplay.c:1403
 msgid "Unable to install hw params:"
 msgstr "Les paramètres matériel n'ont pas pu être installés:"
 
-#: ../aplay/aplay.c:1123
+#: aplay/aplay.c:1410
 #, c-format
 msgid "Can't use period equal to buffer size (%lu == %lu)"
-msgstr "Une période égale à la taille du tampon (%lu == %lu) ne peut être"
-       "utilisée"
+msgstr ""
+"Une période égale à la taille du tampon (%lu == %lu) ne peut êtreutilisée"
 
-#: ../aplay/aplay.c:1154
+#: aplay/aplay.c:1441
 msgid "unable to install sw params:"
 msgstr "Les paramètres logiciel n'ont pas pu être installés:"
 
-#: ../aplay/aplay.c:1229
+#: aplay/aplay.c:1476
+#, c-format
+msgid "snd_pcm_mmap_begin problem: %s"
+msgstr ""
+
+#: aplay/aplay.c:1505
+#, c-format
+msgid "stdin O_NONBLOCK flag setup failed\n"
+msgstr ""
+
+#: aplay/aplay.c:1529
+#, c-format
+msgid "\rPAUSE command ignored (no hw support)\n"
+msgstr ""
+
+#: aplay/aplay.c:1537
+#, fuzzy, c-format
+msgid "pause push error: %s"
+msgstr "erreur d'état: %s"
+
+#: aplay/aplay.c:1548
+#, fuzzy, c-format
+msgid "pause release error: %s"
+msgstr "suspension: prepare error: %s"
+
+#: aplay/aplay.c:1564
+#, c-format
+msgid ""
+"\r=== PAUSE ===                                                            "
+msgstr ""
+
+#: aplay/aplay.c:1606
 #, c-format
 msgid "status error: %s"
 msgstr "erreur d'état: %s"
 
-#: ../aplay/aplay.c:1239 ../aplay/aplay.c:1250
+#: aplay/aplay.c:1611
+#, fuzzy, c-format
+msgid "fatal %s: %s"
+msgstr "%s: %s\n"
+
+#: aplay/aplay.c:1612 aplay/aplay.c:1623 aplay/aplay.c:1626 aplay/aplay.c:1634
+msgid "underrun"
+msgstr "perte"
+
+#: aplay/aplay.c:1612 aplay/aplay.c:1623 aplay/aplay.c:1634
+msgid "overrun"
+msgstr "dépassement"
+
+#: aplay/aplay.c:1622 aplay/aplay.c:1633
 #, c-format
 msgid "%s!!! (at least %.3f ms long)\n"
 msgstr "%s!!! (au moins longue de %.3f ms)\n"
 
-#: ../aplay/aplay.c:1240 ../aplay/aplay.c:1243 ../aplay/aplay.c:1251
-msgid "underrun"
-msgstr "perte"
-
-#: ../aplay/aplay.c:1240 ../aplay/aplay.c:1251
-msgid "overrun"
-msgstr "dépassement"
-
-#: ../aplay/aplay.c:1255
+#: aplay/aplay.c:1638
 #, c-format
 msgid "Status:\n"
 msgstr "État:\n"
 
-#: ../aplay/aplay.c:1259
+#: aplay/aplay.c:1642
 #, c-format
 msgid "xrun: prepare error: %s"
 msgstr ""
 
-#: ../aplay/aplay.c:1265
+#: aplay/aplay.c:1648
 #, c-format
 msgid "Status(DRAINING):\n"
 msgstr ""
 
-#: ../aplay/aplay.c:1269
+#: aplay/aplay.c:1652
 #, c-format
 msgid "capture stream format change? attempting recover...\n"
-msgstr "changement de format de flux de capture? tentative de récupération...\n"
+msgstr ""
+"changement de format de flux de capture? tentative de récupération...\n"
 
-#: ../aplay/aplay.c:1271
+#: aplay/aplay.c:1654
 #, c-format
 msgid "xrun(DRAINING): prepare error: %s"
 msgstr ""
 
-#: ../aplay/aplay.c:1278
+#: aplay/aplay.c:1661
 #, c-format
 msgid "Status(R/W):\n"
 msgstr ""
 
-#: ../aplay/aplay.c:1281
+#: aplay/aplay.c:1664
 #, c-format
 msgid "read/write error, state = %s"
 msgstr "erreur de lecture/écriture, état = %s"
 
-#: ../aplay/aplay.c:1291
+#: aplay/aplay.c:1674
 #, c-format
 msgid "Suspended. Trying resume. "
 msgstr "Suspendu. Tentative de reprise. "
 
-#: ../aplay/aplay.c:1296
+#: aplay/aplay.c:1679
 #, c-format
 msgid "Failed. Restarting stream. "
 msgstr "Échec. Redémarrage du flux."
 
-#: ../aplay/aplay.c:1298
+#: aplay/aplay.c:1681
 #, c-format
 msgid "suspend: prepare error: %s"
 msgstr "suspension: prepare error: %s"
 
-#: ../aplay/aplay.c:1303
+#: aplay/aplay.c:1686
 #, c-format
 msgid "Done.\n"
 msgstr "Terminé.\n"
 
-#: ../aplay/aplay.c:1325
+#: aplay/aplay.c:1708
 #, c-format
 msgid " !clip  "
 msgstr ""
 
-#: ../aplay/aplay.c:1472
+#: aplay/aplay.c:1855
 #, c-format
 msgid "Unsupported bit size %d.\n"
 msgstr "%d bit(s) non supporté(s).\n"
 
-#: ../aplay/aplay.c:1506
+#: aplay/aplay.c:1889
 #, c-format
 msgid "Max peak (%li samples): 0x%08x "
 msgstr "Pic max. (%li échantillons): 0x%08x "
 
-#: ../aplay/aplay.c:1540
+#: aplay/aplay.c:1923
 #, c-format
 msgid ""
-"Suspicious buffer position (%li total): avail = %li, delay = %li, buffer = %"
-"li\n"
+"Suspicious buffer position (%li total): avail = %li, delay = %li, buffer = "
+"%li\n"
 msgstr ""
-"Position de tampon suspicieuse (total %li): dispo = %li, délai = %li, tampon ="
-" %li\n"
+"Position de tampon suspicieuse (total %li): dispo = %li, délai = %li, tampon "
+"= %li\n"
 
-#: ../aplay/aplay.c:1603
+#: aplay/aplay.c:2051
 #, c-format
 msgid "write error: %s"
 msgstr "erreur en écriture: %s"
 
-#: ../aplay/aplay.c:1649
+#: aplay/aplay.c:2099
 #, c-format
 msgid "writev error: %s"
 msgstr "erreur de writev: %s"
 
-#: ../aplay/aplay.c:1692
+#: aplay/aplay.c:2143
 #, c-format
 msgid "read error: %s"
 msgstr "erreur en lecture: %s"
 
-#: ../aplay/aplay.c:1735
+#: aplay/aplay.c:2187
 #, c-format
 msgid "readv error: %s"
 msgstr "erreur de readv: %s"
 
-#: ../aplay/aplay.c:1783
+#: aplay/aplay.c:2235
 msgid "can't allocate buffer for silence"
 msgstr "Un tampon pour silence n'a pas pu être alloué"
 
-#. to stderr
-#: ../aplay/aplay.c:1792 ../aplay/aplay.c:2018 ../aplay/aplay.c:2023
-#: ../aplay/aplay.c:2070 ../aplay/aplay.c:2079 ../aplay/aplay.c:2086
-#: ../aplay/aplay.c:2096 ../aplay/aplay.c:2102 ../aplay/aplay.c:2174
-#: ../aplay/aplay.c:2204 ../aplay/aplay.c:2218
+#: aplay/aplay.c:2244 aplay/aplay.c:2472 aplay/aplay.c:2477 aplay/aplay.c:2527
+#: aplay/aplay.c:2536 aplay/aplay.c:2543 aplay/aplay.c:2553 aplay/aplay.c:2559
+#: aplay/aplay.c:2631 aplay/aplay.c:2661 aplay/aplay.c:2675
 msgid "write error"
 msgstr "erreur en écriture"
 
-#: ../aplay/aplay.c:1805
+#: aplay/aplay.c:2257
 #, c-format
 msgid "voc_pcm_flush - silence error"
 msgstr "voc_pcm_flush - erreur de silence"
 
-#: ../aplay/aplay.c:1808
+#: aplay/aplay.c:2260
 msgid "voc_pcm_flush error"
 msgstr "erreur voc_pcm_flush"
 
-#: ../aplay/aplay.c:1834
+#: aplay/aplay.c:2285
 msgid "malloc error"
 msgstr "erreur malloc"
 
-#: ../aplay/aplay.c:1838
+#: aplay/aplay.c:2289
 #, c-format
 msgid "Playing Creative Labs Channel file '%s'...\n"
 msgstr "Lecture du ficher de canaux Creative Labs '%s'...\n"
 
-#. /dev/dsp can't it
-#: ../aplay/aplay.c:1906 ../aplay/aplay.c:1998
+#: aplay/aplay.c:2357 aplay/aplay.c:2452
 msgid "can't play packed .voc files"
 msgstr "les fichiers .voc de type 'packed' ne sont pas supportés"
 
-#: ../aplay/aplay.c:1958
+#: aplay/aplay.c:2412
 #, c-format
 msgid "can't play loops; %s isn't seekable\n"
 msgstr "%s n'est pas navigable; les motifs n'ont pas pu être lus\n"
 
-#: ../aplay/aplay.c:2007
+#: aplay/aplay.c:2461
 #, c-format
 msgid "unknown blocktype %d. terminate."
 msgstr "type de bloc %d inconnu. fin."
 
-#: ../aplay/aplay.c:2138
+#: aplay/aplay.c:2595
 #, c-format
 msgid "Wave doesn't support %s format..."
 msgstr "Le format wave %s n'est pas supporté..."
 
-#: ../aplay/aplay.c:2198
+#: aplay/aplay.c:2655
 #, c-format
 msgid "Sparc Audio doesn't support %s format..."
 msgstr "Le format %s Sparc Audio n'est pas supporté..."
 
-#: ../aplay/aplay.c:2279
+#: aplay/aplay.c:2736
 msgid "Playing"
 msgstr "Lecture"
 
-#: ../aplay/aplay.c:2279
+#: aplay/aplay.c:2736
 msgid "Recording"
 msgstr "Capture"
 
-#: ../aplay/aplay.c:2283
+#: aplay/aplay.c:2740
 #, c-format
 msgid "Rate %d Hz, "
 msgstr "Fréquence %d Hz, "
 
-#: ../aplay/aplay.c:2285
+#: aplay/aplay.c:2742
 #, c-format
 msgid "Mono"
 msgstr ""
 
-#: ../aplay/aplay.c:2287
+#: aplay/aplay.c:2744
 #, c-format
 msgid "Stereo"
 msgstr "Stéréo"
 
-#: ../aplay/aplay.c:2289
+#: aplay/aplay.c:2746
 #, c-format
 msgid "Channels %i"
 msgstr "%i Canaux"
 
-#: ../aplay/aplay.c:2798 ../aplay/aplay.c:2851
+#: aplay/aplay.c:3344 aplay/aplay.c:3397
 #, c-format
 msgid "You need to specify %d files"
 msgstr "Vous devez spécifier %d fichiers"
 
-#: ../seq/aconnect/aconnect.c:49
+#: seq/aconnect/aconnect.c:49
 #, c-format
 msgid "aconnect - ALSA sequencer connection manager\n"
 msgstr "aconnect - gestionnaire de connection séquenceur ALSA\n"
 
-#: ../seq/aconnect/aconnect.c:50
+#: seq/aconnect/aconnect.c:50
 #, c-format
 msgid "Copyright (C) 1999-2000 Takashi Iwai\n"
 msgstr ""
 
-#: ../seq/aconnect/aconnect.c:51
+#: seq/aconnect/aconnect.c:51
 #, c-format
 msgid "Usage:\n"
 msgstr "Utilisation:\n"
 
-#: ../seq/aconnect/aconnect.c:52
+#: seq/aconnect/aconnect.c:52
 #, c-format
 msgid " * Connection/disconnection between two ports\n"
 msgstr " * Connexion/déconnexion entre deux ports\n"
 
-#: ../seq/aconnect/aconnect.c:53
+#: seq/aconnect/aconnect.c:53
 #, c-format
 msgid "   aconnect [-options] sender receiver\n"
 msgstr "   aconnect [-options] envoyeur destinataire\n"
 
-#: ../seq/aconnect/aconnect.c:54
+#: seq/aconnect/aconnect.c:54
 #, c-format
 msgid "     sender, receiver = client:port pair\n"
 msgstr "     envoyeur, destinataire = couple client:port\n"
 
-#: ../seq/aconnect/aconnect.c:55
+#: seq/aconnect/aconnect.c:55
 #, c-format
 msgid "     -d,--disconnect     disconnect\n"
 msgstr "     -d,--disconnect     déconnecter\n"
 
-#: ../seq/aconnect/aconnect.c:56
+#: seq/aconnect/aconnect.c:56
 #, c-format
 msgid "     -e,--exclusive      exclusive connection\n"
 msgstr "     -e,--exclusive      connexion exclusive\n"
 
-#: ../seq/aconnect/aconnect.c:57
+#: seq/aconnect/aconnect.c:57
 #, c-format
 msgid "     -r,--real #         convert real-time-stamp on queue\n"
 msgstr ""
 
-#: ../seq/aconnect/aconnect.c:58
+#: seq/aconnect/aconnect.c:58
 #, c-format
 msgid "     -t,--tick #         convert tick-time-stamp on queue\n"
 msgstr ""
 
-#: ../seq/aconnect/aconnect.c:59
+#: seq/aconnect/aconnect.c:59
 #, c-format
 msgid " * List connected ports (no subscription action)\n"
 msgstr " * Afficher la liste des ports connectés (pas de souscription)\n"
 
-#: ../seq/aconnect/aconnect.c:60
+#: seq/aconnect/aconnect.c:60
 #, c-format
 msgid "   aconnect -i|-o [-options]\n"
 msgstr "   aconnect -i|-o [-options]\n"
 
-#: ../seq/aconnect/aconnect.c:61
+#: seq/aconnect/aconnect.c:61
 #, c-format
 msgid "     -i,--input          list input (readable) ports\n"
 msgstr "     -i,--input          afficher la liste des ports d'entrée\n"
 
-#: ../seq/aconnect/aconnect.c:62
+#: seq/aconnect/aconnect.c:62
 #, c-format
 msgid "     -o,--output         list output (writable) ports\n"
 msgstr "     -o,--output         afficher la liste des ports de sortie\n"
 
-#: ../seq/aconnect/aconnect.c:63
+#: seq/aconnect/aconnect.c:63
 #, c-format
 msgid "     -l,--list           list current connections of each port\n"
-msgstr "     -l,--list           afficher la liste des connexions en cours\n"
-       "                         sur chaque port\n"
+msgstr ""
+"     -l,--list           afficher la liste des connexions en cours\n"
+"                         sur chaque port\n"
 
-#: ../seq/aconnect/aconnect.c:64
+#: seq/aconnect/aconnect.c:64
 #, c-format
 msgid " * Remove all exported connections\n"
 msgstr " * Retirer toutes les connexions exportées\n"
 
-#: ../seq/aconnect/aconnect.c:65
+#: seq/aconnect/aconnect.c:65
 #, c-format
 msgid "     -x, --removeall\n"
 msgstr "     -x, --removeall\n"
 
-#: ../seq/aconnect/aconnect.c:132
+#: seq/aconnect/aconnect.c:132
 msgid "Connecting To"
 msgstr "Connexion À"
 
-#: ../seq/aconnect/aconnect.c:133
+#: seq/aconnect/aconnect.c:133
 msgid "Connected From"
 msgstr "Connecté Depuis"
 
-#: ../seq/aconnect/aconnect.c:169
-#, c-format
-msgid "client %d: '%s' [type=%s]\n"
+#: seq/aconnect/aconnect.c:171
+#, fuzzy, c-format
+msgid "client %d: '%s' [type=%s"
 msgstr "client %d: '%s' [type=%s]\n"
 
-#: ../seq/aconnect/aconnect.c:173
+#: seq/aconnect/aconnect.c:175
 msgid "user"
 msgstr "utilisateur"
 
-#: ../seq/aconnect/aconnect.c:173
+#: seq/aconnect/aconnect.c:175
 msgid "kernel"
 msgstr "noyau"
 
-#: ../seq/aconnect/aconnect.c:307
+#: seq/aconnect/aconnect.c:323
 #, c-format
 msgid "can't open sequencer\n"
 msgstr "le séquenceur n'a pas pu être ouvert\n"
 
-#: ../seq/aconnect/aconnect.c:335
+#: seq/aconnect/aconnect.c:351
 #, c-format
 msgid "can't get client id\n"
 msgstr "l'identifiant du client n'as pas pu être obtenu\n"
 
-#: ../seq/aconnect/aconnect.c:342
+#: seq/aconnect/aconnect.c:358
 #, c-format
 msgid "can't set client info\n"
 msgstr "les infos du client n'ont pas pu être définies\n"
 
-#: ../seq/aconnect/aconnect.c:349
+#: seq/aconnect/aconnect.c:365
 #, c-format
 msgid "invalid sender address %s\n"
 msgstr "l'addresse envoyeur %s est incorrecte\n"
 
-#: ../seq/aconnect/aconnect.c:354 ../seq/aseqnet/aseqnet.c:290
+#: seq/aconnect/aconnect.c:370 seq/aseqnet/aseqnet.c:290
 #, c-format
 msgid "invalid destination address %s\n"
 msgstr "l'addresse destinataire %s est incorrecte\n"
 
-#: ../seq/aconnect/aconnect.c:368
+#: seq/aconnect/aconnect.c:384
 #, c-format
 msgid "No subscription is found\n"
 msgstr "Aucune souscription trouvée\n"
 
-#: ../seq/aconnect/aconnect.c:373
+#: seq/aconnect/aconnect.c:389
 #, c-format
 msgid "Disconnection failed (%s)\n"
 msgstr "La déconnexion a échoué (%s)\n"
 
-#: ../seq/aconnect/aconnect.c:379
+#: seq/aconnect/aconnect.c:395
 #, c-format
 msgid "Connection is already subscribed\n"
 msgstr "La connexion a déjà été souscrite\n"
 
-#: ../seq/aconnect/aconnect.c:384
+#: seq/aconnect/aconnect.c:400
 #, c-format
 msgid "Connection failed (%s)\n"
 msgstr "Échec de connexion (%s)\n"
 
-#: ../seq/aseqnet/aseqnet.c:164
+#: seq/aseqnet/aseqnet.c:164
 #, c-format
 msgid "aseqnet - network client/server on ALSA sequencer\n"
 msgstr "aseqnet - client/serveur réseau sur le séquenceur ALSA\n"
 
-#: ../seq/aseqnet/aseqnet.c:165
+#: seq/aseqnet/aseqnet.c:165
 #, c-format
 msgid "  Copyright (C) 1999 Takashi Iwai\n"
 msgstr ""
 
-#: ../seq/aseqnet/aseqnet.c:166
+#: seq/aseqnet/aseqnet.c:166
 #, c-format
 msgid "usage:\n"
 msgstr "utilisation:\n"
 
-#: ../seq/aseqnet/aseqnet.c:167
+#: seq/aseqnet/aseqnet.c:167
 #, c-format
 msgid "  server mode: aseqnet [-options]\n"
 msgstr "  mode serveur: aseqnet [-options]\n"
 
-#: ../seq/aseqnet/aseqnet.c:168
+#: seq/aseqnet/aseqnet.c:168
 #, c-format
 msgid "  client mode: aseqnet [-options] server_host\n"
 msgstr "  mode client: aseqnet [-options] hôte_serveur\n"
 
-#: ../seq/aseqnet/aseqnet.c:169
+#: seq/aseqnet/aseqnet.c:169
 #, c-format
 msgid "options:\n"
 msgstr "options:\n"
 
-#: ../seq/aseqnet/aseqnet.c:170
-#, c-format
-msgid "  -p,--port # : sepcify TCP port (digit or service name)\n"
+#: seq/aseqnet/aseqnet.c:170
+#, fuzzy, c-format
+msgid "  -p,--port # : specify TCP port (digit or service name)\n"
 msgstr "  -p,--port # : spécifier le port TCP (numéro ou nom de service)\n"
 
-#: ../seq/aseqnet/aseqnet.c:171
+#: seq/aseqnet/aseqnet.c:171
 #, c-format
 msgid "  -s,--source addr : read from given addr (client:port)\n"
 msgstr "  -s,--source addr : lire à partir de l'addr. donnée (client:port)\n"
 
-#: ../seq/aseqnet/aseqnet.c:172
+#: seq/aseqnet/aseqnet.c:172
 #, c-format
 msgid "  -d,--dest addr : write to given addr (client:port)\n"
 msgstr "  -d,--dest addr : écrire à l'addr. donnée (client:port)\n"
 
-#: ../seq/aseqnet/aseqnet.c:173
+#: seq/aseqnet/aseqnet.c:173
 #, c-format
 msgid "  -v, --verbose : print verbose messages\n"
 msgstr "  -v, --verbose : affichage locace de messages\n"
 
-#: ../seq/aseqnet/aseqnet.c:174
+#: seq/aseqnet/aseqnet.c:174
 #, c-format
 msgid "  -i, --info : print certain received events\n"
 msgstr "  -i, --info : afficher certains évènements reçus\n"
 
-#: ../seq/aseqnet/aseqnet.c:188
+#: seq/aseqnet/aseqnet.c:188
 #, c-format
 msgid "can't malloc\n"
 msgstr "échec allocation mémoire (malloc)\n"
 
-#: ../seq/aseqnet/aseqnet.c:213
+#: seq/aseqnet/aseqnet.c:213
 #, c-format
 msgid "closing files..\n"
 msgstr "fermeture des fichiers...\n"
 
-#: ../seq/aseqnet/aseqnet.c:272
+#: seq/aseqnet/aseqnet.c:272
 #, c-format
 msgid "sequencer opened: %d:%d\n"
 msgstr "séquenceur ouvert: %d:%d\n"
 
-#: ../seq/aseqnet/aseqnet.c:279
+#: seq/aseqnet/aseqnet.c:279
 #, c-format
 msgid "invalid source address %s\n"
 msgstr "addresse source %s incorrecte\n"
 
-#: ../seq/aseqnet/aseqnet.c:309
+#: seq/aseqnet/aseqnet.c:309
 #, c-format
 msgid "service '%s' is not found in /etc/services\n"
 msgstr "le service '%s' n'as pas été trouvé dans /etc/services\n"
 
-#: ../seq/aseqnet/aseqnet.c:377
+#: seq/aseqnet/aseqnet.c:377
 #, c-format
 msgid "too many connections!\n"
 msgstr "trop de connexions!\n"
 
-#: ../seq/aseqnet/aseqnet.c:388
+#: seq/aseqnet/aseqnet.c:388
 #, c-format
 msgid "accepted[%d]\n"
 msgstr "accepté[%d]\n"
 
-#: ../seq/aseqnet/aseqnet.c:411
+#: seq/aseqnet/aseqnet.c:411
 #, c-format
 msgid "can't get address %s\n"
 msgstr "l'addresse %s na pas pu être obtenue\n"
 
-#: ../seq/aseqnet/aseqnet.c:422
+#: seq/aseqnet/aseqnet.c:422
 #, c-format
 msgid "ok.. connected\n"
 msgstr "ok.. connecté\n"
 
-#: ../seq/aseqnet/aseqnet.c:518
+#: seq/aseqnet/aseqnet.c:518
 #, c-format
 msgid "Channel %2d: Control event : %5d\n"
 msgstr "Canal %2d: Évènement de contrôle: %5d\n"
 
-#: ../seq/aseqnet/aseqnet.c:522
+#: seq/aseqnet/aseqnet.c:522
 #, c-format
 msgid "Channel %2d: Pitchbender   : %5d\n"
 msgstr "Canal %2d: Pitchbender          : %5d\n"
 
-#: ../seq/aseqnet/aseqnet.c:526
+#: seq/aseqnet/aseqnet.c:526
 #, c-format
 msgid "Channel %2d: Note On event : %5d\n"
 msgstr "Canal %2d: évènement Note On    : %5d\n"
 
-#: ../seq/aseqnet/aseqnet.c:530
+#: seq/aseqnet/aseqnet.c:530
 #, c-format
 msgid "Channel %2d: Note Off event: %5d\n"
 msgstr "Canal %2d: évènement Note Off   : %5d\n"
 
-#: ../seq/aseqnet/aseqnet.c:585
+#: seq/aseqnet/aseqnet.c:585
 #, c-format
 msgid "disconnected\n"
 msgstr "déconnecté\n"
 
-#. 0
-#: ../speaker-test/speaker-test.c:103
+#: speaker-test/speaker-test.c:121
 msgid "Front Left"
 msgstr "Avant Gauche"
 
-#. 1
-#: ../speaker-test/speaker-test.c:104
+#: speaker-test/speaker-test.c:122
 msgid "Front Right"
 msgstr "Avant Droit"
 
-#. 2
-#: ../speaker-test/speaker-test.c:105
+#: speaker-test/speaker-test.c:123
 msgid "Rear Left"
 msgstr "Arrière Gauche"
 
-#. 3
-#: ../speaker-test/speaker-test.c:106
+#: speaker-test/speaker-test.c:124
 msgid "Rear Right"
 msgstr "Arrière Droit"
 
-#. 5
-#: ../speaker-test/speaker-test.c:108
+#: speaker-test/speaker-test.c:126
 msgid "LFE"
 msgstr ""
 
-#. 6
-#: ../speaker-test/speaker-test.c:109
+#: speaker-test/speaker-test.c:127
 msgid "Side Left"
 msgstr "Côté Gauche"
 
-#. 7
-#: ../speaker-test/speaker-test.c:110
+#: speaker-test/speaker-test.c:128
 msgid "Side Right"
 msgstr "Côté Droit"
 
-#. 8
-#: ../speaker-test/speaker-test.c:111
+#: speaker-test/speaker-test.c:129
 msgid "Channel 9"
 msgstr "Canal 9"
 
-#. 9
-#: ../speaker-test/speaker-test.c:112
+#: speaker-test/speaker-test.c:130
 msgid "Channel 10"
 msgstr "Canal 10"
 
-#. 10
-#: ../speaker-test/speaker-test.c:113
+#: speaker-test/speaker-test.c:131
 msgid "Channel 11"
 msgstr "Canal 11"
 
-#. 11
-#: ../speaker-test/speaker-test.c:114
+#: speaker-test/speaker-test.c:132
 msgid "Channel 12"
 msgstr "Canal 12"
 
-#. 12
-#: ../speaker-test/speaker-test.c:115
+#: speaker-test/speaker-test.c:133
 msgid "Channel 13"
 msgstr "Canal 13"
 
-#. 13
-#: ../speaker-test/speaker-test.c:116
+#: speaker-test/speaker-test.c:134
 msgid "Channel 14"
 msgstr "Canal 14"
 
-#. 14
-#: ../speaker-test/speaker-test.c:117
+#: speaker-test/speaker-test.c:135
 msgid "Channel 15"
 msgstr "Canal 15"
 
-#. 15
-#: ../speaker-test/speaker-test.c:118
+#: speaker-test/speaker-test.c:136
 msgid "Channel 16"
 msgstr "Canal 16"
 
-#: ../speaker-test/speaker-test.c:317
+#: speaker-test/speaker-test.c:519
 #, c-format
 msgid "Broken configuration for playback: no configurations available: %s\n"
 msgstr "Configuration erronée pour la lecture: pas de configuration: %s\n"
 
-#: ../speaker-test/speaker-test.c:324
+#: speaker-test/speaker-test.c:526
 #, c-format
 msgid "Access type not available for playback: %s\n"
 msgstr "Le type d'accès est indisponible à la lecture: %s\n"
 
-#: ../speaker-test/speaker-test.c:331
+#: speaker-test/speaker-test.c:533
 #, c-format
 msgid "Sample format not available for playback: %s\n"
 msgstr "Le format d'échantillonage est indisponible à la lecture: %s\n"
 
-#: ../speaker-test/speaker-test.c:338
+#: speaker-test/speaker-test.c:540
 #, c-format
 msgid "Channels count (%i) not available for playbacks: %s\n"
 msgstr "Le nombre (%i) de canaux est indisponible à la lecture: %s\n"
 
-#: ../speaker-test/speaker-test.c:346
+#: speaker-test/speaker-test.c:548
 #, c-format
 msgid "Rate %iHz not available for playback: %s\n"
 msgstr "La fréquence %iHz est indisponible à la lecture: %s\n"
 
-#: ../speaker-test/speaker-test.c:351
+#: speaker-test/speaker-test.c:553
 #, c-format
 msgid "Rate doesn't match (requested %iHz, get %iHz, err %d)\n"
-msgstr "La fréquence ne correspond pas (demandée: %iHz, obtenue %iHz, err %d)\n"
+msgstr ""
+"La fréquence ne correspond pas (demandée: %iHz, obtenue %iHz, err %d)\n"
 
-#: ../speaker-test/speaker-test.c:355
+#: speaker-test/speaker-test.c:557
 #, c-format
 msgid "Rate set to %iHz (requested %iHz)\n"
 msgstr "La fréquence est %iHz (demandée %iHz)\n"
 
-#: ../speaker-test/speaker-test.c:361
+#: speaker-test/speaker-test.c:563
 #, c-format
 msgid "Buffer size range from %lu to %lu\n"
 msgstr "L'intervalle de la taille du tampon est de %lu à %lu\n"
 
-#: ../speaker-test/speaker-test.c:362
+#: speaker-test/speaker-test.c:564
 #, c-format
 msgid "Period size range from %lu to %lu\n"
 msgstr "L'intervalle de la taille de la période est de %lu à %lu\n"
 
-#: ../speaker-test/speaker-test.c:364
+#: speaker-test/speaker-test.c:566
 #, c-format
 msgid "Requested period time %u us\n"
 msgstr "Temps de période demandé %u µs\n"
 
-#: ../speaker-test/speaker-test.c:367
+#: speaker-test/speaker-test.c:569
 #, c-format
 msgid "Unable to set period time %u us for playback: %s\n"
 msgstr "Le temps de période %u µs n'a pas pu être défini pour la lecture: %s\n"
 
-#: ../speaker-test/speaker-test.c:373
+#: speaker-test/speaker-test.c:575
 #, c-format
 msgid "Requested buffer time %u us\n"
 msgstr "Temps tampon demandé %u µs\n"
 
-#: ../speaker-test/speaker-test.c:376
+#: speaker-test/speaker-test.c:578
 #, c-format
 msgid "Unable to set buffer time %u us for playback: %s\n"
 msgstr "Le temps tampon de %u µs n'a pas pu être définie pour la lecture: %s\n"
 
-#: ../speaker-test/speaker-test.c:385
+#: speaker-test/speaker-test.c:587
 #, c-format
 msgid "Using max buffer size %lu\n"
 msgstr "Taille max. de tampon %lu utilisée\n"
 
-#: ../speaker-test/speaker-test.c:388
+#: speaker-test/speaker-test.c:590
 #, c-format
 msgid "Unable to set buffer size %lu for playback: %s\n"
 msgstr "La taile de tampon %lu n'a pas pu être définie pour la lecture: %s\n"
 
-#: ../speaker-test/speaker-test.c:394
+#: speaker-test/speaker-test.c:596
 #, c-format
 msgid "Periods = %u\n"
 msgstr "Périodes = %u\n"
 
-#: ../speaker-test/speaker-test.c:397
+#: speaker-test/speaker-test.c:599
 #, c-format
 msgid "Unable to set nperiods %u for playback: %s\n"
 msgstr "nperiods %u n'a pas pu être défini pour la lecture: %s\n"
 
-#: ../speaker-test/speaker-test.c:406
+#: speaker-test/speaker-test.c:608
 #, c-format
 msgid "Unable to set hw params for playback: %s\n"
-msgstr "Les paramètres matériel n'ont pas pu être définis pour la lecture: %s\n"
+msgstr ""
+"Les paramètres matériel n'ont pas pu être définis pour la lecture: %s\n"
 
-#: ../speaker-test/speaker-test.c:412
+#: speaker-test/speaker-test.c:614
 #, c-format
 msgid "was set period_size = %lu\n"
 msgstr ""
 
-#: ../speaker-test/speaker-test.c:413
+#: speaker-test/speaker-test.c:615
 #, c-format
 msgid "was set buffer_size = %lu\n"
 msgstr ""
 
-#: ../speaker-test/speaker-test.c:415
+#: speaker-test/speaker-test.c:617
 #, c-format
 msgid "buffer to small, could not use\n"
 msgstr "tampon trop petit, il n'a pas pu être utilisé\n"
 
-#: ../speaker-test/speaker-test.c:428
+#: speaker-test/speaker-test.c:630
 #, c-format
 msgid "Unable to determine current swparams for playback: %s\n"
-msgstr "Les paramètres logiciels actuels n'ont pas pu être déterminés pour la lecture: %s\n"
+msgstr ""
+"Les paramètres logiciels actuels n'ont pas pu être déterminés pour la "
+"lecture: %s\n"
 
-#: ../speaker-test/speaker-test.c:435
+#: speaker-test/speaker-test.c:637
 #, c-format
 msgid "Unable to set start threshold mode for playback: %s\n"
 msgstr ""
 
-#: ../speaker-test/speaker-test.c:442
+#: speaker-test/speaker-test.c:644
 #, c-format
 msgid "Unable to set avail min for playback: %s\n"
 msgstr ""
 
-#: ../speaker-test/speaker-test.c:449
+#: speaker-test/speaker-test.c:651
 #, c-format
 msgid "Unable to set sw params for playback: %s\n"
-msgstr "Les paramètres logiciel n'ont pas pu être définis pour la lecture: %s\n"
+msgstr ""
+"Les paramètres logiciel n'ont pas pu être définis pour la lecture: %s\n"
 
-#: ../speaker-test/speaker-test.c:464
+#: speaker-test/speaker-test.c:671
+#, fuzzy, c-format
+msgid "Unable to set channel map: %s\n"
+msgstr ""
+"Les paramètres matériel n'ont pas pu être définis pour la lecture: %s\n"
+
+#: speaker-test/speaker-test.c:696
 #, c-format
 msgid "Can't recovery from underrun, prepare failed: %s\n"
 msgstr ""
 
-#: ../speaker-test/speaker-test.c:475
+#: speaker-test/speaker-test.c:707
 #, c-format
 msgid "Can't recovery from suspend, prepare failed: %s\n"
 msgstr ""
 
-#: ../speaker-test/speaker-test.c:539 ../speaker-test/speaker-test.c:954
+#: speaker-test/speaker-test.c:771 speaker-test/speaker-test.c:1272
 #, c-format
 msgid "No enough memory\n"
 msgstr "Pas assez de mémoire\n"
 
-#: ../speaker-test/speaker-test.c:544
+#: speaker-test/speaker-test.c:776
 #, c-format
 msgid "Cannot open WAV file %s\n"
 msgstr "Le fichier WAV %s n'a pas pu être ouvert\n"
 
-#: ../speaker-test/speaker-test.c:548 ../speaker-test/speaker-test.c:577
+#: speaker-test/speaker-test.c:780 speaker-test/speaker-test.c:809
 #, c-format
 msgid "Invalid WAV file %s\n"
 msgstr "Fichier WAV incorrect %s\n"
 
-#: ../speaker-test/speaker-test.c:553
+#: speaker-test/speaker-test.c:785
 #, c-format
 msgid "Not a WAV file: %s\n"
 msgstr "Le fichier %s n'est pas au format WAV\n"
 
-#: ../speaker-test/speaker-test.c:557
+#: speaker-test/speaker-test.c:789
 #, c-format
 msgid "Unsupported WAV format %d for %s\n"
 msgstr "Format WAV %d non supporté pour %s\n"
 
-#: ../speaker-test/speaker-test.c:562
+#: speaker-test/speaker-test.c:794
 #, c-format
 msgid "%s is not a mono stream (%d channels)\n"
 msgstr "%s n'est pas un flux en mono (%d canaux)\n"
 
-#: ../speaker-test/speaker-test.c:567
+#: speaker-test/speaker-test.c:799
 #, c-format
 msgid "Sample rate doesn't match (%d) for %s\n"
 msgstr "La fréquence d'échantillonage (%d) ne correspond pas à %s\n"
 
-#: ../speaker-test/speaker-test.c:572
+#: speaker-test/speaker-test.c:804
 #, c-format
 msgid "Unsupported sample format bits %d for %s\n"
 msgstr "Le format d'échantillonage %d bits n'est pas supporté pour %s\n"
 
-#: ../speaker-test/speaker-test.c:622
+#: speaker-test/speaker-test.c:865
 #, c-format
 msgid "Undefined channel %d\n"
 msgstr "Canal non-défini %d\n"
 
-#: ../speaker-test/speaker-test.c:673
+#: speaker-test/speaker-test.c:916
 #, c-format
 msgid "Write error: %d,%s\n"
 msgstr "Erreur en écriture: %d,%s\n"
 
-#: ../speaker-test/speaker-test.c:675
+#: speaker-test/speaker-test.c:918
 #, c-format
 msgid "xrun_recovery failed: %d,%s\n"
 msgstr ""
 
-#: ../speaker-test/speaker-test.c:734
-#, c-format
+#: speaker-test/speaker-test.c:1004
+#, fuzzy, c-format
 msgid ""
 "Usage: speaker-test [OPTION]... \n"
 "-h,--help\thelp\n"
@@ -1474,7 +1603,9 @@ msgid ""
 "-s,--speaker\tsingle speaker test. Values 1=Left, 2=right, etc\n"
 "-w,--wavfile\tUse the given WAV file as a test sound\n"
 "-W,--wavdir\tSpecify the directory containing WAV files\n"
+"-m,--chmap\tSpecify the channel map to override\n"
 "-X,--force-frequency\tforce frequencies outside the 30-8000hz range\n"
+"-S,--scale\tScale of generated test tones in percent (default=80)\n"
 "\n"
 msgstr ""
 "Utilisation: speaker-test [OPTION]...\n"
@@ -1496,73 +1627,81 @@ msgstr ""
 "-X,--force-frequency\tpermettre fréquences en dehors de la gamme 30-8000Hz\n"
 "\n"
 
-#: ../speaker-test/speaker-test.c:852
+#: speaker-test/speaker-test.c:1136
 #, c-format
 msgid "Invalid number of periods %d\n"
 msgstr "Nombre de périodes %d incorrect\n"
 
-#: ../speaker-test/speaker-test.c:866 ../speaker-test/speaker-test.c:870
+#: speaker-test/speaker-test.c:1152 speaker-test/speaker-test.c:1156
 #, c-format
 msgid "Invalid test type %s\n"
 msgstr "Type de test %s incorrect\n"
 
-#: ../speaker-test/speaker-test.c:882
-#, c-format
-msgid "Invalid parameter for -s option.\n"
-msgstr "Paramètre incorrect pour l'option -s.\n"
-
-#: ../speaker-test/speaker-test.c:896
+#: speaker-test/speaker-test.c:1189
 #, c-format
 msgid "Unknown option '%c'\n"
 msgstr "Option '%c' inconnue\n"
 
-#. fixed format
-#: ../speaker-test/speaker-test.c:910
+#: speaker-test/speaker-test.c:1203
+#, c-format
+msgid "Invalid parameter for -s option.\n"
+msgstr "Paramètre incorrect pour l'option -s.\n"
+
+#: speaker-test/speaker-test.c:1218
 #, c-format
 msgid "Playback device is %s\n"
 msgstr "Le périphérique de lecture est %s\n"
 
-#: ../speaker-test/speaker-test.c:911
+#: speaker-test/speaker-test.c:1219
 #, c-format
 msgid "Stream parameters are %iHz, %s, %i channels\n"
 msgstr "Les paramètres du flux sont %iHz, %s, %i canaux\n"
 
-#: ../speaker-test/speaker-test.c:914
+#: speaker-test/speaker-test.c:1222
 #, c-format
 msgid "Using 16 octaves of pink noise\n"
 msgstr "Utilisation de 16 octaves de 'pink noise'\n"
 
-#: ../speaker-test/speaker-test.c:917
+#: speaker-test/speaker-test.c:1225
 #, c-format
 msgid "Sine wave rate is %.4fHz\n"
 msgstr "La fréquence de la courbe sinus est %.4fHz\n"
 
-#: ../speaker-test/speaker-test.c:920
+#: speaker-test/speaker-test.c:1228
 #, c-format
 msgid "WAV file(s)\n"
 msgstr "fichier(s) WAV\n"
 
-#: ../speaker-test/speaker-test.c:926
+#: speaker-test/speaker-test.c:1238
 #, c-format
 msgid "Playback open error: %d,%s\n"
 msgstr "Erreur d'ouverture à la lecture: %d,%s\n"
 
-#: ../speaker-test/speaker-test.c:931
+#: speaker-test/speaker-test.c:1244
 #, c-format
 msgid "Setting of hwparams failed: %s\n"
 msgstr "Échec de la configuration des paramètres matériel: %s\n"
 
-#: ../speaker-test/speaker-test.c:936
+#: speaker-test/speaker-test.c:1248
 #, c-format
 msgid "Setting of swparams failed: %s\n"
 msgstr "Échec de la configuration des paramètres logiciel: %s\n"
 
-#: ../speaker-test/speaker-test.c:985 ../speaker-test/speaker-test.c:1007
+#: speaker-test/speaker-test.c:1295 speaker-test/speaker-test.c:1317
 #, c-format
 msgid "Transfer failed: %s\n"
 msgstr "Échec du transfer: %s\n"
 
-#: ../speaker-test/speaker-test.c:995
+#: speaker-test/speaker-test.c:1303
 #, c-format
 msgid "Time per period = %lf\n"
 msgstr "Temps par période = %lf\n"
+
+#~ msgid "Warning: format is changed to S16_LE\n"
+#~ msgstr "Avertissement: le format est changé en S16_LE\n"
+
+#~ msgid "Warning: format is changed to S24_3LE\n"
+#~ msgstr "Avertissement: le format est changé en S24_3LE\n"
+
+#~ msgid "Warning: format is changed to S24_LE\n"
+#~ msgstr "Avertissement: le format est changé en S24_LE\n"
