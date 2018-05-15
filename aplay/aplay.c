@@ -2821,7 +2821,8 @@ static int read_header(int *loaded, int header_size)
 
 	/* don't be adventurous, get out if file size is smaller than
 	 * requested header size */
-	if (buf.st_size < header_size)
+	if ((buf.st_mode & S_IFMT) == S_IFREG &&
+	    buf.st_size < header_size)
 		return -1;
 
 	if (*loaded < header_size) {
