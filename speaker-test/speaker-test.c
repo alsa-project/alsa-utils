@@ -300,7 +300,6 @@ static void do_generate(uint8_t *frames, int channel, int count,
 {
   value_t res;
   int    chn;
-  int32_t  ires;
   int8_t *samp8 = (int8_t*) frames;
   int16_t *samp16 = (int16_t*) frames;
   int32_t *samp32 = (int32_t*) frames;
