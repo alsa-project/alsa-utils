@@ -178,7 +178,6 @@ void roundtrip_latency_init(struct bat *bat)
 	bat->latency.is_playing = false;
 	bat->latency.error = 0;
 	bat->latency.xrun_error = false;
-	bat->format = BAT_PCM_FORMAT_S16_LE;
 	bat->frames = LATENCY_TEST_TIME_LIMIT * bat->rate;
 	bat->periods_played = 0;
 }
