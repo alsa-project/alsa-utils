@@ -15,4 +15,17 @@ alsaucm_LDADD = -lasound
 %.1: %.rst
 	rst2man $< > $@
 
-EXTRA_DIST = alsaucm.rst
+udevrules_DATA = \
+	89-alsa-ucm.rules
+
+edit = \
+	$(SED) -r -e 's,@bindir\@,$(bindir),g' \
+		  -e 's,@mydatadir\@,$(mydatadir),g' \
+							< $< > $@ || rm $@
+
+89-alsa-ucm.rules: 89-alsa-ucm.rules.in
+	$(edit)
+
+EXTRA_DIST = alsaucm.rst 89-alsa-ucm.rules.in
+
+CLEANFILES = 89-alsa-ucm.rules

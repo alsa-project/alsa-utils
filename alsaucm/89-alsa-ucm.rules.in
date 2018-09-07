@@ -1,0 +1,8 @@
+SUBSYSTEM!="sound", GOTO="ucm_end"
+ACTION!="change", GOTO="ucm_end"
+KERNEL!="card*", GOTO="ucm_end"
+
+ATTRS{id}=="PAZ00", RUN+="@bindir@/alsaucm -c PAZ00 set _verb HiFi"
+ATTRS{id}=="PAZ00", RUN+="@bindir@/alsaucm -c PAZ00 set _verb Record"
+
+LABEL="ucm_end"

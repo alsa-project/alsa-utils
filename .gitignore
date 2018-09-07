@@ -47,6 +47,7 @@ speaker-test/speaker-test
 alsaloop/alsaloop
 alsaucm/alsaucm
 alsaucm/alsaucm.1
+alsaucm/89-alsa-ucm.rules
 topology/alsatplg
 
 include/aconfig.h*
