@@ -28,4 +28,4 @@ edit = \
 
 EXTRA_DIST = alsaucm.rst 89-alsa-ucm.rules.in
 
-CLEANFILES = 89-alsa-ucm.rules
+CLEANFILES = alsaucm.1 89-alsa-ucm.rules
