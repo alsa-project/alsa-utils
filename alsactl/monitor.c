@@ -22,6 +22,36 @@
 #include <stdio.h>
 #include <alsa/asoundlib.h>
 
+#define MAX_CARDS	256
+
+struct snd_card_iterator {
+        int card;
+        char name[16];
+};
+
+void snd_card_iterator_init(struct snd_card_iterator *iter)
+{
+        iter->card = -1;
+        memset(iter->name, 0, sizeof(iter->name));
+}
+
+static const char *snd_card_iterator_next(struct snd_card_iterator *iter)
+{
+        if (snd_card_next(&iter->card) < 0)
+                return NULL;
+        if (iter->card < 0)
+                return NULL;
+	if (iter->card >= MAX_CARDS) {
+		fprintf(stderr, "alsactl: too many cards\n");
+		return NULL;
+	}
+
+
+        snprintf(iter->name, sizeof(iter->name), "hw:%d", iter->card);
+
+        return (const char *)iter->name;
+}
+
 static int open_ctl(const char *name, snd_ctl_t **ctlp)
 {
 	snd_ctl_t *ctl;
@@ -113,8 +143,6 @@ static int run_dispatcher(snd_ctl_t **ctls, int ncards, int show_cards)
 	return err;
 }
 
-#define MAX_CARDS	256
-
 int monitor(const char *name)
 {
 	snd_ctl_t *ctls[MAX_CARDS];
@@ -123,15 +151,11 @@ int monitor(const char *name)
 	int i, err = 0;
 
 	if (!name) {
-		int card = -1;
-		while (snd_card_next(&card) >= 0 && card >= 0) {
-			char cardname[16];
-			if (ncards >= MAX_CARDS) {
-				fprintf(stderr, "alsactl: too many cards\n");
-				err = -E2BIG;
-				goto error;
-			}
-			sprintf(cardname, "hw:%d", card);
+		struct snd_card_iterator iter;
+		const char *cardname;
+
+		snd_card_iterator_init(&iter);
+		while ((cardname = snd_card_iterator_next(&iter))) {
 			err = open_ctl(cardname, &ctls[ncards]);
 			if (err < 0)
 				goto error;
