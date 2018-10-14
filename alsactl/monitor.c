@@ -20,6 +20,9 @@
 #include "aconfig.h"
 #include "version.h"
 #include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
+#include <sys/epoll.h>
 #include <alsa/asoundlib.h>
 
 #define MAX_CARDS	256
@@ -114,41 +117,121 @@ static int print_event(int card, snd_ctl_t *ctl)
 	return 0;
 }
 
-static int run_dispatcher(snd_ctl_t **ctls, int ncards, int show_cards)
+static int operate_dispatcher(int epfd, uint32_t op, struct epoll_event *epev,
+			      snd_ctl_t *ctl)
 {
+	struct pollfd *pfds;
+	int count;
+	unsigned int pfd_count;
+	int i;
+	int err;
+
+	count = snd_ctl_poll_descriptors_count(ctl);
+	if (count < 0)
+		return count;
+	if (count == 0)
+		return -ENXIO;
+	pfd_count = count;
+
+	pfds = calloc(pfd_count, sizeof(*pfds));
+	if (!pfds)
+		return -ENOMEM;
+
+	count = snd_ctl_poll_descriptors(ctl, pfds, pfd_count);
+	if (count < 0) {
+		err = count;
+		goto end;
+	}
+	if (count != pfd_count) {
+		err = -EIO;
+		goto end;
+	}
+
+	for (i = 0; i < pfd_count; ++i) {
+		err = epoll_ctl(epfd, op, pfds[i].fd, epev);
+		if (err < 0)
+			break;
+	}
+end:
+	free(pfds);
+	return err;
+}
+
+static int prepare_dispatcher(int epfd, snd_ctl_t **ctls, int ncards)
+{
+	int i;
 	int err = 0;
 
-	for (;ncards > 0;) {
-		struct pollfd fds[ncards];
-		int i;
-
-		for (i = 0; i < ncards; i++)
-			snd_ctl_poll_descriptors(ctls[i], &fds[i], 1);
-
-		err = poll(fds, ncards, -1);
-		if (err <= 0) {
-			err = 0;
+	for (i = 0; i < ncards; ++i) {
+		snd_ctl_t *ctl = ctls[i];
+		struct epoll_event ev;
+		ev.events = EPOLLIN;
+		ev.data.ptr = (void *)ctl;
+		err = operate_dispatcher(epfd, EPOLL_CTL_ADD, &ev, ctl);
+		if (err < 0)
 			break;
-		}
-
-		for (i = 0; i < ncards; i++) {
-			unsigned short revents;
-			snd_ctl_poll_descriptors_revents(ctls[i], &fds[i], 1,
-							 &revents);
-			if (revents & POLLIN)
-				print_event(show_cards ? i : -1, ctls[i]);
-		}
 	}
 
 	return err;
 }
 
+static int run_dispatcher(int epfd, unsigned int max_ev_count, int show_cards)
+{
+	struct epoll_event *epev;
+	int err = 0;
+
+	epev = calloc(max_ev_count, sizeof(*epev));
+	if (!epev)
+		return -ENOMEM;
+
+	while (true) {
+		int count;
+		int i;
+
+		count = epoll_wait(epfd, epev, max_ev_count, 200);
+		if (count < 0) {
+			err = count;
+			break;
+		}
+		if (count == 0)
+			continue;
+
+		for (i = 0; i < count; ++i) {
+			struct epoll_event *ev = epev + i;
+			snd_ctl_t *handle = (snd_ctl_t *)ev->data.ptr;
+
+			if (ev->events & EPOLLIN)
+				print_event(show_cards ? i : -1, handle);
+		}
+	}
+
+	free(epev);
+
+	return err;
+}
+
+static void clear_dispatcher(int epfd, snd_ctl_t **ctls, int ncards)
+{
+	int i;
+
+	for (i = 0; i < ncards; ++i) {
+		snd_ctl_t *ctl = ctls[i];
+		operate_dispatcher(epfd, EPOLL_CTL_DEL, NULL, ctl);
+	}
+}
+
 int monitor(const char *name)
 {
-	snd_ctl_t *ctls[MAX_CARDS];
+	snd_ctl_t *ctls[MAX_CARDS] = {0};
 	int ncards = 0;
 	int show_cards;
-	int i, err = 0;
+	int epfd;
+	int i;
+	int err = 0;
+
+	epfd = epoll_create(1);
+	if (epfd < 0)
+		return -errno;
 
 	if (!name) {
 		struct snd_card_iterator iter;
@@ -170,9 +253,18 @@ int monitor(const char *name)
 		show_cards = 0;
 	}
 
-	err = run_dispatcher(ctls, ncards, show_cards);
- error:
-	for (i = 0; i < ncards; i++)
-		snd_ctl_close(ctls[i]);
+	err = prepare_dispatcher(epfd, ctls, ncards);
+	if (err >= 0)
+		err = run_dispatcher(epfd, ncards, show_cards);
+	clear_dispatcher(epfd, ctls, ncards);
+
+error:
+	for (i = 0; i < ncards; i++) {
+		if (ctls[i])
+			snd_ctl_close(ctls[i]);
+	}
+
+	close(epfd);
+
 	return err;
 }
