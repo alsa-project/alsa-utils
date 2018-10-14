@@ -27,7 +27,7 @@ void widget_init(struct widget *widget,
 		 int lines_, int cols, int y, int x,
 		 chtype bkgd, unsigned int flags);
 void widget_free(struct widget *widget);
-struct widget *get_active_widget(void);
+const struct widget *get_active_widget(void);
 void window_size_changed(void);
 
 #endif

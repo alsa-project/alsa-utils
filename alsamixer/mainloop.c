@@ -68,7 +68,7 @@ void mainloop(void)
 {
 	struct pollfd *pollfds = NULL;
 	int nfds = 0, n;
-	struct widget *active_widget;
+	const struct widget *active_widget;
 	unsigned short revents;
 	int key;
 	int err;

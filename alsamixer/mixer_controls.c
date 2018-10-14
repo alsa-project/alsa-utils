@@ -216,7 +216,6 @@ static unsigned int create_controls_for_elem(snd_mixer_elem_t *elem, struct cont
 {
 	unsigned int count = 0;
 	unsigned int i;
-	unsigned int multich_flag;
 	unsigned int enum_index;
 	struct control *front_control = NULL;
 	bool has_pvol, has_psw;
@@ -286,7 +285,6 @@ static unsigned int create_controls_for_elem(snd_mixer_elem_t *elem, struct cont
 			++control;
 			++count;
 		} else {
-			multich_flag = 0;
 			for (i = 0; i < ARRAY_SIZE(supported_channels); ++i)
 				has_channel[supported_channels[i]] =
 					snd_mixer_selem_has_playback_channel(elem, supported_channels[i]);

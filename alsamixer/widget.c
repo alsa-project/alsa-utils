@@ -33,7 +33,7 @@ static void widget_handle_key(int key)
 
 static void update_cursor_visibility(void)
 {
-	struct widget *active_widget;
+	const struct widget *active_widget;
 
 	active_widget = get_active_widget();
 	if (active_widget &&
@@ -112,7 +112,7 @@ void widget_free(struct widget *widget)
 	update_cursor_visibility();
 }
 
-struct widget *get_active_widget(void)
+const struct widget *get_active_widget(void)
 {
 	PANEL *active_panel;
 
@@ -126,7 +126,7 @@ struct widget *get_active_widget(void)
 void window_size_changed(void)
 {
 	PANEL *panel, *below;
-	struct widget *widget;
+	const struct widget *widget;
 
 	getmaxyx(stdscr, screen_lines, screen_cols);
 	if (tigetflag("xenl") != 1 && tigetflag("am") != 1)

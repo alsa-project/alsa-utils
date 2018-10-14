@@ -444,7 +444,6 @@ static void balance_volumes(void)
 {
 	struct control *control;
 	double left, right;
-	int err;
 
 	control = get_focus_control(TYPE_PVOLUME | TYPE_CVOLUME);
 	if (!control || !(control->flags & HAS_VOLUME_1))
