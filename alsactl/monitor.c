@@ -26,6 +26,8 @@
 #include <sys/inotify.h>
 #include <limits.h>
 #include <time.h>
+#include <signal.h>
+#include <sys/signalfd.h>
 #include <alsa/asoundlib.h>
 
 #include <stddef.h>
@@ -290,11 +292,17 @@ end:
 	return err;
 }
 
-static int prepare_dispatcher(int epfd, int infd, struct list_head *srcs)
+static int prepare_dispatcher(int epfd, int sigfd, int infd,
+			      struct list_head *srcs)
 {
 	struct epoll_event ev = {0};
 	struct src_entry *entry;
 	int err = 0;
+
+	ev.events = EPOLLIN;
+	ev.data.fd = sigfd;
+	if (epoll_ctl(epfd, EPOLL_CTL_ADD, sigfd, &ev) < 0)
+		return -errno;
 
 	ev.events = EPOLLIN;
 	ev.data.fd = infd;
@@ -312,7 +320,7 @@ static int prepare_dispatcher(int epfd, int infd, struct list_head *srcs)
 	return err;
 }
 
-static int run_dispatcher(int epfd, int infd, struct list_head *srcs,
+static int run_dispatcher(int epfd, int sigfd, int infd, struct list_head *srcs,
 			  bool *retry)
 {
 	struct src_entry *entry;
@@ -343,6 +351,9 @@ static int run_dispatcher(int epfd, int infd, struct list_head *srcs,
 		for (i = 0; i < count; ++i) {
 			struct epoll_event *ev = epev + i;
 
+			if (ev->data.fd == sigfd)
+				goto end;
+
 			if (ev->data.fd == infd) {
 				err = check_control_cdev(infd, retry);
 				if (err < 0 || *retry)
@@ -366,7 +377,8 @@ end:
 	return err;
 }
 
-static void clear_dispatcher(int epfd, int infd, struct list_head *srcs)
+static void clear_dispatcher(int epfd, int sigfd, int infd,
+			     struct list_head *srcs)
 {
 	struct src_entry *entry;
 
@@ -374,20 +386,49 @@ static void clear_dispatcher(int epfd, int infd, struct list_head *srcs)
 		operate_dispatcher(epfd, EPOLL_CTL_DEL, NULL, entry);
 
 	epoll_ctl(epfd, EPOLL_CTL_DEL, infd, NULL);
+
+	epoll_ctl(epfd, EPOLL_CTL_DEL, sigfd, NULL);
+}
+
+static int prepare_signalfd(int *sigfd)
+{
+	sigset_t mask;
+	int fd;
+
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGINT);
+	sigaddset(&mask, SIGTERM);
+
+	if (sigprocmask(SIG_BLOCK, &mask, NULL) < 0)
+		return -errno;
+
+	fd = signalfd(-1, &mask, 0);
+	if (fd < 0)
+		return -errno;
+	*sigfd = fd;
+
+	return 0;
 }
 
 int monitor(const char *name)
 {
 	LIST_HEAD(srcs);
+	int sigfd = 0;
 	int epfd;
 	int infd;
 	int wd = 0;
 	bool retry;
 	int err = 0;
 
+	err = prepare_signalfd(&sigfd);
+	if (err < 0)
+		return err;
+
 	epfd = epoll_create(1);
-	if (epfd < 0)
+	if (epfd < 0) {
+		close(sigfd);
 		return -errno;
+	}
 
 	infd = inotify_init1(IN_NONBLOCK);
 	if (infd < 0) {
@@ -405,10 +446,10 @@ retry:
 	if (err < 0)
 		goto error;
 
-	err = prepare_dispatcher(epfd, infd, &srcs);
+	err = prepare_dispatcher(epfd, sigfd, infd, &srcs);
 	if (err >= 0)
-		err = run_dispatcher(epfd, infd, &srcs, &retry);
-	clear_dispatcher(epfd, infd, &srcs);
+		err = run_dispatcher(epfd, sigfd, infd, &srcs, &retry);
+	clear_dispatcher(epfd, sigfd, infd, &srcs);
 
 	if (retry) {
 		// A simple makeshift for timing gap between creation of nodes
@@ -425,6 +466,8 @@ error:
 	close(infd);
 
 	close(epfd);
+
+	close(sigfd);
 
 	return err;
 }
