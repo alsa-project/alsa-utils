@@ -285,6 +285,10 @@ static int run_dispatcher(int epfd, struct list_head *srcs)
 			struct src_entry *entry = (struct src_entry *)ev->data.ptr;
 			if (ev->events & EPOLLIN)
 				print_event(entry->handle, entry->name);
+			if (ev->events & EPOLLERR) {
+				operate_dispatcher(epfd, EPOLL_CTL_DEL, NULL, entry);
+				remove_source_entry(entry);
+			}
 		}
 	}
 
