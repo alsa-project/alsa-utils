@@ -549,13 +549,13 @@ static void buf_add_src(struct loopback *loop)
 		if (capt->format == SND_PCM_FORMAT_S32)
 			src_int_to_float_array((int *)(capt->buf +
 						pos1 * capt->frame_size),
-					 loop->src_data.data_in +
+					 (void *)loop->src_data.data_in +
 					   pos * capt->channels,
 					 count1 * capt->channels);
 		else
 			src_short_to_float_array((short *)(capt->buf +
 						pos1 * capt->frame_size),
-					 loop->src_data.data_in +
+					 (void *)loop->src_data.data_in +
 					   pos * capt->channels,
 					 count1 * capt->channels);
 		count -= count1;
@@ -1368,7 +1368,7 @@ static void freeloop(struct loopback *loop)
 		if (loop->src_state)
 			src_delete(loop->src_state);
 		loop->src_state = NULL;
-		free(loop->src_data.data_in);
+		free((void *)loop->src_data.data_in);
 		loop->src_data.data_in = NULL;
 		free(loop->src_data.data_out);
 		loop->src_data.data_out = NULL;
