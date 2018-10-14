@@ -1670,13 +1670,15 @@ static void suspend(void)
 {
 	int res;
 
-	if (!quiet_mode)
+	if (!quiet_mode) {
 		fprintf(stderr, _("Suspended. Trying resume. ")); fflush(stderr);
+	}
 	while ((res = snd_pcm_resume(handle)) == -EAGAIN)
 		sleep(1);	/* wait until suspend flag is released */
 	if (res < 0) {
-		if (!quiet_mode)
+		if (!quiet_mode) {
 			fprintf(stderr, _("Failed. Restarting stream. ")); fflush(stderr);
+		}
 		if ((res = snd_pcm_prepare(handle)) < 0) {
 			error(_("suspend: prepare error: %s"), snd_strerror(res));
 			prg_exit(EXIT_FAILURE);
