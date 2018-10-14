@@ -25,6 +25,16 @@
 #include <sys/epoll.h>
 #include <alsa/asoundlib.h>
 
+#include <stddef.h>
+#include "list.h"
+
+struct src_entry {
+	snd_ctl_t *handle;
+	char *name;
+	unsigned int pfd_count;
+	struct list_head list;
+};
+
 #define MAX_CARDS	256
 
 struct snd_card_iterator {
@@ -53,6 +63,59 @@ static const char *snd_card_iterator_next(struct snd_card_iterator *iter)
         snprintf(iter->name, sizeof(iter->name), "hw:%d", iter->card);
 
         return (const char *)iter->name;
+}
+
+static void remove_source_entry(struct src_entry *entry)
+{
+	list_del(&entry->list);
+	free(entry->name);
+	free(entry);
+}
+
+static void clear_source_list(struct list_head *srcs)
+{
+	struct src_entry *entry, *tmp;
+
+	list_for_each_entry_safe(entry, tmp, srcs, list)
+		remove_source_entry(entry);
+}
+
+static int insert_source_entry(struct list_head *srcs, snd_ctl_t *handle,
+			       const char *name)
+{
+	struct src_entry *entry;
+	int count;
+	int err;
+
+	entry = calloc(1, sizeof(*entry));
+	if (!entry)
+		return -ENOMEM;
+	INIT_LIST_HEAD(&entry->list);
+	entry->handle = handle;
+
+	entry->name = strdup(name);
+	if (!entry->name) {
+		err = -ENOMEM;
+		goto error;
+	}
+
+	count = snd_ctl_poll_descriptors_count(handle);
+	if (count < 0) {
+		err = count;
+		goto error;
+	}
+	if (count == 0) {
+		err = -ENXIO;
+		goto error;
+	}
+	entry->pfd_count = count;
+
+	list_add_tail(&entry->list, srcs);
+
+	return 0;
+error:
+	remove_source_entry(entry);
+	return err;
 }
 
 static int open_ctl(const char *name, snd_ctl_t **ctlp)
@@ -222,6 +285,7 @@ static void clear_dispatcher(int epfd, snd_ctl_t **ctls, int ncards)
 
 int monitor(const char *name)
 {
+	LIST_HEAD(srcs);
 	snd_ctl_t *ctls[MAX_CARDS] = {0};
 	int ncards = 0;
 	int show_cards;
@@ -242,11 +306,17 @@ int monitor(const char *name)
 			err = open_ctl(cardname, &ctls[ncards]);
 			if (err < 0)
 				goto error;
+			err = insert_source_entry(&srcs, ctls[ncards], cardname);
+			if (err < 0)
+				goto error;
 			ncards++;
 		}
 		show_cards = 1;
 	} else {
 		err = open_ctl(name, &ctls[0]);
+		if (err < 0)
+			goto error;
+		err = insert_source_entry(&srcs, ctls[ncards], name);
 		if (err < 0)
 			goto error;
 		ncards++;
@@ -259,6 +329,7 @@ int monitor(const char *name)
 	clear_dispatcher(epfd, ctls, ncards);
 
 error:
+	clear_source_list(&srcs);
 	for (i = 0; i < ncards; i++) {
 		if (ctls[i])
 			snd_ctl_close(ctls[i]);
