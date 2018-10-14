@@ -84,6 +84,35 @@ static int print_event(int card, snd_ctl_t *ctl)
 	return 0;
 }
 
+static int run_dispatcher(snd_ctl_t **ctls, int ncards, int show_cards)
+{
+	int err = 0;
+
+	for (;ncards > 0;) {
+		struct pollfd fds[ncards];
+		int i;
+
+		for (i = 0; i < ncards; i++)
+			snd_ctl_poll_descriptors(ctls[i], &fds[i], 1);
+
+		err = poll(fds, ncards, -1);
+		if (err <= 0) {
+			err = 0;
+			break;
+		}
+
+		for (i = 0; i < ncards; i++) {
+			unsigned short revents;
+			snd_ctl_poll_descriptors_revents(ctls[i], &fds[i], 1,
+							 &revents);
+			if (revents & POLLIN)
+				print_event(show_cards ? i : -1, ctls[i]);
+		}
+	}
+
+	return err;
+}
+
 #define MAX_CARDS	256
 
 int monitor(const char *name)
@@ -117,27 +146,7 @@ int monitor(const char *name)
 		show_cards = 0;
 	}
 
-	for (;ncards > 0;) {
-		struct pollfd fds[ncards];
-
-		for (i = 0; i < ncards; i++)
-			snd_ctl_poll_descriptors(ctls[i], &fds[i], 1);
-
-		err = poll(fds, ncards, -1);
-		if (err <= 0) {
-			err = 0;
-			break;
-		}
-
-		for (i = 0; i < ncards; i++) {
-			unsigned short revents;
-			snd_ctl_poll_descriptors_revents(ctls[i], &fds[i], 1,
-							 &revents);
-			if (revents & POLLIN)
-				print_event(show_cards ? i : -1, ctls[i]);
-		}
-	}
-
+	err = run_dispatcher(ctls, ncards, show_cards);
  error:
 	for (i = 0; i < ncards; i++)
 		snd_ctl_close(ctls[i]);
