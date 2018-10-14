@@ -35,8 +35,6 @@ struct src_entry {
 	struct list_head list;
 };
 
-#define MAX_CARDS	256
-
 struct snd_card_iterator {
         int card;
         char name[16];
@@ -54,11 +52,6 @@ static const char *snd_card_iterator_next(struct snd_card_iterator *iter)
                 return NULL;
         if (iter->card < 0)
                 return NULL;
-	if (iter->card >= MAX_CARDS) {
-		fprintf(stderr, "alsactl: too many cards\n");
-		return NULL;
-	}
-
 
         snprintf(iter->name, sizeof(iter->name), "hw:%d", iter->card);
 
@@ -137,6 +130,36 @@ static int open_ctl(const char *name, snd_ctl_t **ctlp)
 		return err;
 	}
 	*ctlp = ctl;
+	return 0;
+}
+
+static int prepare_source_entry(struct list_head *srcs, const char *name)
+{
+	snd_ctl_t *handle;
+	int err;
+
+	if (!name) {
+		struct snd_card_iterator iter;
+		const char *cardname;
+
+		snd_card_iterator_init(&iter);
+		while ((cardname = snd_card_iterator_next(&iter))) {
+			err = open_ctl(cardname, &handle);
+			if (err < 0)
+				return err;
+			err = insert_source_entry(srcs, handle, cardname);
+			if (err < 0)
+				return err;
+		}
+	} else {
+		err = open_ctl(name, &handle);
+		if (err < 0)
+			return err;
+		err = insert_source_entry(srcs, handle, name);
+		if (err < 0)
+			return err;
+	}
+
 	return 0;
 }
 
@@ -281,8 +304,6 @@ static void clear_dispatcher(int epfd, struct list_head *srcs)
 int monitor(const char *name)
 {
 	LIST_HEAD(srcs);
-	snd_ctl_t *ctls[MAX_CARDS] = {0};
-	int ncards = 0;
 	int epfd;
 	int err = 0;
 
@@ -290,29 +311,9 @@ int monitor(const char *name)
 	if (epfd < 0)
 		return -errno;
 
-	if (!name) {
-		struct snd_card_iterator iter;
-		const char *cardname;
-
-		snd_card_iterator_init(&iter);
-		while ((cardname = snd_card_iterator_next(&iter))) {
-			err = open_ctl(cardname, &ctls[ncards]);
-			if (err < 0)
-				goto error;
-			err = insert_source_entry(&srcs, ctls[ncards], cardname);
-			if (err < 0)
-				goto error;
-			ncards++;
-		}
-	} else {
-		err = open_ctl(name, &ctls[0]);
-		if (err < 0)
-			goto error;
-		err = insert_source_entry(&srcs, ctls[ncards], name);
-		if (err < 0)
-			goto error;
-		ncards++;
-	}
+	err = prepare_source_entry(&srcs, name);
+	if (err < 0)
+		goto error;
 
 	err = prepare_dispatcher(epfd, &srcs);
 	if (err >= 0)
