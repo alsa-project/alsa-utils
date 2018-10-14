@@ -35,7 +35,7 @@ static int state_lock_(const char *file, int lock, int timeout, int _fd)
 	int fd = -1, err = 0;
 	struct flock lck;
 	struct stat st;
-	char lcktxt[12];
+	char lcktxt[14];
 	char *nfile = lockfile;
 
 	if (do_lock <= 0)
