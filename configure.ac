@@ -8,7 +8,7 @@ AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE([enable])
 
 AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.15])
+AM_GNU_GETTEXT_VERSION([0.19.8])
 
 dnl Checks for programs.
 
