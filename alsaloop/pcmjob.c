@@ -286,8 +286,16 @@ static int increase_playback_avail_min(struct loopback_handle *lhandle)
 {
 	snd_pcm_t *handle = lhandle->handle;
 	snd_pcm_sw_params_t *swparams;
+	struct timespec ts;
 	int err;
 
+	if (lhandle->avail_min + (lhandle->period_size / 2) > lhandle->buffer_size) {
+		/* avoid 100% CPU usage for broken plugins */
+		ts.tv_sec = 0;
+		ts.tv_nsec = 10000;
+		err = nanosleep(&ts, NULL);
+		return 0;
+	}
 	snd_pcm_sw_params_alloca(&swparams);
 	err = snd_pcm_sw_params_current(handle, swparams);
 	if (err < 0) {
@@ -302,7 +310,6 @@ static int increase_playback_avail_min(struct loopback_handle *lhandle)
 	snd_pcm_sw_params_get_avail_min(swparams, &lhandle->avail_min);
 	if (verbose > 6)
 		snd_output_printf(lhandle->loopback->output, "%s: change avail_min=%li\n", lhandle->id, lhandle->avail_min);
-	printf("%s: change avail_min=%li\n", lhandle->id, lhandle->avail_min);
 	err = snd_pcm_sw_params(handle, swparams);
 	if (err < 0) {
 		logit(LOG_CRIT, "Unable to set sw params for %s: %s\n", lhandle->id, snd_strerror(err));
