@@ -27,7 +27,6 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <dlfcn.h>
 #include <getopt.h>
 #include <assert.h>
 
