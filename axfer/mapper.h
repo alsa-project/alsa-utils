@@ -20,6 +20,7 @@ enum mapper_type {
 
 enum mapper_target {
 	MAPPER_TARGET_SINGLE = 0,
+	MAPPER_TARGET_MULTIPLE,
 	MAPPER_TARGET_COUNT,
 };
 
@@ -79,5 +80,8 @@ struct mapper_data {
 
 extern const struct mapper_data mapper_muxer_single;
 extern const struct mapper_data mapper_demuxer_single;
+
+extern const struct mapper_data mapper_muxer_multiple;
+extern const struct mapper_data mapper_demuxer_multiple;
 
 #endif
