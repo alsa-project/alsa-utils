@@ -9,9 +9,16 @@
 #include "xfer-libasound.h"
 #include "misc.h"
 
+enum no_short_opts {
+        // 200 or later belong to non us-ascii character set.
+	OPT_FATAL_ERRORS = 200,
+};
+
 #define S_OPTS	"D:"
 static const struct option l_opts[] = {
 	{"device",		1, 0, 'D'},
+	// For debugging.
+	{"fatal-errors",	0, 0, OPT_FATAL_ERRORS},
 };
 
 static int xfer_libasound_init(struct xfer_context *xfer,
@@ -39,6 +46,8 @@ static int xfer_libasound_parse_opt(struct xfer_context *xfer, int key,
 
 	if (key == 'D')
 		state->node_literal = arg_duplicate_string(optarg, &err);
+	else if (key == OPT_FATAL_ERRORS)
+		state->finish_at_xrun = true;
 	else
 		err = -ENXIO;
 
@@ -305,7 +314,7 @@ static int xfer_libasound_process_frames(struct xfer_context *xfer,
 	if (err < 0) {
 		if (err == -EAGAIN)
 			return err;
-		if (err == -EPIPE) {
+		if (err == -EPIPE && !state->finish_at_xrun) {
 			// Recover the stream and continue processing
 			// immediately. In this program -EPIPE comes from
 			// libasound implementation instead of file I/O.

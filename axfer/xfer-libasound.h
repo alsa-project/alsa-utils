@@ -29,6 +29,8 @@ struct libasound_state {
 	bool verbose;
 
 	char *node_literal;
+
+	bool finish_at_xrun:1;
 };
 
 // For internal use in 'libasound' module.
