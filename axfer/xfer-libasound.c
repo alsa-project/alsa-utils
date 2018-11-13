@@ -17,7 +17,7 @@ enum no_short_opts {
 	OPT_TEST_NOWAIT,
 };
 
-#define S_OPTS	"D:NMF:B:"
+#define S_OPTS	"D:NMF:B:A:R:T:"
 static const struct option l_opts[] = {
 	{"device",		1, 0, 'D'},
 	{"nonblock",		0, 0, 'N'},
@@ -26,6 +26,9 @@ static const struct option l_opts[] = {
 	{"buffer-time",		1, 0, 'B'},
 	{"period-size",		1, 0, OPT_PERIOD_SIZE},
 	{"buffer-size",		1, 0, OPT_BUFFER_SIZE},
+	{"avail-min",		1, 0, 'A'},
+	{"start-delay",		1, 0, 'R'},
+	{"stop-delay",		1, 0, 'T'},
 	// For debugging.
 	{"fatal-errors",	0, 0, OPT_FATAL_ERRORS},
 	{"test-nowait",		0, 0, OPT_TEST_NOWAIT},
@@ -68,6 +71,12 @@ static int xfer_libasound_parse_opt(struct xfer_context *xfer, int key,
 		state->frames_per_period = arg_parse_decimal_num(optarg, &err);
 	else if (key == OPT_BUFFER_SIZE)
 		state->frames_per_buffer = arg_parse_decimal_num(optarg, &err);
+	else if (key == 'A')
+		state->msec_for_avail_min = arg_parse_decimal_num(optarg, &err);
+	else if (key == 'R')
+		state->msec_for_start_threshold = arg_parse_decimal_num(optarg, &err);
+	else if (key == 'T')
+		state->msec_for_stop_threshold = arg_parse_decimal_num(optarg, &err);
 	else if (key == OPT_FATAL_ERRORS)
 		state->finish_at_xrun = true;
 	else if (key == OPT_TEST_NOWAIT)
@@ -377,8 +386,76 @@ static int retrieve_actual_hw_params(snd_pcm_hw_params_t *hw_params,
 
 static int configure_sw_params(struct libasound_state *state,
 			       unsigned int frames_per_second,
-			       unsigned int frames_per_buffer)
+			       unsigned int frames_per_buffer,
+			       unsigned int msec_for_avail_min,
+			       unsigned int msec_for_start_threshold,
+			       unsigned int msec_for_stop_threshold)
 {
+	snd_pcm_uframes_t frame_count;
+	int err;
+
+	if (msec_for_avail_min > 0) {
+		frame_count = msec_for_avail_min * frames_per_second / 1000000;
+		if (frame_count == 0 || frame_count > frames_per_buffer) {
+			logging(state,
+				"The msec for 'avail_min' is too %s: %u "
+				"msec (%lu frames at %u).\n",
+				frame_count == 0 ? "small" : "large",
+				msec_for_avail_min, frame_count,
+				frames_per_second);
+			return -EINVAL;
+		}
+		err = snd_pcm_sw_params_set_avail_min(state->handle,
+						state->sw_params, frame_count);
+		if (err < 0) {
+			logging(state,
+				"Fail to configure 'avail-min'.\n");
+			return -EINVAL;
+		}
+	}
+
+	if (msec_for_start_threshold > 0) {
+		frame_count = msec_for_start_threshold * frames_per_second /
+			      1000000;
+		if (frame_count == 0 || frame_count > frames_per_buffer) {
+			logging(state,
+				"The msec for 'start-delay' is too %s: %u "
+				"msec (%lu frames at %u).\n",
+				frame_count == 0 ? "small" : "large",
+				msec_for_start_threshold, frame_count,
+				frames_per_second);
+			return -EINVAL;
+		}
+		err = snd_pcm_sw_params_set_start_threshold(state->handle,
+						state->sw_params, frame_count);
+		if (err < 0) {
+			logging(state,
+				"Fail to configure 'start-delay'.\n");
+			return -EINVAL;
+		}
+	}
+
+	if (msec_for_stop_threshold > 0) {
+		frame_count = msec_for_stop_threshold * frames_per_second /
+			      1000000;
+		if (frame_count == 0 || frame_count > frames_per_buffer) {
+			logging(state,
+				"The msec for 'stop-delay' is too %s: %u "
+				"msec (%lu frames at %u).\n",
+				frame_count == 0 ? "small" : "large",
+				msec_for_stop_threshold, frame_count,
+				frames_per_second);
+			return -EINVAL;
+		}
+		err = snd_pcm_sw_params_set_stop_threshold(state->handle,
+						state->sw_params, frame_count);
+		if (err < 0) {
+			logging(state,
+				"Fail to configure 'stop-delay'.\n");
+			return -EINVAL;
+		}
+	}
+
 	return snd_pcm_sw_params(state->handle, state->sw_params);
 }
 
@@ -444,7 +521,10 @@ static int xfer_libasound_pre_process(struct xfer_context *xfer,
 		return err;
 
 	err = configure_sw_params(state, *frames_per_second,
-				  *frames_per_buffer);
+				  *frames_per_buffer,
+				  state->msec_for_avail_min,
+				  state->msec_for_start_threshold,
+				  state->msec_for_stop_threshold);
 	if (err < 0) {
 		logging(state, "Current software parameters:\n");
 		snd_pcm_sw_params_dump(state->sw_params, state->log);
