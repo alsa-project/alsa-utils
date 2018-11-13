@@ -51,4 +51,5 @@ axfer_SOURCES = \
 	xfer-libasound-irq-mmap.c \
 	waiter.h \
 	waiter.c \
-	waiter-poll.c
+	waiter-poll.c \
+	waiter-select.c

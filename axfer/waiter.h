@@ -14,6 +14,7 @@
 enum waiter_type {
 	WAITER_TYPE_DEFAULT = 0,
 	WAITER_TYPE_POLL,
+	WAITER_TYPE_SELECT,
 	WAITER_TYPE_COUNT,
 };
 
@@ -53,5 +54,6 @@ struct waiter_data {
 };
 
 extern const struct waiter_data waiter_poll;
+extern const struct waiter_data waiter_select;
 
 #endif
