@@ -16,6 +16,7 @@
 
 static const char *const waiter_type_labels[] = {
 	[WAITER_TYPE_DEFAULT] = "default",
+	[WAITER_TYPE_POLL] = "poll",
 };
 
 enum waiter_type waiter_type_from_label(const char *label)
@@ -42,7 +43,7 @@ int waiter_context_init(struct waiter_context *waiter,
 		enum waiter_type type;
 		const struct waiter_data *waiter;
 	} entries[] = {
-		{WAITER_TYPE_COUNT,	NULL},
+		{WAITER_TYPE_POLL,	&waiter_poll},
 	};
 	int i;
 

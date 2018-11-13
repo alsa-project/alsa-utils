@@ -50,4 +50,5 @@ axfer_SOURCES = \
 	subcmd-transfer.c \
 	xfer-libasound-irq-mmap.c \
 	waiter.h \
-	waiter.c
+	waiter.c \
+	waiter-poll.c
