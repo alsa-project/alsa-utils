@@ -22,11 +22,13 @@ static const char *const cntr_type_labels[] = {
 static const char *const cntr_format_labels[] = {
 	[CONTAINER_FORMAT_RIFF_WAVE] = "riff/wave",
 	[CONTAINER_FORMAT_AU] = "au",
+	[CONTAINER_FORMAT_VOC] = "voc",
 };
 
 static const char *const suffixes[] = {
 	[CONTAINER_FORMAT_RIFF_WAVE]	= ".wav",
 	[CONTAINER_FORMAT_AU]		= ".au",
+	[CONTAINER_FORMAT_VOC]		= ".voc",
 };
 
 
@@ -145,6 +147,7 @@ int container_parser_init(struct container_context *cntr,
 	const struct container_parser *parsers[] = {
 		[CONTAINER_FORMAT_RIFF_WAVE] = &container_parser_riff_wave,
 		[CONTAINER_FORMAT_AU] = &container_parser_au,
+		[CONTAINER_FORMAT_VOC] = &container_parser_voc,
 	};
 	const struct container_parser *parser;
 	unsigned int size;
@@ -220,6 +223,7 @@ int container_builder_init(struct container_context *cntr,
 	const struct container_builder *builders[] = {
 		[CONTAINER_FORMAT_RIFF_WAVE] = &container_builder_riff_wave,
 		[CONTAINER_FORMAT_AU] = &container_builder_au,
+		[CONTAINER_FORMAT_VOC] = &container_builder_voc,
 	};
 	const struct container_builder *builder;
 	int err;
