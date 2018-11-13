@@ -50,6 +50,17 @@ if test "$HAVE_SEQ_CLIENT_INFO_GET_PID" = "yes" ; then
     AC_DEFINE([HAVE_SEQ_CLIENT_INFO_GET_PID], 1, [alsa-lib supports snd_seq_client_info_get_pid])
 fi
 
+#
+# NOTE: The library 'libffado' (at least v2.4.1) executes ctor/dtor of instances
+# for some objects in startup/finish routines of C runtime. As a result, it
+# outputs some superfluos messages. Furthermore, it brings much memory leak
+# internally. Totally, libffado support is not recommended at all in usual
+# purposes except for technical preview.
+#
+AC_CHECK_LIB([ffado], [ffado_streaming_init], [have_ffado="yes"], [have_ffado="no"])
+AS_IF([test x"$have_ffado" = xyes],
+      [AC_DEFINE([WITH_FFADO], [1], [Define if FFADO library is available])])
+
 AM_CONDITIONAL(HAVE_PCM, test "$have_pcm" = "yes")
 AM_CONDITIONAL(HAVE_MIXER, test "$have_mixer" = "yes")
 AM_CONDITIONAL(HAVE_RAWMIDI, test "$have_rawmidi" = "yes")
@@ -57,6 +68,7 @@ AM_CONDITIONAL(HAVE_SEQ, test "$have_seq" = "yes")
 AM_CONDITIONAL(HAVE_UCM, test "$have_ucm" = "yes")
 AM_CONDITIONAL(HAVE_TOPOLOGY, test "$have_topology" = "yes")
 AM_CONDITIONAL(HAVE_SAMPLERATE, test "$have_samplerate" = "yes")
+AM_CONDITIONAL(HAVE_FFADO, test "$have_ffado" = "yes")
 
 dnl Use tinyalsa
 alsabat_backend_tiny=

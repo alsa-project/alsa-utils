@@ -13,6 +13,9 @@
 
 static const char *const xfer_type_labels[] = {
 	[XFER_TYPE_LIBASOUND] = "libasound",
+#if WITH_FFADO
+	[XFER_TYPE_LIBFFADO] = "libffado",
+#endif
 };
 
 enum xfer_type xfer_type_from_label(const char *label)
@@ -35,6 +38,9 @@ int xfer_context_init(struct xfer_context *xfer, enum xfer_type type,
 		const struct xfer_data *data;
 	} *entry, entries[] = {
 		{XFER_TYPE_LIBASOUND, &xfer_libasound},
+#if WITH_FFADO
+		{XFER_TYPE_LIBFFADO, &xfer_libffado},
+#endif
 	};
 	int i;
 	int err;
