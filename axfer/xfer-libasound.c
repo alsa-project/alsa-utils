@@ -26,9 +26,12 @@ enum no_short_opts {
 	OPT_DISABLE_SOFTVOL,
 	OPT_FATAL_ERRORS,
 	OPT_TEST_NOWAIT,
+	// Obsoleted.
+	OPT_TEST_POSITION,
+	OPT_TEST_COEF,
 };
 
-#define S_OPTS	"D:NMF:B:A:R:T:"
+#define S_OPTS	"D:NMF:B:A:R:T:m:"
 static const struct option l_opts[] = {
 	{"device",		1, 0, 'D'},
 	{"nonblock",		0, 0, 'N'},
@@ -50,6 +53,10 @@ static const struct option l_opts[] = {
 	// For debugging.
 	{"fatal-errors",	0, 0, OPT_FATAL_ERRORS},
 	{"test-nowait",		0, 0, OPT_TEST_NOWAIT},
+	// Obsoleted.
+	{"chmap",		1, 0, 'm'},
+	{"test-position",	0, 0, OPT_TEST_POSITION},
+	{"test-coef",		1, 0, OPT_TEST_COEF},
 };
 
 static int xfer_libasound_init(struct xfer_context *xfer,
@@ -107,6 +114,10 @@ static int xfer_libasound_parse_opt(struct xfer_context *xfer, int key,
 		state->no_auto_format = true;
 	else if (key == OPT_DISABLE_SOFTVOL)
 		state->no_softvol = true;
+	else if (key == 'm' ||
+		 key == OPT_TEST_POSITION ||
+		 key == OPT_TEST_COEF)
+		err = -EINVAL;
 	else if (key == OPT_FATAL_ERRORS)
 		state->finish_at_xrun = true;
 	else if (key == OPT_TEST_NOWAIT)

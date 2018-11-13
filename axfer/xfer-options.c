@@ -21,6 +21,8 @@ enum no_short_opts {
 	OPT_BUFFER_SIZE,
 	// Obsoleted.
 	OPT_MAX_FILE_TIME,
+	OPT_USE_STRFTIME,
+	OPT_PROCESS_ID_FILE,
 };
 
 static int allocate_paths(struct xfer_context *xfer, char *const *paths,
@@ -232,7 +234,7 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 			    const struct xfer_data *data, int argc,
 			    char *const *argv)
 {
-	static const char *short_opts = "CPhvqd:s:f:c:r:t:I";
+	static const char *short_opts = "CPhvqd:s:f:c:r:t:IV:i";
 	static const struct option long_opts[] = {
 		// For generic purposes.
 		{"capture",		0, 0, 'C'},
@@ -255,6 +257,10 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 		{"dump-hw-params",	0, 0, OPT_DUMP_HW_PARAMS},
 		// Obsoleted.
 		{"max-file-time",	1, 0, OPT_MAX_FILE_TIME},
+		{"use-strftime",	0, 0, OPT_USE_STRFTIME},
+		{"process-id-file",	1, 0, OPT_PROCESS_ID_FILE},
+		{"vumeter",		1, 0, 'V'},
+		{"interactive",		0, 0, 'i'},
 	};
 	char *s_opts;
 	struct option *l_opts;
@@ -321,7 +327,11 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 			xfer->dump_hw_params = true;
 		else if (key == '?')
 			return -EINVAL;
-		else if (key == OPT_MAX_FILE_TIME) {
+		else if (key == OPT_MAX_FILE_TIME ||
+			 key == OPT_USE_STRFTIME ||
+			 key == OPT_PROCESS_ID_FILE ||
+			 key == 'V' ||
+			 key == 'i') {
 			fprintf(stderr,
 				"An option '--%s' is obsoleted and has no "
 				"effect.\n",
