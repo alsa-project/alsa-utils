@@ -18,7 +18,7 @@ static const char *const mapper_type_labels[] = {
 };
 
 static const char *const mapper_target_labels[] = {
-	[MAPPER_TARGET_COUNT] = "",
+	[MAPPER_TARGET_SINGLE] = "single",
 };
 
 int mapper_context_init(struct mapper_context *mapper,
@@ -34,6 +34,18 @@ int mapper_context_init(struct mapper_context *mapper,
 	assert(mapper->private_data == NULL);
 
 	memset(mapper, 0, sizeof(*mapper));
+
+	if (type == MAPPER_TYPE_MUXER) {
+		if (cntr_count == 1) {
+			data = &mapper_muxer_single;
+			mapper->target = MAPPER_TARGET_SINGLE;
+		}
+	} else {
+		if (cntr_count == 1) {
+			data = &mapper_demuxer_single;
+			mapper->target = MAPPER_TARGET_SINGLE;
+		}
+	}
 
 	mapper->ops = &data->ops;
 	mapper->type = type;

@@ -19,6 +19,7 @@ enum mapper_type {
 };
 
 enum mapper_target {
+	MAPPER_TARGET_SINGLE = 0,
 	MAPPER_TARGET_COUNT,
 };
 
@@ -75,5 +76,8 @@ struct mapper_data {
 	struct mapper_ops ops;
 	unsigned int private_size;
 };
+
+extern const struct mapper_data mapper_muxer_single;
+extern const struct mapper_data mapper_demuxer_single;
 
 #endif
