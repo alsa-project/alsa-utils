@@ -6,7 +6,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/include
 
 # Unit tests.
-SUBDIRS =
+SUBDIRS = \
+	test
 
 LIBRT = @LIBRT@
 LDADD = \
