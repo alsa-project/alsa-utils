@@ -31,6 +31,7 @@ struct libasound_state {
 	char *node_literal;
 
 	bool finish_at_xrun:1;
+	bool nonblock:1;
 };
 
 // For internal use in 'libasound' module.

@@ -117,6 +117,51 @@ error:
 	return err;
 }
 
+static int r_process_frames_nonblocking(struct libasound_state *state,
+					snd_pcm_state_t status,
+					unsigned int *frame_count,
+					struct mapper_context *mapper,
+					struct container_context *cntrs)
+{
+	snd_pcm_sframes_t avail;
+	snd_pcm_uframes_t avail_count;
+	int err = 0;
+
+	if (status != SND_PCM_STATE_RUNNING) {
+		err = snd_pcm_start(state->handle);
+		if (err < 0)
+			goto error;
+	}
+
+	// Wait for hardware IRQ when no available space.
+	err = snd_pcm_wait(state->handle, -1);
+	if (err < 0)
+		goto error;
+
+	// Check available space on the buffer.
+	avail = snd_pcm_avail(state->handle);
+	if (avail < 0) {
+		err = avail;
+		goto error;
+	}
+	avail_count = (snd_pcm_uframes_t)avail;
+
+	if (avail_count == 0) {
+		// Let's go to a next iteration.
+		err = 0;
+		goto error;
+	}
+
+	err = read_frames(state, frame_count, avail_count, mapper, cntrs);
+	if (err < 0)
+		goto error;
+
+	return 0;
+error:
+	*frame_count = 0;
+	return err;
+}
+
 static int write_frames(struct libasound_state *state,
 			unsigned int *frame_count, unsigned int avail_count,
 			struct mapper_context *mapper,
@@ -231,6 +276,48 @@ error:
 	return err;
 }
 
+static int w_process_frames_nonblocking(struct libasound_state *state,
+					snd_pcm_state_t status,
+					unsigned int *frame_count,
+					struct mapper_context *mapper,
+					struct container_context *cntrs)
+{
+	snd_pcm_sframes_t avail;
+	unsigned int avail_count;
+	int err;
+
+	// Wait for hardware IRQ when no left space.
+	err = snd_pcm_wait(state->handle, -1);
+	if (err < 0)
+		goto error;
+
+	// Check available space on the buffer.
+	avail = snd_pcm_avail(state->handle);
+	if (avail < 0) {
+		err = avail;
+		goto error;
+	}
+	avail_count = (unsigned int)avail;
+
+	if (avail_count == 0) {
+		// Let's go to a next iteration.
+		err = 0;
+		goto error;
+	}
+
+	err = write_frames(state, frame_count, avail_count, mapper, cntrs);
+	if (err < 0)
+		goto error;
+
+	// NOTE: The substream starts automatically when the accumulated number
+	// of queued data frame exceeds start_threshold.
+
+	return 0;
+error:
+	*frame_count = 0;
+	return err;
+}
+
 static int irq_rw_pre_process(struct libasound_state *state)
 {
 	struct rw_closure *closure = state->private_data;
@@ -267,10 +354,17 @@ static int irq_rw_pre_process(struct libasound_state *state)
 	if (err < 0)
 		return err;
 
-	if (snd_pcm_stream(state->handle) == SND_PCM_STREAM_CAPTURE)
-		closure->process_frames = r_process_frames_blocking;
-	else
-		closure->process_frames = w_process_frames_blocking;
+	if (snd_pcm_stream(state->handle) == SND_PCM_STREAM_CAPTURE) {
+		if (state->nonblock)
+			closure->process_frames = r_process_frames_nonblocking;
+		else
+			closure->process_frames = r_process_frames_blocking;
+	} else {
+		if (state->nonblock)
+			closure->process_frames = w_process_frames_nonblocking;
+		else
+			closure->process_frames = w_process_frames_blocking;
+	}
 
 	return 0;
 }
