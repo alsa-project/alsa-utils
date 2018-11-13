@@ -16,6 +16,7 @@
 enum no_short_opts {
 	// 128 or later belong to non us-ascii character set.
 	OPT_XFER_TYPE = 128,
+	OPT_DUMP_HW_PARAMS,
 };
 
 static int allocate_paths(struct xfer_context *xfer, char *const *paths,
@@ -244,6 +245,8 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 		{"file-type",		1, 0, 't'},
 		// For mapper.
 		{"separate-channels",	0, 0, 'I'},
+		// For debugging.
+		{"dump-hw-params",	0, 0, OPT_DUMP_HW_PARAMS},
 	};
 	char *s_opts;
 	struct option *l_opts;
@@ -302,6 +305,8 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 			xfer->cntr_format_literal = arg_duplicate_string(optarg, &err);
 		else if (key == 'I')
 			xfer->multiple_cntrs = true;
+		else if (key == OPT_DUMP_HW_PARAMS)
+			xfer->dump_hw_params = true;
 		else if (key == '?')
 			return -EINVAL;
 		else {

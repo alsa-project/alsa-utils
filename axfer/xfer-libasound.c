@@ -99,6 +99,15 @@ static int open_handle(struct xfer_context *xfer)
 
 	// TODO: Applying NO_PERIOD_WAKEUP should be done here.
 
+	if (xfer->dump_hw_params) {
+		logging(state, "Available HW Params of node: %s\n",
+			snd_pcm_name(state->handle));
+		snd_pcm_hw_params_dump(state->hw_params, state->log);
+		// TODO: there're more parameters which are not dumped by
+		// alsa-lib.
+		return 0;
+	}
+
 	return set_access_hw_param(state);
 }
 
