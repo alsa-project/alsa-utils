@@ -10,6 +10,7 @@
 #define __ALSA_UTILS_AXFER_XFER_LIBASOUND__H_
 
 #include "xfer.h"
+#include "waiter.h"
 
 #define logging(state, ...) \
 	snd_output_printf(state->log, __VA_ARGS__)
@@ -49,6 +50,9 @@ struct libasound_state {
 	bool no_softvol:1;
 
 	bool use_waiter:1;
+
+	enum waiter_type waiter_type;
+	struct waiter_context *waiter;
 };
 
 // For internal use in 'libasound' module.
@@ -62,6 +66,9 @@ struct xfer_libasound_ops {
 	void (*post_process)(struct libasound_state *state);
 	unsigned int private_size;
 };
+
+int xfer_libasound_wait_event(struct libasound_state *state, int timeout_msec,
+			      unsigned short *revents);
 
 extern const struct xfer_libasound_ops xfer_libasound_irq_rw_ops;
 

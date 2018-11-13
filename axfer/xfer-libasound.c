@@ -201,6 +201,7 @@ static int open_handle(struct xfer_context *xfer)
 
 	if ((state->nonblock || state->mmap) && !state->test_nowait)
 		state->use_waiter = true;
+	state->waiter_type = WAITER_TYPE_DEFAULT;
 
 	err = snd_pcm_hw_params_any(state->handle, state->hw_params);
 	if (err < 0)
@@ -218,6 +219,66 @@ static int open_handle(struct xfer_context *xfer)
 	}
 
 	return set_access_hw_param(state);
+}
+
+static int prepare_waiter(struct libasound_state *state)
+{
+	unsigned int pfd_count;
+	int err;
+
+	// Nothing to do for dafault waiter (=snd_pcm_wait()).
+	if (state->waiter_type == WAITER_TYPE_DEFAULT)
+		return 0;
+
+	err = snd_pcm_poll_descriptors_count(state->handle);
+	if (err < 0)
+		return err;
+	if (err == 0)
+		return -ENXIO;
+	pfd_count = (unsigned int)err;
+
+	state->waiter = malloc(sizeof(*state->waiter));
+	if (state->waiter == NULL)
+		return -ENOMEM;
+
+	err = waiter_context_init(state->waiter, state->waiter_type, pfd_count);
+	if (err < 0)
+		return err;
+
+	err = snd_pcm_poll_descriptors(state->handle, state->waiter->pfds,
+				       pfd_count);
+	if (err < 0)
+		return err;
+
+	return waiter_context_prepare(state->waiter);
+}
+
+int xfer_libasound_wait_event(struct libasound_state *state, int timeout_msec,
+			      unsigned short *revents)
+{
+	int err;
+
+	if (state->waiter_type != WAITER_TYPE_DEFAULT) {
+		struct waiter_context *waiter = state->waiter;
+
+		err = waiter_context_wait_event(waiter, timeout_msec);
+		if (err < 0)
+			return err;
+
+		err = snd_pcm_poll_descriptors_revents(state->handle,
+				waiter->pfds, waiter->pfd_count, revents);
+	} else {
+		err = snd_pcm_wait(state->handle, timeout_msec);
+		if (err < 0)
+			return err;
+
+		if (snd_pcm_stream(state->handle) == SND_PCM_STREAM_PLAYBACK)
+			*revents = POLLOUT;
+		else
+			*revents = POLLIN;
+	}
+
+	return err;
 }
 
 static int configure_hw_params(struct libasound_state *state,
@@ -558,6 +619,21 @@ static int xfer_libasound_pre_process(struct xfer_context *xfer,
 
 	if (xfer->verbose > 0)
 		snd_pcm_dump(state->handle, state->log);
+
+	if (state->use_waiter) {
+		// NOTE: This should be after configuring sw_params due to
+		// timer descriptor for time-based scheduling model.
+		err = prepare_waiter(state);
+		if (err < 0)
+			return err;
+
+		if (xfer->verbose > 0) {
+			logging(state, "Waiter type:\n");
+			logging(state,
+				"  %s\n",
+				waiter_label_from_type(state->waiter_type));
+		}
+	}
 
 	return 0;
 }
