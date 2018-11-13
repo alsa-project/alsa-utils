@@ -20,4 +20,5 @@ noinst_HEADERS = \
 axfer_SOURCES = \
 	misc.h \
 	subcmd.h \
-	main.c
+	main.c \
+	subcmd-list.c

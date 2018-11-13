@@ -181,7 +181,7 @@ int main(int argc, char *const *argv)
 	if (subcmd == SUBCMD_TRANSFER)
 		printf("execute 'transfer' subcmd.\n");
 	else if (subcmd == SUBCMD_LIST)
-		printf("execute 'list' subcmd.\n");
+		err = subcmd_list(argc, argv, direction);
 	else if (subcmd == SUBCMD_VERSION)
 		print_version(argv[0]);
 	else

@@ -11,4 +11,6 @@
 
 #include <alsa/asoundlib.h>
 
+int subcmd_list(int argc, char *const *argv, snd_pcm_stream_t direction);
+
 #endif
