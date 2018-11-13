@@ -35,6 +35,10 @@ struct libasound_state {
 	unsigned int frames_per_period;
 	unsigned int frames_per_buffer;
 
+	unsigned int msec_for_avail_min;
+	unsigned int msec_for_start_threshold;
+	unsigned int msec_for_stop_threshold;
+
 	bool finish_at_xrun:1;
 	bool nonblock:1;
 	bool mmap:1;
