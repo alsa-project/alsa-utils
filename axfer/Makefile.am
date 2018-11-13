@@ -17,7 +17,8 @@ LDADD = \
 noinst_HEADERS = \
 	misc.h \
 	subcmd.h \
-	container.h
+	container.h \
+	mapper.h
 
 axfer_SOURCES = \
 	misc.h \
@@ -29,4 +30,6 @@ axfer_SOURCES = \
 	container-riff-wave.c \
 	container-au.c \
 	container-voc.c \
-	container-raw.c
+	container-raw.c \
+	mapper.h \
+	mapper.c
