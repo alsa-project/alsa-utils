@@ -25,6 +25,7 @@ enum container_type {
 };
 
 enum container_format {
+	CONTAINER_FORMAT_RIFF_WAVE = 0,
 	CONTAINER_FORMAT_COUNT,
 };
 
@@ -106,5 +107,8 @@ int container_recursive_read(struct container_context *cntr, void *buf,
 int container_recursive_write(struct container_context *cntr, void *buf,
 			      unsigned int byte_count);
 int container_seek_offset(struct container_context *cntr, off64_t offset);
+
+extern const struct container_parser container_parser_riff_wave;
+extern const struct container_builder container_builder_riff_wave;
 
 #endif
