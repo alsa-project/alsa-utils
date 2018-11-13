@@ -13,6 +13,7 @@
 
 enum waiter_type {
 	WAITER_TYPE_DEFAULT = 0,
+	WAITER_TYPE_POLL,
 	WAITER_TYPE_COUNT,
 };
 
@@ -50,5 +51,7 @@ struct waiter_data {
 	struct waiter_ops ops;
 	unsigned int private_size;
 };
+
+extern const struct waiter_data waiter_poll;
 
 #endif
