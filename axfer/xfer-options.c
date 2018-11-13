@@ -227,7 +227,7 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 			    const struct xfer_data *data, int argc,
 			    char *const *argv)
 {
-	static const char *short_opts = "CPhvf:c:r:t:I";
+	static const char *short_opts = "CPhvqf:c:r:t:I";
 	static const struct option long_opts[] = {
 		// For generic purposes.
 		{"capture",		0, 0, 'C'},
@@ -235,6 +235,7 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 		{"xfer-type",		1, 0, OPT_XFER_TYPE},
 		{"help",		0, 0, 'h'},
 		{"verbose",		0, 0, 'v'},
+		{"quiet",		0, 0, 'q'},
 		// For transfer backend.
 		{"format",		1, 0, 'f'},
 		{"channels",		1, 0, 'c'},
@@ -289,6 +290,8 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 			xfer->help = true;
 		else if (key == 'v')
 			++xfer->verbose;
+		else if (key == 'q')
+			xfer->quiet = true;
 		else if (key == 'f')
 			xfer->sample_format_literal = arg_duplicate_string(optarg, &err);
 		else if (key == 'c')
