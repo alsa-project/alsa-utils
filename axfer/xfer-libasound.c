@@ -11,15 +11,21 @@
 
 enum no_short_opts {
         // 200 or later belong to non us-ascii character set.
-	OPT_FATAL_ERRORS = 200,
+	OPT_PERIOD_SIZE = 200,
+	OPT_BUFFER_SIZE,
+	OPT_FATAL_ERRORS,
 	OPT_TEST_NOWAIT,
 };
 
-#define S_OPTS	"D:NM"
+#define S_OPTS	"D:NMF:B:"
 static const struct option l_opts[] = {
 	{"device",		1, 0, 'D'},
 	{"nonblock",		0, 0, 'N'},
 	{"mmap",		0, 0, 'M'},
+	{"period-time",		1, 0, 'F'},
+	{"buffer-time",		1, 0, 'B'},
+	{"period-size",		1, 0, OPT_PERIOD_SIZE},
+	{"buffer-size",		1, 0, OPT_BUFFER_SIZE},
 	// For debugging.
 	{"fatal-errors",	0, 0, OPT_FATAL_ERRORS},
 	{"test-nowait",		0, 0, OPT_TEST_NOWAIT},
@@ -54,6 +60,14 @@ static int xfer_libasound_parse_opt(struct xfer_context *xfer, int key,
 		state->nonblock = true;
 	else if (key == 'M')
 		state->mmap = true;
+	else if (key == 'F')
+		state->msec_per_period = arg_parse_decimal_num(optarg, &err);
+	else if (key == 'B')
+		state->msec_per_buffer = arg_parse_decimal_num(optarg, &err);
+	else if (key == OPT_PERIOD_SIZE)
+		state->frames_per_period = arg_parse_decimal_num(optarg, &err);
+	else if (key == OPT_BUFFER_SIZE)
+		state->frames_per_buffer = arg_parse_decimal_num(optarg, &err);
 	else if (key == OPT_FATAL_ERRORS)
 		state->finish_at_xrun = true;
 	else if (key == OPT_TEST_NOWAIT)
@@ -90,6 +104,20 @@ int xfer_libasound_validate_opts(struct xfer_context *xfer)
 				"An option for nowait test should be used with "
 				"nonblock or mmap options.\n");
 			return -EINVAL;
+		}
+	}
+
+	if (state->msec_per_period > 0 && state->msec_per_buffer > 0) {
+		if (state->msec_per_period > state->msec_per_buffer) {
+			state->msec_per_period = state->msec_per_buffer;
+			state->msec_per_buffer = 0;
+		}
+	}
+
+	if (state->frames_per_period > 0 && state->frames_per_buffer > 0) {
+		if (state->frames_per_period > state->frames_per_buffer) {
+			state->frames_per_period = state->frames_per_buffer;
+			state->frames_per_buffer = 0;
 		}
 	}
 
@@ -161,7 +189,11 @@ static int open_handle(struct xfer_context *xfer)
 static int configure_hw_params(struct libasound_state *state,
 			       snd_pcm_format_t format,
 			       unsigned int samples_per_frame,
-			       unsigned int frames_per_second)
+			       unsigned int frames_per_second,
+			       unsigned int msec_per_period,
+			       unsigned int msec_per_buffer,
+			       snd_pcm_uframes_t frames_per_period,
+			       snd_pcm_uframes_t frames_per_buffer)
 {
 	int err;
 
@@ -232,6 +264,84 @@ static int configure_hw_params(struct libasound_state *state,
 		return err;
 	}
 
+	// Keep one of 'frames_per_buffer' and 'msec_per_buffer'.
+	if (frames_per_buffer == 0) {
+		if (msec_per_buffer == 0) {
+			err = snd_pcm_hw_params_get_buffer_time_max(
+				state->hw_params, &msec_per_buffer, NULL);
+			if (err < 0) {
+				logging(state,
+					"The maximum msec per buffer is not "
+					"available.\n");
+				return err;
+			}
+			if (msec_per_buffer > 500000)
+				msec_per_buffer = 500000;
+		}
+	} else if (msec_per_buffer > 0) {
+		uint64_t msec;
+
+		msec = 1000000 * frames_per_buffer / frames_per_second;
+		if (msec < msec_per_buffer)
+			msec_per_buffer = 0;
+	}
+
+	// Keep one of 'frames_per_period' and 'msec_per_period'.
+	if (frames_per_period == 0) {
+		if (msec_per_period == 0) {
+			if (msec_per_buffer > 0)
+				msec_per_period = msec_per_buffer / 4;
+			else
+				frames_per_period = frames_per_buffer / 4;
+		}
+	} else if (msec_per_period > 0) {
+		uint64_t msec;
+
+		msec = 1000000 * frames_per_period / frames_per_second;
+		if (msec < msec_per_period)
+			msec_per_period = 0;
+	}
+
+	if (msec_per_period) {
+		err = snd_pcm_hw_params_set_period_time_near(state->handle,
+				state->hw_params, &msec_per_period, NULL);
+		if (err < 0) {
+			logging(state,
+				"Fail to configure period time: %u msec\n",
+				msec_per_period);
+			return err;
+		}
+	} else {
+		err = snd_pcm_hw_params_set_period_size_near(state->handle,
+				state->hw_params, &frames_per_period, NULL);
+		if (err < 0) {
+			logging(state,
+				"Fail to configure period size: %lu frames\n",
+				frames_per_period);
+			return err;
+		}
+	}
+
+	if (msec_per_buffer) {
+		err = snd_pcm_hw_params_set_buffer_time_near(state->handle,
+				state->hw_params, &msec_per_buffer, NULL);
+		if (err < 0) {
+			logging(state,
+				"Fail to configure buffer time: %u msec\n",
+				msec_per_buffer);
+			return err;
+		}
+	} else {
+		err = snd_pcm_hw_params_set_buffer_size_near(state->handle,
+					state->hw_params, &frames_per_buffer);
+		if (err < 0) {
+			logging(state,
+				"Fail to configure buffer size: %lu frames\n",
+				frames_per_buffer);
+			return err;
+		}
+	}
+
 	return snd_pcm_hw_params(state->handle, state->hw_params);
 }
 
@@ -287,7 +397,11 @@ static int xfer_libasound_pre_process(struct xfer_context *xfer,
 		return -ENXIO;
 
 	err = configure_hw_params(state, *format, *samples_per_frame,
-				  *frames_per_second);
+				  *frames_per_second,
+				  state->msec_per_period,
+				  state->msec_per_buffer,
+				  state->frames_per_period,
+				  state->frames_per_buffer);
 	if (err < 0) {
 		logging(state, "Current hardware parameters:\n");
 		snd_pcm_hw_params_dump(state->hw_params, state->log);

@@ -17,6 +17,8 @@ enum no_short_opts {
 	// 128 or later belong to non us-ascii character set.
 	OPT_XFER_TYPE = 128,
 	OPT_DUMP_HW_PARAMS,
+	OPT_PERIOD_SIZE,
+	OPT_BUFFER_SIZE,
 	// Obsoleted.
 	OPT_MAX_FILE_TIME,
 };
