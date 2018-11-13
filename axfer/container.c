@@ -23,14 +23,15 @@ static const char *const cntr_format_labels[] = {
 	[CONTAINER_FORMAT_RIFF_WAVE] = "riff/wave",
 	[CONTAINER_FORMAT_AU] = "au",
 	[CONTAINER_FORMAT_VOC] = "voc",
+	[CONTAINER_FORMAT_RAW] = "raw",
 };
 
 static const char *const suffixes[] = {
 	[CONTAINER_FORMAT_RIFF_WAVE]	= ".wav",
 	[CONTAINER_FORMAT_AU]		= ".au",
 	[CONTAINER_FORMAT_VOC]		= ".voc",
+	[CONTAINER_FORMAT_RAW]		= "",
 };
-
 
 const char *const container_suffix_from_format(enum container_format format)
 {
@@ -108,7 +109,7 @@ enum container_format container_format_from_path(const char *path)
 	}
 
 	// Unsupported.
-	return CONTAINER_FORMAT_COUNT;
+	return CONTAINER_FORMAT_RAW;
 }
 
 int container_seek_offset(struct container_context *cntr, off64_t offset)
@@ -196,7 +197,7 @@ int container_parser_init(struct container_context *cntr,
 
 	// Unless detected, use raw container.
 	if (i == ARRAY_SIZE(parsers))
-		return -EINVAL;
+		parser = &container_parser_raw;
 
 	// Allocate private data for the parser.
 	if (parser->private_size > 0) {
@@ -224,6 +225,7 @@ int container_builder_init(struct container_context *cntr,
 		[CONTAINER_FORMAT_RIFF_WAVE] = &container_builder_riff_wave,
 		[CONTAINER_FORMAT_AU] = &container_builder_au,
 		[CONTAINER_FORMAT_VOC] = &container_builder_voc,
+		[CONTAINER_FORMAT_RAW] = &container_builder_raw,
 	};
 	const struct container_builder *builder;
 	int err;
@@ -302,6 +304,16 @@ int container_context_pre_process(struct container_context *cntr,
 			return 0;
 	}
 
+	if (cntr->format == CONTAINER_FORMAT_RAW) {
+		if (*format == SND_PCM_FORMAT_UNKNOWN ||
+		    *samples_per_frame == 0 || *frames_per_second == 0) {
+			fprintf(stderr,
+				"Any file format is not detected. Need to "
+				"indicate all of sample format, channels and "
+				"rate explicitly.\n");
+			return -EINVAL;
+		}
+	}
 	assert(*format >= SND_PCM_FORMAT_S8);
 	assert(*format <= SND_PCM_FORMAT_LAST);
 	assert(*samples_per_frame > 0);
@@ -348,6 +360,7 @@ int container_context_process_frames(struct container_context *cntr,
 	char *buf = frame_buffer;
 	unsigned int bytes_per_frame;
 	unsigned int byte_count;
+	unsigned int target_byte_count;
 	int err;
 
 	assert(cntr);
@@ -356,7 +369,19 @@ int container_context_process_frames(struct container_context *cntr,
 	assert(frame_count);
 
 	bytes_per_frame = cntr->bytes_per_sample * cntr->samples_per_frame;
-	byte_count = *frame_count * bytes_per_frame;
+	target_byte_count = *frame_count * bytes_per_frame;
+
+	// A parser of cotainers already read first 4 bytes to detect format
+	// of container, however they includes PCM frames when any format was
+	// undetected. Surely to write out them.
+	byte_count = target_byte_count;
+	if (cntr->format == CONTAINER_FORMAT_RAW &&
+	    cntr->type == CONTAINER_TYPE_PARSER && !cntr->magic_handled) {
+		memcpy(buf, cntr->magic, sizeof(cntr->magic));
+		buf += sizeof(cntr->magic);
+		byte_count -= sizeof(cntr->magic);
+		cntr->magic_handled = true;
+	}
 
 	// Each container has limitation for its volume for sample data.
 	if (cntr->handled_byte_count > cntr->max_size - byte_count)
@@ -370,11 +395,11 @@ int container_context_process_frames(struct container_context *cntr,
 		return err;
 	}
 
-	cntr->handled_byte_count += byte_count;
+	cntr->handled_byte_count += target_byte_count;
 	if (cntr->handled_byte_count == cntr->max_size)
 		cntr->eof = true;
 
-	*frame_count = byte_count / bytes_per_frame;
+	*frame_count = target_byte_count / bytes_per_frame;
 
 	return 0;
 }
