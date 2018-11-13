@@ -27,4 +27,5 @@ axfer_SOURCES = \
 	container.c \
 	container-riff-wave.c \
 	container-au.c \
-	container-voc.c
+	container-voc.c \
+	container-raw.c
