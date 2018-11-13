@@ -14,9 +14,10 @@ enum no_short_opts {
 	OPT_FATAL_ERRORS = 200,
 };
 
-#define S_OPTS	"D:"
+#define S_OPTS	"D:N"
 static const struct option l_opts[] = {
 	{"device",		1, 0, 'D'},
+	{"nonblock",		0, 0, 'N'},
 	// For debugging.
 	{"fatal-errors",	0, 0, OPT_FATAL_ERRORS},
 };
@@ -46,6 +47,8 @@ static int xfer_libasound_parse_opt(struct xfer_context *xfer, int key,
 
 	if (key == 'D')
 		state->node_literal = arg_duplicate_string(optarg, &err);
+	else if (key == 'N')
+		state->nonblock = true;
 	else if (key == OPT_FATAL_ERRORS)
 		state->finish_at_xrun = true;
 	else
@@ -91,10 +94,14 @@ static int set_access_hw_param(struct libasound_state *state)
 static int open_handle(struct xfer_context *xfer)
 {
 	struct libasound_state *state = xfer->private_data;
+	int mode = 0;
 	int err;
 
+	if (state->nonblock)
+		mode |= SND_PCM_NONBLOCK;
+
 	err = snd_pcm_open(&state->handle, state->node_literal, xfer->direction,
-			   0);
+			   mode);
 	if (err < 0) {
 		logging(state, "Fail to open libasound PCM node for %s: %s\n",
 			snd_pcm_stream_name(xfer->direction),
@@ -378,7 +385,12 @@ static void xfer_libasound_post_process(struct xfer_context *xfer)
 				logging(state, "snd_pcm_drop(): %s\n",
 				       snd_strerror(err));
 		} else {
+			// TODO: this is a bug in kernel land.
+			if (state->nonblock)
+				snd_pcm_nonblock(state->handle, 0);
 			err = snd_pcm_drain(state->handle);
+			if (state->nonblock)
+				snd_pcm_nonblock(state->handle, 1);
 			if (err < 0)
 				logging(state, "snd_pcm_drain(): %s\n",
 				       snd_strerror(err));
