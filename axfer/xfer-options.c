@@ -17,6 +17,8 @@ enum no_short_opts {
 	// 128 or later belong to non us-ascii character set.
 	OPT_XFER_TYPE = 128,
 	OPT_DUMP_HW_PARAMS,
+	// Obsoleted.
+	OPT_MAX_FILE_TIME,
 };
 
 static int allocate_paths(struct xfer_context *xfer, char *const *paths,
@@ -228,7 +230,7 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 			    const struct xfer_data *data, int argc,
 			    char *const *argv)
 {
-	static const char *short_opts = "CPhvqf:c:r:t:I";
+	static const char *short_opts = "CPhvqd:s:f:c:r:t:I";
 	static const struct option long_opts[] = {
 		// For generic purposes.
 		{"capture",		0, 0, 'C'},
@@ -237,6 +239,8 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 		{"help",		0, 0, 'h'},
 		{"verbose",		0, 0, 'v'},
 		{"quiet",		0, 0, 'q'},
+		{"duration",		1, 0, 'd'},
+		{"samples",		1, 0, 's'},
 		// For transfer backend.
 		{"format",		1, 0, 'f'},
 		{"channels",		1, 0, 'c'},
@@ -247,6 +251,8 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 		{"separate-channels",	0, 0, 'I'},
 		// For debugging.
 		{"dump-hw-params",	0, 0, OPT_DUMP_HW_PARAMS},
+		// Obsoleted.
+		{"max-file-time",	1, 0, OPT_MAX_FILE_TIME},
 	};
 	char *s_opts;
 	struct option *l_opts;
@@ -295,6 +301,10 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 			++xfer->verbose;
 		else if (key == 'q')
 			xfer->quiet = true;
+		else if (key == 'd')
+			xfer->duration_seconds = arg_parse_decimal_num(optarg, &err);
+		else if (key == 's')
+			xfer->duration_frames = arg_parse_decimal_num(optarg, &err);
 		else if (key == 'f')
 			xfer->sample_format_literal = arg_duplicate_string(optarg, &err);
 		else if (key == 'c')
@@ -309,7 +319,13 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 			xfer->dump_hw_params = true;
 		else if (key == '?')
 			return -EINVAL;
-		else {
+		else if (key == OPT_MAX_FILE_TIME) {
+			fprintf(stderr,
+				"An option '--%s' is obsoleted and has no "
+				"effect.\n",
+				l_opts[l_index].name);
+			err = -EINVAL;
+		} else {
 			err = xfer->ops->parse_opt(xfer, key, optarg);
 			if (err < 0 && err != -ENXIO)
 				break;
@@ -324,6 +340,24 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 		return err;
 
 	return validate_options(xfer);
+}
+
+void xfer_options_calculate_duration(struct xfer_context *xfer,
+				     uint64_t *total_frame_count)
+{
+	uint64_t frame_count;
+
+	if (xfer->duration_seconds > 0) {
+		frame_count = xfer->duration_seconds * xfer->frames_per_second;
+		if (frame_count < *total_frame_count)
+			*total_frame_count = frame_count;
+	}
+
+	if (xfer->duration_frames > 0) {
+		frame_count = xfer->duration_frames;
+		if (frame_count < *total_frame_count)
+			*total_frame_count = frame_count;
+	}
 }
 
 static const char *const allowed_duplication[] = {

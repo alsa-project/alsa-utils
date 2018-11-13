@@ -30,6 +30,8 @@ struct xfer_context {
 	char *sample_format_literal;
 	char *cntr_format_literal;
 	unsigned int verbose;
+	unsigned int duration_seconds;
+	unsigned int duration_frames;
 	unsigned int frames_per_second;
 	unsigned int samples_per_frame;
 	bool help:1;
@@ -68,6 +70,8 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 			    const struct xfer_data *data, int argc,
 			    char *const *argv);
 int xfer_options_fixup_paths(struct xfer_context *xfer);
+void xfer_options_calculate_duration(struct xfer_context *xfer,
+				     uint64_t *total_frame_count);
 
 // For internal use in 'xfer' module.
 

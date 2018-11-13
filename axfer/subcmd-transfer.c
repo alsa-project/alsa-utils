@@ -327,6 +327,8 @@ static int context_pre_process(struct context *ctx, snd_pcm_stream_t direction,
 	if (err < 0)
 		return err;
 
+	xfer_options_calculate_duration(&ctx->xfer, total_frame_count);
+
 	return 0;
 }
 
