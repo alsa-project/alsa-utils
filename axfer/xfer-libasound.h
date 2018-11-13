@@ -30,6 +30,11 @@ struct libasound_state {
 
 	char *node_literal;
 
+	unsigned int msec_per_period;
+	unsigned int msec_per_buffer;
+	unsigned int frames_per_period;
+	unsigned int frames_per_buffer;
+
 	bool finish_at_xrun:1;
 	bool nonblock:1;
 	bool mmap:1;
