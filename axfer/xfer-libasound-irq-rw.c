@@ -133,10 +133,12 @@ static int r_process_frames_nonblocking(struct libasound_state *state,
 			goto error;
 	}
 
-	// Wait for hardware IRQ when no available space.
-	err = snd_pcm_wait(state->handle, -1);
-	if (err < 0)
-		goto error;
+	if (state->use_waiter) {
+		// Wait for hardware IRQ when no available space.
+		err = snd_pcm_wait(state->handle, -1);
+		if (err < 0)
+			goto error;
+	}
 
 	// Check available space on the buffer.
 	avail = snd_pcm_avail(state->handle);
@@ -286,10 +288,12 @@ static int w_process_frames_nonblocking(struct libasound_state *state,
 	unsigned int avail_count;
 	int err;
 
-	// Wait for hardware IRQ when no left space.
-	err = snd_pcm_wait(state->handle, -1);
-	if (err < 0)
-		goto error;
+	if (state->use_waiter) {
+		// Wait for hardware IRQ when no left space.
+		err = snd_pcm_wait(state->handle, -1);
+		if (err < 0)
+			goto error;
+	}
 
 	// Check available space on the buffer.
 	avail = snd_pcm_avail(state->handle);

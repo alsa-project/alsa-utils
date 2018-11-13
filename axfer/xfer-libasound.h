@@ -33,6 +33,9 @@ struct libasound_state {
 	bool finish_at_xrun:1;
 	bool nonblock:1;
 	bool mmap:1;
+	bool test_nowait:1;
+
+	bool use_waiter:1;
 };
 
 // For internal use in 'libasound' module.

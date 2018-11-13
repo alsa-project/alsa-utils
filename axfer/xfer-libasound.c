@@ -12,6 +12,7 @@
 enum no_short_opts {
         // 200 or later belong to non us-ascii character set.
 	OPT_FATAL_ERRORS = 200,
+	OPT_TEST_NOWAIT,
 };
 
 #define S_OPTS	"D:NM"
@@ -21,6 +22,7 @@ static const struct option l_opts[] = {
 	{"mmap",		0, 0, 'M'},
 	// For debugging.
 	{"fatal-errors",	0, 0, OPT_FATAL_ERRORS},
+	{"test-nowait",		0, 0, OPT_TEST_NOWAIT},
 };
 
 static int xfer_libasound_init(struct xfer_context *xfer,
@@ -54,6 +56,8 @@ static int xfer_libasound_parse_opt(struct xfer_context *xfer, int key,
 		state->mmap = true;
 	else if (key == OPT_FATAL_ERRORS)
 		state->finish_at_xrun = true;
+	else if (key == OPT_TEST_NOWAIT)
+		state->test_nowait = true;
 	else
 		err = -ENXIO;
 
@@ -78,6 +82,15 @@ int xfer_libasound_validate_opts(struct xfer_context *xfer)
 			"An option for mmap operation should not be used with "
 			"nonblocking option.\n");
 		return -EINVAL;
+	}
+
+	if (state->test_nowait) {
+		if (!state->nonblock && !state->mmap) {
+			fprintf(stderr,
+				"An option for nowait test should be used with "
+				"nonblock or mmap options.\n");
+			return -EINVAL;
+		}
 	}
 
 	return err;
@@ -123,6 +136,9 @@ static int open_handle(struct xfer_context *xfer)
 			state->node_literal);
 		return err;
 	}
+
+	if ((state->nonblock || state->mmap) && !state->test_nowait)
+		state->use_waiter = true;
 
 	err = snd_pcm_hw_params_any(state->handle, state->hw_params);
 	if (err < 0)
