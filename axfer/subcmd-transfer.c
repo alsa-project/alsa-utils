@@ -340,6 +340,21 @@ static int context_process_frames(struct context *ctx,
 	int i;
 	int err = 0;
 
+	if (!ctx->xfer.quiet) {
+		fprintf(stderr,
+			"%s: Format '%s', Rate %u Hz, Channels ",
+			snd_pcm_stream_name(direction),
+			snd_pcm_format_description(ctx->xfer.sample_format),
+			ctx->xfer.frames_per_second);
+		if (ctx->xfer.samples_per_frame == 1)
+			fprintf(stderr, "'monaural'");
+		else if (ctx->xfer.samples_per_frame == 2)
+			fprintf(stderr, "'Stereo'");
+		else
+			fprintf(stderr, "%u", ctx->xfer.samples_per_frame);
+		fprintf(stderr, "\n");
+	}
+
 	*actual_frame_count = 0;
 	while (!ctx->interrupted) {
 		struct container_context *cntr;
@@ -368,6 +383,18 @@ static int context_process_frames(struct context *ctx,
 		*actual_frame_count += frame_count;
 		if (*actual_frame_count >= expected_frame_count)
 			break;
+	}
+
+	if (!ctx->xfer.quiet) {
+		fprintf(stderr,
+			"%s: Expected %lu frames, Actual %lu frames\n",
+			snd_pcm_stream_name(direction), expected_frame_count,
+			*actual_frame_count);
+		if (ctx->interrupted) {
+			fprintf(stderr, "Aborted by signal: %s\n",
+			       strsignal(ctx->signal));
+			return 0;
+		}
 	}
 
 	return err;
