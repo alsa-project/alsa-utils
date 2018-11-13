@@ -43,6 +43,10 @@ struct libasound_state {
 	bool nonblock:1;
 	bool mmap:1;
 	bool test_nowait:1;
+	bool no_auto_resample:1;
+	bool no_auto_channels:1;
+	bool no_auto_format:1;
+	bool no_softvol:1;
 
 	bool use_waiter:1;
 };

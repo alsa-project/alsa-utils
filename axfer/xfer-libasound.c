@@ -13,6 +13,10 @@ enum no_short_opts {
         // 200 or later belong to non us-ascii character set.
 	OPT_PERIOD_SIZE = 200,
 	OPT_BUFFER_SIZE,
+	OPT_DISABLE_RESAMPLE,
+	OPT_DISABLE_CHANNELS,
+	OPT_DISABLE_FORMAT,
+	OPT_DISABLE_SOFTVOL,
 	OPT_FATAL_ERRORS,
 	OPT_TEST_NOWAIT,
 };
@@ -29,6 +33,11 @@ static const struct option l_opts[] = {
 	{"avail-min",		1, 0, 'A'},
 	{"start-delay",		1, 0, 'R'},
 	{"stop-delay",		1, 0, 'T'},
+	// For plugins in alsa-lib.
+	{"disable-resample",	0, 0, OPT_DISABLE_RESAMPLE},
+	{"disable-channels",	0, 0, OPT_DISABLE_CHANNELS},
+	{"disable-format",	0, 0, OPT_DISABLE_FORMAT},
+	{"disable-softvol",	0, 0, OPT_DISABLE_SOFTVOL},
 	// For debugging.
 	{"fatal-errors",	0, 0, OPT_FATAL_ERRORS},
 	{"test-nowait",		0, 0, OPT_TEST_NOWAIT},
@@ -77,6 +86,14 @@ static int xfer_libasound_parse_opt(struct xfer_context *xfer, int key,
 		state->msec_for_start_threshold = arg_parse_decimal_num(optarg, &err);
 	else if (key == 'T')
 		state->msec_for_stop_threshold = arg_parse_decimal_num(optarg, &err);
+	else if (key == OPT_DISABLE_RESAMPLE)
+		state->no_auto_resample = true;
+	else if (key == OPT_DISABLE_CHANNELS)
+		state->no_auto_channels = true;
+	else if (key == OPT_DISABLE_FORMAT)
+		state->no_auto_format = true;
+	else if (key == OPT_DISABLE_SOFTVOL)
+		state->no_softvol = true;
 	else if (key == OPT_FATAL_ERRORS)
 		state->finish_at_xrun = true;
 	else if (key == OPT_TEST_NOWAIT)
@@ -164,6 +181,14 @@ static int open_handle(struct xfer_context *xfer)
 
 	if (state->nonblock)
 		mode |= SND_PCM_NONBLOCK;
+	if (state->no_auto_resample)
+		mode |= SND_PCM_NO_AUTO_RESAMPLE;
+	if (state->no_auto_channels)
+		mode |= SND_PCM_NO_AUTO_CHANNELS;
+	if (state->no_auto_format)
+		mode |= SND_PCM_NO_AUTO_FORMAT;
+	if (state->no_softvol)
+		mode |= SND_PCM_NO_SOFTVOL;
 
 	err = snd_pcm_open(&state->handle, state->node_literal, xfer->direction,
 			   mode);
