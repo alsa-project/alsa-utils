@@ -251,6 +251,12 @@ static int xfer_libasound_pre_process(struct xfer_context *xfer,
 		return err;
 
 	// Assign I/O operation.
+	if (*access == SND_PCM_ACCESS_RW_INTERLEAVED ||
+	    *access == SND_PCM_ACCESS_RW_NONINTERLEAVED) {
+		state->ops = &xfer_libasound_irq_rw_ops;
+	} else {
+		return -ENXIO;
+	}
 	if (state->ops->private_size > 0) {
 		state->private_data = malloc(state->ops->private_size);
 		if (state->private_data == NULL)

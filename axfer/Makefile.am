@@ -20,7 +20,8 @@ noinst_HEADERS = \
 	container.h \
 	mapper.h \
 	xfer.h \
-	xfer-libasound.h
+	xfer-libasound.h \
+	frame-cache.h
 
 axfer_SOURCES = \
 	misc.h \
@@ -41,4 +42,7 @@ axfer_SOURCES = \
 	xfer.c \
 	xfer-options.c \
 	xfer-libasound.h \
-	xfer-libasound.c
+	xfer-libasound.c \
+	frame-cache.h \
+	frame-cache.c \
+	xfer-libasound-irq-rw.c

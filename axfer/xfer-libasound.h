@@ -43,4 +43,6 @@ struct xfer_libasound_ops {
 	unsigned int private_size;
 };
 
+extern const struct xfer_libasound_ops xfer_libasound_irq_rw_ops;
+
 #endif
