@@ -52,4 +52,5 @@ axfer_SOURCES = \
 	waiter.h \
 	waiter.c \
 	waiter-poll.c \
-	waiter-select.c
+	waiter-select.c \
+	waiter-epoll.c
