@@ -19,6 +19,7 @@ static const char *const mapper_type_labels[] = {
 
 static const char *const mapper_target_labels[] = {
 	[MAPPER_TARGET_SINGLE] = "single",
+	[MAPPER_TARGET_MULTIPLE] = "multiple",
 };
 
 int mapper_context_init(struct mapper_context *mapper,
@@ -39,11 +40,17 @@ int mapper_context_init(struct mapper_context *mapper,
 		if (cntr_count == 1) {
 			data = &mapper_muxer_single;
 			mapper->target = MAPPER_TARGET_SINGLE;
+		} else {
+			data = &mapper_muxer_multiple;
+			mapper->target = MAPPER_TARGET_MULTIPLE;
 		}
 	} else {
 		if (cntr_count == 1) {
 			data = &mapper_demuxer_single;
 			mapper->target = MAPPER_TARGET_SINGLE;
+		} else {
+			data = &mapper_demuxer_multiple;
+			mapper->target = MAPPER_TARGET_MULTIPLE;
 		}
 	}
 
@@ -76,6 +83,12 @@ int mapper_context_pre_process(struct mapper_context *mapper,
 	assert(bytes_per_sample > 0);
 	assert(samples_per_frame > 0);
 	assert(cntrs);
+
+	// The purpose of multiple target is to mux/demux each channels to/from
+	// containers.
+	if (mapper->target == MAPPER_TARGET_MULTIPLE &&
+	    samples_per_frame != mapper->cntr_count)
+		return -EINVAL;
 
 	mapper->access = access;
 	mapper->bytes_per_sample = bytes_per_sample;
