@@ -55,3 +55,8 @@ axfer_SOURCES = \
 	waiter-select.c \
 	waiter-epoll.c \
 	xfer-libasound-timer-mmap.c
+
+if HAVE_FFADO
+axfer_SOURCES += xfer-libffado.c
+LDADD += -lffado
+endif
