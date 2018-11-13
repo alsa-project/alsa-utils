@@ -25,4 +25,5 @@ axfer_SOURCES = \
 	subcmd-list.c \
 	container.h \
 	container.c \
-	container-riff-wave.c
+	container-riff-wave.c \
+	container-au.c
