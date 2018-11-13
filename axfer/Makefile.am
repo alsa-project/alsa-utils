@@ -53,4 +53,5 @@ axfer_SOURCES = \
 	waiter.c \
 	waiter-poll.c \
 	waiter-select.c \
-	waiter-epoll.c
+	waiter-epoll.c \
+	xfer-libasound-timer-mmap.c

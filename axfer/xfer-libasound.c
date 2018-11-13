@@ -9,11 +9,17 @@
 #include "xfer-libasound.h"
 #include "misc.h"
 
+static const char *const sched_model_labels [] = {
+	[SCHED_MODEL_IRQ] = "irq",
+	[SCHED_MODEL_TIMER] = "timer",
+};
+
 enum no_short_opts {
         // 200 or later belong to non us-ascii character set.
 	OPT_PERIOD_SIZE = 200,
 	OPT_BUFFER_SIZE,
 	OPT_WAITER_TYPE,
+	OPT_SCHED_MODEL,
 	OPT_DISABLE_RESAMPLE,
 	OPT_DISABLE_CHANNELS,
 	OPT_DISABLE_FORMAT,
@@ -35,6 +41,7 @@ static const struct option l_opts[] = {
 	{"start-delay",		1, 0, 'R'},
 	{"stop-delay",		1, 0, 'T'},
 	{"waiter-type",		1, 0, OPT_WAITER_TYPE},
+	{"sched-model",		1, 0, OPT_SCHED_MODEL},
 	// For plugins in alsa-lib.
 	{"disable-resample",	0, 0, OPT_DISABLE_RESAMPLE},
 	{"disable-channels",	0, 0, OPT_DISABLE_CHANNELS},
@@ -90,6 +97,8 @@ static int xfer_libasound_parse_opt(struct xfer_context *xfer, int key,
 		state->msec_for_stop_threshold = arg_parse_decimal_num(optarg, &err);
 	else if (key == OPT_WAITER_TYPE)
 		state->waiter_type_literal = arg_duplicate_string(optarg, &err);
+	else if (key == OPT_SCHED_MODEL)
+		state->sched_model_literal = arg_duplicate_string(optarg, &err);
 	else if (key == OPT_DISABLE_RESAMPLE)
 		state->no_auto_resample = true;
 	else if (key == OPT_DISABLE_CHANNELS)
@@ -151,6 +160,15 @@ int xfer_libasound_validate_opts(struct xfer_context *xfer)
 		}
 	}
 
+	state->sched_model = SCHED_MODEL_IRQ;
+	if (state->sched_model_literal != NULL) {
+		if (!strcmp(state->sched_model_literal, "timer")) {
+			state->sched_model = SCHED_MODEL_TIMER;
+			state->mmap = true;
+			state->nonblock = true;
+		}
+	}
+
 	if (state->waiter_type_literal != NULL) {
 		if (state->test_nowait) {
 			fprintf(stderr,
@@ -161,7 +179,8 @@ int xfer_libasound_validate_opts(struct xfer_context *xfer)
 		if (!state->nonblock && !state->mmap) {
 			fprintf(stderr,
 				"An option for waiter type should be used "
-				"with nonblock or mmap options.\n");
+				"with nonblock or mmap or timer-based "
+				"scheduling options.\n");
 			return -EINVAL;
 		}
 		state->waiter_type =
@@ -192,6 +211,37 @@ static int set_access_hw_param(struct libasound_state *state)
 	err = snd_pcm_hw_params_set_access_mask(state->handle, state->hw_params,
 						mask);
 	snd_pcm_access_mask_free(mask);
+
+	return err;
+}
+
+static int disable_period_wakeup(struct libasound_state *state)
+{
+	int err;
+
+	if (snd_pcm_type(state->handle) != SND_PCM_TYPE_HW) {
+		logging(state,
+			"Timer-based scheduling is only available for 'hw' "
+			"PCM plugin.\n");
+		return -ENXIO;
+	}
+
+	if (!snd_pcm_hw_params_can_disable_period_wakeup(state->hw_params)) {
+		logging(state,
+			"This hardware doesn't support the mode of no-period-"
+			"wakeup. In this case, timer-based scheduling is not "
+			"available.\n");
+		return -EIO;
+	}
+
+	err = snd_pcm_hw_params_set_period_wakeup(state->handle,
+						  state->hw_params, 0);
+	if (err < 0) {
+		logging(state,
+			"Fail to disable period wakeup so that the hardware "
+			"generates no IRQs during transmission of data "
+			"frames.\n");
+	}
 
 	return err;
 }
@@ -229,7 +279,11 @@ static int open_handle(struct xfer_context *xfer)
 	if (err < 0)
 		return err;
 
-	// TODO: Applying NO_PERIOD_WAKEUP should be done here.
+	if (state->sched_model == SCHED_MODEL_TIMER) {
+		err = disable_period_wakeup(state);
+		if (err < 0)
+			return err;
+	}
 
 	if (xfer->dump_hw_params) {
 		logging(state, "Available HW Params of node: %s\n",
@@ -575,6 +629,7 @@ static int xfer_libasound_pre_process(struct xfer_context *xfer,
 				      snd_pcm_uframes_t *frames_per_buffer)
 {
 	struct libasound_state *state = xfer->private_data;
+	unsigned int flag;
 	int err;
 
 	err = open_handle(xfer);
@@ -606,24 +661,43 @@ static int xfer_libasound_pre_process(struct xfer_context *xfer,
 		return err;
 
 	// Assign I/O operation.
-	if (*access == SND_PCM_ACCESS_RW_INTERLEAVED ||
-	    *access == SND_PCM_ACCESS_RW_NONINTERLEAVED) {
-		state->ops = &xfer_libasound_irq_rw_ops;
-	} else if (*access == SND_PCM_ACCESS_MMAP_INTERLEAVED ||
-		   *access == SND_PCM_ACCESS_MMAP_NONINTERLEAVED) {
-		if (snd_pcm_stream(state->handle) == SND_PCM_STREAM_CAPTURE)
-			state->ops = &xfer_libasound_irq_mmap_r_ops;
-		else
-			state->ops = &xfer_libasound_irq_mmap_w_ops;
+	err = snd_pcm_hw_params_get_period_wakeup(state->handle,
+						  state->hw_params, &flag);
+	if (err < 0)
+		return err;
+
+	if (flag) {
+		if (*access == SND_PCM_ACCESS_RW_INTERLEAVED ||
+		    *access == SND_PCM_ACCESS_RW_NONINTERLEAVED) {
+			state->ops = &xfer_libasound_irq_rw_ops;
+		} else if (*access == SND_PCM_ACCESS_MMAP_INTERLEAVED ||
+			   *access == SND_PCM_ACCESS_MMAP_NONINTERLEAVED) {
+			if (snd_pcm_stream(state->handle) == SND_PCM_STREAM_CAPTURE)
+				state->ops = &xfer_libasound_irq_mmap_r_ops;
+			else
+				state->ops = &xfer_libasound_irq_mmap_w_ops;
+		} else {
+			return -ENXIO;
+		}
 	} else {
-		return -ENXIO;
+		if (*access == SND_PCM_ACCESS_MMAP_INTERLEAVED ||
+		    *access == SND_PCM_ACCESS_MMAP_NONINTERLEAVED) {
+			if (snd_pcm_stream(state->handle) == SND_PCM_STREAM_CAPTURE)
+				state->ops = &xfer_libasound_timer_mmap_r_ops;
+			else
+				state->ops = &xfer_libasound_timer_mmap_w_ops;
+		} else {
+			return -ENXIO;
+		}
 	}
+
 	if (state->ops->private_size > 0) {
 		state->private_data = malloc(state->ops->private_size);
 		if (state->private_data == NULL)
 			return -ENOMEM;
 		memset(state->private_data, 0, state->ops->private_size);
 	}
+
 	err = state->ops->pre_process(state);
 	if (err < 0)
 		return err;
@@ -639,8 +713,11 @@ static int xfer_libasound_pre_process(struct xfer_context *xfer,
 		return err;
 	}
 
-	if (xfer->verbose > 0)
+	if (xfer->verbose > 0) {
 		snd_pcm_dump(state->handle, state->log);
+		logging(state, "Scheduling model:\n");
+		logging(state, "  %s\n", sched_model_labels[state->sched_model]);
+	}
 
 	if (state->use_waiter) {
 		// NOTE: This should be after configuring sw_params due to
@@ -733,7 +810,8 @@ static void xfer_libasound_post_process(struct xfer_context *xfer)
 	pcm_state = snd_pcm_state(state->handle);
 	if (pcm_state != SND_PCM_STATE_OPEN &&
 	    pcm_state != SND_PCM_STATE_DISCONNECTED) {
-		if (snd_pcm_stream(state->handle) == SND_PCM_STREAM_CAPTURE) {
+		if (snd_pcm_stream(state->handle) == SND_PCM_STREAM_CAPTURE ||
+		    state->ops == &xfer_libasound_timer_mmap_w_ops) {
 			err = snd_pcm_drop(state->handle);
 			if (err < 0)
 				logging(state, "snd_pcm_drop(): %s\n",
@@ -774,8 +852,10 @@ static void xfer_libasound_destroy(struct xfer_context *xfer)
 
 	free(state->node_literal);
 	free(state->waiter_type_literal);
+	free(state->sched_model_literal);
 	state->node_literal = NULL;
 	state->waiter_type_literal = NULL;
+	state->sched_model_literal = NULL;
 
 	if (state->hw_params)
 		snd_pcm_hw_params_free(state->hw_params);
