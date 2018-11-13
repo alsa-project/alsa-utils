@@ -81,10 +81,12 @@ static int irq_mmap_process_frames(struct libasound_state *state,
 	snd_pcm_sframes_t consumed_count;
 	int err;
 
-	// Wait for hardware IRQ when no avail space in buffer.
-	err = snd_pcm_wait(state->handle, -1);
-	if (err < 0)
-		return err;
+	if (state->use_waiter) {
+		// Wait for hardware IRQ when no avail space in buffer.
+		err = snd_pcm_wait(state->handle, -1);
+		if (err < 0)
+			return err;
+	}
 
 	// Sync cache in user space to data in kernel space to calculate avail
 	// frames according to the latest positions on PCM buffer.
