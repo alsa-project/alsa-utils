@@ -82,10 +82,22 @@ static int irq_mmap_process_frames(struct libasound_state *state,
 	int err;
 
 	if (state->use_waiter) {
+		unsigned short revents;
+
 		// Wait for hardware IRQ when no avail space in buffer.
-		err = snd_pcm_wait(state->handle, -1);
+		err = xfer_libasound_wait_event(state, -1, &revents);
 		if (err < 0)
 			return err;
+		if (revents & POLLERR) {
+			// TODO: error reporting?
+			return -EIO;
+		}
+		if (!(revents & (POLLIN | POLLOUT)))
+			return -EAGAIN;
+
+		// When rescheduled, current position of data transmission was
+		// queried to actual hardware by a handler of IRQ. No need to
+		// perform it; e.g. ioctl(2) with SNDRV_PCM_IOCTL_HWSYNC.
 	}
 
 	// Sync cache in user space to data in kernel space to calculate avail

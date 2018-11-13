@@ -22,6 +22,7 @@ noinst_HEADERS = \
 	xfer.h \
 	xfer-libasound.h \
 	frame-cache.h
+	waiter.h
 
 axfer_SOURCES = \
 	misc.h \
@@ -47,4 +48,6 @@ axfer_SOURCES = \
 	frame-cache.c \
 	xfer-libasound-irq-rw.c \
 	subcmd-transfer.c \
-	xfer-libasound-irq-mmap.c
+	xfer-libasound-irq-mmap.c \
+	waiter.h \
+	waiter.c
