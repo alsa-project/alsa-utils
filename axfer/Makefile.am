@@ -32,4 +32,5 @@ axfer_SOURCES = \
 	container-voc.c \
 	container-raw.c \
 	mapper.h \
-	mapper.c
+	mapper.c \
+	mapper-single.c
