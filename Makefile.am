@@ -14,7 +14,7 @@ if ALSACONF
 SUBDIRS += alsaconf
 endif
 if HAVE_PCM
-SUBDIRS += aplay iecset speaker-test
+SUBDIRS += aplay iecset speaker-test axfer
 if ALSALOOP
 SUBDIRS += alsaloop
 endif
