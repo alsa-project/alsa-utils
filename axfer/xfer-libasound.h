@@ -15,6 +15,12 @@
 #define logging(state, ...) \
 	snd_output_printf(state->log, __VA_ARGS__)
 
+enum sched_model {
+	SCHED_MODEL_IRQ = 0,
+	SCHED_MODEL_TIMER,
+	SCHED_MODEL_COUNT,
+};
+
 struct xfer_libasound_ops;
 
 struct libasound_state {
@@ -31,6 +37,7 @@ struct libasound_state {
 
 	char *node_literal;
 	char *waiter_type_literal;
+	char *sched_model_literal;
 
 	unsigned int msec_per_period;
 	unsigned int msec_per_buffer;
@@ -54,6 +61,9 @@ struct libasound_state {
 
 	enum waiter_type waiter_type;
 	struct waiter_context *waiter;
+
+	// For scheduling type.
+	enum sched_model sched_model;
 };
 
 // For internal use in 'libasound' module.
@@ -75,5 +85,8 @@ extern const struct xfer_libasound_ops xfer_libasound_irq_rw_ops;
 
 extern const struct xfer_libasound_ops xfer_libasound_irq_mmap_r_ops;
 extern const struct xfer_libasound_ops xfer_libasound_irq_mmap_w_ops;
+
+extern const struct xfer_libasound_ops xfer_libasound_timer_mmap_w_ops;
+extern const struct xfer_libasound_ops xfer_libasound_timer_mmap_r_ops;
 
 #endif
