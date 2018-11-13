@@ -32,6 +32,7 @@ struct libasound_state {
 
 	bool finish_at_xrun:1;
 	bool nonblock:1;
+	bool mmap:1;
 };
 
 // For internal use in 'libasound' module.
@@ -47,5 +48,8 @@ struct xfer_libasound_ops {
 };
 
 extern const struct xfer_libasound_ops xfer_libasound_irq_rw_ops;
+
+extern const struct xfer_libasound_ops xfer_libasound_irq_mmap_r_ops;
+extern const struct xfer_libasound_ops xfer_libasound_irq_mmap_w_ops;
 
 #endif

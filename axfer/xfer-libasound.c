@@ -14,10 +14,11 @@ enum no_short_opts {
 	OPT_FATAL_ERRORS = 200,
 };
 
-#define S_OPTS	"D:N"
+#define S_OPTS	"D:NM"
 static const struct option l_opts[] = {
 	{"device",		1, 0, 'D'},
 	{"nonblock",		0, 0, 'N'},
+	{"mmap",		0, 0, 'M'},
 	// For debugging.
 	{"fatal-errors",	0, 0, OPT_FATAL_ERRORS},
 };
@@ -49,6 +50,8 @@ static int xfer_libasound_parse_opt(struct xfer_context *xfer, int key,
 		state->node_literal = arg_duplicate_string(optarg, &err);
 	else if (key == 'N')
 		state->nonblock = true;
+	else if (key == 'M')
+		state->mmap = true;
 	else if (key == OPT_FATAL_ERRORS)
 		state->finish_at_xrun = true;
 	else
@@ -70,6 +73,13 @@ int xfer_libasound_validate_opts(struct xfer_context *xfer)
 			return -ENOMEM;
 	}
 
+	if (state->mmap && state->nonblock) {
+		fprintf(stderr,
+			"An option for mmap operation should not be used with "
+			"nonblocking option.\n");
+		return -EINVAL;
+	}
+
 	return err;
 }
 
@@ -82,8 +92,13 @@ static int set_access_hw_param(struct libasound_state *state)
 	if (err < 0)
 		return err;
 	snd_pcm_access_mask_none(mask);
-	snd_pcm_access_mask_set(mask, SND_PCM_ACCESS_RW_INTERLEAVED);
-	snd_pcm_access_mask_set(mask, SND_PCM_ACCESS_RW_NONINTERLEAVED);
+	if (state->mmap) {
+		snd_pcm_access_mask_set(mask, SND_PCM_ACCESS_MMAP_INTERLEAVED);
+		snd_pcm_access_mask_set(mask, SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
+	} else {
+		snd_pcm_access_mask_set(mask, SND_PCM_ACCESS_RW_INTERLEAVED);
+		snd_pcm_access_mask_set(mask, SND_PCM_ACCESS_RW_NONINTERLEAVED);
+	}
 	err = snd_pcm_hw_params_set_access_mask(state->handle, state->hw_params,
 						mask);
 	snd_pcm_access_mask_free(mask);
@@ -279,6 +294,12 @@ static int xfer_libasound_pre_process(struct xfer_context *xfer,
 	if (*access == SND_PCM_ACCESS_RW_INTERLEAVED ||
 	    *access == SND_PCM_ACCESS_RW_NONINTERLEAVED) {
 		state->ops = &xfer_libasound_irq_rw_ops;
+	} else if (*access == SND_PCM_ACCESS_MMAP_INTERLEAVED ||
+		   *access == SND_PCM_ACCESS_MMAP_NONINTERLEAVED) {
+		if (snd_pcm_stream(state->handle) == SND_PCM_STREAM_CAPTURE)
+			state->ops = &xfer_libasound_irq_mmap_r_ops;
+		else
+			state->ops = &xfer_libasound_irq_mmap_w_ops;
 	} else {
 		return -ENXIO;
 	}
