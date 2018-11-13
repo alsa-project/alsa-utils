@@ -18,7 +18,8 @@ noinst_HEADERS = \
 	misc.h \
 	subcmd.h \
 	container.h \
-	mapper.h
+	mapper.h \
+	xfer.h
 
 axfer_SOURCES = \
 	misc.h \
@@ -34,4 +35,6 @@ axfer_SOURCES = \
 	mapper.h \
 	mapper.c \
 	mapper-single.c \
-	mapper-multiple.c
+	mapper-multiple.c \
+	xfer.h \
+	xfer.c
