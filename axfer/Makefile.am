@@ -15,10 +15,13 @@ LDADD = \
 
 noinst_HEADERS = \
 	misc.h \
-	subcmd.h
+	subcmd.h \
+	container.h
 
 axfer_SOURCES = \
 	misc.h \
 	subcmd.h \
 	main.c \
-	subcmd-list.c
+	subcmd-list.c \
+	container.h \
+	container.c
