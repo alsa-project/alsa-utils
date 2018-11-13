@@ -30,6 +30,7 @@ struct libasound_state {
 	bool verbose;
 
 	char *node_literal;
+	char *waiter_type_literal;
 
 	unsigned int msec_per_period;
 	unsigned int msec_per_buffer;

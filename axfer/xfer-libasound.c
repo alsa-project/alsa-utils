@@ -13,6 +13,7 @@ enum no_short_opts {
         // 200 or later belong to non us-ascii character set.
 	OPT_PERIOD_SIZE = 200,
 	OPT_BUFFER_SIZE,
+	OPT_WAITER_TYPE,
 	OPT_DISABLE_RESAMPLE,
 	OPT_DISABLE_CHANNELS,
 	OPT_DISABLE_FORMAT,
@@ -33,6 +34,7 @@ static const struct option l_opts[] = {
 	{"avail-min",		1, 0, 'A'},
 	{"start-delay",		1, 0, 'R'},
 	{"stop-delay",		1, 0, 'T'},
+	{"waiter-type",		1, 0, OPT_WAITER_TYPE},
 	// For plugins in alsa-lib.
 	{"disable-resample",	0, 0, OPT_DISABLE_RESAMPLE},
 	{"disable-channels",	0, 0, OPT_DISABLE_CHANNELS},
@@ -86,6 +88,8 @@ static int xfer_libasound_parse_opt(struct xfer_context *xfer, int key,
 		state->msec_for_start_threshold = arg_parse_decimal_num(optarg, &err);
 	else if (key == 'T')
 		state->msec_for_stop_threshold = arg_parse_decimal_num(optarg, &err);
+	else if (key == OPT_WAITER_TYPE)
+		state->waiter_type_literal = arg_duplicate_string(optarg, &err);
 	else if (key == OPT_DISABLE_RESAMPLE)
 		state->no_auto_resample = true;
 	else if (key == OPT_DISABLE_CHANNELS)
@@ -147,6 +151,25 @@ int xfer_libasound_validate_opts(struct xfer_context *xfer)
 		}
 	}
 
+	if (state->waiter_type_literal != NULL) {
+		if (state->test_nowait) {
+			fprintf(stderr,
+				"An option for waiter type should not be "
+				"used with nowait test option.\n");
+			return -EINVAL;
+		}
+		if (!state->nonblock && !state->mmap) {
+			fprintf(stderr,
+				"An option for waiter type should be used "
+				"with nonblock or mmap options.\n");
+			return -EINVAL;
+		}
+		state->waiter_type =
+			waiter_type_from_label(state->waiter_type_literal);
+	} else {
+		state->waiter_type = WAITER_TYPE_DEFAULT;
+	}
+
 	return err;
 }
 
@@ -201,7 +224,6 @@ static int open_handle(struct xfer_context *xfer)
 
 	if ((state->nonblock || state->mmap) && !state->test_nowait)
 		state->use_waiter = true;
-	state->waiter_type = WAITER_TYPE_DEFAULT;
 
 	err = snd_pcm_hw_params_any(state->handle, state->hw_params);
 	if (err < 0)
@@ -751,7 +773,9 @@ static void xfer_libasound_destroy(struct xfer_context *xfer)
 	struct libasound_state *state = xfer->private_data;
 
 	free(state->node_literal);
+	free(state->waiter_type_literal);
 	state->node_literal = NULL;
+	state->waiter_type_literal = NULL;
 
 	if (state->hw_params)
 		snd_pcm_hw_params_free(state->hw_params);
