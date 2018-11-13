@@ -64,11 +64,17 @@ int xfer_context_init(struct xfer_context *xfer, enum xfer_type type,
 	if (err < 0)
 		return err;
 
+	err = xfer_options_parse_args(xfer, entry->data, argc, argv);
+	if (err < 0)
+		return err;
+
 	return xfer->ops->validate_opts(xfer);
 }
 
 void xfer_context_destroy(struct xfer_context *xfer)
 {
+	int i;
+
 	assert(xfer);
 
 	if (!xfer->ops)
@@ -78,6 +84,20 @@ void xfer_context_destroy(struct xfer_context *xfer)
 		xfer->ops->destroy(xfer);
 	if (xfer->private_data)
 		free(xfer->private_data);
+
+	if (xfer->paths) {
+		for (i = 0; i < xfer->path_count; ++i)
+			free(xfer->paths[i]);
+		free(xfer->paths);
+	}
+
+	xfer->paths = NULL;
+
+	free(xfer->sample_format_literal);
+	xfer->sample_format_literal = NULL;
+
+	free(xfer->cntr_format_literal);
+	xfer->cntr_format_literal = NULL;
 }
 
 int xfer_context_pre_process(struct xfer_context *xfer,
@@ -99,6 +119,54 @@ int xfer_context_pre_process(struct xfer_context *xfer,
 	if (!xfer->ops)
 		return -ENXIO;
 
+	if (xfer->direction == SND_PCM_STREAM_CAPTURE) {
+		// For capture direction, use values in options if given.
+		if (xfer->sample_format != SND_PCM_FORMAT_UNKNOWN)
+			*format = xfer->sample_format;
+		if (xfer->samples_per_frame > 0)
+			*samples_per_frame = xfer->samples_per_frame;
+		if (xfer->frames_per_second > 0)
+			*frames_per_second = xfer->frames_per_second;
+	} else if (xfer->direction == SND_PCM_STREAM_PLAYBACK) {
+		// For playback direction, check values in given options so that
+		// they don't mismatch to parameters from media container.
+		if (*format != xfer->sample_format) {
+			// Not initial value.
+			if (xfer->sample_format != SND_PCM_FORMAT_UNKNOWN) {
+				fprintf(stderr,
+					"Sample format mismatch: %s is given "
+					"but %s by files\n",
+					snd_pcm_format_name(xfer->sample_format),
+					snd_pcm_format_name(*format));
+				return -EINVAL;
+			}
+		}
+
+		if (*samples_per_frame != xfer->samples_per_frame) {
+			// Not initial value.
+			if (xfer->samples_per_frame > 0) {
+				fprintf(stderr,
+					"The number of channels mismatch: %u "
+					"is given but %u by files\n",
+					xfer->samples_per_frame,
+					*samples_per_frame);
+				return -EINVAL;
+			}
+		}
+
+		if (*frames_per_second != xfer->frames_per_second) {
+			// Not initial value.
+			if (xfer->frames_per_second != 8000) {
+				fprintf(stderr,
+					"Sampling rate mismatch: %u is given "
+					"but %u by files\n",
+					xfer->frames_per_second,
+					*frames_per_second);
+				return -EINVAL;
+			}
+		}
+	}
+
 	err = xfer->ops->pre_process(xfer, format, samples_per_frame,
 				     frames_per_second, access,
 				     frames_per_buffer);
@@ -112,6 +180,16 @@ int xfer_context_pre_process(struct xfer_context *xfer,
 	assert(*access >= SND_PCM_ACCESS_MMAP_INTERLEAVED);
 	assert(*access <= SND_PCM_ACCESS_LAST);
 	assert(*frames_per_buffer > 0);
+
+	xfer->sample_format = *format;
+	xfer->samples_per_frame = *samples_per_frame;
+	xfer->frames_per_second = *frames_per_second;
+
+	if (xfer->direction == SND_PCM_STREAM_CAPTURE) {
+		err = xfer_options_fixup_paths(xfer);
+		if (err < 0)
+			return err;
+	}
 
 	if (xfer->verbose > 1) {
 		fprintf(stderr, "Transfer: %s\n",

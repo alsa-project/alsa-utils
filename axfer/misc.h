@@ -13,4 +13,7 @@
 
 #define ARRAY_SIZE(array)	(sizeof(array)/sizeof(array[0]))
 
+char *arg_duplicate_string(const char *str, int *err);
+long arg_parse_decimal_num(const char *str, int *err);
+
 #endif

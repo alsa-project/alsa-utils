@@ -37,4 +37,5 @@ axfer_SOURCES = \
 	mapper-single.c \
 	mapper-multiple.c \
 	xfer.h \
-	xfer.c
+	xfer.c \
+	xfer-options.c

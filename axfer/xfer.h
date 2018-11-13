@@ -26,7 +26,20 @@ struct xfer_context {
 	const struct xfer_ops *ops;
 	void *private_data;
 
+	char *sample_format_literal;
+	char *cntr_format_literal;
 	unsigned int verbose;
+	unsigned int frames_per_second;
+	unsigned int samples_per_frame;
+	bool help:1;
+	bool multiple_cntrs:1;	// For mapper.
+
+	snd_pcm_format_t sample_format;
+
+	// For containers.
+	char **paths;
+	unsigned int path_count;
+	enum container_format cntr_format;
 };
 
 enum xfer_type xfer_type_from_label(const char *label);
@@ -46,6 +59,12 @@ int xfer_context_process_frames(struct xfer_context *xfer,
 				unsigned int *frame_count);
 void xfer_context_pause(struct xfer_context *xfer, bool enable);
 void xfer_context_post_process(struct xfer_context *xfer);
+
+struct xfer_data;
+int xfer_options_parse_args(struct xfer_context *xfer,
+			    const struct xfer_data *data, int argc,
+			    char *const *argv);
+int xfer_options_fixup_paths(struct xfer_context *xfer);
 
 // For internal use in 'xfer' module.
 
