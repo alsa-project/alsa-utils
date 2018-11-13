@@ -34,6 +34,7 @@ struct xfer_context {
 	unsigned int samples_per_frame;
 	bool help:1;
 	bool quiet:1;
+	bool dump_hw_params:1;
 	bool multiple_cntrs:1;	// For mapper.
 
 	snd_pcm_format_t sample_format;
