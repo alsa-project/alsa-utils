@@ -1,8 +1,10 @@
 TESTS = \
-	container-test
+	container-test  \
+	mapper-test
 
 check_PROGRAMS = \
-	container-test
+	container-test \
+	mapper-test
 
 container_test_SOURCES = \
 	../container.h \
@@ -13,3 +15,17 @@ container_test_SOURCES = \
 	../container-raw.c \
 	generator.c \
 	container-test.c
+
+mapper_test_SOURCES = \
+	../container.h \
+	../container.c \
+	../container-riff-wave.c \
+	../container-au.c \
+	../container-voc.c \
+	../container-raw.c \
+	../mapper.h \
+	../mapper.c \
+	../mapper-single.c \
+	../mapper-multiple.c \
+	generator.c \
+	mapper-test.c
