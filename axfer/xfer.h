@@ -15,6 +15,7 @@
 
 enum xfer_type {
 	XFER_TYPE_UNSUPPORTED = -1,
+	XFER_TYPE_LIBASOUND = 0,
 	XFER_TYPE_COUNT,
 };
 
@@ -94,6 +95,6 @@ struct xfer_data {
 	unsigned int private_size;
 };
 
-extern const struct xfer_data xfer_alsa;
+extern const struct xfer_data xfer_libasound;
 
 #endif

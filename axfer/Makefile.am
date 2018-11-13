@@ -19,7 +19,8 @@ noinst_HEADERS = \
 	subcmd.h \
 	container.h \
 	mapper.h \
-	xfer.h
+	xfer.h \
+	xfer-libasound.h
 
 axfer_SOURCES = \
 	misc.h \
@@ -38,4 +39,6 @@ axfer_SOURCES = \
 	mapper-multiple.c \
 	xfer.h \
 	xfer.c \
-	xfer-options.c
+	xfer-options.c \
+	xfer-libasound.h \
+	xfer-libasound.c
