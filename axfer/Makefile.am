@@ -45,4 +45,5 @@ axfer_SOURCES = \
 	xfer-libasound.c \
 	frame-cache.h \
 	frame-cache.c \
-	xfer-libasound-irq-rw.c
+	xfer-libasound-irq-rw.c \
+	subcmd-transfer.c
