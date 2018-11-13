@@ -13,4 +13,6 @@
 
 int subcmd_list(int argc, char *const *argv, snd_pcm_stream_t direction);
 
+int subcmd_transfer(int argc, char *const *argv, snd_pcm_stream_t direction);
+
 #endif

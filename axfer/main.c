@@ -215,7 +215,7 @@ int main(int argc, char *const *argv)
 		decide_subcmd(argc, argv, &subcmd);
 
 	if (subcmd == SUBCMD_TRANSFER)
-		printf("execute 'transfer' subcmd.\n");
+		err = subcmd_transfer(argc, argv, direction);
 	else if (subcmd == SUBCMD_LIST)
 		err = subcmd_list(argc, argv, direction);
 	else if (subcmd == SUBCMD_VERSION)
