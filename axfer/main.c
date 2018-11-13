@@ -24,6 +24,42 @@ enum subcmds {
 	SUBCMD_VERSION,
 };
 
+char *arg_duplicate_string(const char *str, int *err)
+{
+	char *ptr;
+
+	// For safe.
+	if (strlen(str) > 1024) {
+		*err = -EINVAL;
+		return NULL;
+	}
+
+	ptr = strdup(str);
+	if (ptr == NULL)
+		*err = -ENOMEM;
+
+	return ptr;
+}
+
+long arg_parse_decimal_num(const char *str, int *err)
+{
+	long val;
+	char *endptr;
+
+	errno = 0;
+	val = strtol(str, &endptr, 0);
+	if (errno > 0) {
+		*err = -errno;
+		return 0;
+	}
+	if (*endptr != '\0') {
+		*err = -EINVAL;
+		return 0;
+	}
+
+	return val;
+}
+
 static void print_version(const char *const cmdname)
 {
 	printf("%s: version %s\n", cmdname, SND_UTIL_VERSION_STR);
