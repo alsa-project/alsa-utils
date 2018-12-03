@@ -70,7 +70,8 @@ static void print_help(void)
 	printf("help\n");
 }
 
-static void decide_subcmd(int argc, char *const *argv, enum subcmds *subcmd)
+// Backward compatibility to aplay(1).
+static bool decide_subcmd(int argc, char *const *argv, enum subcmds *subcmd)
 {
 	static const struct {
 		const char *const name;
@@ -92,17 +93,15 @@ static void decide_subcmd(int argc, char *const *argv, enum subcmds *subcmd)
 	char *pos;
 	int i, j;
 
-	if (argc == 1) {
-		*subcmd = SUBCMD_HELP;
-		return;
-	}
+	if (argc == 1)
+		return false;
 
 	// Original command system. For long options.
 	for (i = 0; i < ARRAY_SIZE(long_opts); ++i) {
 		for (j = 0; j < argc; ++j) {
 			if (!strcmp(long_opts[i].name, argv[j])) {
 				*subcmd = long_opts[i].subcmd;
-				return;
+				return true;
 			}
 		}
 	}
@@ -117,15 +116,16 @@ static void decide_subcmd(int argc, char *const *argv, enum subcmds *subcmd)
 			for (j = 0; j < ARRAY_SIZE(short_opts); ++j) {
 				if (*pos == short_opts[j].c) {
 					*subcmd = short_opts[j].subcmd;
-					return;
+					return true;
 				}
 			}
 		}
 	}
 
-	*subcmd = SUBCMD_TRANSFER;
+	return false;
 }
 
+// Backward compatibility to aplay(1).
 static bool decide_direction(int argc, char *const *argv,
 			     snd_pcm_stream_t *direction)
 {
@@ -241,9 +241,9 @@ int main(int argc, char *const *argv)
 	if (strstr(argv[0], "arecord") == argv[0] + strlen(argv[0]) - 7 ||
 	    strstr(argv[0], "aplay") == argv[0] + strlen(argv[0]) - 5) {
 		if (!decide_direction(argc, argv, &direction))
-			subcmd = SUBCMD_HELP;
-		else
-			decide_subcmd(argc, argv, &subcmd);
+			direction = SND_PCM_STREAM_PLAYBACK;
+		if (!decide_subcmd(argc, argv, &subcmd))
+			subcmd = SUBCMD_TRANSFER;
 	} else {
 		// The first option should be one of subcommands.
 		if (!detect_subcmd(argc, argv, &subcmd))
