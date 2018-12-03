@@ -233,11 +233,11 @@ static int detect_operation(int argc, char *const *argv, enum list_op *op)
 	};
 	int i;
 
-	if (strcmp(argv[1], "list") || argc < 3)
+	if (argc < 2)
 		return false;
 
 	for (i = 0; i < ARRAY_SIZE(ops); ++i) {
-		if (!strcmp(argv[2], ops[i])) {
+		if (!strcmp(argv[1], ops[i])) {
 			*op = i;
 			return true;
 		}
@@ -252,11 +252,9 @@ int subcmd_list(int argc, char *const *argv, snd_pcm_stream_t direction)
 	int err = 0;
 
 	// Renewed command system.
-	if (argc > 1) {
-		if (!detect_operation(argc, argv, &op) &&
-		    !decide_operation(argc, argv, &op))
-				err = -EINVAL;
-	}
+	if (!detect_operation(argc, argv, &op) &&
+	    !decide_operation(argc, argv, &op))
+			err = -EINVAL;
 
 	if (op == LIST_OP_DEVICE)
 		err = list_devices(direction);

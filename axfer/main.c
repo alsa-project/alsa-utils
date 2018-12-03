@@ -251,8 +251,14 @@ int main(int argc, char *const *argv)
 		// The second option should be either 'capture' or 'direction'
 		// if subcommand is neither 'version' nor 'help'.
 		if (subcmd != SUBCMD_VERSION && subcmd != SUBCMD_HELP) {
-			if (!detect_direction(argc, argv, &direction))
+			if (!detect_direction(argc, argv, &direction)) {
 				subcmd = SUBCMD_HELP;
+			} else {
+				// argv[0] is needed for unparsed option to use
+				// getopt_long(3).
+				argc -= 2;
+				argv += 2;
+			}
 		}
 	}
 
