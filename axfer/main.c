@@ -72,12 +72,6 @@ static void print_help(void)
 
 static void decide_subcmd(int argc, char *const *argv, enum subcmds *subcmd)
 {
-	static const char *const subcmds[] = {
-		[SUBCMD_TRANSFER] = "transfer",
-		[SUBCMD_LIST] = "list",
-		[SUBCMD_HELP] = "help",
-		[SUBCMD_VERSION] = "version",
-	};
 	static const struct {
 		const char *const name;
 		enum subcmds subcmd;
@@ -101,14 +95,6 @@ static void decide_subcmd(int argc, char *const *argv, enum subcmds *subcmd)
 	if (argc == 1) {
 		*subcmd = SUBCMD_HELP;
 		return;
-	}
-
-	// sub-command system.
-	for (i = 0; i < ARRAY_SIZE(subcmds); ++i) {
-		if (!strcmp(argv[1], subcmds[i])) {
-			*subcmd = i;
-			return;
-		}
 	}
 
 	// Original command system. For long options.
@@ -203,16 +189,72 @@ static bool decide_direction(int argc, char *const *argv,
 	return false;
 }
 
+static bool detect_subcmd(int argc, char *const *argv, enum subcmds *subcmd)
+{
+	static const char *const subcmds[] = {
+		[SUBCMD_TRANSFER] = "transfer",
+		[SUBCMD_LIST] = "list",
+		[SUBCMD_HELP] = "help",
+		[SUBCMD_VERSION] = "version",
+	};
+	int i;
+
+	if (argc < 2)
+		return false;
+
+	for (i = 0; i < ARRAY_SIZE(subcmds); ++i) {
+		if (!strcmp(argv[1], subcmds[i])) {
+			*subcmd = i;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool detect_direction(int argc, char *const *argv,
+			     snd_pcm_stream_t *direction)
+{
+	if (argc < 3)
+		return false;
+
+	if (!strcmp(argv[2], "capture")) {
+		*direction = SND_PCM_STREAM_CAPTURE;
+		return true;
+	}
+
+	if (!strcmp(argv[2], "playback")) {
+		*direction = SND_PCM_STREAM_PLAYBACK;
+		return true;
+	}
+
+	return false;
+}
+
 int main(int argc, char *const *argv)
 {
 	snd_pcm_stream_t direction;
 	enum subcmds subcmd;
 	int err = 0;
 
-	if (!decide_direction(argc, argv, &direction))
-		subcmd = SUBCMD_HELP;
-	else
-		decide_subcmd(argc, argv, &subcmd);
+	// For compatibility to aplay(1) implementation.
+	if (strstr(argv[0], "arecord") == argv[0] + strlen(argv[0]) - 7 ||
+	    strstr(argv[0], "aplay") == argv[0] + strlen(argv[0]) - 5) {
+		if (!decide_direction(argc, argv, &direction))
+			subcmd = SUBCMD_HELP;
+		else
+			decide_subcmd(argc, argv, &subcmd);
+	} else {
+		// The first option should be one of subcommands.
+		if (!detect_subcmd(argc, argv, &subcmd))
+			subcmd = SUBCMD_HELP;
+		// The second option should be either 'capture' or 'direction'
+		// if subcommand is neither 'version' nor 'help'.
+		if (subcmd != SUBCMD_VERSION && subcmd != SUBCMD_HELP) {
+			if (!detect_direction(argc, argv, &direction))
+				subcmd = SUBCMD_HELP;
+		}
+	}
 
 	if (subcmd == SUBCMD_TRANSFER)
 		err = subcmd_transfer(argc, argv, direction);
