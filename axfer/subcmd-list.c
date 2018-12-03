@@ -10,6 +10,13 @@
 #include "misc.h"
 
 #include <getopt.h>
+#include <stdbool.h>
+
+enum list_op {
+	LIST_OP_DEVICE = 0,
+	LIST_OP_PCM,
+	LIST_OP_HELP,
+};
 
 static int dump_device(snd_ctl_t *handle, const char *id, const char *name,
 		       snd_pcm_stream_t direction, snd_pcm_info_t *info)
@@ -189,6 +196,35 @@ static void print_help(void)
 	printf("help for list sub-command.\n");
 }
 
+// Backward compatibility to aplay(1).
+static bool decide_operation(int argc, char *const *argv, enum list_op *op)
+{
+	static const char *s_opts = "hlL";
+	static const struct option l_opts[] = {
+		{"list-devices",	0, NULL, 'l'},
+		{"list-pcms",		0, NULL, 'L'},
+		{NULL,			0, NULL, 0}
+	};
+
+	optind = 0;
+	opterr = 0;
+	while (1) {
+		int c = getopt_long(argc, argv, s_opts, l_opts, NULL);
+		if (c < 0)
+			break;
+		if (c == 'l') {
+			*op = LIST_OP_DEVICE;
+			return true;
+		}
+		if (c == 'L') {
+			*op = LIST_OP_PCM;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int subcmd_list(int argc, char *const *argv, snd_pcm_stream_t direction)
 {
 	static const struct {
@@ -198,14 +234,9 @@ int subcmd_list(int argc, char *const *argv, snd_pcm_stream_t direction)
 		{"device",	list_devices},
 		{"pcm",		list_pcms},
 	};
+	enum list_op op;
 	int i;
-	static const char *s_opts = "hlL";
-	static const struct option l_opts[] = {
-		{"list-devices",	0, NULL, 'l'},
-		{"list-pcms",		0, NULL, 'L'},
-		{NULL,			0, NULL, 0}
-	};
-	int c;
+	int err;
 
 	// Renewed command system.
 	if (argc > 2 && !strcmp(argv[1], "list")) {
@@ -215,20 +246,17 @@ int subcmd_list(int argc, char *const *argv, snd_pcm_stream_t direction)
 		}
 	}
 
-	// Original command system.
-	optind = 0;
-	opterr = 0;
-	while (1) {
-		c = getopt_long(argc, argv, s_opts, l_opts, NULL);
-		if (c < 0)
-			break;
-		if (c == 'l')
-			return list_devices(direction);
-		if (c == 'L')
-			return list_pcms(direction);
+	if (!decide_operation(argc, argv, &op)) {
+		err = -EINVAL;
+		op = LIST_OP_HELP;
 	}
 
-	print_help();
+	if (op == LIST_OP_DEVICE)
+		err = list_devices(direction);
+	else if (op == LIST_OP_PCM)
+		err = list_pcms(direction);
+	else
+		print_help();
 
-	return 0;
+	return err;
 }
