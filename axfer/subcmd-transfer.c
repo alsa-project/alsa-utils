@@ -435,13 +435,6 @@ int subcmd_transfer(int argc, char *const *argv, snd_pcm_stream_t direction)
 	uint64_t actual_frame_count = 0;
 	int err = 0;
 
-	// Renewed command system.
-	if (argc > 2 && !strcmp(argv[1], "transfer")) {
-		// Go ahead to parse file paths properly.
-		--argc;
-		++argv;
-	}
-
 	err = prepare_signal_handler(&ctx);
 	if (err < 0)
 		return err;
