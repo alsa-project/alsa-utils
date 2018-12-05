@@ -1,0 +1,342 @@
+.TH AXFER\-TRANSFER 1 "28 November 2018" "alsa\-utils"
+
+.SH NAME
+axfer\-transfer \- transferrer of audio data frame for sound devices and nodes.
+
+.SH SYNOPSIS
+
+.B axfer transfer
+.I direction
+[
+.I common\-options
+] [
+.I backend\-options
+] [
+.I filepath
+]
+
+.B axfer transfer
+.I direction
+[
+.I common\-options
+] [
+.I backend\-options
+]
+.I \-I
+|
+.I \-\-separate\-channels filepath ...
+
+direction =
+.B capture
+|
+.B playback
+
+common\-options = ( read
+.I OPTIONS
+section )
+
+backend\-options = ( read
+.I OPTIONS
+section )
+
+filepaths = ( read
+.I OPTIONS
+section )
+
+.SH DESCRIPTION
+The
+.B transfer
+subcommand of
+.B axfer
+performs transmission of audio data frames for devices available in supported
+backends. This program is essentially designed to use alsa\-lib APIs
+(libasound backend) to handle sound devices supported by Linux sound subsystem
+(ALSA).
+
+.SH OPTIONS
+
+.SS Direction
+
+.TP
+.B capture
+Operates for capture transmission.
+
+.TP
+.B playback
+Operates for playback transmission.
+
+.SS Filepath
+
+Filepath is handled as a path relative to current working directory of run time
+if it\(aqs not full path from root directory.
+
+The standard input or output is used if filepath is not specified or given as
+.I \(aq\-\(aq
+\&.
+
+For playback transmission, container format of given
+\I filepath
+is detected automatically and metadata is used for parameters of sample format,
+channels, rate, duration. If nothing detected, content of given file path is
+handled as raw data. In this case, the parameters should be indicated as
+options.
+
+Multiple
+.I filepaths
+are allowed with
+.I \-I
+|
+.I \-\-separate\-channels
+option. In this case, standard input and output is not available. The same
+.I filepath
+is not allowed except for paths listed below:
+ \- /dev/null
+ \- /dev/zero
+ \- /dev/full
+ \- /dev/random
+ \- /dev/urandom
+
+.SS Common options
+
+.TP
+.B \-h, \-\-help
+Print help messages and finish run time. Not yet implemented.
+
+.TP
+.B \-q, \-\-quiet
+Quiet mode. Suppress messages (not sound :))
+
+.TP
+.B \-v, \-\-verbose
+Verbose mode. Runtime dumps supplemental information according to the number of
+this option given in command line.
+
+.TP
+.B \-d, \-\-duration=#
+Interrupt after # seconds. A value of zero means infinity. The default is zero,
+so if this option is omitted then the transmission process will run until it is
+killed. Either
+.I \-d
+or
+.I \-s
+option is available exclusively.
+
+.TP
+.B \-s, \-\-samples=#
+Interrupt after transmission of # number of data frames. A value of zero means
+infinity. The default is zero, so if this options is omitted then the
+transmission process will run until it is killed. Either
+.I \-d
+or
+.I \-s
+option is available exclusively.
+
+.TP
+.B \-f, \-\-format=FORMAT
+Indicate format of audio sample. This is required for capture transmission, or
+playback transmission with files including raw audio data.
+
+Available sample format is listed below:
+ - [S8|U8|S16|U16|S32|U32][_LE|_BE]
+ - [S24|U24][_LE|_BE]
+ - FLOAT[_LE|_BE]
+ - FLOAT64[_LE|_BE]
+ - IEC958_SUBFRAME[_LE|_BE]
+ - MU_LAW
+ - A_LAW
+ - [S20|U20][_LE|_BE]
+ - [S24|U24][_3LE|_3BE]
+ - [S20|U20][_3LE|_3BE]
+ - [S18|U18][_3LE|_3BE]
+ - DSD_U8
+ - DSD_[U16|U32][_LE|_BE]
+
+If endian\-ness is omitted, host endian\-ness is used.
+
+Some special formats are available:
+ - cd (16 bit little endian, 44100, stereo) [= \-f S16_LE \-c 2 \-r 44100]
+ - cdr (16 bit big endian, 44100, stereo) [= \-f S16_BE \-c 2 \-f 44100]
+ - dat (16 bit little endian, 48000, stereo) [= \-f S16_LE \-c 2 \-r 48000]
+
+If omitted,
+.I U8
+is used as a default. Actual available formats are restricted by each
+transmission backend.
+
+Unavailable sample format is listed below. These format has size of data frame
+unaligned to byte unit.
+
+ - IMA_ADPCM
+ - MPEG
+ - GSM
+ - SPECIAL
+ - G723_24
+ - G723_24_1B
+ - G723_40
+ - G723_40_1B
+
+.TP
+.B \-c, \-\-channels=#
+Indicate the number of audio data samples per frame. This is required for
+capture transmission, or playback transmission with files including raw audio
+data. The value should be between
+.I 1 to
+.I 256
+\&. If omitted,
+.I 1
+is used as a default.
+
+.TP
+.B \-r, \-\-rate=#
+Indicate the number of audio data frame per second. This is required for
+capture transmission, or playback transmission with files including raw audio
+data. If the value is less than
+.I 1000
+, it\(aqs interpreted by
+.I kHz
+unit. The value should be between
+.I 2000
+and
+.I 192000
+\&. If omitted,
+.I 8000
+is used as a default.
+
+.TP
+.B \-t, \-\-file\-type=TYPES
+Indicate the type of file. This is required for capture transmission. Available
+types are listed below:
+ - wav: Microsoft/IBM RIFF/Wave format
+ - au, sparc: Sparc AU format
+ - voc: Creative Tech. voice format
+ - raw: raw data
+
+When nothing is indicated, for capture transmission, the type is decided
+according to suffix of
+.I filepath
+, and
+.I raw
+type is used for fallback.
+
+.TP
+.B \-I, \-\-separate\-channels
+Indicate this option when several files are going to be handled. For capture
+transmission, if one filepath is given as
+.I filepath
+, a list of
+.I filepaths
+is generated in a formula \(aq<filepath>\-<sequential number>[.suffix]\(aq.
+The suffix is omitted when raw format of container is used.
+
+.TP
+.B \-\-dump\-hw\-params
+Dump hardware parameters and finish run time if backend supports it.
+
+.TP
+.B \-\-xfer\-backend=BACKEND
+Select backend of transmission from a list below. The default is libasound.
+.br
+ - libasound
+ - libffado (optional if compiled)
+
+.SS Backend options for libasound
+
+(placeholder)
+
+.SS Backend options for libffado
+
+(placeholder)
+
+.SH POSIX SIGNALS
+During transmission,
+.I SIGINT
+and
+.I SIGTERM
+The above will close handled files and finish run time.
+
+.I SIGTSTP
+The above will suspend PCM substream and
+.I SIGCONT
+The above will resume it. No XRUNs are expected.
+
+The other signals perform default behaviours.
+
+.SH EXAMPLES
+
+.PP
+.in +4n
+.EX
+.B $ axfer transfer playback \-d 1 something
+.EE
+.in
+.PP
+
+The above will transfer audio data frame in \(aqsomething\(aq file for playback
+during 1 second.  The sample format is detected automatically as a result to
+parse \(aqsomething\(aq as long as it\(aqs compliant to one of Microsoft/IBM
+RIFF/Wave, Sparc AU, Creative Tech. voice formats. If nothing detected,
+.I \-r
+,
+.I \-c
+and
+.I \-f
+should be given,
+or
+.I \-f
+should be given with special format.
+
+.PP
+.in +4n
+.EX
+.B $ axfer transfer playback \-r 22050 \-c 1 \-f S16_LE \-t raw something
+.EE
+.in
+.PP
+
+The above will transfer audio data frame in \(aqsomething\(aq file including no
+information of sample format, as sample format of 22050 Hz, monaural, signed 16
+bit little endian PCM for playback. The transmission continues till catching
+.I SIGINT
+from keyboard or
+.I SIGTERM
+by
+.I kill(1)
+\&.
+
+.PP
+.in +4n
+.EX
+.B $ axfer transfer capture \-d 10 \-f cd something.wav
+.EE
+.in
+.PP
+
+The above will transfer audio data frame to \(aqsomething.wav\(aq file as
+sample format of 44.1 kHz, 2 channels, signed 16 bit little endian PCM, during
+10 seconds. The file format is Microsoft/IBM RIFF/Wave according to suffix of
+the given
+.I filepath
+\&.
+
+.PP
+.in +4n
+.EX
+.B $ axfer transfer capture \-s 1024 \-r 48000 \-c 2 \-f S32_BE \-I \-t au channels
+.EE
+.in
+.PP
+
+The above will transfer audio data frame as sample format of 48.0 kHz, 2
+channels, signed 32 bit big endian PCM for 1,024 number of data frames to files
+named \(aqchannels\-1.au\(aq and \(aqchannels\-2.au\(aq.
+
+.SH SEE ALSO
+\fB
+axfer(1),
+axfer\-list(1),
+alsamixer(1),
+amixer(1)
+\fP
+
+.SH AUTHOR
+Takashi Sakamoto <o\-takashi@sakamocchi.jp>
