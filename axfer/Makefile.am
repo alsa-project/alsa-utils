@@ -1,6 +1,9 @@
 bin_PROGRAMS = \
 	axfer
 
+man_MANS = \
+	axfer.1
+
 # To include headers for gettext and version.
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include
@@ -60,3 +63,6 @@ if HAVE_FFADO
 axfer_SOURCES += xfer-libffado.c
 LDADD += -lffado
 endif
+
+EXTRA_DIST = \
+	axfer.1
