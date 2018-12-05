@@ -1,0 +1,91 @@
+.TH AXFER 1 "28 November 2018" "alsa\-utils"
+
+.SH NAME
+axfer \- command\-line sound recorder and player for sound devices and nodes
+supported by Linux sound subsystem (Advanced Linux Sound Architecture, also
+known as ALSA).
+
+.SH SYNOPSYS
+
+.B axfer
+.I subcommand direction options
+
+subcommand =
+.B transfer
+|
+.B list
+|
+.B version
+|
+.B help
+
+direction =
+.B capture
+|
+.B playback
+
+options = ( depends on
+.I subcommand
+)
+
+.SH DESCRIPTION
+The
+.B axfer
+is a command\-line recorder and player to transfer audio data frame between H
+sound devices/nodes and files/stdin/stdout.
+
+.SH OPTIONS
+
+.SS Subcommand
+
+.TP
+.B transfer
+Performs transmission of audio data frame. Its detail is described in
+.B axfer\-transfer(1)
+manual.
+
+.TP
+.B list
+Dumps lists of available sound devices and nodes. Its detail is described in
+.B axfer\-list(1)
+manual.
+
+.TP
+.B version
+Prints version of this application (as the same version as alsa\-utils package).
+
+.TP
+.B help
+Prints a short message about subcommands for users to enter this application.
+
+.SS Direction
+
+.TP
+.B capture
+Operates for capture transmission.
+
+.TP
+.B playback
+Operates for playback transmission.
+
+.SH EXIT STATUS
+
+.I EXIT_SUCCESS
+(0) if run time successfully finished, else
+.I EXIT_FAILURE
+(1).
+
+.SH REPORTING BUGS
+Report any bugs to mailing list of ALSA community
+<alsa\-devel@alsa\-project.org> where the development and maintenance is
+primarily done. Bug tracking service of alsa\-utils repository on github.com is
+also available.
+
+.SH SEE ALSO
+.B axfer\-transfer(1),
+.B axfer\-list(1),
+.B alsamixer(1),
+.B amixer(1)
+
+.SH AUTHOR
+Takashi Sakamoto <o\-takashi@sakamocchi.jp>
