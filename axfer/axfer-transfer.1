@@ -330,6 +330,80 @@ The above will transfer audio data frame as sample format of 48.0 kHz, 2
 channels, signed 32 bit big endian PCM for 1,024 number of data frames to files
 named \(aqchannels\-1.au\(aq and \(aqchannels\-2.au\(aq.
 
+.SH COMPATIBILITY TO APLAY
+
+The
+.B transfer
+subcommand of
+.B axfer
+is designed to keep compatibility to aplay(1). However some options below are
+not compatible due to several technical reasons.
+
+.TP
+.I \-I, \-\-separate\-channels
+This option is supported just for files to store audio data frames corresponding
+to each channel. In aplay(1) implementation, this option has an additional
+effect to use PCM buffer aligned to non\-interleaved order if a target device
+supports. As of 2018, PCM buffer of non\-interleaved order is hardly used by
+sound devices.
+
+.TP
+.I \-\-max\-file\-time=#
+This option is unsupported. In aplay(1) implementation, the option has an
+effect for capture transmission to save files up to the same number of data
+frames as the given value by second unit, or the maximum number of data frames
+supported by used file format. When reaching to the limitation, used file is
+closed, then new file is opened and audio data frames are written. However, this
+option requires extra handling of files and shall increase complexity of main
+loop of axfer.
+
+.TP
+.I \-\-use\-strftime=FORMAT
+This option is unsupported. In aplay(1) implementation, the option has an effect
+for capture transmission to generate file paths according to given format in
+which some extra formats are available as well as formats supported by
+strftime(3). However, this option requires extra string processing for file
+paths and it\(aqs bothersome if written in C language.
+
+.TP
+.I \-\-process\-id\-file=FILEPATH
+This option is unsupported. In aplay(1) implementation, the option has an effect
+to create a file for given value and write out process ID to it. This file
+allows users to get process ID and send any POSIX signal to aplay process.
+However, this idea has some troubles for file locking when multiple aplay
+processes run with the same file.
+
+.TP
+.I \-V, \-\-vumeter=TYPE
+This option is not supported at present. In aplay(1) implementation, this option
+has an effect to occupy stdout with some terminal control characters and display
+vumeter for monaural and stereo channels. However, some problems lay; this
+feature is just for audio data frames with PCM format, this feature brings
+disorder of terminal after aborting, stdout is not available for pipeline.
+
+.TP
+.I \-i, \-\-interactive
+This option is not supported at present. In aplay(1) implementation, this option
+has an effect to occupy stdin for key input and suspend/resume PCM substream
+according to pushed enter key. However, this feature requires an additional
+input handling in main loop and leave bothersome operation to maintain PCM
+substream.
+
+.TP
+.I SIGTSTP, SIGCONT
+This performs suspend/resume of PCM substream. In aplay(1) implementation,
+these operations bring XRUN state to the substream, and suspend/resume is done
+in interactive mode in the above. Some developers use the signal for recovery
+test from XRUN. At present, no alternative is supported for the test.
+
+.TP
+.I SIGUSR1
+This is not supported. In aplay(1) implementation, this signal is assigned to a
+handler to close a current file to store audio data frame and open a new file
+to continue processing. However, as well as
+.I \-\-max\-file\-time
+option, this option should increase complexity of main loop of axfer.
+
 .SH SEE ALSO
 \fB
 axfer(1),

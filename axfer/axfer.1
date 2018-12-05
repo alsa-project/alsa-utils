@@ -75,6 +75,47 @@ Operates for playback transmission.
 .I EXIT_FAILURE
 (1).
 
+.SH COMPATIBILITY TO APLAY
+
+The
+.I axfer
+is designed to be compatible to aplay(1) as much as possible. In command line,
+executions of aplay/arecord files under $PATH runs axfer with compatibility
+mode if filesystem has symbolic link from the aplay/arecord to axfer.
+
+.PP
+.in +4n
+.EX
+$ ln \-s aplay axfer
+$ ln \-s arecord axfer
+.EE
+.in
+.PP
+
+.SS A string to which arg[0] points
+When args[0] in run time points to string ended with \(aqaplay\(aq, it has the
+same meaning of
+.I playback
+direction. When it points to string ended with \(aqarecord\(aq, it has the same
+meaning of
+.I capture
+direction.
+
+.SS Options acknowledged as list subcommand
+Options of
+.I \-l
+,
+.I \-\-list\-devices
+,
+.I \-L
+,
+.I \-\-list\-pcms
+are acknowledged as
+.I list
+subcommand. Without them, the run time performs
+.I transfer
+subcommand.
+
 .SH REPORTING BUGS
 Report any bugs to mailing list of ALSA community
 <alsa\-devel@alsa\-project.org> where the development and maintenance is
