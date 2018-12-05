@@ -168,6 +168,13 @@ int container_parser_init(struct container_context *cntr,
 	// Open a target descriptor.
 	if (!strcmp(path, "-")) {
 		cntr->fd = fileno(stdin);
+		if (isatty(cntr->fd)) {
+			fprintf(stderr,
+				"A terminal is referred for standard input. "
+				"Output from any process or shell redirection "
+				"should be referred instead.\n");
+			return -EIO;
+		}
 		err = set_nonblock_flag(cntr->fd);
 		if (err < 0)
 			return err;
@@ -245,6 +252,13 @@ int container_builder_init(struct container_context *cntr,
 		return -EINVAL;
 	if (!strcmp(path, "-")) {
 		cntr->fd = fileno(stdout);
+		if (isatty(cntr->fd)) {
+			fprintf(stderr,
+				"A terminal is referred for standard output. "
+				"Input to any process or shell redirection "
+				"should be referred instead.\n");
+			return -EIO;
+		}
 		err = set_nonblock_flag(cntr->fd);
 		if (err < 0)
 			return err;
