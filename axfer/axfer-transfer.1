@@ -404,6 +404,90 @@ to continue processing. However, as well as
 .I \-\-max\-file\-time
 option, this option should increase complexity of main loop of axfer.
 
+.SH DESIGN
+
+.SS Modular structure
+
+This program consists of three modules;
+.I xfer
+,
+.I mapper
+and
+.I container
+\&.
+Each module has an abstraction layer to enable actual implementation.
+
+.nf
+           --------     ----------     -------------
+device <-> | xfer | <-> | mapper | <-> | container | <-> file
+           --------     ----------     -------------
+            libasound    single         wav
+            libffado     multiple       au
+                                        voc
+                                        raw
+.fi
+
+The
+.I xfer
+module performs actual transmission to devices and nodes. The module can have
+several transmission backends. As a default backend,
+.I libasound
+backend is used to perform transmission via alsa\-lib APIs. The module allows
+each backend to parse own command line options.
+
+The
+.I container
+module performs to read/write audio data frame via descriptor for file/stream
+of multimedia container or raw data. The module automatically detect type of
+multimedia container and parse parameters in its metadata of data header. At
+present, three types of multimedia containers are supported; Microsoft/IBM
+RIFF/Wave (
+.I wav
+), Sparc AU (
+.I au
+) and Creative Technology voice (
+.I voc
+). Additionally, a special container is prepared for raw audio data (
+.I raw
+).
+
+The
+.I mapper
+module handles buffer layout and alignment for transmission of audio data frame.
+The module has two implementations;
+.I single
+and
+.I multiple
+\&.
+The
+.I single
+backend uses one container to construct the buffer. The
+.I multiple
+backend uses several containers to construct it.
+
+.SS Care of copying audio data frame
+
+Between the
+.I xfer
+module and
+.I mapper
+module, a pointer to buffer including audio data frames is passed. This buffer
+has two shapes for interleaved and non\-interleaved order. For the former, the
+pointer points to one buffer. For the latter, the pointer points to an array in
+which each element points to one buffer. Between the
+.I mapper
+module and
+.I container
+module, a pointer to one buffer is passed because supported media containers
+including raw type store audio data frames in interleaved order.
+
+In passing audio data frame between the modules, axfer is programmed to avoid
+copying between a buffer to another buffer as much as possible. For example, in
+some scenarios below, no copying occurs between modules.
+
+ - xfer(mmap/interleaved), mapper(single), container(any)
+ - xfer(mmap/non\-interleaved), mapper(multiple), containers(any)
+
 .SH SEE ALSO
 \fB
 axfer(1),
