@@ -2,7 +2,8 @@ bin_PROGRAMS = \
 	axfer
 
 man_MANS = \
-	axfer.1
+	axfer.1 \
+	axfer-list.1
 
 # To include headers for gettext and version.
 AM_CPPFLAGS = \
@@ -65,4 +66,5 @@ LDADD += -lffado
 endif
 
 EXTRA_DIST = \
-	axfer.1
+	axfer.1 \
+	axfer-list.1

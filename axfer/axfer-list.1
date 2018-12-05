@@ -1,0 +1,70 @@
+.TH AXFER\-LIST 1 "28 November 2018" "alsa\-utils"
+
+.SH NAME
+axfer\-list \- dump lists of available sound devices and nodes to transfer audio
+data frame.
+
+.SH SYNOPSIS
+
+.B axfer list
+.I direction target
+
+direction =
+.B capture
+|
+.B playback
+
+target =
+.B device
+|
+.B pcm
+
+.SH DESCRIPTION
+The
+.B list
+subcommand of
+.B axfer
+dumps lists of available nodes to
+transfer audio data frame. At present, the subcommand is helpful just for
+libasound backend of
+.B transfer
+subcommand.
+
+.SH OPTIONS
+
+.SS Direction
+
+.TP
+.B capture
+Operates for capture transmission.
+
+.TP
+.B playback
+Operates for playback transmission.
+
+.SS Target
+
+.TP
+.B device
+Dumps a list of all soundcards and digital audio devices available in
+.I libasound
+backend for
+.I tranfer
+subcommand.
+
+.TP
+.B pcm
+Dumps a list of all PCM nodes available in alsa\-lib configuration space in
+.I libasound
+backend for
+.I transfer
+subcommand.
+
+.SH SEE ALSO
+.B axfer(1),
+.B axfer\-transfer(1),
+.B alsamixer(1),
+.B amixer(1)
+
+.SH AUTHOR
+Takashi Sakamoto <o\-takashi@sakamocchi.jp>
