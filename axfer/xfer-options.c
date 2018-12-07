@@ -373,6 +373,12 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 
 	if (xfer->help) {
 		print_help();
+		if (xfer->ops->help) {
+			printf("\n");
+			printf("    BACKEND-OPTIONS (%s) =\n",
+			       xfer_label_from_type(xfer->type));
+			xfer->ops->help(xfer);
+		}
 		return 0;
 	}
 

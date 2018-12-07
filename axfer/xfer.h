@@ -53,6 +53,7 @@ struct xfer_context {
 };
 
 enum xfer_type xfer_type_from_label(const char *label);
+const char *xfer_label_from_type(enum xfer_type type);
 
 int xfer_context_init(struct xfer_context *xfer, enum xfer_type type,
 		      snd_pcm_stream_t direction, int argc, char *const *argv);
@@ -96,6 +97,7 @@ struct xfer_ops {
 	void (*post_process)(struct xfer_context *xfer);
 	void (*destroy)(struct xfer_context *xfer);
 	void (*pause)(struct xfer_context *xfer, bool enable);
+	void (*help)(struct xfer_context *xfer);
 };
 
 struct xfer_data {

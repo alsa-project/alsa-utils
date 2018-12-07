@@ -880,6 +880,11 @@ static void xfer_libasound_destroy(struct xfer_context *xfer)
 	state->log = NULL;
 }
 
+static void xfer_libasound_help(struct xfer_context *xfer)
+{
+	printf("      (placeholder)\n");
+}
+
 const struct xfer_data xfer_libasound = {
 	.s_opts = S_OPTS,
 	.l_opts = l_opts,
@@ -893,6 +898,7 @@ const struct xfer_data xfer_libasound = {
 		.pause		= xfer_libasound_pause,
 		.post_process	= xfer_libasound_post_process,
 		.destroy	= xfer_libasound_destroy,
+		.help		= xfer_libasound_help,
 	},
 	.private_size = sizeof(struct libasound_state),
 };
