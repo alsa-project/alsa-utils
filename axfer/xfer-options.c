@@ -25,6 +25,30 @@ enum no_short_opts {
 	OPT_PROCESS_ID_FILE,
 };
 
+static int print_help()
+{
+	printf(
+"Usage:\n"
+"  axfer transfer DIRECTION [ COMMON-OPTIONS ] [ BACKEND-OPTIONS ]\n"
+"\n"
+"  where:\n"
+"    DIRECTION = capture | playback\n"
+"    COMMON-OPTIONS =\n"
+"      -h, --help              help\n"
+"      -v, --verbose           verbose\n"
+"      -q, --quiet             quiet mode\n"
+"      -d, --duration=#        interrupt after # seconds\n"
+"      -s, --samples=#         interrupt after # frames\n"
+"      -f, --format=FORMAT     sample format (case-insensitive)\n"
+"      -c, --channels=#        channels\n"
+"      -r, --rate=#            numeric sample rate in unit of Hz or kHz\n"
+"      -t, --file-type=TYPE    file type (wav, au, sparc, voc or raw, case-insentive)\n"
+"      -I, --separate-channels one file for each channel\n"
+"      --dump-hw-params        dump hw_params of the device\n"
+"      --xfer-type=BACKEND     backend type (libasound, libffado)\n"
+	);
+}
+
 static int allocate_paths(struct xfer_context *xfer, char *const *paths,
 			   unsigned int count)
 {
@@ -346,6 +370,11 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 
 	free(l_opts);
 	free(s_opts);
+
+	if (xfer->help) {
+		print_help();
+		return 0;
+	}
 
 	err = allocate_paths(xfer, argv + optind, argc - optind);
 	if (err < 0)
