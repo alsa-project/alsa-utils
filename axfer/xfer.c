@@ -30,6 +30,11 @@ enum xfer_type xfer_type_from_label(const char *label)
 	return XFER_TYPE_UNSUPPORTED;
 }
 
+const char *xfer_label_from_type(enum xfer_type type)
+{
+	return xfer_type_labels[type];
+}
+
 int xfer_context_init(struct xfer_context *xfer, enum xfer_type type,
 		      snd_pcm_stream_t direction, int argc, char *const *argv)
 {

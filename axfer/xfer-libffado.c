@@ -537,6 +537,11 @@ static void xfer_libffado_destroy(struct xfer_context *xfer)
 	state->guid_literal = NULL;
 }
 
+static void xfer_libffado_help(struct xfer_context *xfer)
+{
+	printf("      (placeholder)\n");
+}
+
 const struct xfer_data xfer_libffado = {
 	.s_opts = S_OPTS,
 	.l_opts = l_opts,
@@ -550,6 +555,7 @@ const struct xfer_data xfer_libffado = {
 		.pause		= xfer_libffado_pause,
 		.post_process	= xfer_libffado_post_process,
 		.destroy	= xfer_libffado_destroy,
+		.help		= xfer_libffado_help,
 	},
 	.private_size = sizeof(struct libffado_state),
 };
