@@ -67,7 +67,17 @@ static void print_version(const char *const cmdname)
 
 static void print_help(void)
 {
-	printf("help\n");
+	printf(
+"Usage:\n"
+"  axfer transfer DIRECTION OPTIONS\n"
+"  axfer list DIRECTION OPTIONS\n"
+"  axfer version\n"
+"  axfer help\n"
+"\n"
+"  where:\n"
+"    DIRECTION = capture | playback\n"
+"    OPTIONS = -h | --help | (subcommand specific)\n"
+	);
 }
 
 // Backward compatibility to aplay(1).
