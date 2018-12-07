@@ -193,7 +193,14 @@ static int list_pcms(snd_pcm_stream_t direction)
 
 static void print_help(void)
 {
-	printf("help for list sub-command.\n");
+	printf(
+"Usage:\n"
+"  axfer list DIRECTION TARGET\n"
+"\n"
+"  where:\n"
+"    DIRECTION = capture | playback\n"
+"    TARGET = device | pcm\n"
+	);
 }
 
 // Backward compatibility to aplay(1).
