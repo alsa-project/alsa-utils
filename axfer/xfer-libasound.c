@@ -882,7 +882,30 @@ static void xfer_libasound_destroy(struct xfer_context *xfer)
 
 static void xfer_libasound_help(struct xfer_context *xfer)
 {
-	printf("      (placeholder)\n");
+	printf(
+"      [BASICS]\n"
+"        -D, --device          select node by name in coniguration space\n"
+"        -N, --nonblock        nonblocking mode\n"
+"        -M, --mmap            use mmap(2) for zero copying technique\n"
+"        -F, --period-time     interval between interrupts (msec unit)\n"
+"        --period-size         interval between interrupts (frame unit)\n"
+"        -B, --buffer-time     size of buffer for frame(msec unit)\n"
+"        --buffer-size         size of buffer for frame(frame unit)\n"
+"        --waiter-type         type of waiter to handle available frames\n"
+"        --sched-model         model of process scheduling\n"
+"      [SOFTWARE FEATURES]\n"
+"        -A, --avail-min       threshold of frames to wake up process\n"
+"        -R, --start-delay     threshold of frames to start PCM substream\n"
+"        -T, --stop-delay      threshold of frames to stop PCM substream\n"
+"      [LIBASOUND PLUGIN OPTIONS]\n"
+"        --disable-resample    disable rate conversion for plug plugin\n"
+"        --disable-channels    disable channel conversion for plug plugin\n"
+"        --disable-format      disable format conversion for plug plugin\n"
+"        --disable-softvol     disable software volume for sofvol plugin\n"
+"      [DEBUG ASSISTANT]\n"
+"        --fatal-errors        finish at XRUN\n"
+"        --test-nowait         busy poll without any waiter\n"
+	);
 }
 
 const struct xfer_data xfer_libasound = {
