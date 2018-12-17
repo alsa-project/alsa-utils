@@ -25,7 +25,7 @@ enum no_short_opts {
 	OPT_PROCESS_ID_FILE,
 };
 
-static int print_help()
+static void print_help()
 {
 	printf(
 "Usage:\n"
