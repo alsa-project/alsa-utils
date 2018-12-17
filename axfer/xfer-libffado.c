@@ -539,7 +539,16 @@ static void xfer_libffado_destroy(struct xfer_context *xfer)
 
 static void xfer_libffado_help(struct xfer_context *xfer)
 {
-	printf("      (placeholder)\n");
+	printf(
+"      -p, --port           decimal ID of port to decide 1394 OHCI controller for communication on IEEE 1394 bus\n"
+"      -n, --node           decimal ID of node to decide unit on IEEE 1394 bus for transmission of audio data frame\n"
+"      -g, --guid           hexadecimal ID for node on IEEE 1394 bus for transmission of audio data frame\n"
+"      --frames-per-period  the number of audio data frame to handle one operation (frame unit)\n"
+"      --periods-per-bufer  the number of periods in intermediate buffer between libffado (frame unit)\n"
+"      --slave              receive frames from the other Linux system on IEEE 1394 bus running with libffado.\n"
+"      --snoop              receive frames on packets of all isochronous channels.\n"
+"      --sched-priority     set SCHED_FIFO with given priority. see RLIMIT_RTPRIO in getrlimit(2).\n"
+	);
 }
 
 const struct xfer_data xfer_libffado = {
