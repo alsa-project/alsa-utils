@@ -241,7 +241,257 @@ Select backend of transmission from a list below. The default is libasound.
 
 .SS Backend options for libasound
 
-(placeholder)
+.TP
+.B \-D, \-\-device
+
+This option is used to select PCM node in libasound configuration space.
+Available nodes are listed by
+.I pcm
+operation of
+.I list
+subcommand.
+
+.TP
+.B \-N, \-\-nonblock
+
+With this option, PCM substream is opened in non\-blocking mode. When audio
+data frame is not available in buffer of the PCM substream, I/O operation
+immediately returns without blocking process. This option implicitly uses
+.I \-\-waiter\-type
+option as well to prevent heavy consumption of CPU time.
+
+.TP
+.B \-M, \-\-mmap
+
+With this option, audio data frame is processed directly in buffer of PCM
+substream if selected node supports this operation. Without the option,
+temporary buffers are used to copy audio data frame for buffer of PCM substream.
+This option implicitly uses
+.I \-\-waiter\-type
+option as well to prevent heavy consumption of CPU time.
+
+.TP
+.B \-F, \-\-period\-size
+
+This option configures given value to
+.I period_size
+hardware parameter of PCM substream. The parameter indicates the number of audio
+data frame per period in buffer of the PCM substream. Actual number is decided
+as a result of interaction between each implementation of PCM plugin chained
+from the selected PCM node, and in\-kernel driver or PCM I/O plugins.
+
+Ideally, the same amount of audio data frame as the value should be handled in
+one I/O operation. Actually, it is not, depending on implementation of the PCM
+plugins, in\-kernel driver, PCM I/O plugins and scheduling model. For \(aqhw\(aq
+PCM plugin in \(aqirq\(aq scheduling model, the value is used to decide
+intervals of hardware interrupt, thus the same amount of audio data frame as
+the value is expected to be available for one I/O operation.
+
+.TP
+.B \-\-period\-time
+
+This option configures given value to
+.I period_time
+hardware parameter of PCM substream. This option is similar to
+.I \-\-period\-size
+option, however its unit is micro\-second.
+
+.TP
+.B \-B, \-\-buffer\-size
+
+This option configures given value to
+.I buffer_size
+hardware parameter of PCM substream. The parameter indicates the number of audio
+data frame in buffer of PCM substream. Actual number is decided as a result of
+interaction between each implementation of PCM plugin chained from the selected
+PCM node, and in\-kernel driver or PCM I/O plugins.
+
+Ideally, this is multiples of the number of audio data frame per period, thus
+the size of period. Actually, it is not, depending on implementation of the PCM
+plugins, in\-kernel driver and PCM I/O plugins.
+
+.TP
+.B \-\-buffer\-time
+
+This option configures given value to
+.I buffer_time
+hardware parameter of PCM substream. This option is similar to
+.I \-\-buffer\-size
+option, however its unit is micro\-second.
+
+.TP
+.B \-\-waiter\-type
+
+This option indicates the type of waiter for event notification. At present,
+four types are available;
+.I default
+,
+.I select
+,
+.I poll
+and
+.I epoll
+\&. With
+.I default
+type, \(aqsnd_pcm_wait()\(aq is used. With
+.I select
+type, \(aqselect(2)\(aq system call is used. With
+.I poll
+type, \(aqpoll(2)\(aq system call is used. With
+.I epoll
+type, Linux\-specific \(aqepoll(7)\(aq system call is used.
+
+This option should correspond to one of
+.I \-\-nonblock
+or
+.I \-\-mmap
+options, or
+.I timer
+value of
+.I \-\-sched\-model
+option.
+Neither this option nor
+.I \-\-test\-nowait
+is available at the same time.
+
+.TP
+.B \-\-sched\-model
+
+This option selects scheduling model for process of this program. One of
+.I irq
+or
+.I timer
+is available. In detail, please read \(aqSCHEDULING MODEL\(aq section.
+
+When nothing specified,
+.I irq
+model is used.
+
+.TP
+.B \-A, \-\-avail\-min
+
+This option configures given value to
+.I avail\-min
+software parameter of PCM substream. In blocking mode, the value is used as
+threshold of the number of available audio data frames in buffer of PCM
+substream to wake up process blocked by I/O operation. In non\-blocking mode,
+any I/O operation returns \-EAGAIN untill the available number of audio data frame reaches the threshold.
+
+This option has an effect in cases neither
+.I \-\-mmap
+nor
+.I timer
+value of
+.I \-\-sched\-model
+option is used.
+
+.TP
+.B \-R, \-\-start\-delay
+
+This option configures given value to
+.I start_threshold
+software parameter of PCM substream. The value is used as threshold to start
+PCM substream automatically. At present, this option has an effect in cases
+neither
+.I \-\-mmap
+nor
+.I timer
+value of
+.I \-\-sched\-model
+option is used.
+
+For playback transmission, when the number of accumulated audio data frame
+in buffer of PCM substream to which this program writes out reaches the
+threshold, the PCM substream starts automatically without an explicit call of
+.I snd_pcm_start()
+to the PCM substream.
+
+For capture transmission, this option is useless. The number of
+accumulated audio data frame is not increased without an explicit call of
+.I snd_pcm_start()
+to the PCM substream.
+
+This option has an effect in cases neither
+.I \-\-mmap
+nor
+.I timer
+value of
+.I \-\-sched\-model
+option is used.
+
+.TP
+.B \-T, \-\-stop\-delay
+
+This option configures given value to
+.I stop_threshold
+software parameter of PCM substream. The value is used as threshold to stop PCM
+substream automatically. At present, this option has an effect in cases neither
+.I \-\-mmap
+nor
+.I timer
+value of
+.I \-\-sched\-model
+option is used.
+
+For capture transmission, when the number of accumulated audio data frame
+in buffer of PCM substream to which a driver or alsa\-lib PCM plugins write
+reaches the threshold, the PCM substream stops automatically without an explicit
+call of
+.I snd_pcm_stop()
+to the PCM substream. This is a case that this program leaves the audio data
+frames without reading for a while.
+
+For playback transmission, when the number available audio data frame in buffer
+of PCM substream from which a driver or alsa\-lib PCM plugins read reaches the
+threshold, the PCM substream stops automatically without an explicit call of
+.I snd_pcm_stop()
+to the PCM substream. This is a case that this program leaves the audio data
+frames without writing for a while.
+
+This option has an effect in cases neither
+.I \-\-mmap
+nor
+.I timer
+value of
+.I \-\-sched\-model
+option is used.
+
+.TP
+.B \-\-disable\-resample
+
+This option has an effect for \(aqplug\(aq plugin in alsa\-lib to suppress
+conversion of sampling rate for audio data frame.
+
+.TP
+.B \-\-disable\-channels
+
+This option has an effect for \(aqplug\(aq plugin in alsa\-lib to suppress
+conversion of channels for audio data frame.
+
+.TP
+.B \-\-disable\-format
+
+This option has an effect for \(aqplug\(aq plugin in alsa\-lib to suppress
+conversion of sample format for audio data frame.
+
+.TP
+.B \-\-disable\-softvol
+
+This option has an effect for \(aqsoftvol\(aq plugin in alsa\-lib to suppress
+conversion of samples for audio data frame via additional control element.
+
+.TP
+.B \-\-fatal\-errors
+
+This option suppresses recovery operation from XRUN state of running PCM
+substream, then process of this program is going to finish as usual.
+
+.TP
+.B \-\-test\-nowait
+
+This option disables any waiter for I/O event notification. I/O operations are
+iterated till any of audio data frame is available. The option brings heavy
+load in consumption of CPU time.
 
 .SS Backend options for libffado
 
@@ -412,6 +662,10 @@ the given
 The above will transfer audio data frame as sample format of 48.0 kHz, 2
 channels, signed 32 bit big endian PCM for 1,024 number of data frames to files
 named \(aqchannels\-1.au\(aq and \(aqchannels\-2.au\(aq.
+
+.SH SCHEDULING MODEL
+
+(placeholder)
 
 .SH COMPATIBILITY TO APLAY
 
