@@ -685,6 +685,42 @@ supports. As of 2018, PCM buffer of non\-interleaved order is hardly used by
 sound devices.
 
 .TP
+.I \-A, \-\-avail\-min
+This option indicates threshold to wake up blocked process in a unit of
+audio data frame. Against aplay(1) implementation, this option has no effect
+with
+.I \-\-mmap
+option as well as
+.I timer
+of
+.I \-\-sched\-model
+option.
+
+.TP
+.I \-R, \-\-start\-delay
+This option indicates threshold to start prepared PCM substream in a unit of
+audio data frame. Against aplay(1) implementation, this option has no effect
+with
+.I \-\-mmap
+option as well as
+.I timer
+of
+.I \-\-sched\-model
+option.
+
+.TP
+.I \-T, \-\-stop\-delay
+This option indicates threshold to stop running PCM substream in a unit of
+audio data frame. Against aplay(1) implementation, this option has no effect
+with
+.I \-\-mmap
+option as well as
+.I timer
+of
+.I \-\-sched\-model
+option.
+
+.TP
 .I \-\-max\-file\-time=#
 This option is unsupported. In aplay(1) implementation, the option has an
 effect for capture transmission to save files up to the same number of data
