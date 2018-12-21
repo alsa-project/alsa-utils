@@ -245,7 +245,89 @@ Select backend of transmission from a list below. The default is libasound.
 
 .SS Backend options for libffado
 
-(placeholder)
+This backend is automatically available when configure script detects
+.I ffado_streaming_init()
+symbol in libffado shared object.
+
+.TP
+.B \-p, \-\-port
+
+This option uses given value to decide which 1394 OHCI controller is used to
+communicate. When Linux system has two 1394 OHCI controllers,
+.I 0
+or
+.I 1
+are available. Neither this option nor
+.I \-g
+is available at the same time. If nothing specified, libffado performs to
+communicate to units on IEEE 1394 bus managed by all of 1394 OHCI controller available in Linux system.
+
+.TP
+.B \-n, \-\-node
+
+This option uses given value to decide which unit is used to communicate. This
+option requires
+.I \-p
+option to indicate which 1394 OHCI controller is used to communicate to the
+specified unit.
+
+.TP
+.B \-g, \-\-guid
+
+This option uses given value to decide a target unit to communicate. The value
+should be prefixed with '0x' and consists of hexadecimal literal letters
+(0\-9, a\-f, A\-F). Neither this option nor
+.I \-p
+is available at the same time. If nothing specified, libffado performs to
+communicate to units on IEEE 1394 bus managed by all of 1394 OHCI controller
+available in Linux system.
+
+.TP
+.B \-\-frames\-per\-period
+
+This option uses given value to decide the number of audio data frame in one
+read/write operation. The operation is blocked till the number of available
+audio data frame exceeds the given value. As a default, 512 audio data frames
+is used.
+
+.TP
+.B \-\-periods\-per\-buffer
+
+This option uses given value to decide the size of intermediate buffer between
+this program and libffado. As a default, 2 periods per buffer is used.
+
+.TP
+.B \-\-slave
+
+This option allows this program to run slave mode. In this mode, libffado
+adds unit directory into configuration ROM of 1394 OHCI controller where Linux
+system runs. The unit directory can be found by the other node on the same bus.
+Linux system running on the node can transfer isochronous packet with audio
+data frame to the unit. This program can receive the packet and demultiplex the
+audio data frame.
+
+.TP
+.B \-\-snoop
+
+This option allows this program to run snoop mode. In this mode, libffado
+listens all isochronous channels. When isochronous communication starts
+by any unit on the same bus, the packets can be handled by this program.
+
+.TP
+.B \-\-sched\-priority
+
+This option executes
+.I pthread_setschedparam()
+in a call of
+.I ffado_streaming_init()
+to configure
+scheduling policy and given value as its priority for threads related to
+isochronous communication.
+The given value should be within
+.I RLIMIT_RTPRIO
+parameter of process. Please read
+.I getrlimit(2)
+for details.
 
 .SH POSIX SIGNALS
 During transmission,
@@ -257,7 +339,8 @@ will close handled files and PCM substream to be going to finish run time.
 .I SIGTSTP
 will suspend PCM substream and
 .I SIGCONT
-will resume it. No XRUNs are expected.
+will resume it. No XRUNs are expected. With libffado backend, the suspend/resume
+is not supported and runtime is aboeted immediately.
 
 The other signals perform default behaviours.
 
