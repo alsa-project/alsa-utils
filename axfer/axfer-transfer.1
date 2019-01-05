@@ -710,6 +710,51 @@ option with
 .I irq
 value.
 
+.SS Timer\-based scheduling model
+
+The
+.I no\-period\-wakeup
+mode is an optional mode of runtime of PCM substream. The mode assumes a
+specific feature of hardware and assist of in\-kernel driver and PCM
+applications. In this mode, in\-kernel drivers don't operate hardware to
+generate periodical notification for transmission of audio data frame.
+The hardware should automatically continue transmission of audio data frame
+without periodical operation of the drivers; e.g. according to auto\-triggered
+DMA transmission, a chain of registered descriptors.
+
+In this mode, nothing wakes up blocked processes, therefore PCM applications
+should be programmed without any blocking operation. For this reason, this mode
+is enabled when the PCM applications explicitly configure hardware parameter to
+runtime of PCM substream, to prevent disorder of existing applications.
+Additionally, nothing maintains timing for transmission of audio data frame,
+therefore the PCM applications should voluntarily handle any timer to queue
+audio data frame in buffer of the PCM substream for lapse of time. Furthermore,
+instead of driver, the PCM application should call a helper function of ALSA
+PCM core to update a position to head of hardware transmission and to check
+XRUN.
+
+In
+.I axfer
+, this is called
+.I timer\-based
+scheduling model and available as long as hardware/driver assists
+.I no\-period\-wakeup
+runtime. Users should explicitly set this mode by usage of
+.I \-\-sched\-model
+option with
+.I timer
+value.
+
+In the scheduling model, PCM applications need to care of available space on
+PCM buffer by lapse of time, typically by yielding CPU and wait for
+rescheduling. For the yielding, timeout is calculated for preferable amount of
+PCM frames to process. This is convenient to a kind of applications, like sound
+servers. when an I/O thread of the server wait for the timeout, the other
+threads can process audio data frames for server clients. Furthermore, with
+usage of rewinding/forwarding, applications can achieve low latency between
+transmission position and handling position even if they uses large size of
+PCM buffers.
+
 .SH COMPATIBILITY TO APLAY
 
 The
