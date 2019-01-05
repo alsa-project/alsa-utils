@@ -755,6 +755,28 @@ usage of rewinding/forwarding, applications can achieve low latency between
 transmission position and handling position even if they uses large size of
 PCM buffers.
 
+.SS Advantages and issues
+
+Ideally, timer\-based scheduling model has some advantages than IRQ\-based
+scheduling model. At first, no interrupt context runs for PCM substream. The
+PCM substream is handled in any process context only. No need to care of race
+conditions between IRQ and process contexts. This reduces some concerns for
+some developers of drivers and applications. Secondary, CPU time is not used
+for handlers on the interrupt context. The CPU time can be dedicated for the
+other tasks. This is good in a point of Time Sharing System. Thirdly, hardware
+is not configured to generate interrupts. This is good in a point of reduction
+of overall power consumption possibly.
+
+In either scheduling model, the hardware should allow drivers to read the
+number of audio data frame transferred between the dedicated memory and the
+device memory for audio serial bus. However, in timer\-based scheduling model,
+fine granularity and accuracy of the value is important. Actually hardware
+performs transmission between dedicated memory and device memory for a small
+batch of audio data frames or bytes. In a view of PCM applications, the
+granularity in current transmission is required to decide correct timeout for
+each I/O operation. As of Linux kernel v4.21, ALSA PCM interface between
+kernel/userspace has no feature to report it.
+
 .SH COMPATIBILITY TO APLAY
 
 The
