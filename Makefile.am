@@ -32,7 +32,7 @@ if HAVE_TOPOLOGY
 SUBDIRS += topology
 endif
 
-EXTRA_DIST= TODO gitcompile
+EXTRA_DIST= README.md TODO gitcompile
 AUTOMAKE_OPTIONS=foreign
 ACLOCAL_AMFLAGS = -I m4
 
