@@ -203,7 +203,7 @@ and
 is used as a default.
 
 .TP
-.B \-t, \-\-file\-type=TYPES
+.B \-t, \-\-file\-type=TYPE
 Indicate the type of file. This is required for capture transmission. Available
 types are listed below:
  - wav: Microsoft/IBM RIFF/Wave format
@@ -242,7 +242,7 @@ Select backend of transmission from a list below. The default is libasound.
 .SS Backend options for libasound
 
 .TP
-.B \-D, \-\-device
+.B \-D, \-\-device=NODE
 
 This option is used to select PCM node in libasound configuration space.
 Available nodes are listed by
@@ -271,7 +271,7 @@ This option implicitly uses
 option as well to prevent heavy consumption of CPU time.
 
 .TP
-.B \-F, \-\-period\-size
+.B \-F, \-\-period\-size=#
 
 This option configures given value to
 .I period_size
@@ -288,7 +288,7 @@ intervals of hardware interrupt, thus the same amount of audio data frame as
 the value is expected to be available for one I/O operation.
 
 .TP
-.B \-\-period\-time
+.B \-\-period\-time=#
 
 This option configures given value to
 .I period_time
@@ -297,7 +297,7 @@ hardware parameter of PCM substream. This option is similar to
 option, however its unit is micro\-second.
 
 .TP
-.B \-B, \-\-buffer\-size
+.B \-B, \-\-buffer\-size=#
 
 This option configures given value to
 .I buffer_size
@@ -311,7 +311,7 @@ the size of period. Actually, it is not, depending on implementation of the PCM
 plugins, in\-kernel driver and PCM I/O plugins.
 
 .TP
-.B \-\-buffer\-time
+.B \-\-buffer\-time=#
 
 This option configures given value to
 .I buffer_time
@@ -320,7 +320,7 @@ hardware parameter of PCM substream. This option is similar to
 option, however its unit is micro\-second.
 
 .TP
-.B \-\-waiter\-type
+.B \-\-waiter\-type=TYPE
 
 This option indicates the type of waiter for event notification. At present,
 four types are available;
@@ -355,7 +355,7 @@ Neither this option nor
 is available at the same time.
 
 .TP
-.B \-\-sched\-model
+.B \-\-sched\-model=MODEL
 
 This option selects scheduling model for process of this program. One of
 .I irq
@@ -368,7 +368,7 @@ When nothing specified,
 model is used.
 
 .TP
-.B \-A, \-\-avail\-min
+.B \-A, \-\-avail\-min=#
 
 This option configures given value to
 .I avail\-min
@@ -386,7 +386,7 @@ value of
 option is used.
 
 .TP
-.B \-R, \-\-start\-delay
+.B \-R, \-\-start\-delay=#
 
 This option configures given value to
 .I start_threshold
@@ -420,7 +420,7 @@ value of
 option is used.
 
 .TP
-.B \-T, \-\-stop\-delay
+.B \-T, \-\-stop\-delay=#
 
 This option configures given value to
 .I stop_threshold
@@ -500,7 +500,7 @@ This backend is automatically available when configure script detects
 symbol in libffado shared object.
 
 .TP
-.B \-p, \-\-port
+.B \-p, \-\-port=#
 
 This option uses given value to decide which 1394 OHCI controller is used to
 communicate. When Linux system has two 1394 OHCI controllers,
@@ -513,7 +513,7 @@ is available at the same time. If nothing specified, libffado performs to
 communicate to units on IEEE 1394 bus managed by all of 1394 OHCI controller available in Linux system.
 
 .TP
-.B \-n, \-\-node
+.B \-n, \-\-node=#
 
 This option uses given value to decide which unit is used to communicate. This
 option requires
@@ -522,7 +522,7 @@ option to indicate which 1394 OHCI controller is used to communicate to the
 specified unit.
 
 .TP
-.B \-g, \-\-guid
+.B \-g, \-\-guid=HEXADECIMAL
 
 This option uses given value to decide a target unit to communicate. The value
 should be prefixed with '0x' and consists of hexadecimal literal letters
@@ -533,7 +533,7 @@ communicate to units on IEEE 1394 bus managed by all of 1394 OHCI controller
 available in Linux system.
 
 .TP
-.B \-\-frames\-per\-period
+.B \-\-frames\-per\-period=#
 
 This option uses given value to decide the number of audio data frame in one
 read/write operation. The operation is blocked till the number of available
@@ -541,7 +541,7 @@ audio data frame exceeds the given value. As a default, 512 audio data frames
 is used.
 
 .TP
-.B \-\-periods\-per\-buffer
+.B \-\-periods\-per\-buffer=#
 
 This option uses given value to decide the size of intermediate buffer between
 this program and libffado. As a default, 2 periods per buffer is used.
@@ -565,7 +565,7 @@ isochronous communication starts by any unit on the same bus, the packets can
 be handled by this program.
 
 .TP
-.B \-\-sched\-priority
+.B \-\-sched\-priority=#
 
 This option executes
 .I pthread_setschedparam()
@@ -796,7 +796,7 @@ supports. As of 2018, PCM buffer of non\-interleaved order is hardly used by
 sound devices.
 
 .TP
-.I \-A, \-\-avail\-min
+.I \-A, \-\-avail\-min=#
 This option indicates threshold to wake up blocked process in a unit of
 audio data frame. Against aplay(1) implementation, this option has no effect
 with
@@ -808,7 +808,7 @@ of
 option.
 
 .TP
-.I \-R, \-\-start\-delay
+.I \-R, \-\-start\-delay=#
 This option indicates threshold to start prepared PCM substream in a unit of
 audio data frame. Against aplay(1) implementation, this option has no effect
 with
@@ -820,7 +820,7 @@ of
 option.
 
 .TP
-.I \-T, \-\-stop\-delay
+.I \-T, \-\-stop\-delay=#
 This option indicates threshold to stop running PCM substream in a unit of
 audio data frame. Against aplay(1) implementation, this option has no effect
 with
