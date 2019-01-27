@@ -15,9 +15,18 @@
 #include <sys/select.h>
 
 // Except for POLLERR.
-#define POLLIN_SET	(POLLRDNORM | POLLRDBAND | POLLIN | POLLHUP)
-#define POLLOUT_SET	(POLLWRBAND | POLLWRNORM | POLLOUT)
+#ifdef POLLRDNORM
+// This program is for userspace compliant to POSIX 2008 (IEEE 1003.1:2008).
+// This is the default compliance level since glibc-2.12 or later.
+# define POLLIN_SET	(POLLRDNORM | POLLRDBAND | POLLIN | POLLHUP)
+# define POLLOUT_SET	(POLLWRBAND | POLLWRNORM | POLLOUT)
+#else
+// However it's allowed to be for old compliance levels.
+# define POLLIN_SET	(POLLIN | POLLHUP)
+# define POLLOUT_SET	(POLLOUT)
+#endif
 #define POLLEX_SET	(POLLPRI)
+
 
 struct select_state {
 	fd_set rfds_rd;
