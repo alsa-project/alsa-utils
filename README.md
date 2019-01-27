@@ -11,6 +11,7 @@ alsaconf	| the ALSA driver configurator script
 alsa-info       | a script to gather information about ALSA subsystem
 alsactl		| an utility for soundcard settings management
 aplay/arecord	| an utility for the playback / capture of .wav,.voc,.au files
+axfer		| an utility to transfer audio data frame (enhancement of aplay)
 amixer		| a command line mixer
 alsamixer	| a ncurses mixer
 amidi		| a utility to send/receive sysex dumps or other MIDI data
