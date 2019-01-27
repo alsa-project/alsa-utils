@@ -971,6 +971,22 @@ some scenarios below, no copying occurs between modules.
  - xfer(mmap/interleaved), mapper(single), container(any)
  - xfer(mmap/non\-interleaved), mapper(multiple), containers(any)
 
+.SS Unit test
+
+For each of the
+.I mapper
+and
+.I container
+module, unit test is available. To run the tests, execute below command:
+
+.nf
+$ make test
+.fi
+
+Each test iterates writing to file and reading to the file for many times and it
+takes long time to finish. Please take care of the execution time if running on
+any CI environment.
+
 .SH SEE ALSO
 \fB
 axfer(1),
