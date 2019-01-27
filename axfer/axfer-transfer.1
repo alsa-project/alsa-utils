@@ -873,6 +873,15 @@ input handling in main loop and leave bothersome operation to maintain PCM
 substream.
 
 .TP
+.I \-m, \-\-chmap=CH1,CH2,...
+ALSA PCM core and control core doesn't support this feature, therefore
+remapping should be done in userspace. This brings overhead to align audio
+data frames, especially for mmap operation. Furthermore, as of alsa-lib v1.1.8,
+some plugins don't support this feature expectedly, thus this option is a lack
+of transparent operation. At present, this option is not supported yet not to
+confuse users.
+
+.TP
 .I SIGTSTP, SIGCONT
 This performs suspend/resume of PCM substream. In aplay(1) implementation,
 these operations bring XRUN state to the substream, and suspend/resume is done
