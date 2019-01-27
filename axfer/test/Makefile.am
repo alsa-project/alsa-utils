@@ -14,6 +14,7 @@ container_test_SOURCES = \
 	../container-voc.c \
 	../container-raw.c \
 	generator.c \
+	generator.h \
 	container-test.c
 
 mapper_test_SOURCES = \
@@ -28,4 +29,5 @@ mapper_test_SOURCES = \
 	../mapper-single.c \
 	../mapper-multiple.c \
 	generator.c \
+	generator.h \
 	mapper-test.c
