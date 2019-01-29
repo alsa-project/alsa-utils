@@ -86,6 +86,25 @@ static int ts_num = 4; /* time signature: numerator */
 static int ts_div = 4; /* time signature: denominator */
 static int ts_dd = 2; /* time signature: denominator as a power of two */
 
+/* Parse a decimal number from a command line argument. */
+static long arg_parse_decimal_num(const char *str, int *err)
+{
+	long val;
+	char *endptr;
+
+	errno = 0;
+	val = strtol(str, &endptr, 0);
+	if (errno > 0) {
+		*err = -errno;
+		return 0;
+	}
+	if (*endptr != '\0') {
+		*err = -EINVAL;
+		return 0;
+	}
+
+	return val;
+}
 
 /* prints an error message to stderr, and dies */
 static void fatal(const char *msg, ...)
@@ -690,7 +709,8 @@ static void help(const char *argv0)
 		"  -t,--ticks=ticks           resolution in ticks per beat or frame\n"
 		"  -s,--split-channels        create a track for each channel\n"
 		"  -m,--metronome=client:port play a metronome signal\n"
-		"  -i,--timesig=nn:dd         time signature\n",
+		"  -i,--timesig=nn:dd         time signature\n"
+		"  -n,--num-events=events     fixed number of events to record, then exit\n",
 		argv0);
 }
 
@@ -706,7 +726,7 @@ static void sighandler(int sig)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hVlp:b:f:t:sdm:i:";
+	static const char short_options[] = "hVlp:b:f:t:sdm:i:n:";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
@@ -719,6 +739,7 @@ int main(int argc, char *argv[])
 		{"dump", 0, NULL, 'd'},
 		{"metronome", 1, NULL, 'm'},
 		{"timesig", 1, NULL, 'i'},
+		{"num-events", 1, NULL, 'n'},
 		{ }
 	};
 
@@ -727,6 +748,9 @@ int main(int argc, char *argv[])
 	struct pollfd *pfds;
 	int npfds;
 	int c, err;
+	/* If |num_events| isn't specified, leave it at 0. */
+	long num_events = 0;
+	long events_received = 0;
 
 	init_seq();
 
@@ -774,6 +798,16 @@ int main(int argc, char *argv[])
 			break;
 		case 'i':
 			time_signature(optarg);
+			break;
+		case 'n':
+			err = 0;
+			num_events = arg_parse_decimal_num(optarg, &err);
+			if (err != 0) {
+				fatal("Couldn't parse num_events argument: %s\n",
+					strerror(-err));
+			}
+			if (num_events <= 0)
+				fatal("num_events must be greater than 0");
 			break;
 		default:
 			help(argv[0]);
@@ -864,12 +898,19 @@ int main(int argc, char *argv[])
 			err = snd_seq_event_input(seq, &event);
 			if (err < 0)
 				break;
-			if (event)
+			if (event) {
 				record_event(event);
+				events_received++;
+			}
 		} while (err > 0);
 		if (stop)
 			break;
+		if (num_events && (events_received == num_events))
+			break;
 	}
+
+	if (num_events && events_received < num_events)
+		fputs("Warning: Received signal before num_events\n", stdout);
 
 	finish_tracks();
 	write_file();
