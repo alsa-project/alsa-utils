@@ -22,22 +22,26 @@ CHANGELOG="http://www.alsa-project.org/alsa-info.sh.changelog"
 
 ##################################################################################
 
-#The script was written for 2 main reasons:
-# 1. Remove the need for the devs/helpers to ask several questions before we can easily help the user.
-# 2. Allow newer/inexperienced ALSA users to give us all the info we need to help them.
+# The script was written for 2 main reasons:
+#  1. Remove the need for the devs/helpers to ask several questions before we can easily help the user.
+#  2. Allow newer/inexperienced ALSA users to give us all the info we need to help them.
 
 #Set the locale (this may or may not be a good idea.. let me know)
 export LC_ALL=C
 
-#Change the PATH variable, so we can run lspci (needed for some distros)
+# Change the PATH variable, so we can run lspci (needed for some distros)
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin
 BGTITLE="ALSA-Info v $SCRIPT_VERSION"
 PASTEBINKEY="C9cRIO8m/9y8Cs0nVs0FraRx7U0pHsuc"
-#Define some simple functions
 
-WGET=$(which wget 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null)
+WGET=$(which wget 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null)
+REQUIRES="mktemp grep pgrep whereis ping awk date uname cat dmesg amixer alsactl"
 
-pbcheck(){
+#
+# Define some simple functions
+#
+
+pbcheck() {
 	[[ $UPLOAD = "no" ]] && return
 
 	if [[ -z $PASTEBIN ]]; then
@@ -50,9 +54,9 @@ pbcheck(){
 update() {
 	test -z "$WGET" -o ! -x "$WGET" && return
 
-	SHFILE=`mktemp -t alsa-info.XXXXXXXXXX` || exit 1
+	SHFILE=$(mktemp -t alsa-info.XXXXXXXXXX) || exit 1
 	wget -O $SHFILE "http://www.alsa-project.org/alsa-info.sh" >/dev/null 2>&1
-	REMOTE_VERSION=`grep SCRIPT_VERSION $SHFILE |head -n1 |sed 's/.*=//'`
+	REMOTE_VERSION=$(grep SCRIPT_VERSION $SHFILE | head -n1 | sed 's/.*=//')
 	if [ -s "$SHFILE" -a "$REMOTE_VERSION" != "$SCRIPT_VERSION" ]; then
 		if [[ -n $DIALOG ]]
 		then
@@ -131,7 +135,7 @@ withlsmod() {
 	echo "!!All Loaded Modules" >> $FILE
 	echo "!!------------------" >> $FILE
 	echo "" >> $FILE
-	lsmod |awk {'print $1'} >> $FILE
+	lsmod | awk '{print $1}' >> $FILE
 	echo "" >> $FILE
 	echo "" >> $FILE
 }
@@ -140,13 +144,13 @@ withamixer() {
         echo "!!Amixer output" >> $FILE
         echo "!!-------------" >> $FILE
         echo "" >> $FILE
-	for i in `grep "]: " /proc/asound/cards | awk -F ' ' '{ print $1} '` ; do
-	CARD_NAME=`grep "^ *$i " $TEMPDIR/alsacards.tmp|awk {'print $2'}`
-	echo "!!-------Mixer controls for card $i $CARD_NAME]" >> $FILE
-	echo "" >>$FILE
-	amixer -c$i info>> $FILE 2>&1
-	amixer -c$i>> $FILE 2>&1
-        echo "" >> $FILE
+	for i in $(grep "]: " /proc/asound/cards | awk -F ' ' '{ print $1 }') ; do
+		CARD_NAME=$(grep "^ *$i " $TEMPDIR/alsacards.tmp | awk '{ print $2 }')
+		echo "!!-------Mixer controls for card $i $CARD_NAME]" >> $FILE
+		echo "" >>$FILE
+		amixer -c$i info >> $FILE 2>&1
+		amixer -c$i >> $FILE 2>&1
+		echo "" >> $FILE
 	done
 	echo "" >> $FILE
 }
@@ -155,17 +159,7 @@ withalsactl() {
 	echo "!!Alsactl output" >> $FILE
         echo "!!--------------" >> $FILE
         echo "" >> $FILE
-        exe=""
-        if [ -x /usr/sbin/alsactl ]; then
-        	exe="/usr/sbin/alsactl"
-        fi
-        if [ -x /usr/local/sbin/alsactl ]; then
-        	exe="/usr/local/sbin/alsactl"
-        fi
-        if [ -z "$exe" ]; then
-        	exe=`whereis alsactl | cut -d ' ' -f 2`
-        fi
-	$exe -f $TEMPDIR/alsactl.tmp store
+	alsactl -f $TEMPDIR/alsactl.tmp store
 	echo "--startcollapse--" >> $FILE
 	cat $TEMPDIR/alsactl.tmp >> $FILE
 	echo "--endcollapse--" >> $FILE
@@ -183,8 +177,7 @@ withdevices() {
 }
 
 withconfigs() {
-if [[ -e $HOME/.asoundrc ]] || [[ -e /etc/asound.conf ]] || [[ -e $HOME/.asoundrc.asoundconf ]]
-then
+if [[ -e $HOME/.asoundrc ]] || [[ -e /etc/asound.conf ]] || [[ -e $HOME/.asoundrc.asoundconf ]]; then
         echo "!!ALSA configuration files" >> $FILE
         echo "!!------------------------" >> $FILE
         echo "" >> $FILE
@@ -268,7 +261,7 @@ withall() {
 }
 
 get_alsa_library_version() {
-	ALSA_LIB_VERSION=`grep VERSION_STR /usr/include/alsa/version.h 2>/dev/null|awk {'print $3'}|sed 's/"//g'`
+	ALSA_LIB_VERSION=$(grep VERSION_STR /usr/include/alsa/version.h 2>/dev/null | awk '{ print $3 }' | sed 's/"//g')
 
 	if [ -z "$ALSA_LIB_VERSION" ]; then
 		if [ -f /etc/lsb-release ]; then
@@ -276,7 +269,7 @@ get_alsa_library_version() {
 			case "$DISTRIB_ID" in
 				Ubuntu)
 					if which dpkg > /dev/null ; then
-						ALSA_LIB_VERSION=`dpkg -l libasound2 | tail -1 | awk '{print $3}' | cut -f 1 -d -`
+						ALSA_LIB_VERSION=$(dpkg -l libasound2 | tail -1 | awk '{ print $3 }' | cut -f 1 -d -)
 					fi
 
 					if [ "$ALSA_LIB_VERSION" = "<none>" ]; then
@@ -290,7 +283,7 @@ get_alsa_library_version() {
 			esac
 		elif [ -f /etc/debian_version ]; then
 			if which dpkg > /dev/null ; then
-				ALSA_LIB_VERSION=`dpkg -l libasound2 | tail -1 | awk '{print $3}' | cut -f 1 -d -`
+				ALSA_LIB_VERSION=$(dpkg -l libasound2 | tail -1 | awk '{ print $3 }' | cut -f 1 -d -)
 			fi
 
 			if [ "$ALSA_LIB_VERSION" = "<none>" ]; then
@@ -301,16 +294,24 @@ get_alsa_library_version() {
 	fi
 }
 
+# Basic requires
+for prg in $REQUIRES; do
+  t=$(which $prg 2> /dev/null)
+  if test -z "$t"; then
+    echo "This script requires $prg utility to continue."
+    exit 1
+  fi
+done
 
-#Run checks to make sure the programs we need are installed.
-LSPCI=$(which lspci 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null);
-TPUT=$(which tput 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null);
+# Run checks to make sure the programs we need are installed.
+LSPCI=$(which lspci 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null);
+TPUT=$(which tput 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null);
 DIALOG=$(which dialog 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null);
 
-#Check to see if sysfs is enabled in the kernel. We'll need this later on
-SYSFS=$(mount |grep sysfs|awk {'print $3'});
+# Check to see if sysfs is enabled in the kernel. We'll need this later on
+SYSFS=$(mount | grep sysfs | awk '{ print $3 }');
 
-#Check modprobe config files for sound related options
+# Check modprobe config files for sound related options
 SNDOPTIONS=$(modprobe -c|sed -n 's/^options \(snd[-_][^ ]*\)/\1:/p')
 
 KEEP_OUTPUT=
@@ -386,11 +387,11 @@ else
 fi # dialog
 fi # WELCOME
 
-#Set the output file
-TEMPDIR=`mktemp -t -d alsa-info.XXXXXXXXXX` || exit 1
+# Set the output file
+TEMPDIR=$(mktemp -t -d alsa-info.XXXXXXXXXX) || exit 1
 FILE="$TEMPDIR/alsa-info.txt"
 if [ -z "$NFILE" ]; then
-	NFILE=`mktemp -t alsa-info.txt.XXXXXXXXXX` || exit 1
+	NFILE=$(mktemp -t alsa-info.txt.XXXXXXXXXX) || exit 1
 fi
 
 trap cleanup 0
@@ -404,17 +405,17 @@ if [ -z "$LSPCI" ]; then
 	fi
 fi
 
-#Fetch the info and store in temp files/variables
-DISTRO=`grep -ihs "buntu\|SUSE\|Fedora\|PCLinuxOS\|MEPIS\|Mandriva\|Debian\|Damn\|Sabayon\|Slackware\|KNOPPIX\|Gentoo\|Zenwalk\|Mint\|Kubuntu\|FreeBSD\|Puppy\|Freespire\|Vector\|Dreamlinux\|CentOS\|Arch\|Xandros\|Elive\|SLAX\|Red\|BSD\|KANOTIX\|Nexenta\|Foresight\|GeeXboX\|Frugalware\|64\|SystemRescue\|Novell\|Solaris\|BackTrack\|KateOS\|Pardus" /etc/{issue,*release,*version}`
-KERNEL_VERSION=`uname -r`
-KERNEL_PROCESSOR=`uname -p`
-KERNEL_MACHINE=`uname -m`
-KERNEL_OS=`uname -o`
-[[ `uname -v | grep SMP`  ]] && KERNEL_SMP="Yes" || KERNEL_SMP="No" 
-ALSA_DRIVER_VERSION=`cat /proc/asound/version |head -n1|awk {'print $7'} |sed 's/\.$//'`
+# Fetch the info and store in temp files/variables
+TSTAMP=$(LANG=C TZ=UTC date)
+DISTRO=$(grep -ihs "buntu\|SUSE\|Fedora\|PCLinuxOS\|MEPIS\|Mandriva\|Debian\|Damn\|Sabayon\|Slackware\|KNOPPIX\|Gentoo\|Zenwalk\|Mint\|Kubuntu\|FreeBSD\|Puppy\|Freespire\|Vector\|Dreamlinux\|CentOS\|Arch\|Xandros\|Elive\|SLAX\|Red\|BSD\|KANOTIX\|Nexenta\|Foresight\|GeeXboX\|Frugalware\|64\|SystemRescue\|Novell\|Solaris\|BackTrack\|KateOS\|Pardus" /etc/{issue,*release,*version})
+KERNEL_VERSION=$(uname -r)
+KERNEL_PROCESSOR=$(uname -p)
+KERNEL_MACHINE=$(uname -m)
+KERNEL_OS=$(uname -o)
+[[ $(uname -v | grep SMP) ]] && KERNEL_SMP="Yes" || KERNEL_SMP="No"
+ALSA_DRIVER_VERSION=$(cat /proc/asound/version | head -n1 | awk '{ print $7 }' | sed 's/\.$//')
 get_alsa_library_version
-ALSA_UTILS_VERSION=`amixer -v |awk {'print $3'}`
-LAST_CARD=$((`grep "]: " /proc/asound/cards | wc -l` - 1 ))
+ALSA_UTILS_VERSION=$(amixer -v | awk '{ print $3 }')
 
 ESDINST=$(which esd 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null)
 PAINST=$(which pulseaudio 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null)
@@ -451,10 +452,10 @@ if [ -d /sys/bus/acpi/devices ]; then
     done
 fi
 
-cat /proc/asound/modules 2>/dev/null|awk {'print $2'}>$TEMPDIR/alsamodules.tmp
-cat /proc/asound/cards >$TEMPDIR/alsacards.tmp
+cat /proc/asound/modules 2>/dev/null | awk '{ print $2 }' > $TEMPDIR/alsamodules.tmp
+cat /proc/asound/cards > $TEMPDIR/alsacards.tmp
 if [[ ! -z "$LSPCI" ]]; then
-lspci |grep -i "multi\|audio">$TEMPDIR/lspci.tmp
+  lspci | grep -i "multi\|audio">$TEMPDIR/lspci.tmp
 fi
 
 #Check for HDA-Intel cards codec#*
@@ -477,7 +478,7 @@ echo "!!################################" >> $FILE
 echo "!!ALSA Information Script v $SCRIPT_VERSION" >> $FILE
 echo "!!################################" >> $FILE
 echo "" >> $FILE
-echo "!!Script ran on: `LANG=C TZ=UTC date`" >> $FILE
+echo "!!Script ran on: $TSTAMP" >> $FILE
 echo "" >> $FILE
 echo "" >> $FILE
 echo "!!Linux Distribution" >> $FILE
@@ -531,35 +532,35 @@ echo "!!Sound Servers on this system" >> $FILE
 echo "!!----------------------------" >> $FILE
 echo "" >> $FILE
 if [[ -n $PAINST ]];then
-[[ `pgrep '^(.*/)?pulseaudio$'` ]] && PARUNNING="Yes" || PARUNNING="No"
+[[ $(pgrep '^(.*/)?pulseaudio$') ]] && PARUNNING="Yes" || PARUNNING="No"
 echo "Pulseaudio:" >> $FILE
 echo "      Installed - Yes ($PAINST)" >> $FILE
 echo "      Running - $PARUNNING" >> $FILE
 echo "" >> $FILE
 fi
 if [[ -n $ESDINST ]];then
-[[ `pgrep '^(.*/)?esd$'` ]] && ESDRUNNING="Yes" || ESDRUNNING="No"
+[[ $(pgrep '^(.*/)?esd$') ]] && ESDRUNNING="Yes" || ESDRUNNING="No"
 echo "ESound Daemon:" >> $FILE
 echo "      Installed - Yes ($ESDINST)" >> $FILE
 echo "      Running - $ESDRUNNING" >> $FILE
 echo "" >> $FILE
 fi
 if [[ -n $ARTSINST ]];then
-[[ `pgrep '^(.*/)?artsd$'` ]] && ARTSRUNNING="Yes" || ARTSRUNNING="No"
+[[ $(pgrep '^(.*/)?artsd$') ]] && ARTSRUNNING="Yes" || ARTSRUNNING="No"
 echo "aRts:" >> $FILE
 echo "      Installed - Yes ($ARTSINST)" >> $FILE
 echo "      Running - $ARTSRUNNING" >> $FILE
 echo "" >> $FILE
 fi
 if [[ -n $JACKINST ]];then
-[[ `pgrep '^(.*/)?jackd$'` ]] && JACKRUNNING="Yes" || JACKRUNNING="No"
+[[ $(pgrep '^(.*/)?jackd$') ]] && JACKRUNNING="Yes" || JACKRUNNING="No"
 echo "Jack:" >> $FILE
 echo "      Installed - Yes ($JACKINST)" >> $FILE
 echo "      Running - $JACKRUNNING" >> $FILE
 echo "" >> $FILE
 fi
 if [[ -n $ROARINST ]];then
-[[ `pgrep '^(.*/)?roard$'` ]] && ROARRUNNING="Yes" || ROARRUNNING="No"
+[[ $(pgrep '^(.*/)?roard$') ]] && ROARRUNNING="Yes" || ROARRUNNING="No"
 echo "RoarAudio:" >> $FILE
 echo "      Installed - Yes ($ROARINST)" >> $FILE
 echo "      Running - $ROARRUNNING" >> $FILE
@@ -602,20 +603,20 @@ echo "" >> $FILE
 echo "" >> $FILE
 fi
 
-if [ -d "$SYSFS" ]
-then
-echo "!!Loaded sound module options" >> $FILE
-echo "!!---------------------------" >> $FILE
-echo "" >> $FILE
-for mod in `cat /proc/asound/modules|awk {'print $2'}`;do
-echo "!!Module: $mod" >> $FILE
-for params in `echo $SYSFS/module/$mod/parameters/*`; do
-	echo -ne "\t";
-	echo "$params : `cat $params`" | sed 's:.*/::';
-done >> $FILE
-echo "" >> $FILE
-done
-echo "" >> $FILE
+if [ -d "$SYSFS" ]; then
+	echo "!!Loaded sound module options" >> $FILE
+	echo "!!---------------------------" >> $FILE
+	echo "" >> $FILE
+	for mod in $(cat /proc/asound/modules | awk '{ print $2 }'); do
+		echo "!!Module: $mod" >> $FILE
+		for params in $(echo $SYSFS/module/$mod/parameters/*); do
+			echo -ne "\t"
+			value=$(cat $params)
+			echo "$params : $value" | sed 's:.*/::'
+		done >> $FILE
+		echo "" >> $FILE
+	done
+	echo "" >> $FILE
 fi
 
 if [ -s "$TEMPDIR/alsa-hda-intel.tmp" ]; then
@@ -856,8 +857,8 @@ if [ "$UPLOAD" = "no" ]; then
 
 fi # UPLOAD
 
-#Test that wget is installed, and supports --post-file. Upload $FILE if it does, and prompt user to upload file if it doesnt. 
-if [[ -n "${WGET}" ]] && [[ -x "${WGET}" ]] && [[ `wget --help |grep post-file` ]]
+# Test that wget is installed, and supports --post-file. Upload $FILE if it does, and prompt user to upload file if it does not.
+if [[ -n "${WGET}" ]] && [[ -x "${WGET}" ]] && [[ $(wget --help | grep post-file) ]]
 then
 
 if [[ -n $DIALOG ]]
@@ -882,7 +883,7 @@ fi
 dialog --backtitle "$BGTITLE" --title "Information uploaded" --yesno "Would you like to see the uploaded information?" 5 100 
 DIALOG_EXIT_CODE=$?
 if [ $DIALOG_EXIT_CODE = 0 ]; then
-	grep -v "alsa-info.txt" $FILE >$TEMPDIR/uploaded.txt
+	grep -v "alsa-info.txt" $FILE > $TEMPDIR/uploaded.txt
 	dialog --backtitle "$BGTITLE" --textbox $TEMPDIR/uploaded.txt 0 0
 fi
 
@@ -911,20 +912,20 @@ done
 echo -e "\b Done!"
 echo ""
 
-fi #dialog
+fi # dialog
 
-#See if tput is available, and use it if it is.	
+# See if tput is available, and use it if it is.
 if [ -n "$TPUT" ]; then
 	if [[ -z $PASTEBIN ]]; then
-		FINAL_URL=`tput setaf 1; grep "SUCCESS:" $TEMPDIR/wget.tmp | cut -d ' ' -f 2 ; tput sgr0`
+		FINAL_URL=$(tput setaf 1; grep "SUCCESS:" $TEMPDIR/wget.tmp | cut -d ' ' -f 2 ; tput sgr0)
 	else
-		FINAL_URL=`tput setaf 1; grep "SUCCESS:" $TEMPDIR/wget.tmp | sed -n 's/.*\:\([0-9]\+\).*/http:\/\/pastebin.ca\/\1/p';tput sgr0`
+		FINAL_URL=$(tput setaf 1; grep "SUCCESS:" $TEMPDIR/wget.tmp | sed -n 's/.*\:\([0-9]\+\).*/http:\/\/pastebin.ca\/\1/p'; tput sgr0)
 	fi
 else
 	if [[ -z $PASTEBIN ]]; then
-		FINAL_URL=`grep "SUCCESS:" $TEMPDIR/wget.tmp | cut -d ' ' -f 2`
+		FINAL_URL=$(grep "SUCCESS:" $TEMPDIR/wget.tmp | cut -d ' ' -f 2)
 	else
-		FINAL_URL=`grep "SUCCESS:" $TEMPDIR/wget.tmp | sed -n 's/.*\:\([0-9]\+\).*/http:\/\/pastebin.ca\/\1/p'`
+		FINAL_URL=$(grep "SUCCESS:" $TEMPDIR/wget.tmp | sed -n 's/.*\:\([0-9]\+\).*/http:\/\/pastebin.ca\/\1/p')
 	fi
 fi
 
