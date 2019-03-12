@@ -2690,8 +2690,6 @@ static void end_voc(int fd)
 	bt.datalen_h = (u_char) ((cnt & 0xFF0000) >> 16);
 	if (lseek64(fd, length_seek, SEEK_SET) == length_seek)
 		xwrite(fd, &bt, sizeof(VocBlockType));
-	if (fd != 1)
-		close(fd);
 }
 
 static void end_wave(int fd)
@@ -2712,8 +2710,6 @@ static void end_wave(int fd)
 		xwrite(fd, &rifflen, 4);
 	if (lseek64(fd, length_seek, SEEK_SET) == length_seek)
 		xwrite(fd, &cd, sizeof(WaveChunkHeader));
-	if (fd != 1)
-		close(fd);
 }
 
 static void end_au(int fd)
@@ -2725,8 +2721,6 @@ static void end_au(int fd)
 	ah.data_size = fdcount > 0xffffffff ? 0xffffffff : BE_INT(fdcount);
 	if (lseek64(fd, length_seek, SEEK_SET) == length_seek)
 		xwrite(fd, &ah.data_size, sizeof(ah.data_size));
-	if (fd != 1)
-		close(fd);
 }
 
 static void header(int rtype, char *name)
@@ -2938,7 +2932,7 @@ static void playback(char *name)
 		break;
         }
 
-	if (fd != 0)
+	if (fd != fileno(stdin))
 		close(fd);
 }
 
@@ -3151,7 +3145,7 @@ static void capture(char *orig_name)
 	if (!name || !strcmp(name, "-")) {
 		fd = fileno(stdout);
 		name = "stdout";
-		tostdout=1;
+		tostdout = 1;
 		if (count > fmt_rec_table[file_type].max_filesize)
 			count = fmt_rec_table[file_type].max_filesize;
 	}
@@ -3159,7 +3153,7 @@ static void capture(char *orig_name)
 
 	do {
 		/* open a file to write */
-		if(!tostdout) {
+		if (!tostdout) {
 			/* upon the second file we start the numbering scheme */
 			if (filecount || use_strftime) {
 				filecount = new_capture_file(orig_name, namebuf,
@@ -3218,8 +3212,10 @@ static void capture(char *orig_name)
 		}
 
 		/* finish sample container */
-		if (fmt_rec_table[file_type].end && !tostdout) {
-			fmt_rec_table[file_type].end(fd);
+		if (!tostdout) {
+			if (fmt_rec_table[file_type].end)
+				fmt_rec_table[file_type].end(fd);
+			close(fd);
 			fd = -1;
 		}
 
