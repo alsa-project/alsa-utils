@@ -631,7 +631,7 @@ static void write_file(void)
 	fwrite("MThd\0\0\0\6", 1, 8, file);
 	/* type 0 or 1 */
 	fputc(0, file);
-	fputc(used_tracks > 1, file);
+	fputc(used_tracks > 1 ? 1 : 0, file);
 	/* number of tracks */
 	fputc((used_tracks >> 8) & 0xff, file);
 	fputc(used_tracks & 0xff, file);
