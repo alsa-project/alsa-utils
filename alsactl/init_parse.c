@@ -1675,8 +1675,10 @@ static int parse(struct space *space, const char *filename)
 	linenum = 0;
 	linesize = 128;
 	line = malloc(linesize);
-	if (line == NULL)
+	if (line == NULL) {
+		file_unmap(buf, bufsize);
 		return -ENOMEM;
+	}
 	space->filename = filename;
 	while (!err && pos < bufsize && !space->quit) {
 		count = line_width(buf, bufsize, pos);
