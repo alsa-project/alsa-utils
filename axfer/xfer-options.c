@@ -349,8 +349,11 @@ int xfer_options_parse_args(struct xfer_context *xfer,
 			xfer->multiple_cntrs = true;
 		else if (key == OPT_DUMP_HW_PARAMS)
 			xfer->dump_hw_params = true;
-		else if (key == '?')
+		else if (key == '?') {
+			free(l_opts);
+			free(s_opts);
 			return -EINVAL;
+		}
 		else if (key == OPT_MAX_FILE_TIME ||
 			 key == OPT_USE_STRFTIME ||
 			 key == OPT_PROCESS_ID_FILE ||
