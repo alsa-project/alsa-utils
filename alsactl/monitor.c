@@ -369,8 +369,6 @@ static int run_dispatcher(int epfd, int sigfd, int infd, struct list_head *srcs,
 				remove_source_entry(entry);
 			}
 		}
-		if (err < 0)
-			break;
 	}
 end:
 	free(epev);
