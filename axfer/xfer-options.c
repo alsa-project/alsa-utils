@@ -395,7 +395,7 @@ void xfer_options_calculate_duration(struct xfer_context *xfer,
 	uint64_t frame_count;
 
 	if (xfer->duration_seconds > 0) {
-		frame_count = xfer->duration_seconds * xfer->frames_per_second;
+		frame_count = (uint64_t)xfer->duration_seconds * (uint64_t)xfer->frames_per_second;
 		if (frame_count < *total_frame_count)
 			*total_frame_count = frame_count;
 	}

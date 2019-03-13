@@ -50,13 +50,18 @@ int frame_cache_init(struct frame_cache *cache, snd_pcm_access_t access,
 		     unsigned int samples_per_frame,
 		     unsigned int frames_per_cache)
 {
+	cache->access = access;
+	cache->remained_count = 0;
+	cache->bytes_per_sample = bytes_per_sample;
+	cache->samples_per_frame = samples_per_frame;
+	cache->frames_per_cache = frames_per_cache;
+
 	if (access == SND_PCM_ACCESS_RW_INTERLEAVED)
 		cache->align_frames = align_frames_in_i;
 	else if (access == SND_PCM_ACCESS_RW_NONINTERLEAVED)
 		cache->align_frames = align_frames_in_n;
 	else
 		return -EINVAL;
-	cache->access = access;
 
 	if (access == SND_PCM_ACCESS_RW_INTERLEAVED) {
 		char *buf;
@@ -64,45 +69,42 @@ int frame_cache_init(struct frame_cache *cache, snd_pcm_access_t access,
 		buf = calloc(frames_per_cache,
 			     bytes_per_sample * samples_per_frame);
 		if (buf == NULL)
-			return -ENOMEM;
+			goto nomem;
 		cache->buf = buf;
 		cache->buf_ptr = buf;
 	} else {
-		char **bufs;
-		char **buf_ptrs;
+		char **bufs = calloc(samples_per_frame, sizeof(*bufs));
+		char **buf_ptrs = calloc(samples_per_frame, sizeof(*buf_ptrs));
 		int i;
 
-		bufs = calloc(samples_per_frame, sizeof(*bufs));
-		if (bufs == NULL)
-			return -ENOMEM;
-		buf_ptrs = calloc(samples_per_frame, sizeof(*buf_ptrs));
-		if (buf_ptrs == NULL)
-			return -ENOMEM;
+		cache->buf = bufs;
+		cache->buf_ptr = buf_ptrs;
+		if (bufs == NULL || buf_ptrs == NULL)
+			goto nomem;
 		for (i = 0; i < samples_per_frame; ++i) {
 			bufs[i] = calloc(frames_per_cache, bytes_per_sample);
 			if (bufs[i] == NULL)
-				return -ENOMEM;
+				goto nomem;
 			buf_ptrs[i] = bufs[i];
 		}
-		cache->buf = bufs;
-		cache->buf_ptr = buf_ptrs;
 	}
 
-	cache->remained_count = 0;
-	cache->bytes_per_sample = bytes_per_sample;
-	cache->samples_per_frame = samples_per_frame;
-	cache->frames_per_cache = frames_per_cache;
 
 	return 0;
+
+nomem:
+	frame_cache_destroy(cache);
+	return -ENOMEM;
 }
 
 void frame_cache_destroy(struct frame_cache *cache)
 {
 	if (cache->access == SND_PCM_ACCESS_RW_NONINTERLEAVED) {
-		int i;
-		for (i = 0; i < cache->samples_per_frame; ++i) {
-			char **bufs = cache->buf;
-			free(bufs[i]);
+		char **bufs = cache->buf;
+		if (bufs) {
+			int i;
+			for (i = 0; i < cache->samples_per_frame; ++i)
+				free(bufs[i]);
 		}
 		free(cache->buf_ptr);
 	}

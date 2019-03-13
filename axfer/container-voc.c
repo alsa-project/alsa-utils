@@ -234,7 +234,7 @@ static int build_time_constant(unsigned int frames_per_second,
 					frames_per_second)
 				break;
 		}
-		if (i < ARRAY_SIZE(ex_v110_time_consts) ||
+		if (i < ARRAY_SIZE(ex_v110_time_consts) &&
 		    frames_per_second <= 192000) {
 			*code = ex_v110_time_consts[i].code;
 		} else {
@@ -520,29 +520,31 @@ static int detect_format_block(struct container_context *cntr)
 {
 	struct parser_state *state = cntr->private_data;
 	struct block_header header;
-	void *buf = NULL;
+	void *buf;
 	int err;
 
 again:
+	buf = NULL;
 	err = cache_data_block(cntr, &header, &buf);
 	if (err < 0)
 		return err;
+	if (buf) {
+		if (header.type == BLOCK_TYPE_EXTENDED_V110_FORMAT) {
+			err = parse_extended_v110_format(state, buf);
+		} else if (header.type == BLOCK_TYPE_V120_DATA) {
+			err = parse_v120_format_block(state, buf);
+		} else if (header.type == BLOCK_TYPE_V110_DATA) {
+			err = parse_v110_data(state, buf);
+		} else {
+			free(buf);
+			goto again;
+		}
 
-	if (header.type == BLOCK_TYPE_EXTENDED_V110_FORMAT) {
-		err = parse_extended_v110_format(state, buf);
-	} else if (header.type == BLOCK_TYPE_V120_DATA) {
-		err = parse_v120_format_block(state, buf);
-	} else if (header.type == BLOCK_TYPE_V110_DATA) {
-		err = parse_v110_data(state, buf);
-	} else {
 		free(buf);
-		goto again;
+
+		if (err < 0)
+			return err;
 	}
-
-	free(buf);
-
-	if (err < 0)
-		return err;
 
 	// Expect to detect block_v110_data.
 	if (header.type == BLOCK_TYPE_EXTENDED_V110_FORMAT)

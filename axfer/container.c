@@ -296,7 +296,7 @@ int container_context_pre_process(struct container_context *cntr,
 				  unsigned int *frames_per_second,
 				  uint64_t *frame_count)
 {
-	uint64_t byte_count;
+	uint64_t byte_count = 0;
 	unsigned int bytes_per_frame;
 	int err;
 
