@@ -1411,7 +1411,11 @@ static void set_params(void)
 		      chunk_size, buffer_size);
 		prg_exit(EXIT_FAILURE);
 	}
-	snd_pcm_sw_params_current(handle, swparams);
+	err = snd_pcm_sw_params_current(handle, swparams);
+	if (err < 0) {
+		error(_("Unable to get current sw params."));
+		prg_exit(EXIT_FAILURE);
+	}
 	if (avail_min < 0)
 		n = chunk_size;
 	else
