@@ -293,7 +293,7 @@ static int increase_playback_avail_min(struct loopback_handle *lhandle)
 		/* avoid 100% CPU usage for broken plugins */
 		ts.tv_sec = 0;
 		ts.tv_nsec = 10000;
-		err = nanosleep(&ts, NULL);
+		nanosleep(&ts, NULL);
 		return 0;
 	}
 	snd_pcm_sw_params_alloca(&swparams);
