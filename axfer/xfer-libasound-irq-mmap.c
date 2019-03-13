@@ -75,7 +75,7 @@ static int irq_mmap_process_frames(struct libasound_state *state,
 	struct map_layout *layout = state->private_data;
 	const snd_pcm_channel_area_t *areas;
 	snd_pcm_uframes_t frame_offset;
-	snd_pcm_sframes_t avail;
+	snd_pcm_uframes_t avail;
 	unsigned int avail_count;
 	void *frame_buf;
 	snd_pcm_sframes_t consumed_count;
@@ -110,7 +110,7 @@ static int irq_mmap_process_frames(struct libasound_state *state,
 	// MEMO: either snd_pcm_avail_update() and snd_pcm_mmap_begin() can
 	// return the same number of available frames.
 	avail = snd_pcm_avail_update(state->handle);
-	if (avail < 0)
+	if ((snd_pcm_sframes_t)avail < 0)
 		return (int)avail;
 	if (*frame_count < avail)
 		avail = *frame_count;
