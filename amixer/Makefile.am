@@ -1,3 +1,4 @@
+AM_CFLAGS = -D_GNU_SOURCE
 AM_CPPFLAGS = -I$(top_srcdir)/include
 LDADD = -lm
 # LDFLAGS = -static
