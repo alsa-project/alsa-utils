@@ -120,7 +120,7 @@ extern const struct container_builder container_builder_au;
 extern const struct container_parser container_parser_voc;
 extern const struct container_builder container_builder_voc;
 
-const struct container_parser container_parser_raw;
-const struct container_builder container_builder_raw;
+extern const struct container_parser container_parser_raw;
+extern const struct container_builder container_builder_raw;
 
 #endif
