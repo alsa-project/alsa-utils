@@ -622,8 +622,8 @@ static int write_v120_format_block(struct container_context *cntr,
 	build_block_data_size(block->size, 12 + byte_count);
 
 	block->frames_per_second = htole32(frames_per_second);
-	block->bits_per_sample = htole16(state->bytes_per_sample * 8);
-	block->samples_per_frame = htole16(state->samples_per_frame);
+	block->bits_per_sample = state->bytes_per_sample * 8;
+	block->samples_per_frame = state->samples_per_frame;
 	block->code_id = htole16(state->code_id);
 
 	return container_recursive_write(cntr, block, sizeof(*block));
