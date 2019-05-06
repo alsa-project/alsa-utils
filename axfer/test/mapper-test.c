@@ -300,8 +300,10 @@ static int test_vector(struct mapper_trial *trial, snd_pcm_access_t access,
 
 	for (i = 0; i < cntr_count; ++i) {
 		bufs[i] = malloc(size);
-		if (bufs[i] == NULL)
+		if (bufs[i] == NULL) {
+			err = -ENOMEM;
 			goto end;
+		}
 		memset(bufs[i], 0, size);
 	}
 
