@@ -71,7 +71,7 @@ static int test_demux(struct mapper_trial *trial, snd_pcm_access_t access,
 	unsigned int bytes_per_sample;
 	uint64_t total_frame_count;
 	int i;
-	int err;
+	int err = 0;
 
 	for (i = 0; i < cntr_count; ++i) {
 		snd_pcm_format_t format;
@@ -163,7 +163,7 @@ static int test_mux(struct mapper_trial *trial, snd_pcm_access_t access,
 	unsigned int bytes_per_sample;
 	uint64_t total_frame_count;
 	int i;
-	int err;
+	int err = 0;
 
 	for (i = 0; i < cntr_count; ++i) {
 		snd_pcm_format_t format;
