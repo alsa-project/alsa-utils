@@ -156,7 +156,6 @@ static int list_pcms(snd_pcm_stream_t direction)
 
 	filter = filters[direction];
 
-	n = hints;
 	for (n = hints; *n != NULL; ++n) {
 		io = snd_device_name_get_hint(*n, "IOID");
 		if (io != NULL && strcmp(io, filter) != 0) {

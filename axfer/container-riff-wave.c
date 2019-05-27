@@ -381,7 +381,6 @@ static int wave_parser_pre_process(struct container_context *cntr,
 	*format = format_maps[i].format;
 	*samples_per_frame = state->samples_per_frame;
 	*frames_per_second = state->frames_per_second;
-	phys_width /= 8;
 	*byte_count = state->byte_count;
 
 	return 0;
