@@ -1262,6 +1262,7 @@ static int setup_chmap(void)
 	hw_map = calloc(hwparams.channels, sizeof(int));
 	if (!hw_map) {
 		error(_("not enough memory"));
+		free(hw_chmap);
 		return -1;
 	}
 
@@ -1284,6 +1285,7 @@ static int setup_chmap(void)
 			error(_("Channel %d doesn't match with hw_parmas"), ch);
 			snd_pcm_chmap_print(hw_chmap, sizeof(buf), buf);
 			fprintf(stderr, "hardware chmap = %s\n", buf);
+			free(hw_chmap);
 			return -1;
 		}
 	}
