@@ -114,7 +114,8 @@ static int multiple_pre_process(struct mapper_context *mapper,
 		// configured to store one sample per frame.
 		if (mapper->type == MAPPER_TYPE_DEMUXER) {
 			for (i = 0; i < cntr_count; ++i) {
-				if (cntrs->samples_per_frame != 1)
+				cntr = cntrs + i;
+				if (cntr->samples_per_frame != 1)
 					return -EINVAL;
 			}
 		}
