@@ -220,7 +220,7 @@ static int test_sample_format(struct test_generator *gen,
 	int err = 0;
 
 	for (i = 0; i <= SND_PCM_FORMAT_LAST; ++i) {
-		if (!((1ul << i) & gen->sample_format_mask))
+		if (!((1ull << i) & gen->sample_format_mask))
 			continue;
 
 		err = test_samples_per_frame(gen, access, i);
@@ -237,7 +237,7 @@ static int test_access(struct test_generator *gen)
 	int err = 0;
 
 	for (i = 0; i <= SND_PCM_ACCESS_LAST; ++i) {
-		if (!((1ul << i) & gen->access_mask))
+		if (!((1ull << i) & gen->access_mask))
 			continue;
 
 		err = test_sample_format(gen, i);

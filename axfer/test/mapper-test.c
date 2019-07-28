@@ -396,13 +396,13 @@ int main(int argc, const char *argv[])
 {
 	// Test 8/16/18/20/24/32/64 bytes per sample.
 	static const uint64_t sample_format_mask =
-			(1ul << SND_PCM_FORMAT_U8) |
-			(1ul << SND_PCM_FORMAT_S16_LE) |
-			(1ul << SND_PCM_FORMAT_S18_3LE) |
-			(1ul << SND_PCM_FORMAT_S20_3LE) |
-			(1ul << SND_PCM_FORMAT_S24_LE) |
-			(1ul << SND_PCM_FORMAT_S32_LE) |
-			(1ul << SND_PCM_FORMAT_FLOAT64_LE);
+			(1ull << SND_PCM_FORMAT_U8) |
+			(1ull << SND_PCM_FORMAT_S16_LE) |
+			(1ull << SND_PCM_FORMAT_S18_3LE) |
+			(1ull << SND_PCM_FORMAT_S20_3LE) |
+			(1ull << SND_PCM_FORMAT_S24_LE) |
+			(1ull << SND_PCM_FORMAT_S32_LE) |
+			(1ull << SND_PCM_FORMAT_FLOAT64_LE);
 	uint64_t access_mask;
 	struct test_generator gen = {0};
 	struct mapper_trial *trial;
@@ -451,13 +451,13 @@ int main(int argc, const char *argv[])
 			goto end;
 		}
 
-		access_mask = 1ul << access;
+		access_mask = 1ull << access;
 		verbose = true;
 	} else {
-		access_mask = (1ul << SND_PCM_ACCESS_MMAP_INTERLEAVED) |
-			      (1ul << SND_PCM_ACCESS_MMAP_NONINTERLEAVED) |
-			      (1ul << SND_PCM_ACCESS_RW_INTERLEAVED) |
-			      (1ul << SND_PCM_ACCESS_RW_NONINTERLEAVED);
+		access_mask = (1ull << SND_PCM_ACCESS_MMAP_INTERLEAVED) |
+			      (1ull << SND_PCM_ACCESS_MMAP_NONINTERLEAVED) |
+			      (1ull << SND_PCM_ACCESS_RW_INTERLEAVED) |
+			      (1ull << SND_PCM_ACCESS_RW_NONINTERLEAVED);
 		verbose = false;
 	}
 
