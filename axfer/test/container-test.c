@@ -172,82 +172,82 @@ int main(int argc, const char *argv[])
 {
 	static const uint64_t sample_format_masks[] = {
 		[CONTAINER_FORMAT_RIFF_WAVE] =
-			(1ul << SND_PCM_FORMAT_U8) |
-			(1ul << SND_PCM_FORMAT_S16_LE) |
-			(1ul << SND_PCM_FORMAT_S16_BE) |
-			(1ul << SND_PCM_FORMAT_S24_LE) |
-			(1ul << SND_PCM_FORMAT_S24_BE) |
-			(1ul << SND_PCM_FORMAT_S32_LE) |
-			(1ul << SND_PCM_FORMAT_S32_BE) |
-			(1ul << SND_PCM_FORMAT_FLOAT_LE) |
-			(1ul << SND_PCM_FORMAT_FLOAT_BE) |
-			(1ul << SND_PCM_FORMAT_FLOAT64_LE) |
-			(1ul << SND_PCM_FORMAT_FLOAT64_BE) |
-			(1ul << SND_PCM_FORMAT_MU_LAW) |
-			(1ul << SND_PCM_FORMAT_A_LAW) |
-			(1ul << SND_PCM_FORMAT_S24_3LE) |
-			(1ul << SND_PCM_FORMAT_S24_3BE) |
-			(1ul << SND_PCM_FORMAT_S20_3LE) |
-			(1ul << SND_PCM_FORMAT_S20_3BE) |
-			(1ul << SND_PCM_FORMAT_S18_3LE) |
-			(1ul << SND_PCM_FORMAT_S18_3BE),
+			(1ull << SND_PCM_FORMAT_U8) |
+			(1ull << SND_PCM_FORMAT_S16_LE) |
+			(1ull << SND_PCM_FORMAT_S16_BE) |
+			(1ull << SND_PCM_FORMAT_S24_LE) |
+			(1ull << SND_PCM_FORMAT_S24_BE) |
+			(1ull << SND_PCM_FORMAT_S32_LE) |
+			(1ull << SND_PCM_FORMAT_S32_BE) |
+			(1ull << SND_PCM_FORMAT_FLOAT_LE) |
+			(1ull << SND_PCM_FORMAT_FLOAT_BE) |
+			(1ull << SND_PCM_FORMAT_FLOAT64_LE) |
+			(1ull << SND_PCM_FORMAT_FLOAT64_BE) |
+			(1ull << SND_PCM_FORMAT_MU_LAW) |
+			(1ull << SND_PCM_FORMAT_A_LAW) |
+			(1ull << SND_PCM_FORMAT_S24_3LE) |
+			(1ull << SND_PCM_FORMAT_S24_3BE) |
+			(1ull << SND_PCM_FORMAT_S20_3LE) |
+			(1ull << SND_PCM_FORMAT_S20_3BE) |
+			(1ull << SND_PCM_FORMAT_S18_3LE) |
+			(1ull << SND_PCM_FORMAT_S18_3BE),
 		[CONTAINER_FORMAT_AU] =
-			(1ul << SND_PCM_FORMAT_S8) |
-			(1ul << SND_PCM_FORMAT_S16_BE) |
-			(1ul << SND_PCM_FORMAT_S32_BE) |
-			(1ul << SND_PCM_FORMAT_FLOAT_BE) |
-			(1ul << SND_PCM_FORMAT_FLOAT64_BE) |
-			(1ul << SND_PCM_FORMAT_MU_LAW) |
-			(1ul << SND_PCM_FORMAT_A_LAW),
+			(1ull << SND_PCM_FORMAT_S8) |
+			(1ull << SND_PCM_FORMAT_S16_BE) |
+			(1ull << SND_PCM_FORMAT_S32_BE) |
+			(1ull << SND_PCM_FORMAT_FLOAT_BE) |
+			(1ull << SND_PCM_FORMAT_FLOAT64_BE) |
+			(1ull << SND_PCM_FORMAT_MU_LAW) |
+			(1ull << SND_PCM_FORMAT_A_LAW),
 		[CONTAINER_FORMAT_VOC] =
-			(1ul << SND_PCM_FORMAT_U8) |
-			(1ul << SND_PCM_FORMAT_S16_LE) |
-			(1ul << SND_PCM_FORMAT_MU_LAW) |
-			(1ul << SND_PCM_FORMAT_A_LAW),
+			(1ull << SND_PCM_FORMAT_U8) |
+			(1ull << SND_PCM_FORMAT_S16_LE) |
+			(1ull << SND_PCM_FORMAT_MU_LAW) |
+			(1ull << SND_PCM_FORMAT_A_LAW),
 		[CONTAINER_FORMAT_RAW] =
-			(1ul << SND_PCM_FORMAT_S8) |
-			(1ul << SND_PCM_FORMAT_U8) |
-			(1ul << SND_PCM_FORMAT_S16_LE) |
-			(1ul << SND_PCM_FORMAT_S16_BE) |
-			(1ul << SND_PCM_FORMAT_U16_LE) |
-			(1ul << SND_PCM_FORMAT_U16_BE) |
-			(1ul << SND_PCM_FORMAT_S24_LE) |
-			(1ul << SND_PCM_FORMAT_S24_BE) |
-			(1ul << SND_PCM_FORMAT_U24_LE) |
-			(1ul << SND_PCM_FORMAT_U24_BE) |
-			(1ul << SND_PCM_FORMAT_S32_LE) |
-			(1ul << SND_PCM_FORMAT_S32_BE) |
-			(1ul << SND_PCM_FORMAT_U32_LE) |
-			(1ul << SND_PCM_FORMAT_U32_BE) |
-			(1ul << SND_PCM_FORMAT_FLOAT_LE) |
-			(1ul << SND_PCM_FORMAT_FLOAT_BE) |
-			(1ul << SND_PCM_FORMAT_FLOAT64_LE) |
-			(1ul << SND_PCM_FORMAT_FLOAT64_BE) |
-			(1ul << SND_PCM_FORMAT_IEC958_SUBFRAME_LE) |
-			(1ul << SND_PCM_FORMAT_IEC958_SUBFRAME_BE) |
-			(1ul << SND_PCM_FORMAT_MU_LAW) |
-			(1ul << SND_PCM_FORMAT_A_LAW) |
-			(1ul << SND_PCM_FORMAT_S24_3LE) |
-			(1ul << SND_PCM_FORMAT_S24_3BE) |
-			(1ul << SND_PCM_FORMAT_U24_3LE) |
-			(1ul << SND_PCM_FORMAT_U24_3BE) |
-			(1ul << SND_PCM_FORMAT_S20_3LE) |
-			(1ul << SND_PCM_FORMAT_S20_3BE) |
-			(1ul << SND_PCM_FORMAT_U20_3LE) |
-			(1ul << SND_PCM_FORMAT_U20_3BE) |
-			(1ul << SND_PCM_FORMAT_S18_3LE) |
-			(1ul << SND_PCM_FORMAT_S18_3BE) |
-			(1ul << SND_PCM_FORMAT_U18_3LE) |
-			(1ul << SND_PCM_FORMAT_U18_3BE) |
-			(1ul << SND_PCM_FORMAT_DSD_U8) |
-			(1ul << SND_PCM_FORMAT_DSD_U16_LE) |
-			(1ul << SND_PCM_FORMAT_DSD_U32_LE) |
-			(1ul << SND_PCM_FORMAT_DSD_U16_BE) |
-			(1ul << SND_PCM_FORMAT_DSD_U32_BE),
+			(1ull << SND_PCM_FORMAT_S8) |
+			(1ull << SND_PCM_FORMAT_U8) |
+			(1ull << SND_PCM_FORMAT_S16_LE) |
+			(1ull << SND_PCM_FORMAT_S16_BE) |
+			(1ull << SND_PCM_FORMAT_U16_LE) |
+			(1ull << SND_PCM_FORMAT_U16_BE) |
+			(1ull << SND_PCM_FORMAT_S24_LE) |
+			(1ull << SND_PCM_FORMAT_S24_BE) |
+			(1ull << SND_PCM_FORMAT_U24_LE) |
+			(1ull << SND_PCM_FORMAT_U24_BE) |
+			(1ull << SND_PCM_FORMAT_S32_LE) |
+			(1ull << SND_PCM_FORMAT_S32_BE) |
+			(1ull << SND_PCM_FORMAT_U32_LE) |
+			(1ull << SND_PCM_FORMAT_U32_BE) |
+			(1ull << SND_PCM_FORMAT_FLOAT_LE) |
+			(1ull << SND_PCM_FORMAT_FLOAT_BE) |
+			(1ull << SND_PCM_FORMAT_FLOAT64_LE) |
+			(1ull << SND_PCM_FORMAT_FLOAT64_BE) |
+			(1ull << SND_PCM_FORMAT_IEC958_SUBFRAME_LE) |
+			(1ull << SND_PCM_FORMAT_IEC958_SUBFRAME_BE) |
+			(1ull << SND_PCM_FORMAT_MU_LAW) |
+			(1ull << SND_PCM_FORMAT_A_LAW) |
+			(1ull << SND_PCM_FORMAT_S24_3LE) |
+			(1ull << SND_PCM_FORMAT_S24_3BE) |
+			(1ull << SND_PCM_FORMAT_U24_3LE) |
+			(1ull << SND_PCM_FORMAT_U24_3BE) |
+			(1ull << SND_PCM_FORMAT_S20_3LE) |
+			(1ull << SND_PCM_FORMAT_S20_3BE) |
+			(1ull << SND_PCM_FORMAT_U20_3LE) |
+			(1ull << SND_PCM_FORMAT_U20_3BE) |
+			(1ull << SND_PCM_FORMAT_S18_3LE) |
+			(1ull << SND_PCM_FORMAT_S18_3BE) |
+			(1ull << SND_PCM_FORMAT_U18_3LE) |
+			(1ull << SND_PCM_FORMAT_U18_3BE) |
+			(1ull << SND_PCM_FORMAT_DSD_U8) |
+			(1ull << SND_PCM_FORMAT_DSD_U16_LE) |
+			(1ull << SND_PCM_FORMAT_DSD_U32_LE) |
+			(1ull << SND_PCM_FORMAT_DSD_U16_BE) |
+			(1ull << SND_PCM_FORMAT_DSD_U32_BE),
 	};
 	static const uint64_t access_mask =
-		(1ul << SND_PCM_ACCESS_MMAP_INTERLEAVED) |
-		(1ul << SND_PCM_ACCESS_RW_INTERLEAVED);
+		(1ull << SND_PCM_ACCESS_MMAP_INTERLEAVED) |
+		(1ull << SND_PCM_ACCESS_RW_INTERLEAVED);
 	struct test_generator gen = {0};
 	struct container_trial *trial;
 	int i;
