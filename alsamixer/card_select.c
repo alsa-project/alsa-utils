@@ -200,11 +200,9 @@ static int get_cards(void)
 		if (err < 0)
 			continue;
 		card = ccalloc(1, sizeof *card);
-		sprintf(buf, "%d", number);
-		card->indexstr = cstrdup(buf);
-		card->name = cstrdup(snd_ctl_card_info_get_name(info));
-		sprintf(buf, "hw:%d", number);
 		card->device_name = cstrdup(buf);
+		card->indexstr = cstrdup(buf + 3);
+		card->name = cstrdup(snd_ctl_card_info_get_name(info));
 		prev_card->next = card;
 		prev_card = card;
 		++count;
