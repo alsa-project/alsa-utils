@@ -420,10 +420,8 @@ static void display_control(unsigned int control_index)
 		waddch(mixer_widget.window, ACS_HLINE);
 		waddch(mixer_widget.window, ACS_HLINE);
 		waddch(mixer_widget.window, ACS_URCORNER);
-		for (i = 0; i < volume_height; ++i) {
-			mvwaddch(mixer_widget.window, base_y - i - 1, frame_left, ACS_VLINE);
-			mvwaddch(mixer_widget.window, base_y - i - 1, frame_left + 3, ACS_VLINE);
-		}
+		mvwvline(mixer_widget.window, base_y - volume_height, frame_left, ACS_VLINE, volume_height);
+		mvwvline(mixer_widget.window, base_y - volume_height, frame_left + 3, ACS_VLINE, volume_height);
 		mvwaddch(mixer_widget.window, base_y, frame_left,
 			 control->flags & TYPE_PSWITCH ? ACS_LTEE : ACS_LLCORNER);
 		waddch(mixer_widget.window, ACS_HLINE);
@@ -626,10 +624,8 @@ static void display_scroll_indicators(void)
 	right = first_visible_control_index + visible_controls < controls_count
 		? ACS_RARROW : ACS_VLINE;
 	wattrset(mixer_widget.window, attr_mixer_frame);
-	for (y = y0; y <= y1; ++y) {
-		mvwaddch(mixer_widget.window, y, 0, left);
-		mvwaddch(mixer_widget.window, y, screen_cols - 1, right);
-	}
+	mvwvline(mixer_widget.window, y0, 0, left, y1 - y0);
+	mvwvline(mixer_widget.window, y0, screen_cols -1, right, y1 - y0);
 }
 
 void display_controls(void)

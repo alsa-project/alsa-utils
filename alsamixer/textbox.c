@@ -184,8 +184,7 @@ static void update_text_lines(void)
 static void update_y_scroll_bar(void)
 {
 	int length;
-	int begin, end;
-	int i;
+	int begin;
 
 	if (max_scroll_y <= 0 || text_lines_count == 0)
 		return;
@@ -193,17 +192,15 @@ static void update_y_scroll_bar(void)
 	if (length >= text_box_y)
 		return;
 	begin = current_top * (text_box_y - length) / max_scroll_y;
-	end = begin + length;
-	for (i = 0; i < text_box_y; ++i)
-		mvwaddch(text_widget.window, i + 1, text_box_x + 1,
-			 i >= begin && i < end ? ACS_BOARD : ' ');
+
+	mvwvline(text_widget.window, 1, text_box_x + 1, ' ', text_box_y);
+	mvwvline(text_widget.window, begin + 1, text_box_x + 1, ACS_BOARD, length);
 }
 
 static void update_x_scroll_bar(void)
 {
 	int length;
-	int begin, end;
-	int i;
+	int begin;
 
 	if (max_scroll_x <= 0 || max_line_width <= 0)
 		return;
@@ -211,10 +208,9 @@ static void update_x_scroll_bar(void)
 	if (length >= text_box_x)
 		return;
 	begin = current_left * (text_box_x - length) / max_scroll_x;
-	end = begin + length;
-	wmove(text_widget.window, text_box_y + 1, 1);
-	for (i = 0; i < text_box_x; ++i)
-		waddch(text_widget.window, i >= begin && i < end ? ACS_BOARD : ' ');
+
+	mvwhline(text_widget.window, text_box_y + 1, 1, ' ', text_box_x);
+	mvwhline(text_widget.window, text_box_y + 1, begin + 1, ACS_BOARD, length);
 }
 
 static void move_x(int delta)
