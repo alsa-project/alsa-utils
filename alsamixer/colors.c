@@ -47,23 +47,46 @@ int attr_textfield;
 int attr_menu;
 int attr_menu_selected;
 
+/* Wrapper around ncurses init_pair() that ensures
+ * each color pair is only defined once. */
+int get_color_pair(short fg, short bg)
+{
+	static int color_pairs_defined = 0;
+	short i, pair_fg, pair_bg;
+
+	for (i = 1; i <= color_pairs_defined; ++i) {
+		if (OK == pair_content(i, &pair_fg, &pair_bg))
+			if (pair_fg == fg && pair_bg == bg)
+				return COLOR_PAIR(i);
+	}
+
+	if (color_pairs_defined + 1 < COLOR_PAIRS) {
+		++color_pairs_defined;
+		init_pair(color_pairs_defined, fg, bg);
+		return COLOR_PAIR(color_pairs_defined);
+	}
+
+   return 0;
+}
+
 void init_colors(int use_color)
 {
 	if (!!has_colors() == !!use_color) {
 		start_color();
+		use_default_colors();
 
-		init_pair(1, COLOR_CYAN, COLOR_BLACK);
-		init_pair(2, COLOR_YELLOW, COLOR_BLACK);
-		init_pair(3, COLOR_WHITE, COLOR_GREEN);
-		init_pair(4, COLOR_RED, COLOR_BLACK);
-		init_pair(5, COLOR_WHITE, COLOR_BLACK);
-		init_pair(6, COLOR_WHITE, COLOR_BLUE);
-		init_pair(7, COLOR_RED, COLOR_BLUE);
-		init_pair(8, COLOR_GREEN, COLOR_GREEN);
-		init_pair(9, COLOR_WHITE, COLOR_RED);
+		get_color_pair(COLOR_CYAN, COLOR_BLACK); // COLOR_PAIR(1)
+		get_color_pair(COLOR_YELLOW, COLOR_BLACK);
+		get_color_pair(COLOR_WHITE, COLOR_GREEN);
+		get_color_pair(COLOR_RED, COLOR_BLACK);
+		get_color_pair(COLOR_WHITE, COLOR_BLACK);
+		get_color_pair(COLOR_WHITE, COLOR_BLUE);
+		get_color_pair(COLOR_RED, COLOR_BLUE);
+		get_color_pair(COLOR_GREEN, COLOR_GREEN);
+		get_color_pair(COLOR_WHITE, COLOR_RED); // COLOR_PAIR(9)
 #ifdef TRICOLOR_VOLUME_BAR
-		init_pair(10, COLOR_WHITE, COLOR_WHITE);
-		init_pair(11, COLOR_RED, COLOR_RED);
+		get_color_pair(COLOR_WHITE, COLOR_WHITE);
+		get_color_pair(COLOR_RED, COLOR_RED);
 #endif
 
 		attr_mixer_frame = COLOR_PAIR(1);

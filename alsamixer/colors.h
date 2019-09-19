@@ -29,5 +29,6 @@ extern int attr_menu;
 extern int attr_menu_selected;
 
 void init_colors(int use_color);
+int get_color_pair(short fg, short bg);
 
 #endif
