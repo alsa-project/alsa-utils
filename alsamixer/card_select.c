@@ -73,8 +73,28 @@ static void on_menu_key(int key)
 		menu_driver(menu, request + KEY_MAX);
 }
 
+static int menu_handle_mouse()
+{
+	int key;
+
+	switch (menu_driver(menu, KEY_MOUSE)) {
+		case E_UNKNOWN_COMMAND:
+			return KEY_ENTER;
+		case E_REQUEST_DENIED:
+			key = wgetch(menu_win(menu));
+			if (key == KEY_MOUSE)
+				return KEY_CANCEL;
+			else
+				ungetch(key);
+	}
+	return 0;
+}
+
 static void on_handle_key(int key)
 {
+	if (key == KEY_MOUSE)
+		key = menu_handle_mouse();
+
 	switch (key) {
 	case 27:
 	case KEY_CANCEL:

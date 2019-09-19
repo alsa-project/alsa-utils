@@ -34,6 +34,7 @@
 #include "mixer_widget.h"
 #include "mixer_controls.h"
 #include "mixer_display.h"
+#include "mixer_clickable.h"
 
 enum align {
 	ALIGN_LEFT,
@@ -109,6 +110,8 @@ void init_mixer_layout(void)
 	unsigned int label_width_left, label_width_right;
 	unsigned int right_x, i;
 
+	clickable_clear(mixer_widget.window, 0, 0, -1, -1);
+
 	screen_too_small = screen_lines < 14 || screen_cols < 12;
 	has_info_items = screen_lines >= 6;
 	if (!has_info_items)
@@ -135,9 +138,13 @@ void init_mixer_layout(void)
 			display_string_in_field(1 + i, 2, labels_left[i],
 						label_width_left, ALIGN_RIGHT);
 	if (label_width_right)
-		for (i = 0; i < 4; ++i)
+		for (i = 0; i < 4; ++i) {
 			display_string_in_field(1 + i, right_x, labels_right[i],
 						label_width_right, ALIGN_LEFT);
+			clickable_set(
+						1 + i, right_x, 1 + i, right_x + label_width_right - 1,
+						CMD_MIXER_HELP + i, -1);
+		}
 }
 
 void display_card_info(void)
@@ -197,6 +204,8 @@ void display_view_mode(void)
 	bool has_view_mode;
 	int i;
 
+	clickable_clear(mixer_widget.window, 3, 0, 3, 30);
+
 	if (!has_info_items)
 		return;
 
@@ -215,6 +224,9 @@ void display_view_mode(void)
 			} else {
 				wprintw(mixer_widget.window, " %s ", modes[i]);
 			}
+			clickable_set_relative(mixer_widget.window,
+					0, -(widths[i] + 5), 0, -1,
+					CMD_MIXER_MODE_PLAYBACK+i, -1);
 			if (i < 2)
 				waddch(mixer_widget.window, ' ');
 		}
@@ -322,6 +334,7 @@ static void clear_controls_display(void)
 {
 	int i;
 
+	clickable_clear(mixer_widget.window, 5, 0, -1, -1);
 	wattrset(mixer_widget.window, attr_mixer_frame);
 	for (i = 5; i < screen_lines - 1; ++i)
 		mvwprintw(mixer_widget.window, i, 1, "%*s", screen_cols - 2, "");
@@ -481,6 +494,9 @@ static void display_control(unsigned int control_index)
 					 frame_left + c + 1, ch);
 			}
 		}
+		clickable_set(
+				base_y - volume_height, frame_left + 1, base_y, frame_left + 2,
+				CMD_MIXER_MOUSE_CHANGE_CONTROL, control_index);
 		if (control->flags & IS_ACTIVE)
 			wattrset(mixer_widget.window, attr_mixer_active);
 		if (!(control->flags & HAS_VOLUME_1)) {
@@ -518,6 +534,8 @@ static void display_control(unsigned int control_index)
 		       switches[1]
 		       ? _("O")[0] | (control->flags & IS_ACTIVE ? attr_ctl_nomute : 0)
 		       : _("M")[0] | (control->flags & IS_ACTIVE ? attr_ctl_mute : 0));
+		clickable_set(base_y + 1, frame_left + 1, base_y + 1, frame_left + 2,
+				CMD_MIXER_MOUSE_TOGGLE_MUTE, control_index);
 	}
 
 	if (control->flags & TYPE_CSWITCH) {
@@ -532,10 +550,16 @@ static void display_control(unsigned int control_index)
 			wattrset(mixer_widget.window, switches[0] ? attr_ctl_capture : attr_ctl_nocapture);
 		/* TRANSLATORS: "left"; no more than two characters */
 		display_string_in_field(cswitch_y - 1, frame_left - 2, switches[0] ? _("L") : "", 2, ALIGN_RIGHT);
+		clickable_set(
+				cswitch_y - 1, frame_left - 2, cswitch_y - 1, frame_left - 1,
+				CMD_MIXER_TOGGLE_CAPTURE_LEFT, control_index);
 		if (control->flags & IS_ACTIVE)
 			wattrset(mixer_widget.window, switches[1] ? attr_ctl_capture : attr_ctl_nocapture);
 		/* TRANSLATORS: "right"; no more than two characters */
 		display_string_in_field(cswitch_y - 1, frame_left + 4, switches[1] ? _("R") : "", 2, ALIGN_LEFT);
+		clickable_set(
+				cswitch_y - 1, frame_left + 4, cswitch_y - 1, frame_left + 5,
+				CMD_MIXER_TOGGLE_CAPTURE_RIGHT, control_index);
 		/* TRANSLATORS: no more than eight characters */
 		s = _("CAPTURE");
 		if (switches[0] || switches[1]) {
@@ -552,6 +576,9 @@ static void display_control(unsigned int control_index)
 				wattrset(mixer_widget.window, attr_ctl_nocapture);
 			display_string_in_field(cswitch_y, frame_left - 2, buf, 8, ALIGN_CENTER);
 		}
+		clickable_set(
+				cswitch_y, frame_left - 2, cswitch_y, frame_left - 2 + 8,
+				CMD_MIXER_TOGGLE_CAPTURE, control_index);
 	}
 
 	if (control->flags & TYPE_ENUM) {
@@ -564,6 +591,9 @@ static void display_control(unsigned int control_index)
 		if (control->flags & IS_ACTIVE)
 			wattrset(mixer_widget.window, attr_mixer_active);
 		display_string_centered_in_control(base_y, col, buf, control_width);
+		clickable_set_relative(mixer_widget.window,
+				0, (-1)*control_name_width, 0, -2,
+				CMD_MIXER_MOUSE_CHANGE_CONTROL_ENUM, control_index);
 	}
 
 	if (control_index == focus_control_index) {
@@ -582,6 +612,9 @@ static void display_control(unsigned int control_index)
 			wattrset(mixer_widget.window, attr_ctl_label_inactive);
 	}
 	display_string_centered_in_control(name_y, col, control->name, control_name_width);
+	clickable_set_relative(mixer_widget.window,
+			-1, (-1)*control_name_width, 0, -2,
+			CMD_MIXER_MOUSE_FOCUS_CONTROL, control_index);
 	if (channel_name_y > name_y) {
 		if (control->flags & IS_MULTICH) {
 			switch (control->flags & MULTICH_MASK) {

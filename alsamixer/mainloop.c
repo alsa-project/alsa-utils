@@ -40,7 +40,7 @@ static void black_hole_error_handler(const char *file, int line,
 {
 }
 
-void initialize_curses(bool use_color)
+void initialize_curses(bool use_color, bool use_mouse)
 {
 	curses_initialized = initscr();
 	cbreak();
@@ -50,6 +50,11 @@ void initialize_curses(bool use_color)
 #endif
 	window_size_changed(); /* update screen_lines/cols */
 	init_colors(use_color);
+	if (use_mouse) {
+		mousemask(BUTTON1_CLICKED|BUTTON1_DOUBLE_CLICKED|BUTTON1_TRIPLE_CLICKED|
+				BUTTON2_CLICKED|BUTTON2_DOUBLE_CLICKED|BUTTON2_TRIPLE_CLICKED|
+				BUTTON3_CLICKED|BUTTON3_DOUBLE_CLICKED|BUTTON3_TRIPLE_CLICKED, NULL);
+	}
 	snd_lib_error_set_handler(black_hole_error_handler);
 }
 

@@ -37,6 +37,7 @@
 #include "mixer_controls.h"
 #include "mixer_display.h"
 #include "mixer_widget.h"
+#include "mixer_clickable.h"
 #include "bindings.h"
 
 snd_mixer_t *mixer;
@@ -477,14 +478,81 @@ static void balance_volumes(void)
 #define EXPAND_CASE(S,E,A1,A2,A3,A4,A5) \
 	S##A1##E: case S##A2##E: case S##A3##E: case S##A4##E: case S##A5##E
 
+static int on_mouse_key() {
+	MEVENT m;
+	int volume;
+	enum mixer_command cmd;
+	unsigned int channels = LEFT | RIGHT;
+	unsigned int index;
+	struct control *control;
+
+	getmouse(&m);
+	struct clickable_rect* rect = clickable_find(m.y, m.x);
+	if (! rect)
+		return 0;
+
+	// Mind to process the data of the rect BEFORE calling
+	// refocus_control(), because it will call clickable_clear().
+	// This will make the rect pointer invalid.
+	cmd = rect->command;
+
+	// If argument is set (value != -1) it is mostly used for
+	// setting `focus_control_index`.
+	// Exception: cmd_mixer_mouse_scroll_horizontal
+	if (rect->arg1 >= 0 && cmd != CMD_MIXER_MOUSE_SCROLL_HORIZONTAL)
+		focus_control_index = rect->arg1;
+
+	switch (cmd) {
+	case CMD_MIXER_MOUSE_TOGGLE_MUTE:
+	case CMD_MIXER_MOUSE_CHANGE_CONTROL:
+		if (m.bstate & BUTTON3_CLICKED || m.bstate & BUTTON3_DOUBLE_CLICKED ||
+				m.bstate & BUTTON3_TRIPLE_CLICKED) {
+			channels = m.x - rect->x1 + 1;
+		}
+
+		if (cmd == CMD_MIXER_MOUSE_CHANGE_CONTROL) {
+			volume = (int) (100 * (rect->y2 - m.y) / (rect->y2 - rect->y1));
+			change_control_to_percent(volume, channels);
+		}
+		else {
+			toggle_mute(channels);
+		}
+		break;
+
+	case CMD_MIXER_MOUSE_CHANGE_CONTROL_ENUM:
+		control = get_focus_control(TYPE_ENUM);
+		if (control &&
+			(snd_mixer_selem_get_enum_item(control->elem, 0, &index) >= 0)) {
+				change_control_relative((index == 0 ? 100 : -1), 0);
+		}
+		break;
+
+	case CMD_MIXER_MOUSE_SCROLL_HORIZONTAL:
+		focus_control_index += rect->arg1;
+		clamp_focus_control_index();
+		// fall-through
+
+	case CMD_MIXER_MOUSE_FOCUS_CONTROL:
+		refocus_control();
+		break;
+
+	default:
+		return cmd;
+	}
+
+	return 0;
+}
+
 static void on_handle_key(int key)
 {
 	enum mixer_command cmd;
 
-	if (key >= ARRAY_SIZE(mixer_bindings))
+	if (key == KEY_MOUSE)
+		cmd = on_mouse_key();
+	else if (key < ARRAY_SIZE(mixer_bindings))
+		cmd = mixer_bindings[key];
+	else
 		return;
-
-	cmd = mixer_bindings[key];
 
 	switch (cmd) {
 	case CMD_MIXER_CLOSE:

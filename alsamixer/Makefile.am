@@ -13,6 +13,7 @@ alsamixer_SOURCES = card_select.c card_select.h \
 		mainloop.c mainloop.h \
 		mem.c mem.h \
 		mixer_controls.c mixer_controls.h \
+		mixer_clickable.c mixer_clickable.h \
 		mixer_display.c mixer_display.h \
 		mixer_widget.c mixer_widget.h \
 		proc_files.c proc_files.h \
