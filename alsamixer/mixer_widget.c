@@ -37,6 +37,7 @@
 #include "mixer_controls.h"
 #include "mixer_display.h"
 #include "mixer_widget.h"
+#include "bindings.h"
 
 snd_mixer_t *mixer;
 char *mixer_device_name;
@@ -326,6 +327,13 @@ static double clamp_volume(double v)
 	return v;
 }
 
+static void clamp_focus_control_index() {
+	if (focus_control_index >= controls_count)
+		focus_control_index = controls_count - 1;
+	else if (focus_control_index < 0)
+		focus_control_index = 0;
+}
+
 static void change_volume_relative(struct control *control, int delta, unsigned int channels)
 {
 	double (*get_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t);
@@ -466,146 +474,96 @@ static void balance_volumes(void)
 	display_controls();
 }
 
+#define EXPAND_CASE(S,E,A1,A2,A3,A4,A5) \
+	S##A1##E: case S##A2##E: case S##A3##E: case S##A4##E: case S##A5##E
+
 static void on_handle_key(int key)
 {
-	switch (key) {
-	case 27:
-	case KEY_CANCEL:
-	case KEY_F(10):
+	enum mixer_command cmd;
+
+	if (key >= ARRAY_SIZE(mixer_bindings))
+		return;
+
+	cmd = mixer_bindings[key];
+
+	switch (cmd) {
+	case CMD_MIXER_CLOSE:
 		mixer_widget.close();
 		break;
-	case KEY_F(1):
-	case KEY_HELP:
-	case 'H':
-	case 'h':
-	case '?':
+	case CMD_MIXER_HELP:
 		show_help();
 		break;
-	case KEY_F(2):
-	case '/':
+	case CMD_MIXER_SYSTEM_INFORMATION:
 		create_proc_files_list();
 		break;
-	case KEY_F(3):
-		set_view_mode(VIEW_MODE_PLAYBACK);
+	case CMD_MIXER_MODE_PLAYBACK:
+	case CMD_MIXER_MODE_CAPTURE:
+	case CMD_MIXER_MODE_ALL:
+		set_view_mode((enum view_mode)(cmd - CMD_MIXER_MODE_PLAYBACK));
 		break;
-	case KEY_F(4):
-		set_view_mode(VIEW_MODE_CAPTURE);
-		break;
-	case KEY_F(5):
-		set_view_mode(VIEW_MODE_ALL);
-		break;
-	case '\t':
+	case CMD_MIXER_MODE_TOGGLE:
 		set_view_mode((enum view_mode)((view_mode + 1) % VIEW_MODE_COUNT));
 		break;
-	case KEY_F(6):
-	case 'S':
-	case 's':
+	case CMD_MIXER_SELECT_CARD:
 		create_card_select_list();
 		break;
-	case KEY_REFRESH:
-	case 12:
-	case 'L':
-	case 'l':
+	case CMD_MIXER_REFRESH:
 		clearok(mixer_widget.window, TRUE);
 		display_controls();
 		break;
-	case KEY_LEFT:
-	case 'P':
-	case 'p':
+	case CMD_MIXER_PREVIOUS:
 		if (focus_control_index > 0) {
 			--focus_control_index;
 			refocus_control();
 		}
 		break;
-	case KEY_RIGHT:
-	case 'N':
-	case 'n':
+	case CMD_MIXER_NEXT:
 		if (focus_control_index < controls_count - 1) {
 			++focus_control_index;
 			refocus_control();
 		}
 		break;
-	case KEY_PPAGE:
-		change_control_relative(5, LEFT | RIGHT);
+	case EXPAND_CASE(CMD_MIXER_CONTROL_FOCUS_,,1,2,3,4,5):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_FOCUS_,,6,7,8,9,10):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_FOCUS_,,11,12,13,14,15):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_FOCUS_,,16,17,18,19,20):
+		focus_control_index = cmd - CMD_MIXER_CONTROL_FOCUS_1;
+		clamp_focus_control_index();
+		refocus_control();
 		break;
-	case KEY_NPAGE:
-		change_control_relative(-5, LEFT | RIGHT);
+	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_LEFT_,,1,2,3,4,5):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_RIGHT_,,1,2,3,4,5):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_,,1,2,3,4,5):
+		change_control_relative(
+				((cmd - CMD_MIXER_CONTROL_UP_LEFT_1) % 5) + 1,
+				((cmd - CMD_MIXER_CONTROL_UP_LEFT_1) / 5) + 1
+		);
 		break;
-#if 0
-	case KEY_BEG:
-	case KEY_HOME:
-		change_control_to_percent(100, LEFT | RIGHT);
+	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_LEFT_,,1,2,3,4,5):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_RIGHT_,,1,2,3,4,5):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_,,1,2,3,4,5):
+		change_control_relative(
+				-(((cmd - CMD_MIXER_CONTROL_DOWN_LEFT_1) % 5) + 1),
+				((cmd - CMD_MIXER_CONTROL_DOWN_LEFT_1) / 5) + 1
+		);
 		break;
-#endif
-	case KEY_LL:
-	case KEY_END:
-		change_control_to_percent(0, LEFT | RIGHT);
+	case CMD_MIXER_CONTROL_0_PERCENT:
+	case EXPAND_CASE(CMD_MIXER_CONTROL_,_PERCENT,10,20,30,40,50):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_,_PERCENT,60,70,80,90,100):
+		change_control_to_percent((cmd - CMD_MIXER_CONTROL_0_PERCENT) * 10, LEFT | RIGHT);
 		break;
-	case KEY_UP:
-	case '+':
-	case 'K':
-	case 'k':
-	case 'W':
-	case 'w':
-		change_control_relative(1, LEFT | RIGHT);
+	case CMD_MIXER_TOGGLE_MUTE_LEFT:
+	case CMD_MIXER_TOGGLE_MUTE_RIGHT:
+	case CMD_MIXER_TOGGLE_MUTE:
+		toggle_mute(cmd - CMD_MIXER_TOGGLE_MUTE_LEFT + 1);
 		break;
-	case KEY_DOWN:
-	case '-':
-	case 'J':
-	case 'j':
-	case 'X':
-	case 'x':
-		change_control_relative(-1, LEFT | RIGHT);
+	case CMD_MIXER_TOGGLE_CAPTURE_LEFT:
+	case CMD_MIXER_TOGGLE_CAPTURE_RIGHT:
+	case CMD_MIXER_TOGGLE_CAPTURE:
+		toggle_capture(cmd - CMD_MIXER_TOGGLE_CAPTURE_LEFT + 1);
 		break;
-	case '0': case '1': case '2': case '3': case '4':
-	case '5': case '6': case '7': case '8': case '9':
-		change_control_to_percent((key - '0') * 10, LEFT | RIGHT);
-		break;
-	case 'Q':
-	case 'q':
-		change_control_relative(1, LEFT);
-		break;
-	case 'Y':
-	case 'y':
-	case 'Z':
-	case 'z':
-		change_control_relative(-1, LEFT);
-		break;
-	case 'E':
-	case 'e':
-		change_control_relative(1, RIGHT);
-		break;
-	case 'C':
-	case 'c':
-		change_control_relative(-1, RIGHT);
-		break;
-	case 'M':
-	case 'm':
-		toggle_mute(LEFT | RIGHT);
-		break;
-	case 'B':
-	case 'b':
-	case '=':
+	case CMD_MIXER_BALANCE_CONTROL:
 		balance_volumes();
-		break;
-	case '<':
-	case ',':
-		toggle_mute(LEFT);
-		break;
-	case '>':
-	case '.':
-		toggle_mute(RIGHT);
-		break;
-	case ' ':
-		toggle_capture(LEFT | RIGHT);
-		break;
-	case KEY_IC:
-	case ';':
-		toggle_capture(LEFT);
-		break;
-	case KEY_DC:
-	case '\'':
-		toggle_capture(RIGHT);
 		break;
 	}
 }

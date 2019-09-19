@@ -32,6 +32,7 @@
 #include "colors.h"
 #include "widget.h"
 #include "textbox.h"
+#include "bindings.h"
 
 #define MAX_FILE_SIZE 1048576
 
@@ -247,68 +248,41 @@ static void move_y(int delta)
 
 static void on_handle_key(int key)
 {
-	switch (key) {
-	case 10:
-	case 13:
-	case 27:
-	case KEY_CANCEL:
-	case KEY_ENTER:
-	case KEY_CLOSE:
-	case KEY_EXIT:
+	if (key >= ARRAY_SIZE(textbox_bindings))
+		return;
+
+	switch ((enum textbox_command) textbox_bindings[key]) {
+	case CMD_TEXTBOX_CLOSE:
 		text_widget.close();
 		break;
-	case KEY_DOWN:
-	case KEY_SF:
-	case 'J':
-	case 'j':
-	case 'X':
-	case 'x':
+	case CMD_TEXTBOX_DOWN:
 		move_y(1);
 		break;
-	case KEY_UP:
-	case KEY_SR:
-	case 'K':
-	case 'k':
-	case 'W':
-	case 'w':
+	case CMD_TEXTBOX_UP:
 		move_y(-1);
 		break;
-	case KEY_LEFT:
-	case 'H':
-	case 'h':
-	case 'P':
-	case 'p':
+	case CMD_TEXTBOX_LEFT:
 		move_x(-1);
 		break;
-	case KEY_RIGHT:
-	case 'L':
-	case 'l':
-	case 'N':
-	case 'n':
+	case CMD_TEXTBOX_RIGHT:
 		move_x(1);
 		break;
-	case KEY_NPAGE:
-	case ' ':
+	case CMD_TEXTBOX_PAGE_DOWN:
 		move_y(text_box_y);
 		break;
-	case KEY_PPAGE:
-	case KEY_BACKSPACE:
-	case 'B':
-	case 'b':
+	case CMD_TEXTBOX_PAGE_UP:
 		move_y(-text_box_y);
 		break;
-	case KEY_HOME:
-	case KEY_BEG:
+	case CMD_TEXTBOX_TOP:
 		move_x(-max_scroll_x);
 		break;
-	case KEY_LL:
-	case KEY_END:
+	case CMD_TEXTBOX_BOTTOM:
 		move_x(max_scroll_x);
 		break;
-	case '\t':
+	case CMD_TEXTBOX_PAGE_RIGHT:
 		move_x(8);
 		break;
-	case KEY_BTAB:
+	case CMD_TEXTBOX_PAGE_LEFT:
 		move_x(-8);
 		break;
 	}

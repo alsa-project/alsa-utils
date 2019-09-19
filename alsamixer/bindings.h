@@ -1,0 +1,84 @@
+#ifndef BINDINGS_H_INCLUDED
+#define BINDINGS_H_INCLUDED
+
+#include CURSESINC
+#include <menu.h>
+
+// Choosing typedef over `enum __attribute__((packed))`
+typedef unsigned char command_enum;
+extern command_enum mixer_bindings[KEY_MAX];
+extern command_enum textbox_bindings[KEY_MAX];
+
+#define EXPAND(S,E,A1,A2,A3,A4,A5) \
+	S##A1##E, S##A2##E, S##A3##E, S##A4##E, S##A5##E
+
+enum mixer_command {
+	// Keep those in the same order as displayed on screen
+	CMD_MIXER_HELP = 1,
+	CMD_MIXER_SYSTEM_INFORMATION,
+	CMD_MIXER_SELECT_CARD,
+	CMD_MIXER_CLOSE,
+
+	// Keep those in the same order as in `enum view_mode`
+	CMD_MIXER_MODE_PLAYBACK,
+	CMD_MIXER_MODE_CAPTURE,
+	CMD_MIXER_MODE_ALL,
+
+	CMD_MIXER_MODE_TOGGLE,
+	CMD_MIXER_REFRESH,
+	CMD_MIXER_PREVIOUS,
+	CMD_MIXER_NEXT,
+	CMD_MIXER_BALANCE_CONTROL,
+
+	// Keep order: left, right, both
+	EXPAND(CMD_MIXER_CONTROL_DOWN_LEFT_,,1,2,3,4,5),
+	EXPAND(CMD_MIXER_CONTROL_DOWN_RIGHT_,,1,2,3,4,5),
+	EXPAND(CMD_MIXER_CONTROL_DOWN_,,1,2,3,4,5),
+
+	// Keep order: left, right, both
+	EXPAND(CMD_MIXER_CONTROL_UP_LEFT_,,1,2,3,4,5),
+	EXPAND(CMD_MIXER_CONTROL_UP_RIGHT_,,1,2,3,4,5),
+	EXPAND(CMD_MIXER_CONTROL_UP_,,1,2,3,4,5),
+
+	// Keep order: left, right, both
+	CMD_MIXER_TOGGLE_MUTE_LEFT,
+	CMD_MIXER_TOGGLE_MUTE_RIGHT,
+	CMD_MIXER_TOGGLE_MUTE,
+
+	// Keep order: left, right, both
+	CMD_MIXER_TOGGLE_CAPTURE_LEFT,
+	CMD_MIXER_TOGGLE_CAPTURE_RIGHT,
+	CMD_MIXER_TOGGLE_CAPTURE,
+
+	// Keep those sorted
+	CMD_MIXER_CONTROL_0_PERCENT,
+	EXPAND(CMD_MIXER_CONTROL_,_PERCENT,10,20,30,40,50),
+	EXPAND(CMD_MIXER_CONTROL_,_PERCENT,60,70,80,90,100),
+
+	// Keep those sorted
+	EXPAND(CMD_MIXER_CONTROL_FOCUS_,,1,2,3,4,5),
+	EXPAND(CMD_MIXER_CONTROL_FOCUS_,,6,7,8,9,10),
+	EXPAND(CMD_MIXER_CONTROL_FOCUS_,,11,12,13,14,15),
+	EXPAND(CMD_MIXER_CONTROL_FOCUS_,,16,17,18,19,20),
+};
+
+enum textbox_command {
+	// These commands are also used inside the menu widget.
+	// `REQ_* - KEY_MAX` evalutes to something inbetween 1 and 17.
+	// KEY_MAX is substracted because we want to fit the value in 8 bits.
+	CMD_TEXTBOX___MIN_MENU_COMMAND = MIN_MENU_COMMAND - KEY_MAX,
+	CMD_TEXTBOX_TOP = REQ_FIRST_ITEM - KEY_MAX,
+	CMD_TEXTBOX_BOTTOM = REQ_LAST_ITEM - KEY_MAX,
+	CMD_TEXTBOX_LEFT = REQ_LEFT_ITEM - KEY_MAX,
+	CMD_TEXTBOX_RIGHT = REQ_RIGHT_ITEM - KEY_MAX,
+	CMD_TEXTBOX_UP = REQ_UP_ITEM - KEY_MAX,
+	CMD_TEXTBOX_DOWN = REQ_DOWN_ITEM - KEY_MAX,
+	CMD_TEXTBOX_PAGE_DOWN = REQ_SCR_DPAGE - KEY_MAX,
+	CMD_TEXTBOX_PAGE_UP = REQ_SCR_UPAGE - KEY_MAX,
+	CMD_TEXTBOX___MAX_MENU_COMMAND = MAX_MENU_COMMAND - KEY_MAX,
+	CMD_TEXTBOX_PAGE_LEFT,
+	CMD_TEXTBOX_PAGE_RIGHT,
+	CMD_TEXTBOX_CLOSE,
+};
+
+#endif
