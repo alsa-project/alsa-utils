@@ -149,44 +149,38 @@ static const char *command_words =
 static unsigned int parse_words(const char *name, int *number) {
 	unsigned words = 0;
 	unsigned word;
-	char *sdup, *sdup_orig;
-	int idx;
-	sdup = sdup_orig = cstrdup(name);
+	char buf[16];
+	int i;
 
-	while (*sdup) {
-		name = sdup;
-		while (*sdup) {
-			if (*sdup == '_') {
-				*sdup = '\0';
-				++sdup;
+	while (*name) {
+		for (i = 0; i < sizeof(buf) - 1; ++i) {
+			if (*name == '\0')
+				break;
+			if (*name == '_') {
+				++name;
 				break;
 			}
-			++sdup;
+			buf[i] = *name;
+			++name;
 		}
+		buf[i] = '\0';
 
-		word = 0;
-		if (*name >= '0' && *name <= '9') {
-			if (!number)
-				goto FAIL;
-			*number = atoi(name);
+		if (buf[0] >= '0' && buf[0] <= '9') {
+			if (number)
+				*number = atoi(buf);
 			word = W_NUMBER;
 		}
-		else {
-			idx = strlist_index(command_words, 9, ' ', name);
-			if (idx >= 0)
-				word = 1 << idx;
-		}
+		else if ((i = strlist_index(command_words, 9, ' ', buf)) >= 0)
+			word = 1 << i;
+		else
+			return 0;
 		
-		if (!word || words & word) // Every word only once
-			goto FAIL;
+		if (words & word) // Every word only once
+			return 0;
 		words |= word;
 	}
 
-	free(sdup_orig);
 	return words;
-FAIL:
-	free(sdup_orig);
-	return 0;
 }
 
 static int textbox_command_by_name(const char *name) {
@@ -223,10 +217,11 @@ static int mixer_command_by_name(const char *name) {
 		case W_MODE|W_TOGGLE: return CMD_MIXER_MODE_TOGGLE;
 		case W_CONTROL|W_BALANCE: return CMD_MIXER_BALANCE_CONTROL;
 		case W_CONTROL|W_SET|W_NUMBER:
-			  if (number % 10 == 0 && number <= 100)
-				  return CMD_MIXER_CONTROL_0_PERCENT + number/10;
-			  else
-				  return 0;
+			return ((number % 10 || number > 100) ? 0 :
+				  CMD_MIXER_CONTROL_0_PERCENT + number/10);
+		case W_CONTROL|W_FOCUS|W_NUMBER:
+			return ((number < 1 || number > 20) ? 0 :
+					CMD_MIXER_CONTROL_FOCUS_1 + number - 1);
 	}
 
 	if (words & W_LEFT)
@@ -240,15 +235,12 @@ static int mixer_command_by_name(const char *name) {
 	switch (words) {
 		case W_CONTROL|W_UP:
 		case W_CONTROL|W_UP|W_NUMBER:
-			return ((number < 0 || number > 10) ? 0 :
+			return ((number < 1 || number > 10) ? 0 :
 				CMD_MIXER_CONTROL_UP_LEFT_1 + (channel-1)*10 + number - 1);
 		case W_CONTROL|W_DOWN:
 		case W_CONTROL|W_DOWN|W_NUMBER:
-			return ((number < 0 || number > 10) ? 0 :
+			return ((number < 1 || number > 10) ? 0 :
 				CMD_MIXER_CONTROL_DOWN_LEFT_1 + (channel-1)*10 + number - 1);
-		case W_CONTROL|W_FOCUS|W_NUMBER:
-			return ((number < 0 || number > 20) ? 0 :
-					CMD_MIXER_CONTROL_FOCUS_1 + number - 1);
 		case W_CONTROL|W_MUTE:
 			return CMD_MIXER_TOGGLE_MUTE_LEFT + channel - 1;
 		case W_CONTROL|W_CAPTURE:
