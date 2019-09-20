@@ -55,6 +55,8 @@ unsigned int current_control_flags;
 bool control_values_changed;
 bool controls_changed;
 
+int mouse_wheel_step = 1;
+
 enum channel_mask {
 	LEFT = 1,
 	RIGHT = 2,
@@ -329,10 +331,10 @@ static double clamp_volume(double v)
 }
 
 static void clamp_focus_control_index() {
-	if (focus_control_index >= controls_count)
-		focus_control_index = controls_count - 1;
-	else if (focus_control_index < 0)
+	if (focus_control_index < 0)
 		focus_control_index = 0;
+	else if (focus_control_index >= controls_count)
+		focus_control_index = controls_count - 1;
 }
 
 static void change_volume_relative(struct control *control, int delta, unsigned int channels)
@@ -487,6 +489,21 @@ static int on_mouse_key() {
 	struct control *control;
 
 	getmouse(&m);
+
+#if NCURSES_MOUSE_VERSION > 1
+	if (m.bstate & (BUTTON4_CLICKED|BUTTON4_PRESSED))
+		return CMD_MIXER_CONTROL_UP_1 + mouse_wheel_step - 1;
+	else if (m.bstate & (BUTTON5_CLICKED|BUTTON5_PRESSED))
+		return CMD_MIXER_CONTROL_DOWN_1 + mouse_wheel_step - 1;
+#endif
+
+	// Can't use mousemask() to filter those events, menu_driver() needs them.
+	if (m.bstate & (
+				BUTTON1_PRESSED|BUTTON1_RELEASED|
+				BUTTON2_PRESSED|BUTTON2_RELEASED|
+				BUTTON3_PRESSED|BUTTON3_RELEASED))
+		return 0;
+
 	struct clickable_rect* rect = clickable_find(m.y, m.x);
 	if (! rect)
 		return 0;
@@ -505,8 +522,7 @@ static int on_mouse_key() {
 	switch (cmd) {
 	case CMD_MIXER_MOUSE_TOGGLE_MUTE:
 	case CMD_MIXER_MOUSE_CHANGE_CONTROL:
-		if (m.bstate & BUTTON3_CLICKED || m.bstate & BUTTON3_DOUBLE_CLICKED ||
-				m.bstate & BUTTON3_TRIPLE_CLICKED) {
+		if (m.bstate & (BUTTON3_CLICKED|BUTTON3_DOUBLE_CLICKED|BUTTON3_TRIPLE_CLICKED)) {
 			channels = m.x - rect->x1 + 1;
 		}
 
@@ -528,7 +544,7 @@ static int on_mouse_key() {
 		break;
 
 	case CMD_MIXER_MOUSE_SCROLL_HORIZONTAL:
-		focus_control_index += rect->arg1;
+		focus_control_index = focus_control_index + rect->arg1;
 		clamp_focus_control_index();
 		// fall-through
 
@@ -600,19 +616,25 @@ static void on_handle_key(int key)
 		refocus_control();
 		break;
 	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_LEFT_,,1,2,3,4,5):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_LEFT_,,6,7,8,9,10):
 	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_RIGHT_,,1,2,3,4,5):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_RIGHT_,,6,7,8,9,10):
 	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_,,1,2,3,4,5):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_,,6,7,8,9,10):
 		change_control_relative(
-				((cmd - CMD_MIXER_CONTROL_UP_LEFT_1) % 5) + 1,
-				((cmd - CMD_MIXER_CONTROL_UP_LEFT_1) / 5) + 1
+				((cmd - CMD_MIXER_CONTROL_UP_LEFT_1) % 10) + 1,
+				((cmd - CMD_MIXER_CONTROL_UP_LEFT_1) / 10) + 1
 		);
 		break;
 	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_LEFT_,,1,2,3,4,5):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_LEFT_,,6,7,8,9,10):
 	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_RIGHT_,,1,2,3,4,5):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_RIGHT_,,6,7,8,9,10):
 	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_,,1,2,3,4,5):
+	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_,,6,7,8,9,10):
 		change_control_relative(
-				-(((cmd - CMD_MIXER_CONTROL_DOWN_LEFT_1) % 5) + 1),
-				((cmd - CMD_MIXER_CONTROL_DOWN_LEFT_1) / 5) + 1
+				-(((cmd - CMD_MIXER_CONTROL_DOWN_LEFT_1) % 10) + 1),
+				((cmd - CMD_MIXER_CONTROL_DOWN_LEFT_1) / 10) + 1
 		);
 		break;
 	case CMD_MIXER_CONTROL_0_PERCENT:

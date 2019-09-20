@@ -15,8 +15,14 @@
 #include "curskey.h"
 #include "bindings.h"
 
+#define ERROR_CONFIG -1
+#define ERROR_MISSING_ARGUMENTS -2
+#define ERROR_TOO_MUCH_ARGUMENTS -3
+
 static const char *error_message;
 static const char *error_cause;
+
+extern int mouse_wheel_step;
 
 static int strlist_index(const char *haystack, int padlen, int padchar, const char *needle) {
 	int needle_len;
@@ -37,7 +43,7 @@ static int strlist_index(const char *haystack, int padlen, int padchar, const ch
 }
 
 static int color_by_name(const char *name) {
-	static const char *names = 
+	return strlist_index(
 		"default "
 		"black   "
 		"red     "
@@ -46,13 +52,11 @@ static int color_by_name(const char *name) {
 		"blue    "
 		"magenta "
 		"cyan    "
-		"white   ";
-	return strlist_index(names, 8, ' ', name) - 1;
+		"white   ", 8, ' ', name) - 1;
 };
 
 static int attr_by_name(const char *name) {
-	static const char* names =
-		// Sorted by likeliness
+	int idx = strlist_index(
 		"bold      "
 		"reverse   "
 		"standout  "
@@ -62,9 +66,12 @@ static int attr_by_name(const char *name) {
 		"italic    "
 #endif
 		"normal    "
-		"blink     ";
+		"blink     ", 10, ' ', name);
 
-	static const int values[] = {
+	if (idx < 0)
+		return -1;
+
+	return (int[]) {
 		A_BOLD,
 		A_REVERSE,
 		A_STANDOUT,
@@ -75,12 +82,7 @@ static int attr_by_name(const char *name) {
 #endif
 		A_NORMAL,
 		A_BLINK,
-	};
-
-	int idx = strlist_index(names, 10, ' ', name);
-	if (idx >= 0)
-		return values[idx];
-	return -1;
+	}[idx];
 };
 
 enum command_word {
@@ -238,12 +240,12 @@ static int mixer_command_by_name(const char *name) {
 	switch (words) {
 		case W_CONTROL|W_UP:
 		case W_CONTROL|W_UP|W_NUMBER:
-			return ((number < 0 || number > 5) ? 0 :
-				CMD_MIXER_CONTROL_UP_LEFT_1 + (channel-1)*5 + number - 1);
+			return ((number < 0 || number > 10) ? 0 :
+				CMD_MIXER_CONTROL_UP_LEFT_1 + (channel-1)*10 + number - 1);
 		case W_CONTROL|W_DOWN:
 		case W_CONTROL|W_DOWN|W_NUMBER:
-			return ((number < 0 || number > 5) ? 0 :
-				CMD_MIXER_CONTROL_DOWN_LEFT_1 + (channel-1)*5 + number - 1);
+			return ((number < 0 || number > 10) ? 0 :
+				CMD_MIXER_CONTROL_DOWN_LEFT_1 + (channel-1)*10 + number - 1);
 		case W_CONTROL|W_FOCUS|W_NUMBER:
 			return ((number < 0 || number > 20) ? 0 :
 					CMD_MIXER_CONTROL_FOCUS_1 + number - 1);
@@ -263,7 +265,7 @@ static int mixer_command_by_name(const char *name) {
 }
 
 static int* element_by_name(const char *name) {
-	static const char* names =
+	int idx = strlist_index(
 #ifdef TRICOLOR_VOLUME_BAR
 		"ctl_bar_hi         "
 #endif
@@ -289,9 +291,12 @@ static int* element_by_name(const char *name) {
 		"mixer_frame        "
 		"mixer_text         "
 		"textbox            "
-		"textfield          ";
+		"textfield          ", 19, ' ', name);
 
-	static int* values[] = {
+	if (idx < 0)
+		return NULL;
+
+	return (int*[]) {
 #ifdef TRICOLOR_VOLUME_BAR
 		&attr_ctl_bar_hi,
 #else
@@ -322,12 +327,7 @@ static int* element_by_name(const char *name) {
 		&attr_mixer_text,
 		&attr_textbox,
 		&attr_textfield,
-	};
-
-	int index = strlist_index(names, 19, ' ', name);
-	if (index >= 0)
-		return values[index];
-	return NULL;
+	}[idx];
 }
 
 // === Configuration commands ===
@@ -350,21 +350,18 @@ static int cfg_bind(char **argv, int argc) {
 		else {
 			error_message = _("invalid widget");
 			error_cause = argv[1];
-			return -1;
+			return ERROR_CONFIG;
 		}
 	}
 	else {
-		error_message = (argc < 2 ?
-				_("missing arguments") :
-				_("too much arguments"));
-		return -1;
+		return (argc < 2 ? ERROR_MISSING_ARGUMENTS : ERROR_TOO_MUCH_ARGUMENTS);
 	}
 
 	int keycode = curskey_parse(argv[0]);
 	if (keycode < 0 || keycode >= ARRAY_SIZE(mixer_bindings)) {
 		error_message = _("invalid key");
 		error_cause = argv[0];
-		return -1;
+		return ERROR_CONFIG;
 	}
 
 	if (bindings == textbox_bindings)
@@ -378,7 +375,7 @@ static int cfg_bind(char **argv, int argc) {
 		else {
 			error_message = _("invalid command");
 			error_cause = command_name;
-			return -1;
+			return ERROR_CONFIG;
 		}
 	}
 
@@ -392,27 +389,25 @@ static int cfg_color(char **argv, int argc)
 	int *element;
 	int attr, i;
 
-	if (argc < 3) {
-		error_message = _("missing arguments");
-		return -1;
-	}
+	if (argc < 3)
+		return ERROR_MISSING_ARGUMENTS;
 
 	if (NULL == (element = element_by_name(argv[0]))) {
 		error_message = _("unknown theme element");
 		error_cause = argv[0];
-		return -1;
+		return ERROR_CONFIG;
 	}
 
 	if (-2 == (fg_color = color_by_name(argv[1]))) {
 		error_message = _("unknown color");
 		error_cause = argv[1];
-		return -1;
+		return ERROR_CONFIG;
 	}
 
 	if (-2 == (bg_color = color_by_name(argv[2]))) {
 		error_message = _("unknown color");
 		error_cause = argv[2];
-		return -1;
+		return ERROR_CONFIG;
 	}
 
 	*element = get_color_pair(fg_color, bg_color);
@@ -421,11 +416,36 @@ static int cfg_color(char **argv, int argc)
 		if (-1 == (attr = attr_by_name(argv[i]))) {
 			error_message = _("unknown color attribute");
 			error_cause = argv[i];
-			return -1;
+			return ERROR_CONFIG;
 		}
 		else
 			*element |= attr;
 	}
+	return 0;
+}
+
+static int cfg_set(char **argv, int argc)
+{
+	if (argc == 2) {
+		if (! strcmp(argv[0], "mouse_wheel_step")) {
+			mouse_wheel_step = atoi(argv[1]);
+			if (!mouse_wheel_step || mouse_wheel_step > 10) {
+				mouse_wheel_step = 1;
+				error_message = _("invalid value");
+				error_cause = argv[1];
+				return ERROR_CONFIG;
+			}
+		}
+		else {
+			error_message = _("unknown option");
+			error_cause = argv[0];
+			return ERROR_CONFIG;
+		}
+	}
+	else {
+		return (argc < 2 ? ERROR_MISSING_ARGUMENTS : ERROR_TOO_MUCH_ARGUMENTS);
+	}
+
 	return 0;
 }
 
@@ -464,26 +484,34 @@ static size_t parse_line(char *line, char **args, size_t args_size)
 static int process_line(char *line) {
 	char *args[16];
 	size_t argc = parse_line(line, args, ARRAY_SIZE(args));
+	int ret = 0;
 
 	if (argc >= 1) {
 		error_cause = NULL;
 		//error_message = _("unknown error");
 
-		if (argc >= ARRAY_SIZE(args)) {
-			error_message = _("too much arguments");
-			return -1;
-		}
-		else if (! strcmp(args[0], "bind"))
-			return cfg_bind(args + 1, argc - 1);
-		else if (! strcmp(args[0], "color"))
-			return cfg_color(args + 1, argc - 1);
+		if (argc >= ARRAY_SIZE(args))
+			ret = ERROR_TOO_MUCH_ARGUMENTS;
 		else {
-			error_message = _("unknown command");
-			return -1;
+			ret = strlist_index(
+				"bind  "
+				"color "
+				"set   ", 6, ' ', args[0]);
+			switch (ret) {
+				case 0: ret = cfg_bind(args + 1, argc - 1); break;
+				case 1: ret = cfg_color(args + 1, argc - 1); break;
+				case 2: ret = cfg_set(args + 1, argc - 1); break;
+				default: error_message = _("unknown command");
+			}
 		}
+
+		if (ret == ERROR_MISSING_ARGUMENTS)
+			error_message = _("missing arguments");
+		else if (ret == ERROR_TOO_MUCH_ARGUMENTS)
+			error_message = _("too much arguments");
 	}
 
-	return 0;
+	return ret;
 }
 
 // Taken and adapted from textbox.c

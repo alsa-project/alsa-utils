@@ -657,8 +657,12 @@ static void display_scroll_indicators(void)
 	right = first_visible_control_index + visible_controls < controls_count
 		? ACS_RARROW : ACS_VLINE;
 	wattrset(mixer_widget.window, attr_mixer_frame);
-	mvwvline(mixer_widget.window, y0, 0, left, y1 - y0);
-	mvwvline(mixer_widget.window, y0, screen_cols -1, right, y1 - y0);
+	mvwvline(mixer_widget.window, y0, 0, left, y1 - y0 + 1);
+	mvwvline(mixer_widget.window, y0, screen_cols -1, right, y1 - y0 + 1);
+	clickable_set(y0, 0, y1, 0,
+			CMD_MIXER_MOUSE_SCROLL_HORIZONTAL, (-1)*(visible_controls + 1));
+	clickable_set(y0, screen_cols - 1, y1, screen_cols - 1,
+			CMD_MIXER_MOUSE_SCROLL_HORIZONTAL, visible_controls + 1);
 }
 
 void display_controls(void)
