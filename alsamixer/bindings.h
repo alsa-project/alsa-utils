@@ -3,14 +3,27 @@
 
 #include CURSESINC
 #include <menu.h>
+#include <stdint.h>
 
-// Choosing typedef over `enum __attribute__((packed))`
-typedef unsigned char command_enum;
+typedef uint16_t command_enum;
 extern command_enum mixer_bindings[KEY_MAX];
 extern command_enum textbox_bindings[KEY_MAX];
 
-#define EXPAND(S,E,A1,A2,A3,A4,A5) \
-	S##A1##E, S##A2##E, S##A3##E, S##A4##E, S##A5##E
+/* Some commands, like `CMD_MIXER_CONTROL_UP_N` take a numeric argument.
+ * The argument is stored in the higher bits, the command itself in the lower
+ * bits.
+ *
+ * These macros can be used to bind/extract arguments to/from a command.
+ */
+
+#define CMD_WITH_ARG(CMD, ARG) \
+	(CMD + (ARG << 9))
+
+#define CMD_GET_CMD(CMD) \
+	(CMD & 0x1FF)
+
+#define CMD_GET_ARG(CMD) \
+	(CMD >> 9)
 
 enum mixer_command {
 	// Keep those in the same order as displayed on screen
@@ -29,22 +42,18 @@ enum mixer_command {
 	CMD_MIXER_PREVIOUS,
 	CMD_MIXER_NEXT,
 	CMD_MIXER_BALANCE_CONTROL,
+	CMD_MIXER_CONTROL_N_PERCENT,
+	CMD_MIXER_CONTROL_FOCUS_N,
 
 	// Keep order: left, right, both
-	EXPAND(CMD_MIXER_CONTROL_DOWN_LEFT_,,1,2,3,4,5),
-	EXPAND(CMD_MIXER_CONTROL_DOWN_LEFT_,,6,7,8,9,10),
-	EXPAND(CMD_MIXER_CONTROL_DOWN_RIGHT_,,1,2,3,4,5),
-	EXPAND(CMD_MIXER_CONTROL_DOWN_RIGHT_,,6,7,8,9,10),
-	EXPAND(CMD_MIXER_CONTROL_DOWN_,,1,2,3,4,5),
-	EXPAND(CMD_MIXER_CONTROL_DOWN_,,6,7,8,9,10),
+	CMD_MIXER_CONTROL_UP_LEFT_N,
+	CMD_MIXER_CONTROL_UP_RIGHT_N,
+	CMD_MIXER_CONTROL_UP_N,
 
 	// Keep order: left, right, both
-	EXPAND(CMD_MIXER_CONTROL_UP_LEFT_,,1,2,3,4,5),
-	EXPAND(CMD_MIXER_CONTROL_UP_LEFT_,,6,7,8,9,10),
-	EXPAND(CMD_MIXER_CONTROL_UP_RIGHT_,,1,2,3,4,5),
-	EXPAND(CMD_MIXER_CONTROL_UP_RIGHT_,,6,7,8,9,10),
-	EXPAND(CMD_MIXER_CONTROL_UP_,,1,2,3,4,5),
-	EXPAND(CMD_MIXER_CONTROL_UP_,,6,7,8,9,10),
+	CMD_MIXER_CONTROL_DOWN_LEFT_N,
+	CMD_MIXER_CONTROL_DOWN_RIGHT_N,
+	CMD_MIXER_CONTROL_DOWN_N,
 
 	// Keep order: left, right, both
 	CMD_MIXER_TOGGLE_MUTE_LEFT,
@@ -55,17 +64,6 @@ enum mixer_command {
 	CMD_MIXER_TOGGLE_CAPTURE_LEFT,
 	CMD_MIXER_TOGGLE_CAPTURE_RIGHT,
 	CMD_MIXER_TOGGLE_CAPTURE,
-
-	// Keep those sorted
-	CMD_MIXER_CONTROL_0_PERCENT,
-	EXPAND(CMD_MIXER_CONTROL_,_PERCENT,10,20,30,40,50),
-	EXPAND(CMD_MIXER_CONTROL_,_PERCENT,60,70,80,90,100),
-
-	// Keep those sorted
-	EXPAND(CMD_MIXER_CONTROL_FOCUS_,,1,2,3,4,5),
-	EXPAND(CMD_MIXER_CONTROL_FOCUS_,,6,7,8,9,10),
-	EXPAND(CMD_MIXER_CONTROL_FOCUS_,,11,12,13,14,15),
-	EXPAND(CMD_MIXER_CONTROL_FOCUS_,,16,17,18,19,20),
 
 	// Mouse
 	CMD_MIXER_MOUSE_TOGGLE_MUTE,

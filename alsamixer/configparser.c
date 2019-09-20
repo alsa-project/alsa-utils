@@ -217,11 +217,11 @@ static int mixer_command_by_name(const char *name) {
 		case W_MODE|W_TOGGLE: return CMD_MIXER_MODE_TOGGLE;
 		case W_CONTROL|W_BALANCE: return CMD_MIXER_BALANCE_CONTROL;
 		case W_CONTROL|W_SET|W_NUMBER:
-			return ((number % 10 || number > 100) ? 0 :
-				  CMD_MIXER_CONTROL_0_PERCENT + number/10);
+			return (number > 100 ? 0 :
+					CMD_WITH_ARG(CMD_MIXER_CONTROL_N_PERCENT, number));
 		case W_CONTROL|W_FOCUS|W_NUMBER:
-			return ((number < 1 || number > 20) ? 0 :
-					CMD_MIXER_CONTROL_FOCUS_1 + number - 1);
+			return ((number < 1 || number > 100) ? 0 :
+					CMD_WITH_ARG(CMD_MIXER_CONTROL_FOCUS_N, number));
 	}
 
 	if (words & W_LEFT)
@@ -235,12 +235,12 @@ static int mixer_command_by_name(const char *name) {
 	switch (words) {
 		case W_CONTROL|W_UP:
 		case W_CONTROL|W_UP|W_NUMBER:
-			return ((number < 1 || number > 10) ? 0 :
-				CMD_MIXER_CONTROL_UP_LEFT_1 + (channel-1)*10 + number - 1);
 		case W_CONTROL|W_DOWN:
 		case W_CONTROL|W_DOWN|W_NUMBER:
-			return ((number < 1 || number > 10) ? 0 :
-				CMD_MIXER_CONTROL_DOWN_LEFT_1 + (channel-1)*10 + number - 1);
+			return ((number < 1 || number > 100) ? 0 :
+				CMD_WITH_ARG(
+					(words & W_UP ? CMD_MIXER_CONTROL_UP_LEFT_N : CMD_MIXER_CONTROL_DOWN_LEFT_N)
+					+ channel - 1, number));
 		case W_CONTROL|W_MUTE:
 			return CMD_MIXER_TOGGLE_MUTE_LEFT + channel - 1;
 		case W_CONTROL|W_CAPTURE:

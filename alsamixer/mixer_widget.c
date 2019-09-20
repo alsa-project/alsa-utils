@@ -477,9 +477,6 @@ static void balance_volumes(void)
 	display_controls();
 }
 
-#define EXPAND_CASE(S,E,A1,A2,A3,A4,A5) \
-	S##A1##E: case S##A2##E: case S##A3##E: case S##A4##E: case S##A5##E
-
 static int on_mouse_key() {
 	MEVENT m;
 	int volume;
@@ -492,9 +489,9 @@ static int on_mouse_key() {
 
 #if NCURSES_MOUSE_VERSION > 1
 	if (m.bstate & (BUTTON4_CLICKED|BUTTON4_PRESSED))
-		return CMD_MIXER_CONTROL_UP_1 + mouse_wheel_step - 1;
+		return CMD_MIXER_CONTROL_UP_N + mouse_wheel_step - 1;
 	else if (m.bstate & (BUTTON5_CLICKED|BUTTON5_PRESSED))
-		return CMD_MIXER_CONTROL_DOWN_1 + mouse_wheel_step - 1;
+		return CMD_MIXER_CONTROL_DOWN_N + mouse_wheel_step - 1;
 #endif
 
 	// Can't use mousemask() to filter those events, menu_driver() needs them.
@@ -561,7 +558,8 @@ static int on_mouse_key() {
 
 static void on_handle_key(int key)
 {
-	enum mixer_command cmd;
+	int arg;
+	command_enum cmd;
 
 	if (key == KEY_MOUSE)
 		cmd = on_mouse_key();
@@ -569,6 +567,9 @@ static void on_handle_key(int key)
 		cmd = mixer_bindings[key];
 	else
 		return;
+
+	arg = CMD_GET_ARG(cmd);
+	cmd = CMD_GET_CMD(cmd);
 
 	switch (cmd) {
 	case CMD_MIXER_CLOSE:
@@ -607,40 +608,23 @@ static void on_handle_key(int key)
 			refocus_control();
 		}
 		break;
-	case EXPAND_CASE(CMD_MIXER_CONTROL_FOCUS_,,1,2,3,4,5):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_FOCUS_,,6,7,8,9,10):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_FOCUS_,,11,12,13,14,15):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_FOCUS_,,16,17,18,19,20):
-		focus_control_index = cmd - CMD_MIXER_CONTROL_FOCUS_1;
+	case CMD_MIXER_CONTROL_FOCUS_N:
+		focus_control_index = arg;
 		clamp_focus_control_index();
 		refocus_control();
 		break;
-	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_LEFT_,,1,2,3,4,5):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_LEFT_,,6,7,8,9,10):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_RIGHT_,,1,2,3,4,5):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_RIGHT_,,6,7,8,9,10):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_,,1,2,3,4,5):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_UP_,,6,7,8,9,10):
-		change_control_relative(
-				((cmd - CMD_MIXER_CONTROL_UP_LEFT_1) % 10) + 1,
-				((cmd - CMD_MIXER_CONTROL_UP_LEFT_1) / 10) + 1
-		);
+	case CMD_MIXER_CONTROL_UP_LEFT_N:
+	case CMD_MIXER_CONTROL_UP_RIGHT_N:
+	case CMD_MIXER_CONTROL_UP_N:
+		change_control_relative(arg, cmd - CMD_MIXER_CONTROL_UP_LEFT_N + 1);
 		break;
-	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_LEFT_,,1,2,3,4,5):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_LEFT_,,6,7,8,9,10):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_RIGHT_,,1,2,3,4,5):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_RIGHT_,,6,7,8,9,10):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_,,1,2,3,4,5):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_DOWN_,,6,7,8,9,10):
-		change_control_relative(
-				-(((cmd - CMD_MIXER_CONTROL_DOWN_LEFT_1) % 10) + 1),
-				((cmd - CMD_MIXER_CONTROL_DOWN_LEFT_1) / 10) + 1
-		);
+	case CMD_MIXER_CONTROL_DOWN_LEFT_N:
+	case CMD_MIXER_CONTROL_DOWN_RIGHT_N:
+	case CMD_MIXER_CONTROL_DOWN_N:
+		change_control_relative(-arg, cmd - CMD_MIXER_CONTROL_DOWN_LEFT_N + 1);
 		break;
-	case CMD_MIXER_CONTROL_0_PERCENT:
-	case EXPAND_CASE(CMD_MIXER_CONTROL_,_PERCENT,10,20,30,40,50):
-	case EXPAND_CASE(CMD_MIXER_CONTROL_,_PERCENT,60,70,80,90,100):
-		change_control_to_percent((cmd - CMD_MIXER_CONTROL_0_PERCENT) * 10, LEFT | RIGHT);
+	case CMD_MIXER_CONTROL_N_PERCENT:
+		change_control_to_percent(arg, LEFT | RIGHT);
 		break;
 	case CMD_MIXER_TOGGLE_MUTE_LEFT:
 	case CMD_MIXER_TOGGLE_MUTE_RIGHT:
