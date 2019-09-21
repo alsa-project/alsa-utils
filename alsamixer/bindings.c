@@ -3,8 +3,8 @@
 #define CNTRL(C) C%32
 
 command_enum textbox_bindings[KEY_MAX] = {
-	[10] =				CMD_TEXTBOX_CLOSE,
-	[13] =				CMD_TEXTBOX_CLOSE,
+	['\n'] =			CMD_TEXTBOX_CLOSE,
+	['\r'] 				CMD_TEXTBOX_CLOSE,
 	[27] =				CMD_TEXTBOX_CLOSE,
 	[KEY_CANCEL] =		CMD_TEXTBOX_CLOSE,
 	[KEY_ENTER] =		CMD_TEXTBOX_CLOSE,
@@ -74,7 +74,7 @@ command_enum mixer_bindings[] = {
 	['S'] =				CMD_MIXER_SELECT_CARD,
 	['s'] =				CMD_MIXER_SELECT_CARD,
 	[KEY_REFRESH] =		CMD_MIXER_REFRESH,
-	[12] =				CMD_MIXER_REFRESH,
+	[CNTRL('L')] =		CMD_MIXER_REFRESH,
 	['L'] =				CMD_MIXER_REFRESH,
 	['l'] =				CMD_MIXER_REFRESH,
 	[KEY_LEFT] =		CMD_MIXER_PREVIOUS,
