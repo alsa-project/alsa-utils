@@ -609,7 +609,7 @@ static void on_handle_key(int key)
 		}
 		break;
 	case CMD_MIXER_CONTROL_FOCUS_N:
-		focus_control_index = arg;
+		focus_control_index = arg - 1;
 		clamp_focus_control_index();
 		refocus_control();
 		break;
