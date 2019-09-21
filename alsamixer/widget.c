@@ -28,9 +28,11 @@ int screen_cols;
 
 static int cursor_visibility = -1;
 
+#if 0
 static void widget_handle_key(int key)
 {
 }
+#endif
 
 static void update_cursor_visibility(void)
 {
@@ -86,8 +88,10 @@ void widget_init(struct widget *widget, int lines_, int cols, int y, int x,
 		set_panel_userptr(widget->panel, widget);
 	}
 
+#if 0
 	if (!widget->handle_key)
 		widget->handle_key = widget_handle_key;
+#endif
 
 	if (old_window)
 		delwin(old_window);

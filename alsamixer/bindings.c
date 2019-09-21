@@ -4,7 +4,7 @@
 
 command_enum textbox_bindings[KEY_MAX] = {
 	['\n'] =			CMD_TEXTBOX_CLOSE,
-	['\r'] 				CMD_TEXTBOX_CLOSE,
+	['\r'] =			CMD_TEXTBOX_CLOSE,
 	[27] =				CMD_TEXTBOX_CLOSE,
 	[KEY_CANCEL] =		CMD_TEXTBOX_CLOSE,
 	[KEY_ENTER] =		CMD_TEXTBOX_CLOSE,
