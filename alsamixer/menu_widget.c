@@ -66,7 +66,7 @@ void menu_widget_create(struct widget *widget, MENU *menu, const char *title)
 		columns = screen_cols;
 
 	widget_init(widget, rows, columns, SCREEN_CENTER, SCREEN_CENTER,
-		    attr_menu, WIDGET_BORDER | WIDGET_SUBWINDOW);
+		    attrs.menu, WIDGET_BORDER | WIDGET_SUBWINDOW);
 
 	mvwprintw(widget->window, 0, (columns - 2 - get_mbs_width(title)) / 2, " %s ", title);
 	set_menu_win(menu, widget->window);

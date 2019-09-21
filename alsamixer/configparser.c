@@ -288,38 +288,7 @@ static int* element_by_name(const char *name) {
 	if (idx < 0)
 		return NULL;
 
-	return (int*[]) {
-#ifdef TRICOLOR_VOLUME_BAR
-		&attr_ctl_bar_hi,
-#else
-		&errno,
-#endif
-		&attr_ctl_bar_lo,
-#ifdef TRICOLOR_VOLUME_BAR
-		&attr_ctl_bar_mi,
-#else
-		&errno,
-#endif
-		&attr_ctl_capture,
-		&attr_ctl_frame,
-		&attr_ctl_inactive,
-		&attr_ctl_label,
-		&attr_ctl_label_focus,
-		&attr_ctl_label_inactive,
-		&attr_ctl_mark_focus,
-		&attr_ctl_mute,
-		&attr_ctl_nocapture,
-		&attr_ctl_nomute,
-		&attr_errormsg,
-		&attr_infomsg,
-		&attr_menu,
-		&attr_menu_selected,
-		&attr_mixer_active,
-		&attr_mixer_frame,
-		&attr_mixer_text,
-		&attr_textbox,
-		&attr_textfield,
-	}[idx];
+	return &( ((int*) &attrs)[idx] );
 }
 
 // === Configuration commands ===

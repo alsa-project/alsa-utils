@@ -100,8 +100,8 @@ void create_proc_files_list(void)
 	menu = new_menu(items);
 	if (!menu)
 		fatal_error("cannot create menu");
-	set_menu_fore(menu, attr_menu_selected);
-	set_menu_back(menu, attr_menu);
+	set_menu_fore(menu, attrs.menu_selected);
+	set_menu_back(menu, attrs.menu);
 	set_menu_mark(menu, NULL);
 	menu_opts_off(menu, O_SHOWDESC);
 

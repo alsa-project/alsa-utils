@@ -647,9 +647,9 @@ static void create(void)
 	static const char title[] = " AlsaMixer v" SND_UTIL_VERSION_STR " ";
 
 	widget_init(&mixer_widget, screen_lines, screen_cols, 0, 0,
-		    attr_mixer_frame, WIDGET_BORDER);
+		    attrs.mixer_frame, WIDGET_BORDER);
 	if (screen_cols >= (sizeof(title) - 1) + 2) {
-		wattrset(mixer_widget.window, attr_mixer_active);
+		wattrset(mixer_widget.window, attrs.mixer_active);
 		mvwaddstr(mixer_widget.window, 0, (screen_cols - (sizeof(title) - 1)) / 2, title);
 	}
 	init_mixer_layout();

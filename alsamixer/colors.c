@@ -22,30 +22,7 @@
 #include CURSESINC
 #include "colors.h"
 
-int attr_mixer_frame;
-int attr_mixer_text;
-int attr_mixer_active;
-int attr_ctl_frame;
-int attr_ctl_mute;
-int attr_ctl_nomute;
-int attr_ctl_capture;
-int attr_ctl_nocapture;
-int attr_ctl_label;
-int attr_ctl_label_focus;
-int attr_ctl_mark_focus;
-int attr_ctl_bar_lo;
-#ifdef TRICOLOR_VOLUME_BAR
-int attr_ctl_bar_mi;
-int attr_ctl_bar_hi;
-#endif
-int attr_ctl_inactive;
-int attr_ctl_label_inactive;
-int attr_errormsg;
-int attr_infomsg;
-int attr_textbox;
-int attr_textfield;
-int attr_menu;
-int attr_menu_selected;
+struct attributes attrs;
 
 /* Wrapper around ncurses init_pair() that ensures
  * each color pair is only defined once. */
@@ -89,54 +66,54 @@ void init_colors(int use_color)
 		get_color_pair(COLOR_RED, COLOR_RED);
 #endif
 
-		attr_mixer_frame = COLOR_PAIR(1);
-		attr_mixer_text = COLOR_PAIR(1);
-		attr_mixer_active = A_BOLD | COLOR_PAIR(2);
-		attr_ctl_frame = A_BOLD | COLOR_PAIR(1);
-		attr_ctl_mute = COLOR_PAIR(1);
-		attr_ctl_nomute = A_BOLD | COLOR_PAIR(3);
-		attr_ctl_capture = A_BOLD | COLOR_PAIR(4);
-		attr_ctl_nocapture = COLOR_PAIR(5);
-		attr_ctl_label = A_BOLD | COLOR_PAIR(6);
-		attr_ctl_label_focus = A_BOLD | COLOR_PAIR(7);
-		attr_ctl_mark_focus = A_BOLD | COLOR_PAIR(4);
-		attr_ctl_bar_lo = A_BOLD | COLOR_PAIR(8);
+		attrs.mixer_frame = COLOR_PAIR(1);
+		attrs.mixer_text = COLOR_PAIR(1);
+		attrs.mixer_active = A_BOLD | COLOR_PAIR(2);
+		attrs.ctl_frame = A_BOLD | COLOR_PAIR(1);
+		attrs.ctl_mute = COLOR_PAIR(1);
+		attrs.ctl_nomute = A_BOLD | COLOR_PAIR(3);
+		attrs.ctl_capture = A_BOLD | COLOR_PAIR(4);
+		attrs.ctl_nocapture = COLOR_PAIR(5);
+		attrs.ctl_label = A_BOLD | COLOR_PAIR(6);
+		attrs.ctl_label_focus = A_BOLD | COLOR_PAIR(7);
+		attrs.ctl_mark_focus = A_BOLD | COLOR_PAIR(4);
+		attrs.ctl_bar_lo = A_BOLD | COLOR_PAIR(8);
 #ifdef TRICOLOR_VOLUME_BAR
-		attr_ctl_bar_mi = A_BOLD | COLOR_PAIR(10);
-		attr_ctl_bar_hi = A_BOLD | COLOR_PAIR(11);
+		attrs.ctl_bar_mi = A_BOLD | COLOR_PAIR(10);
+		attrs.ctl_bar_hi = A_BOLD | COLOR_PAIR(11);
 #endif
-		attr_ctl_inactive = COLOR_PAIR(5);
-		attr_ctl_label_inactive = A_REVERSE | COLOR_PAIR(5);
-		attr_errormsg = A_BOLD | COLOR_PAIR(9);
-		attr_infomsg = A_BOLD | COLOR_PAIR(6);
-		attr_textbox = A_BOLD | COLOR_PAIR(6);
-		attr_textfield = A_REVERSE | COLOR_PAIR(5);
-		attr_menu = A_BOLD | COLOR_PAIR(6);
-		attr_menu_selected = A_REVERSE | COLOR_PAIR(6);
+		attrs.ctl_inactive = COLOR_PAIR(5);
+		attrs.ctl_label_inactive = A_REVERSE | COLOR_PAIR(5);
+		attrs.errormsg = A_BOLD | COLOR_PAIR(9);
+		attrs.infomsg = A_BOLD | COLOR_PAIR(6);
+		attrs.textbox = A_BOLD | COLOR_PAIR(6);
+		attrs.textfield = A_REVERSE | COLOR_PAIR(5);
+		attrs.menu = A_BOLD | COLOR_PAIR(6);
+		attrs.menu_selected = A_REVERSE | COLOR_PAIR(6);
 	} else {
-		attr_mixer_frame = A_NORMAL;
-		attr_mixer_text = A_NORMAL;
-		attr_mixer_active = A_BOLD;
-		attr_ctl_frame = A_BOLD;
-		attr_ctl_mute = A_NORMAL;
-		attr_ctl_nomute = A_BOLD;
-		attr_ctl_capture = A_BOLD;
-		attr_ctl_nocapture = A_NORMAL;
-		attr_ctl_label = A_REVERSE;
-		attr_ctl_label_focus = A_REVERSE | A_BOLD;
-		attr_ctl_mark_focus = A_BOLD;
-		attr_ctl_bar_lo = A_BOLD;
+		attrs.mixer_frame = A_NORMAL;
+		attrs.mixer_text = A_NORMAL;
+		attrs.mixer_active = A_BOLD;
+		attrs.ctl_frame = A_BOLD;
+		attrs.ctl_mute = A_NORMAL;
+		attrs.ctl_nomute = A_BOLD;
+		attrs.ctl_capture = A_BOLD;
+		attrs.ctl_nocapture = A_NORMAL;
+		attrs.ctl_label = A_REVERSE;
+		attrs.ctl_label_focus = A_REVERSE | A_BOLD;
+		attrs.ctl_mark_focus = A_BOLD;
+		attrs.ctl_bar_lo = A_BOLD;
 #ifdef TRICOLOR_VOLUME_BAR
-		attr_ctl_bar_mi = A_BOLD;
-		attr_ctl_bar_hi = A_BOLD;
+		attrs.ctl_bar_mi = A_BOLD;
+		attrs.ctl_bar_hi = A_BOLD;
 #endif
-		attr_ctl_inactive = A_NORMAL;
-		attr_ctl_label_inactive = A_REVERSE;
-		attr_errormsg = A_STANDOUT;
-		attr_infomsg = A_NORMAL;
-		attr_textbox = A_NORMAL;
-		attr_textfield = A_REVERSE;
-		attr_menu = A_NORMAL;
-		attr_menu_selected = A_REVERSE;
+		attrs.ctl_inactive = A_NORMAL;
+		attrs.ctl_label_inactive = A_REVERSE;
+		attrs.errormsg = A_STANDOUT;
+		attrs.infomsg = A_NORMAL;
+		attrs.textbox = A_NORMAL;
+		attrs.textfield = A_REVERSE;
+		attrs.menu = A_NORMAL;
+		attrs.menu_selected = A_REVERSE;
 	}
 }
