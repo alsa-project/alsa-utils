@@ -213,10 +213,10 @@ void display_view_mode(void)
 	for (i = 0; i < 3; ++i)
 		widths[i] = get_mbs_width(modes[i]);
 	if (4 + widths[0] + 6 + widths[1] + 6 + widths[2] + 1 <= info_items_width) {
-		wmove(mixer_widget.window, 3, info_items_left);
+		wmove(mixer_widget.window, 3, info_items_left - 1);
 		wattrset(mixer_widget.window, attrs.mixer_text);
 		for (i = 0; i < 3; ++i) {
-			wprintw(mixer_widget.window, "F%c:", '3' + i);
+			wprintw(mixer_widget.window, " F%c:", '3' + i);
 			if (has_view_mode && (int)view_mode == i) {
 				wattrset(mixer_widget.window, attrs.mixer_active);
 				wprintw(mixer_widget.window, "[%s]", modes[i]);
@@ -227,8 +227,6 @@ void display_view_mode(void)
 			clickable_set_relative(mixer_widget.window,
 					0, -(widths[i] + 5), 0, -1,
 					CMD_MIXER_MODE_PLAYBACK+i, -1);
-			if (i < 2)
-				waddch(mixer_widget.window, ' ');
 		}
 	} else {
 		wattrset(mixer_widget.window, attrs.mixer_active);
@@ -475,8 +473,7 @@ static void display_control(unsigned int control_index)
 			for (i = 0; i < volume_height; ++i) {
 				chtype ch;
 				if (i + 1 > bar_height)
-					ch = ' ' | (control->flags & IS_ACTIVE ?
-						    attrs.ctl_frame : 0);
+					ch = (control->flags & IS_ACTIVE ? attrs.ctl_frame|' ' : ' ');
 				else {
 					ch = ACS_CKBOARD;
 					if (!(control->flags & IS_ACTIVE))
