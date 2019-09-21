@@ -480,7 +480,7 @@ static void balance_volumes(void)
 static int on_mouse_key() {
 	MEVENT m;
 	int volume;
-	enum mixer_command cmd;
+	command_enum cmd;
 	unsigned int channels = LEFT | RIGHT;
 	unsigned int index;
 	struct control *control;
@@ -489,9 +489,9 @@ static int on_mouse_key() {
 
 #if NCURSES_MOUSE_VERSION > 1
 	if (m.bstate & (BUTTON4_CLICKED|BUTTON4_PRESSED))
-		return CMD_MIXER_CONTROL_UP_N + mouse_wheel_step - 1;
+		return CMD_WITH_ARG(CMD_MIXER_CONTROL_UP_N, mouse_wheel_step);
 	else if (m.bstate & (BUTTON5_CLICKED|BUTTON5_PRESSED))
-		return CMD_MIXER_CONTROL_DOWN_N + mouse_wheel_step - 1;
+		return CMD_WITH_ARG(CMD_MIXER_CONTROL_DOWN_N, mouse_wheel_step);
 #endif
 
 	// Can't use mousemask() to filter those events, menu_driver() needs them.
