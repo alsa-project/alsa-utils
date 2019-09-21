@@ -28,10 +28,10 @@
 #include "utils.h"
 #include "colors.h"
 #include "widget.h"
+#include "menu_widget.h"
 #include "mixer_widget.h"
 #include "device_name.h"
 #include "card_select.h"
-#include "bindings.h"
 
 struct card {
 	struct card *next;
@@ -60,93 +60,20 @@ static void on_key_enter(void)
 	}
 }
 
-static void on_menu_key(int key)
-{
-	int request;
-
-	if (key >= ARRAY_SIZE(textbox_bindings))
-		return;
-
-	request = textbox_bindings[key];
-	if (request >= CMD_TEXTBOX___MIN_MENU_COMMAND &&
-			request <= CMD_TEXTBOX___MAX_MENU_COMMAND)
-		menu_driver(menu, request + KEY_MAX);
-}
-
-static int menu_handle_mouse()
-{
-	int key;
-
-	switch (menu_driver(menu, KEY_MOUSE)) {
-		case E_UNKNOWN_COMMAND:
-			return KEY_ENTER;
-		case E_REQUEST_DENIED:
-			key = wgetch(menu_win(menu));
-			if (key == KEY_MOUSE)
-				return KEY_CANCEL;
-			else
-				ungetch(key);
-	}
-	return 0;
-}
-
-static void on_handle_key(int key)
-{
-	if (key == KEY_MOUSE)
-		key = menu_handle_mouse();
-
-	switch (key) {
-	case 27:
-	case KEY_CANCEL:
-	case 'q':
-	case 'Q':
-		list_widget.close();
-		break;
-	case 10:
-	case 13:
-	case KEY_ENTER:
-		on_key_enter();
-		break;
-	default:
-		on_menu_key(key);
-		break;
+static void on_handle_key(int key) {
+	switch (menu_widget_handle_key(menu, key)) {
+		case KEY_ENTER:
+			on_key_enter();
+			break;
+		case KEY_CANCEL:
+			list_widget.close();
+			break;
 	}
 }
 
-static bool create(void)
+static void create(void)
 {
-	int rows, columns;
-	const char *title;
-
-	if (screen_lines < 3 || screen_cols < 10) {
-		beep();
-		list_widget.close();
-		return FALSE;
-	}
-	scale_menu(menu, &rows, &columns);
-	rows += 2;
-	columns += 2;
-	if (rows > screen_lines)
-		rows = screen_lines;
-	if (columns > screen_cols)
-		columns = screen_cols;
-
-	widget_init(&list_widget, rows, columns, SCREEN_CENTER, SCREEN_CENTER,
-		    attr_menu, WIDGET_BORDER | WIDGET_SUBWINDOW);
-
-	title = _("Sound Card");
-	mvwprintw(list_widget.window, 0, (columns - 2 - get_mbs_width(title)) / 2, " %s ", title);
-	set_menu_win(menu, list_widget.window);
-	set_menu_sub(menu, list_widget.subwindow);
-	return TRUE;
-}
-
-static void on_window_size_changed(void)
-{
-	unpost_menu(menu);
-	if (!create())
-		return;
-	post_menu(menu);
+	menu_widget_create(&list_widget, menu, _("Sound Card"));
 }
 
 static void on_close(void)
@@ -176,7 +103,7 @@ void close_card_select_list(void)
 
 static struct widget list_widget = {
 	.handle_key = on_handle_key,
-	.window_size_changed = on_window_size_changed,
+	.window_size_changed = create,
 	.close = on_close,
 };
 
@@ -270,8 +197,5 @@ void create_card_select_list(void)
 	set_menu_spacing(menu, 2, 1, 1);
 	menu_opts_on(menu, O_SHOWDESC);
 
-	if (!create())
-		return;
-
-	post_menu(menu);
+	create();
 }
