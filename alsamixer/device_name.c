@@ -170,8 +170,7 @@ void create_device_name_form(void)
 	fields[0] = new_field(1, 32, 1, 1, 0, 0);
 	if (!fields[0])
 		fatal_error("cannot create field");
-	field_opts_off(fields[0], O_ACTIVE);
-	field_opts_off(fields[0], O_EDIT);
+	field_opts_off(fields[0], O_ACTIVE|O_EDIT);
 	set_field_fore(fields[0], attr_textbox);
 	set_field_back(fields[0], attr_textbox);
 	set_field_buffer(fields[0], 0, _("Device name:"));
@@ -179,9 +178,7 @@ void create_device_name_form(void)
 	fields[1] = new_field(1, 32, 2, 1, 0, 0);
 	if (!fields[1])
 		fatal_error("cannot create field");
-	field_opts_off(fields[1], O_AUTOSKIP);
-	field_opts_off(fields[1], O_NULLOK);
-	field_opts_off(fields[1], O_STATIC);
+	field_opts_off(fields[1], O_AUTOSKIP|O_NULLOK|O_STATIC);
 	set_field_fore(fields[1], attr_textfield);
 	set_field_back(fields[1], attr_textfield);
 	set_field_buffer(fields[1], 0, mixer_device_name);
