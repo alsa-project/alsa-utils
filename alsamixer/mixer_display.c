@@ -110,7 +110,7 @@ void init_mixer_layout(void)
 	unsigned int label_width_left, label_width_right;
 	unsigned int right_x, i;
 
-	clickable_clear(mixer_widget.window, 0, 0, -1, -1);
+	clickable_clear(0, 0, -1, -1);
 
 	screen_too_small = screen_lines < 14 || screen_cols < 12;
 	has_info_items = screen_lines >= 6;
@@ -204,7 +204,7 @@ void display_view_mode(void)
 	bool has_view_mode;
 	int i;
 
-	clickable_clear(mixer_widget.window, 3, 0, 3, 30);
+	clickable_clear(3, 0, 3, 30);
 
 	if (!has_info_items)
 		return;
@@ -334,7 +334,7 @@ static void clear_controls_display(void)
 {
 	int i;
 
-	clickable_clear(mixer_widget.window, 5, 0, -1, -1);
+	clickable_clear(5, 0, -1, -1);
 	wattrset(mixer_widget.window, attr_mixer_frame);
 	for (i = 5; i < screen_lines - 1; ++i)
 		mvwprintw(mixer_widget.window, i, 1, "%*s", screen_cols - 2, "");

@@ -90,7 +90,7 @@ void clickable_end(WINDOW *win) {
 }
 #endif
 
-void clickable_clear(WINDOW *win, int y1, int x1, int y2, int x2) {
+void clickable_clear(int y1, int x1, int y2, int x2) {
 #define IS_IN_RECT(Y, X) (Y >= y1 && Y <= y2 && X >= x1 && X <= x2)
 	unsigned int i;
 

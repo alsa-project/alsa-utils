@@ -19,7 +19,7 @@ void clickable_set_relative(WINDOW *win, int y1, int x1, int y2, int x2, command
 void clickable_begin(WINDOW *win, enum command command, int arg1);
 void clickable_end(WINDOW *win);
 #endif
-void clickable_clear(WINDOW *win, int y1, int x1, int y2, int x2);
+void clickable_clear(int y1, int x1, int y2, int x2);
 struct clickable_rect* clickable_find(int y, int x);
 
 #endif
