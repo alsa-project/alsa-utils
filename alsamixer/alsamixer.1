@@ -170,6 +170,243 @@ Only for controls without dB information, a linear mapping of the
 hardware volume register values is used (this is the same algorithm as
 used in the old \fBalsamixer\fP).
 
+
+
+.SH FILES
+Configuration is read from the following files:
+
+\fI$XDG_CONFIG_HOME\fP/alsamixer.rc
+
+\fI$HOME\fP/.config/alsamixer.rc
+
+\fI$HOME\fP/.alsamixer.rc
+
+After a file has been successfully read no further files are processed.
+
+.SH CONFIGURATION
+
+Comment char is '#'.
+
+Everything after comment char is ignored.
+
+No quoting allowed.
+
+.TP
+\fBcolor\fP \fIelement\fP \fIforeground\fP \fIbackground\fP [\fIattribute\fP...]
+
+\fIelement\fP: A theme element as listed in \fBTHEME ELEMENTS\fP.
+
+\fIforeground\fP/\fIbackground\fP: \fIred\fP, \fIgreen\fP, \fIyellow\fP, \fIblue\fP, \fImagenta\fP, \fIcyan\fP, \fIwhite\fP, \fIblack\fP, \fIdefault\fP.
+
+\fIattribute\fP:  \fIbold\fP, \fInormal\fP, \fIreverse\fP, \fIunderline\fP, \fIdim\fP, \fIitalic\fP, \fIblink\fP.
+
+.TP
+\fBset\fP \fIoption\fP \fIvalue\fP
+
+\fImouse_wheel_step\fP = \fI<number>\fP
+
+.TP
+\fBbind\fP \fIkey\fP [\fIwidget\fP] \fIcommand\fP
+
+\fIkey\fP:
+    - a single character
+    - a combination with control and/or meta/alt key: \fIC-x\fP, \fIM-x\fP, \fIA-x\fP, \fIC-M-x\fP
+    - a curses key constant as found in \fBgetch(3)\fP (like \fIUp\fP, \fILeft\fP, \fIHome\fP, \fIF1\fP, \fIF12\fP, ...)
+    - one of these aliases: \fIEscape\fP, \fIDel\fP, \fIDelete\fP, \fIInsert\fP, \fIPageDown\fP, \fIPageUp\fP, \fISpace\fP, \fITab\fP
+
+\fIwidget\fP:
+    - \fImixer\fP (default),
+    - \fItextbox\fP
+
+.SS OPTIONS
+\fImouse_wheel_step\fP
+Sets how many percent the volume changes using the mousewheel
+
+\fImouse_wheel_focuses_control\fP
+If enabled (\fI1\fP) the controls get refocused when a mousewheel event occurs. \fI0\fP disables it.
+
+.SS THEME ELEMENTS
+\fImixer_frame\fP
+Frame around the mixer
+
+\fImixer_text\fP
+Default text color (used for upper labels \fICard:\fP, \fIChip:\fP, ...)
+
+\fImixer_active\fP
+Color of active labels (\fI[Playback]\fP)
+
+\fIctl_frame\fP
+Frame around the volume bar controls
+
+\fIctl_mute\fP
+Text color for indicating the mute state (\fIMM\fP)
+
+\fIctl_nomute\fP
+Text color for indicating the unmute state (\fIOO\fP)
+
+\fIctl_capture\fP
+Text color for the capture label (\fICAPTURE\fP)
+
+\fIctl_nocapture\fP
+Text color for disabled capture label (\fI-------\fP)
+
+\fIctl_label\fP
+Color of label underneath mixer controls (\fIMaster\fP, \fIHeadphone\fP, ...)
+
+\fIctl_label_focus\fP
+Color of label underneath focused mixer control
+
+\fIctl_mark_focus\fP
+Color of \fI<\fP \fI>\fP marks beside focused mixer label
+
+\fIctl_bar_lo\fP
+Lower volume bar
+
+\fIctl_bar_mi\fP
+Middle volume bar
+
+\fIctl_bar_hi\fP
+Upper volume bar
+
+\fIctl_inactive\fP
+Color of inactive control
+
+\fIctl_label_inactive\fP
+Color for inactive label
+
+\fIerrormsg\fP
+Color used for error message textbox
+
+\fIinfomsg\fP
+Color used for information message textbox
+
+\fItextbox\fP
+Color used for textbox (help screen)
+
+\fItextfield\fP
+Color used for user input
+
+\fImenu\fP
+Color used for menu
+
+\fImenu_selected\fP
+Color used for selected entry in menu
+
+.SS MIXER COMMANDS
+
+\fIhelp\fP
+Display a window with keybindings
+
+\fIsystem_information\fP
+Display a menu with files containing information about alsa
+
+\fIselect_card\fP
+Display a menu for selecting the soundcard
+
+\fIclose\fP
+Close the application
+
+\fImode_playback\fP
+Display playback controls
+
+\fImode_capture\fP
+Display capture controls
+
+\fImode_all\fP
+Display all controls
+
+\fImode_toggle\fP
+Switch between displaying playback/capture/all controls
+
+\fIrefresh\fP
+Refresh the screen
+
+\fInext\fP
+Select next control
+
+\fIprevious\fP
+Select previous control
+
+\fIbalance_control\fP
+Balance control volumes
+
+\fIcontrol_down_<N>\fP
+Change control by <N> percent down
+
+\fIcontrol_down_left_<N>\fP
+Change left channel by <N> percent down
+
+\fIcontrol_down_right_<N>\fP
+Change right channel by <N> percent down
+
+\fIcontrol_up_<N>\fP
+Change control by <N> percent up
+
+\fIcontrol_up_left_<N>\fP
+Change left channel by <N> percent up
+
+\fIcontrol_up_right_<N>\fP
+Change right channel by <N> percent up
+
+\fItoggle_mute\fP
+Toggle muting of control
+
+\fItoggle_mute_left\fP
+Toggle muting left channel of control
+
+\fItoggle_mute_right\fP
+Toggle muting right channel of control
+
+\fItoggle_capture\fP
+Toggle capturing of control
+
+\fItoggle_capture_left\fP
+Toggle capturing left channel of control
+
+\fItoggle_capture_right\fP
+Toggle capturing right channel of control
+
+\fIcontrol_set_<N>\fP
+Set control to <N> percent
+
+\fIcontrol_focus_<N>\fP
+Focus control number <N>
+
+.SS TEXTBOX COMMANDS
+
+\fItop\fP
+Go to first line
+
+\fIbottom\fP
+Go to last line
+
+\fIup\fP
+Scroll text up by one line
+
+\fIdown\fP
+Scroll text down by one line
+
+\fIleft\fP
+Scroll text left by one column
+
+\fIright\fP
+Scroll text right by one column
+
+\fIpage_up\fP
+Scroll text up by half a page
+
+\fIpage_down\fP
+Scroll text down by half a page
+
+\fIpage_left\fP
+Scroll text left by half a page
+
+\fIpage_right\fP
+Scroll text right by half a page
+
+\fIclose\fP
+Close textbox
+
 .SH SEE ALSO
 \fB
 amixer(1),

@@ -1,0 +1,194 @@
+# alsamixer.rc - Default configuration file for alsamixer(1)
+
+### Options ###
+#set mouse_wheel_step 1
+#set mouse_wheel_focuses_control 1
+
+### Key bindings ###
+#bind B		 balance_control
+#bind b		 balance_control
+#bind =		 balance_control
+#bind ESCAPE		 close
+#bind CANCEL		 close
+#bind F10		 close
+#bind C-q		 close
+#bind A-q		 close
+#bind DOWN		 control_down_1
+#bind -		 control_down_1
+#bind J		 control_down_1
+#bind j		 control_down_1
+#bind X		 control_down_1
+#bind x		 control_down_1
+#bind NPAGE		 control_down_5
+#bind Y		 control_down_left_1
+#bind y		 control_down_left_1
+#bind Z		 control_down_left_1
+#bind z		 control_down_left_1
+#bind C-j		 control_down_left_1
+#bind C		 control_down_right_1
+#bind c		 control_down_right_1
+#bind A-j		 control_down_right_1
+#bind g		 control_focus_1
+#bind !		 control_focus_1
+#bind A-1		 control_focus_1
+#bind )		 control_focus_10
+#bind A-0		 control_focus_10
+#bind G		 control_focus_100
+#bind @		 control_focus_2
+#bind A-2		 control_focus_2
+#bind #		 control_focus_3
+#bind A-3		 control_focus_3
+#bind $		 control_focus_4
+#bind A-4		 control_focus_4
+#bind %		 control_focus_5
+#bind A-5		 control_focus_5
+#bind ^		 control_focus_6
+#bind A-6		 control_focus_6
+#bind &		 control_focus_7
+#bind A-7		 control_focus_7
+#bind *		 control_focus_8
+#bind A-8		 control_focus_8
+#bind (		 control_focus_9
+#bind A-9		 control_focus_9
+#bind LL		 control_set_0
+#bind END		 control_set_0
+#bind 0		 control_set_0
+#bind 1		 control_set_10
+#bind BEG		 control_set_100
+#bind HELP		 control_set_100
+#bind 2		 control_set_20
+#bind 3		 control_set_30
+#bind 4		 control_set_40
+#bind 5		 control_set_50
+#bind 6		 control_set_60
+#bind 7		 control_set_70
+#bind 8		 control_set_80
+#bind 9		 control_set_90
+#bind UP		 control_up_1
+#bind +		 control_up_1
+#bind K		 control_up_1
+#bind k		 control_up_1
+#bind W		 control_up_1
+#bind w		 control_up_1
+#bind PPAGE		 control_up_5
+#bind Q		 control_up_left_1
+#bind q		 control_up_left_1
+#bind C-k		 control_up_left_1
+#bind E		 control_up_right_1
+#bind e		 control_up_right_1
+#bind A-k		 control_up_right_1
+#bind F1		 help
+#bind HELP		 help
+#bind H		 help
+#bind h		 help
+#bind ?		 help
+#bind F5		 mode_all
+#bind F4		 mode_capture
+#bind F3		 mode_playback
+#bind TAB		 mode_toggle
+#bind RIGHT		 next
+#bind N		 next
+#bind n		 next
+#bind ]		 next
+#bind }		 next
+#bind LEFT		 previous
+#bind p		 previous
+#bind P		 previous
+#bind [		 previous
+#bind {		 previous
+#bind REFRESH		 refresh
+#bind C-L		 refresh
+#bind L		 refresh
+#bind l		 refresh
+#bind r		 refresh
+#bind R		 refresh
+#bind F6		 select_card
+#bind S		 select_card
+#bind s		 select_card
+#bind F2		 system_information
+#bind /		 system_information
+#bind SPACE		 toggle_capture
+#bind IC		 toggle_capture_left
+#bind ;		 toggle_capture_left
+#bind DC		 toggle_capture_right
+#bind '		 toggle_capture_right
+#bind M		 toggle_mute
+#bind m		 toggle_mute
+#bind <		 toggle_mute_left
+#bind ,		 toggle_mute_left
+#bind >		 toggle_mute_right
+#bind .		 toggle_mute_right
+#bind LL		textbox bottom
+#bind END		textbox bottom
+#bind G		textbox bottom
+#bind RETURN		textbox close
+#bind RETURN		textbox close
+#bind ESCAPE		textbox close
+#bind CANCEL		textbox close
+#bind ENTER		textbox close
+#bind CLOSE		textbox close
+#bind EXIT		textbox close
+#bind DOWN		textbox down
+#bind SF		textbox down
+#bind J		textbox down
+#bind j		textbox down
+#bind X		textbox down
+#bind x		textbox down
+#bind C-N		textbox down
+#bind LEFT		textbox left
+#bind H		textbox left
+#bind h		textbox left
+#bind P		textbox left
+#bind p		textbox left
+#bind NPAGE		textbox page_down
+#bind SPACE		textbox page_down
+#bind C-D		textbox page_down
+#bind BTAB		textbox page_left
+#bind <		textbox page_left
+#bind TAB		textbox page_right
+#bind >		textbox page_right
+#bind PPAGE		textbox page_up
+#bind BACKSPACE		textbox page_up
+#bind B		textbox page_up
+#bind b		textbox page_up
+#bind C-U		textbox page_up
+#bind RIGHT		textbox right
+#bind L		textbox right
+#bind l		textbox right
+#bind N		textbox right
+#bind n		textbox right
+#bind HOME		textbox top
+#bind BEG		textbox top
+#bind g		textbox top
+#bind UP		textbox up
+#bind SR		textbox up
+#bind K		textbox up
+#bind k		textbox up
+#bind W		textbox up
+#bind w		textbox up
+#bind C-P		textbox up
+
+### Colors ###
+#color	mixer_frame	cyan	black
+#color	mixer_text	cyan	black
+#color	mixer_active	yellow	black	bold
+#color	ctl_frame	cyan	black	bold
+#color	ctl_mute	cyan	black
+#color	ctl_nomute	white	green	bold
+#color	ctl_capture	red	black	bold
+#color	ctl_nocapture	white	black
+#color	ctl_label	white	blue	bold
+#color	ctl_label_focus	red	blue	bold
+#color	ctl_mark_focus	red	black	bold
+#color	ctl_bar_lo	green	green	bold
+#color	ctl_bar_mi	white	white	bold
+#color	ctl_bar_hi	red	red	bold
+#color	ctl_inactive	white	black
+#color	ctl_label_inactive	white	black	reverse
+#color	errormsg	white	red	bold
+#color	infomsg	white	blue	bold
+#color	textbox	white	blue	bold
+#color	textfield	white	black	reverse
+#color	menu	white	blue	bold
+#color	menu_selected	white	blue	reverse
+
