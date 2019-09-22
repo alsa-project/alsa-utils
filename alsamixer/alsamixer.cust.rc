@@ -1,0 +1,36 @@
+# Alsamixer.rc
+# More vi-like, and prettier colors (at least for me)
+
+# Options
+set mouse_wheel_step 3
+
+# Bindings
+bind h previous
+bind l next
+bind q close
+
+# Colors
+color mixer_frame blue default
+color mixer_text blue default
+color mixer_active yellow default bold  
+
+color ctl_frame blue default
+color ctl_mute red default bold
+color ctl_nomute white default bold  
+color ctl_capture red default bold  
+color ctl_nocapture blue default bold
+
+color ctl_label white black
+color ctl_label_focus white black bold reverse
+color ctl_mark_focus black default bold
+#color ctl_bar_lo green green bold  
+#color ctl_bar_mi white white bold  
+#color ctl_bar_hi red red bold  
+#color ctl_inactive white black 
+#color ctl_label_inactive white black reverse  
+#color errormsg white red bold  
+#color infomsg white blue bold  
+color textbox white black
+#color textfield white black reverse  
+color menu white black
+#color menu_selected white blue reverse  
