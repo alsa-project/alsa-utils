@@ -56,6 +56,7 @@ bool control_values_changed;
 bool controls_changed;
 
 int mouse_wheel_step = 1;
+bool mouse_wheel_focuses_control = 1;
 
 enum channel_mask {
 	LEFT = 1,
@@ -480,80 +481,83 @@ static void balance_volumes(void)
 static int on_mouse_key() {
 	MEVENT m;
 	int volume;
-	command_enum cmd;
+	command_enum cmd = 0;
 	unsigned int channels = LEFT | RIGHT;
 	unsigned int index;
 	struct control *control;
 
 	getmouse(&m);
 
-#if NCURSES_MOUSE_VERSION > 1
-	if (m.bstate & (BUTTON4_CLICKED|BUTTON4_PRESSED))
-		return CMD_WITH_ARG(CMD_MIXER_CONTROL_UP_N, mouse_wheel_step);
-	else if (m.bstate & (BUTTON5_CLICKED|BUTTON5_PRESSED))
-		return CMD_WITH_ARG(CMD_MIXER_CONTROL_DOWN_N, mouse_wheel_step);
-#endif
-
-	// Can't use mousemask() to filter those events, menu_driver() needs them.
 	if (m.bstate & (
 				BUTTON1_PRESSED|BUTTON1_RELEASED|
 				BUTTON2_PRESSED|BUTTON2_RELEASED|
 				BUTTON3_PRESSED|BUTTON3_RELEASED))
 		return 0;
 
+	/* Mind to process the data of the rect BEFORE calling
+	 * refocus_control(), because it will call clickable_clear().
+	 * This will make the rect pointer invalid. */
 	struct clickable_rect* rect = clickable_find(m.y, m.x);
-	if (! rect)
-		return 0;
+	if (rect)
+		cmd = rect->command;
 
-	// Mind to process the data of the rect BEFORE calling
-	// refocus_control(), because it will call clickable_clear().
-	// This will make the rect pointer invalid.
-	cmd = rect->command;
+#if NCURSES_MOUSE_VERSION > 1
+	if (m.bstate & (BUTTON4_CLICKED|BUTTON4_PRESSED|BUTTON5_CLICKED|BUTTON5_PRESSED)) {
+		switch (cmd) {
+			case CMD_MIXER_MOUSE_CLICK_CONTROL_ENUM:
+				focus_control_index = rect->arg1;
+				return CMD_WITH_ARG((
+							m.bstate & (BUTTON4_CLICKED|BUTTON4_PRESSED)
+							? CMD_MIXER_CONTROL_UP_N
+							: CMD_MIXER_CONTROL_DOWN_N
+						), 1);
 
-	// If argument is set (value != -1) it is mostly used for
-	// setting `focus_control_index`.
-	// Exception: cmd_mixer_mouse_scroll_horizontal
-	if (rect->arg1 >= 0 && cmd != CMD_MIXER_MOUSE_SCROLL_HORIZONTAL)
+			case CMD_MIXER_MOUSE_CLICK_VOLUME_BAR:
+				if (mouse_wheel_focuses_control)
+					focus_control_index = rect->arg1;
+
+			default:
+				return CMD_WITH_ARG((
+							m.bstate & (BUTTON4_CLICKED|BUTTON4_PRESSED)
+							? CMD_MIXER_CONTROL_UP_N
+							: CMD_MIXER_CONTROL_DOWN_N
+						), mouse_wheel_step);
+		}
+	}
+#endif
+
+	/* If the rectangle has got an argument (value != -1) it is used for
+	 * setting `focus_control_index` */
+	if (rect && rect->arg1 >= 0)
 		focus_control_index = rect->arg1;
 
 	switch (cmd) {
-	case CMD_MIXER_MOUSE_TOGGLE_MUTE:
-	case CMD_MIXER_MOUSE_CHANGE_CONTROL:
-		if (m.bstate & (BUTTON3_CLICKED|BUTTON3_DOUBLE_CLICKED|BUTTON3_TRIPLE_CLICKED)) {
+	case CMD_MIXER_MOUSE_CLICK_VOLUME_BAR:
+		if (m.bstate & (BUTTON3_CLICKED|BUTTON3_DOUBLE_CLICKED|BUTTON3_TRIPLE_CLICKED))
 			channels = m.x - rect->x1 + 1;
-		}
+		volume = (int) (100 * (rect->y2 - m.y) / (rect->y2 - rect->y1));
+		return CMD_WITH_ARG(CMD_MIXER_CONTROL_N_PERCENT_LEFT + channels - 1, volume);
 
-		if (cmd == CMD_MIXER_MOUSE_CHANGE_CONTROL) {
-			volume = (int) (100 * (rect->y2 - m.y) / (rect->y2 - rect->y1));
-			change_control_to_percent(volume, channels);
-		}
-		else {
-			toggle_mute(channels);
-		}
-		break;
+	case CMD_MIXER_MOUSE_CLICK_MUTE:
+		if (m.bstate & (BUTTON3_CLICKED|BUTTON3_DOUBLE_CLICKED|BUTTON3_TRIPLE_CLICKED))
+			channels = m.x - rect->x1 + 1;
+		return CMD_MIXER_TOGGLE_MUTE_LEFT + channels - 1;
 
-	case CMD_MIXER_MOUSE_CHANGE_CONTROL_ENUM:
+	case CMD_MIXER_MOUSE_CLICK_CONTROL_ENUM:
 		control = get_focus_control(TYPE_ENUM);
 		if (control &&
 			(snd_mixer_selem_get_enum_item(control->elem, 0, &index) >= 0)) {
-				change_control_relative((index == 0 ? 100 : -1), 0);
+				return (index == 0
+					? CMD_WITH_ARG(CMD_MIXER_CONTROL_UP_N, 100)
+					: CMD_WITH_ARG(CMD_MIXER_CONTROL_DOWN_N, 1));
 		}
 		break;
 
-	case CMD_MIXER_MOUSE_SCROLL_HORIZONTAL:
-		focus_control_index = focus_control_index + rect->arg1;
-		clamp_focus_control_index();
-		// fall-through
-
-	case CMD_MIXER_MOUSE_FOCUS_CONTROL:
-		refocus_control();
-		break;
-
 	default:
-		return cmd;
+		return cmd; // it's a non-mouse command
 	}
 
-	return 0;
+	return 0; // it's a failed mouse command
 }
 
 static void on_handle_key(int key)
@@ -581,12 +585,10 @@ static void on_handle_key(int key)
 	case CMD_MIXER_SYSTEM_INFORMATION:
 		create_proc_files_list();
 		break;
-	case CMD_MIXER_MODE_PLAYBACK:
-	case CMD_MIXER_MODE_CAPTURE:
-	case CMD_MIXER_MODE_ALL:
-		set_view_mode((enum view_mode)(cmd - CMD_MIXER_MODE_PLAYBACK));
+	case CMD_MIXER_SET_VIEW_MODE:
+		set_view_mode((enum view_mode)(arg));
 		break;
-	case CMD_MIXER_MODE_TOGGLE:
+	case CMD_MIXER_TOGGLE_VIEW_MODE:
 		set_view_mode((enum view_mode)((view_mode + 1) % VIEW_MODE_COUNT));
 		break;
 	case CMD_MIXER_SELECT_CARD:
@@ -597,17 +599,13 @@ static void on_handle_key(int key)
 		display_controls();
 		break;
 	case CMD_MIXER_PREVIOUS:
-		if (focus_control_index > 0) {
-			--focus_control_index;
-			refocus_control();
-		}
+		focus_control_index -= arg;
+		clamp_focus_control_index();
+		refocus_control();
 		break;
 	case CMD_MIXER_NEXT:
-		if (focus_control_index < controls_count - 1) {
-			++focus_control_index;
-			refocus_control();
-		}
-		break;
+		arg = focus_control_index + 2;
+		// fall-through
 	case CMD_MIXER_CONTROL_FOCUS_N:
 		focus_control_index = arg - 1;
 		clamp_focus_control_index();
@@ -623,8 +621,10 @@ static void on_handle_key(int key)
 	case CMD_MIXER_CONTROL_DOWN_N:
 		change_control_relative(-arg, cmd - CMD_MIXER_CONTROL_DOWN_LEFT_N + 1);
 		break;
+	case CMD_MIXER_CONTROL_N_PERCENT_LEFT:
+	case CMD_MIXER_CONTROL_N_PERCENT_RIGHT:
 	case CMD_MIXER_CONTROL_N_PERCENT:
-		change_control_to_percent(arg, LEFT | RIGHT);
+		change_control_to_percent(arg, cmd - CMD_MIXER_CONTROL_N_PERCENT_LEFT + 1);
 		break;
 	case CMD_MIXER_TOGGLE_MUTE_LEFT:
 	case CMD_MIXER_TOGGLE_MUTE_RIGHT:

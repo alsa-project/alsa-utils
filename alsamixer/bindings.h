@@ -17,13 +17,13 @@ extern command_enum textbox_bindings[KEY_MAX];
  */
 
 #define CMD_WITH_ARG(CMD, ARG) \
-	(CMD + (ARG << 9))
+	((CMD) + ((ARG) << 9))
 
 #define CMD_GET_CMD(CMD) \
-	(CMD & 0x1FF)
+	((CMD) & 0x1FF)
 
 #define CMD_GET_ARG(CMD) \
-	(CMD >> 9)
+	((CMD) >> 9)
 
 enum mixer_command {
 	// Keep those in the same order as displayed on screen
@@ -32,18 +32,18 @@ enum mixer_command {
 	CMD_MIXER_SELECT_CARD,
 	CMD_MIXER_CLOSE,
 
-	// Keep those in the same order as in `enum view_mode`
-	CMD_MIXER_MODE_PLAYBACK,
-	CMD_MIXER_MODE_CAPTURE,
-	CMD_MIXER_MODE_ALL,
-
-	CMD_MIXER_MODE_TOGGLE,
+	CMD_MIXER_SET_VIEW_MODE,
+	CMD_MIXER_TOGGLE_VIEW_MODE,
 	CMD_MIXER_REFRESH,
 	CMD_MIXER_PREVIOUS,
 	CMD_MIXER_NEXT,
 	CMD_MIXER_BALANCE_CONTROL,
-	CMD_MIXER_CONTROL_N_PERCENT,
 	CMD_MIXER_CONTROL_FOCUS_N,
+
+	// Keep order: left, right, both
+	CMD_MIXER_CONTROL_N_PERCENT_LEFT,
+	CMD_MIXER_CONTROL_N_PERCENT_RIGHT,
+	CMD_MIXER_CONTROL_N_PERCENT,
 
 	// Keep order: left, right, both
 	CMD_MIXER_CONTROL_UP_LEFT_N,
@@ -66,11 +66,9 @@ enum mixer_command {
 	CMD_MIXER_TOGGLE_CAPTURE,
 
 	// Mouse
-	CMD_MIXER_MOUSE_TOGGLE_MUTE,
-	CMD_MIXER_MOUSE_CHANGE_CONTROL,
-	CMD_MIXER_MOUSE_CHANGE_CONTROL_ENUM,
-	CMD_MIXER_MOUSE_SCROLL_HORIZONTAL,
-	CMD_MIXER_MOUSE_FOCUS_CONTROL,
+	CMD_MIXER_MOUSE_CLICK_MUTE,
+	CMD_MIXER_MOUSE_CLICK_VOLUME_BAR,
+	CMD_MIXER_MOUSE_CLICK_CONTROL_ENUM,
 };
 
 enum textbox_command {

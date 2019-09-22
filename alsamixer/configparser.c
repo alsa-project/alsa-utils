@@ -14,6 +14,7 @@
 #include "utils.h"
 #include "curskey.h"
 #include "bindings.h"
+#include "mixer_widget.h"
 
 #define ERROR_CONFIG -1
 #define ERROR_MISSING_ARGUMENTS -2
@@ -23,6 +24,7 @@ static const char *error_message;
 static const char *error_cause;
 
 extern int mouse_wheel_step;
+extern int mouse_wheel_focuses_control;
 
 static int strlist_index(const char *haystack, int padlen, int padchar, const char *needle) {
 	int needle_len;
@@ -208,17 +210,14 @@ static int mixer_command_by_name(const char *name) {
 	switch (words) {
 		case W_CLOSE: return CMD_MIXER_CLOSE;
 		case W_HELP: return CMD_MIXER_HELP;
-		case W_NEXT: return CMD_MIXER_NEXT;
-		case W_PREVIOUS: return CMD_MIXER_PREVIOUS;
+		case W_NEXT: return CMD_WITH_ARG(CMD_MIXER_NEXT, 1);
+		case W_PREVIOUS: return CMD_WITH_ARG(CMD_MIXER_PREVIOUS, 1);
 		case W_REFRESH: return CMD_MIXER_REFRESH;
-		case W_MODE|W_ALL: return CMD_MIXER_MODE_ALL;
-		case W_MODE|W_CAPTURE: return CMD_MIXER_MODE_CAPTURE;
-		case W_MODE|W_PLAYBACK: return CMD_MIXER_MODE_PLAYBACK;
-		case W_MODE|W_TOGGLE: return CMD_MIXER_MODE_TOGGLE;
+		case W_MODE|W_ALL: return CMD_WITH_ARG(CMD_MIXER_SET_VIEW_MODE, VIEW_MODE_ALL);
+		case W_MODE|W_CAPTURE: return CMD_WITH_ARG(CMD_MIXER_SET_VIEW_MODE, VIEW_MODE_CAPTURE);
+		case W_MODE|W_PLAYBACK: return CMD_WITH_ARG(CMD_MIXER_SET_VIEW_MODE, VIEW_MODE_PLAYBACK);
+		case W_MODE|W_TOGGLE: return CMD_MIXER_TOGGLE_VIEW_MODE;
 		case W_CONTROL|W_BALANCE: return CMD_MIXER_BALANCE_CONTROL;
-		case W_CONTROL|W_SET|W_NUMBER:
-			return (number > 100 ? 0 :
-					CMD_WITH_ARG(CMD_MIXER_CONTROL_N_PERCENT, number));
 		case W_CONTROL|W_FOCUS|W_NUMBER:
 			return ((number < 1 || number > 100) ? 0 :
 					CMD_WITH_ARG(CMD_MIXER_CONTROL_FOCUS_N, number));
@@ -241,6 +240,9 @@ static int mixer_command_by_name(const char *name) {
 				CMD_WITH_ARG(
 					(words & W_UP ? CMD_MIXER_CONTROL_UP_LEFT_N : CMD_MIXER_CONTROL_DOWN_LEFT_N)
 					+ channel - 1, number));
+		case W_CONTROL|W_SET|W_NUMBER:
+			return (number > 100 ? 0 :
+					CMD_WITH_ARG(CMD_MIXER_CONTROL_N_PERCENT_LEFT + channel - 1, number));
 		case W_CONTROL|W_MUTE:
 			return CMD_MIXER_TOGGLE_MUTE_LEFT + channel - 1;
 		case W_CONTROL|W_CAPTURE:
@@ -396,6 +398,9 @@ static int cfg_set(char **argv, int argc)
 				error_cause = argv[1];
 				return ERROR_CONFIG;
 			}
+		}
+		else if (! strcmp(argv[0], "mouse_wheel_focuses_control")) {
+			mouse_wheel_focuses_control = atoi(argv[1]);
 		}
 		else {
 			error_message = _("unknown option");

@@ -226,7 +226,7 @@ void display_view_mode(void)
 			}
 			clickable_set_relative(mixer_widget.window,
 					0, -(widths[i] + 5), 0, -1,
-					CMD_MIXER_MODE_PLAYBACK+i, -1);
+					CMD_WITH_ARG(CMD_MIXER_SET_VIEW_MODE, i), -1);
 		}
 	} else {
 		wattrset(mixer_widget.window, attrs.mixer_active);
@@ -493,7 +493,7 @@ static void display_control(unsigned int control_index)
 		}
 		clickable_set(
 				base_y - volume_height, frame_left + 1, base_y, frame_left + 2,
-				CMD_MIXER_MOUSE_CHANGE_CONTROL, control_index);
+				CMD_MIXER_MOUSE_CLICK_VOLUME_BAR, control_index);
 		if (control->flags & IS_ACTIVE)
 			wattrset(mixer_widget.window, attrs.mixer_active);
 		if (!(control->flags & HAS_VOLUME_1)) {
@@ -532,7 +532,7 @@ static void display_control(unsigned int control_index)
 		       ? _("O")[0] | (control->flags & IS_ACTIVE ? attrs.ctl_nomute : 0)
 		       : _("M")[0] | (control->flags & IS_ACTIVE ? attrs.ctl_mute : 0));
 		clickable_set(base_y + 1, frame_left + 1, base_y + 1, frame_left + 2,
-				CMD_MIXER_MOUSE_TOGGLE_MUTE, control_index);
+				CMD_MIXER_MOUSE_CLICK_MUTE, control_index);
 	}
 
 	if (control->flags & TYPE_CSWITCH) {
@@ -590,7 +590,7 @@ static void display_control(unsigned int control_index)
 		display_string_centered_in_control(base_y, col, buf, control_width);
 		clickable_set_relative(mixer_widget.window,
 				0, (-1)*control_name_width, 0, -2,
-				CMD_MIXER_MOUSE_CHANGE_CONTROL_ENUM, control_index);
+				CMD_MIXER_MOUSE_CLICK_CONTROL_ENUM, control_index);
 	}
 
 	if (control_index == focus_control_index) {
@@ -611,7 +611,7 @@ static void display_control(unsigned int control_index)
 	display_string_centered_in_control(name_y, col, control->name, control_name_width);
 	clickable_set_relative(mixer_widget.window,
 			-1, (-1)*control_name_width, 0, -2,
-			CMD_MIXER_MOUSE_FOCUS_CONTROL, control_index);
+			CMD_WITH_ARG(CMD_MIXER_CONTROL_FOCUS_N, control_index), -1);
 	if (channel_name_y > name_y) {
 		if (control->flags & IS_MULTICH) {
 			switch (control->flags & MULTICH_MASK) {
@@ -657,9 +657,9 @@ static void display_scroll_indicators(void)
 	mvwvline(mixer_widget.window, y0, 0, left, y1 - y0 + 1);
 	mvwvline(mixer_widget.window, y0, screen_cols -1, right, y1 - y0 + 1);
 	clickable_set(y0, 0, y1, 0,
-			CMD_MIXER_MOUSE_SCROLL_HORIZONTAL, (-1)*(visible_controls + 1));
+			CMD_WITH_ARG(CMD_MIXER_PREVIOUS, visible_controls), -1);
 	clickable_set(y0, screen_cols - 1, y1, screen_cols - 1,
-			CMD_MIXER_MOUSE_SCROLL_HORIZONTAL, visible_controls + 1);
+			CMD_WITH_ARG(CMD_MIXER_NEXT, visible_controls), -1);
 }
 
 void display_controls(void)
