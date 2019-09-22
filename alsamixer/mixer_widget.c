@@ -480,11 +480,11 @@ static void balance_volumes(void)
 
 static int on_mouse_key() {
 	MEVENT m;
-	int volume;
 	command_enum cmd = 0;
 	unsigned int channels = LEFT | RIGHT;
 	unsigned int index;
 	struct control *control;
+	struct clickable_rect *rect;
 
 	getmouse(&m);
 
@@ -497,7 +497,7 @@ static int on_mouse_key() {
 	/* Mind to process the data of the rect BEFORE calling
 	 * refocus_control(), because it will call clickable_clear().
 	 * This will make the rect pointer invalid. */
-	struct clickable_rect* rect = clickable_find(m.y, m.x);
+	rect = clickable_find(m.y, m.x);
 	if (rect)
 		cmd = rect->command;
 
@@ -535,8 +535,9 @@ static int on_mouse_key() {
 	case CMD_MIXER_MOUSE_CLICK_VOLUME_BAR:
 		if (m.bstate & (BUTTON3_CLICKED|BUTTON3_DOUBLE_CLICKED|BUTTON3_TRIPLE_CLICKED))
 			channels = m.x - rect->x1 + 1;
-		volume = (int) (100 * (rect->y2 - m.y) / (rect->y2 - rect->y1));
-		return CMD_WITH_ARG(CMD_MIXER_CONTROL_N_PERCENT_LEFT + channels - 1, volume);
+		return CMD_WITH_ARG(CMD_MIXER_CONTROL_N_PERCENT_LEFT + channels - 1,
+			(100 * (rect->y2 - m.y) / (rect->y2 - rect->y1)) // volume
+		);
 
 	case CMD_MIXER_MOUSE_CLICK_MUTE:
 		if (m.bstate & (BUTTON3_CLICKED|BUTTON3_DOUBLE_CLICKED|BUTTON3_TRIPLE_CLICKED))
