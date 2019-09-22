@@ -243,9 +243,9 @@ static int mixer_command_by_name(const char *name) {
 		case W_CONTROL|W_SET|W_NUMBER:
 			return (number > 100 ? 0 :
 					CMD_WITH_ARG(CMD_MIXER_CONTROL_N_PERCENT_LEFT + channel - 1, number));
-		case W_CONTROL|W_MUTE:
+		case W_TOGGLE|W_MUTE:
 			return CMD_MIXER_TOGGLE_MUTE_LEFT + channel - 1;
-		case W_CONTROL|W_CAPTURE:
+		case W_TOGGLE|W_CAPTURE:
 			return CMD_MIXER_TOGGLE_CAPTURE_LEFT + channel - 1;
 	}
 
