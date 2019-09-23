@@ -220,7 +220,7 @@ static int mixer_command_by_name(const char *name) {
 		case W_CONTROL|W_BALANCE: return CMD_MIXER_BALANCE_CONTROL;
 		case W_CONTROL|W_FOCUS|W_NUMBER:
 			return ((number < 1 || number > 100) ? 0 :
-					CMD_WITH_ARG(CMD_MIXER_CONTROL_FOCUS_N, number));
+					CMD_WITH_ARG(CMD_MIXER_CONTROL_FOCUS_N, number - 1));
 	}
 
 	if (words & W_LEFT)
@@ -230,8 +230,7 @@ static int mixer_command_by_name(const char *name) {
 	if (!channel)
 		channel = 3;
 
-	words &= ~(W_LEFT|W_RIGHT);
-	switch (words) {
+	switch (words & ~(W_LEFT|W_RIGHT)) {
 		case W_CONTROL|W_UP:
 		case W_CONTROL|W_UP|W_NUMBER:
 		case W_CONTROL|W_DOWN:
@@ -480,38 +479,6 @@ static int process_line(char *line) {
 	return ret;
 }
 
-// Taken and adapted from textbox.c
-#define MAX_FILE_SIZE 1048576
-static char *read_file(const char *file_name, unsigned int *file_size)
-{
-	FILE *f;
-	int err;
-	char *buf;
-	unsigned int allocated = 2048;
-	unsigned int bytes_read;
-
-	f = fopen(file_name, "r");
-	if (!f) {
-		fprintf(stderr, _("Cannot open file \"%s\"."), file_name);
-		fprintf(stderr, " %s\n", strerror(errno));
-		return NULL;
-	}
-	*file_size = 0;
-	buf = NULL;
-	do {
-		allocated *= 2;
-		buf = crealloc(buf, allocated);
-		bytes_read = fread(buf + *file_size, 1, allocated - *file_size, f);
-		*file_size += bytes_read;
-	} while (*file_size == allocated && allocated < MAX_FILE_SIZE);
-	fclose(f);
-	if (*file_size > 0 && buf[*file_size - 1] != '\n' && *file_size < allocated) {
-		buf[*file_size] = '\n';
-		++*file_size;
-	}
-	return buf;
-}
-
 void parse_config_file(const char *file_name)
 {
 	char *buf;
@@ -520,12 +487,15 @@ void parse_config_file(const char *file_name)
 	unsigned int i;
 	char *line;
 
+	endwin(); // print warnings to stderr
+
 	buf = read_file(file_name, &file_size);
-	if (!buf)
+	if (!buf) {
+		fprintf(stderr, "%s: %s\n", file_name, strerror(errno));
 		return;
+	}
 
 	curskey_init();
-	endwin(); // print warnings to stderr
 
 	lineno = 0;
 	line = buf;

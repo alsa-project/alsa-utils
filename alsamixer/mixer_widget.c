@@ -586,11 +586,11 @@ static void on_handle_key(int key)
 	case CMD_MIXER_SYSTEM_INFORMATION:
 		create_proc_files_list();
 		break;
+	case CMD_MIXER_TOGGLE_VIEW_MODE:
+		arg = (view_mode + 1) % VIEW_MODE_COUNT;
+		// overwrite arg; fall-through
 	case CMD_MIXER_SET_VIEW_MODE:
 		set_view_mode((enum view_mode)(arg));
-		break;
-	case CMD_MIXER_TOGGLE_VIEW_MODE:
-		set_view_mode((enum view_mode)((view_mode + 1) % VIEW_MODE_COUNT));
 		break;
 	case CMD_MIXER_SELECT_CARD:
 		create_card_select_list();
@@ -605,10 +605,10 @@ static void on_handle_key(int key)
 		refocus_control();
 		break;
 	case CMD_MIXER_NEXT:
-		arg = focus_control_index + 2;
-		// fall-through
+		arg = focus_control_index + 1;
+		// overwrite arg; fall-through
 	case CMD_MIXER_CONTROL_FOCUS_N:
-		focus_control_index = arg - 1;
+		focus_control_index = arg;
 		clamp_focus_control_index();
 		refocus_control();
 		break;
