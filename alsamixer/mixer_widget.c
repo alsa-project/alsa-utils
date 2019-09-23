@@ -605,7 +605,7 @@ static void on_handle_key(int key)
 		refocus_control();
 		break;
 	case CMD_MIXER_NEXT:
-		arg = focus_control_index + 1;
+		arg = focus_control_index + arg;
 		// overwrite arg; fall-through
 	case CMD_MIXER_CONTROL_FOCUS_N:
 		focus_control_index = arg;
