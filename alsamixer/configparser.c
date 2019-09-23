@@ -2,14 +2,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
 #include <pwd.h>
 #include CURSESINC
 #include "colors.h"
-#include "mem.h"
-#include "die.h"
 #include "gettext_curses.h"
 #include "utils.h"
 #include "curskey.h"
