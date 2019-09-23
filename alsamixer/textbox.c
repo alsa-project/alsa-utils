@@ -224,7 +224,7 @@ static void on_handle_key(int key)
 	if (key >= ARRAY_SIZE(textbox_bindings))
 		return;
 
-	switch ((enum textbox_command) textbox_bindings[key]) {
+	switch (textbox_bindings[key]) {
 	case CMD_TEXTBOX_CLOSE:
 		text_widget.close();
 		break;

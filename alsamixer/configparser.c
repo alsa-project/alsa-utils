@@ -26,17 +26,17 @@ static const char *error_cause;
 extern int mouse_wheel_step;
 extern int mouse_wheel_focuses_control;
 
-static int strlist_index(const char *haystack, int padlen, int padchar, const char *needle) {
+static int strlist_index(const char *haystack, int padlen, const char *needle) {
 	int needle_len;
 	int pos;
 	const char *found;
 
 	needle_len = strlen(needle);
-	if (needle_len < padlen && needle[needle_len - 1] != padchar) {
+	if (needle_len < padlen && needle[needle_len - 1] != ' ') {
 		found = strstr(haystack, needle);
 		if (found) {
 			pos = (found - haystack);
-			if (pos % padlen == 0 && haystack[pos+needle_len] == padchar)
+			if (pos % padlen == 0 && haystack[pos+needle_len] == ' ')
 				return pos / padlen;
 		}
 	}
@@ -54,7 +54,7 @@ static int color_by_name(const char *name) {
 		"blue    "
 		"magenta "
 		"cyan    "
-		"white   ", 8, ' ', name) - 1;
+		"white   ", 8, name) - 1;
 };
 
 static int attr_by_name(const char *name) {
@@ -68,7 +68,7 @@ static int attr_by_name(const char *name) {
 		"italic    "
 #endif
 		"normal    "
-		"blink     ", 10, ' ', name);
+		"blink     ", 10, name);
 
 	if (idx < 0)
 		return -1;
@@ -148,11 +148,11 @@ static const char *command_words =
 	"top      "
 	"up       ";
 
-static unsigned int parse_words(const char *name, int *number) {
-	unsigned words = 0;
-	unsigned word;
+static unsigned int parse_words(const char *name, unsigned int *number) {
+	unsigned int words = 0;
+	unsigned int word;
+	unsigned int i;
 	char buf[16];
-	int i;
 
 	while (*name) {
 		for (i = 0; i < sizeof(buf) - 1; ++i) {
@@ -172,7 +172,7 @@ static unsigned int parse_words(const char *name, int *number) {
 				*number = atoi(buf);
 			word = W_NUMBER;
 		}
-		else if ((i = strlist_index(command_words, 9, ' ', buf)) >= 0)
+		else if ((i = strlist_index(command_words, 9, buf)) >= 0)
 			word = 1 << i;
 		else
 			return 0;
@@ -203,8 +203,8 @@ static int textbox_command_by_name(const char *name) {
 }
 
 static int mixer_command_by_name(const char *name) {
-	int channel = 0;
-	int number = 1; // W_CONTROL|{W_UP,W_DOWN} default
+	unsigned int channel = 0;
+	unsigned int number = 1; // W_CONTROL|{W_UP,W_DOWN} default
 	unsigned int words = parse_words(name, &number);
 
 	switch (words) {
@@ -284,7 +284,7 @@ static int* element_by_name(const char *name) {
 		"mixer_frame        "
 		"mixer_text         "
 		"textbox            "
-		"textfield          ", 19, ' ', name);
+		"textfield          ", 19, name);
 
 	if (idx < 0)
 		return NULL;
@@ -461,7 +461,7 @@ static int process_line(char *line) {
 			ret = strlist_index(
 				"bind  "
 				"color "
-				"set   ", 6, ' ', args[0]);
+				"set   ", 6, args[0]);
 			switch (ret) {
 				case 0: ret = cfg_bind(args + 1, argc - 1); break;
 				case 1: ret = cfg_color(args + 1, argc - 1); break;

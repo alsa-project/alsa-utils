@@ -600,10 +600,8 @@ static void on_handle_key(int key)
 		display_controls();
 		break;
 	case CMD_MIXER_PREVIOUS:
-		focus_control_index -= arg;
-		clamp_focus_control_index();
-		refocus_control();
-		break;
+		arg = (-arg);
+		// overwrite arg; fall-through
 	case CMD_MIXER_NEXT:
 		arg = focus_control_index + arg;
 		// overwrite arg; fall-through
