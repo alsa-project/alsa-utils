@@ -76,13 +76,14 @@ static void on_form_key(int key)
 		{ KEY_RIGHT, REQ_NEXT_CHAR },
 		{ KEY_HOME, REQ_BEG_FIELD },
 		{ KEY_BACKSPACE, REQ_DEL_PREV },
+		{ 127, REQ_DEL_PREV },
 		{ KEY_DC, REQ_DEL_CHAR },
 		{ KEY_BEG, REQ_BEG_FIELD },
 		{ KEY_END, REQ_END_FIELD },
 	};
 	unsigned int i;
 
-	if (key >= 32 && key < 256) {
+	if (key >= 32 && key < 256 && key != 127) {
 		form_driver(form, key);
 		return;
 	}
