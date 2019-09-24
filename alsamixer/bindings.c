@@ -4,7 +4,7 @@
 #define CNTRL(C) (C%32)
 #define ALT(C) (C+128)
 
-command_enum textbox_bindings[KEY_MAX] = {
+uint8_t textbox_bindings[KEY_MAX] = {
 	['\n'] =			CMD_TEXTBOX_CLOSE,
 	['\r'] =			CMD_TEXTBOX_CLOSE,
 	[27] =				CMD_TEXTBOX_CLOSE,

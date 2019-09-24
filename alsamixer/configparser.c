@@ -294,7 +294,12 @@ static int* element_by_name(const char *name) {
 static int cfg_bind(char **argv, int argc) {
 	const char *command_name;
 	command_enum command = 0;
-	command_enum *bindings = mixer_bindings;
+	union {
+		command_enum *mixer_bindings;
+		uint8_t *textbox_bindings;
+	} bind_to = {
+		.mixer_bindings = mixer_bindings
+	};
 
 	if (argc == 2)
 		command_name = argv[1];
@@ -302,10 +307,10 @@ static int cfg_bind(char **argv, int argc) {
 		command_name = argv[2];
 
 		if (! strcmp(argv[1], "textbox")) {
-			bindings = textbox_bindings;
+			bind_to.textbox_bindings = textbox_bindings;
 		}
 		else if (! strcmp(argv[1], "mixer"))
-			; // bindings = mixer_bindings
+			; // bind_to.mixer_bindings = mixer_bindings
 		else {
 			error_message = _("invalid widget");
 			error_cause = argv[1];
@@ -323,10 +328,14 @@ static int cfg_bind(char **argv, int argc) {
 		return ERROR_CONFIG;
 	}
 
-	if (bindings == textbox_bindings)
+	if (bind_to.textbox_bindings == textbox_bindings) {
 		command = textbox_command_by_name(command_name);
-	else
+		bind_to.textbox_bindings[keycode] = command;
+	}
+	else {
 		command = mixer_command_by_name(command_name);
+		bind_to.mixer_bindings[keycode] = command;
+	}
 
 	if (!command) {
 		if (!strcmp(command_name, "none"))
@@ -338,7 +347,6 @@ static int cfg_bind(char **argv, int argc) {
 		}
 	}
 
-	bindings[keycode] = command;
 	return 0;
 }
 

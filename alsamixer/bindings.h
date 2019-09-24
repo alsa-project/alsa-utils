@@ -7,7 +7,7 @@
 
 typedef uint16_t command_enum;
 extern command_enum mixer_bindings[KEY_MAX];
-extern command_enum textbox_bindings[KEY_MAX];
+extern uint8_t textbox_bindings[KEY_MAX]; // textbox commands don't take args
 
 /* Some commands, like `CMD_MIXER_CONTROL_UP_N` take a numeric argument.
  * The argument is stored in the higher bits, the command itself in the lower
