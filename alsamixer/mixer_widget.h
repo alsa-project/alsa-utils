@@ -12,6 +12,11 @@ enum view_mode {
 	VIEW_MODE_COUNT,
 };
 
+enum channel_mask {
+	LEFT = 1,
+	RIGHT = 2,
+};
+
 extern snd_mixer_t *mixer;
 extern char *mixer_device_name;
 extern bool unplugged;

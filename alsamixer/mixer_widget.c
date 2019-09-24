@@ -58,11 +58,6 @@ bool controls_changed;
 int mouse_wheel_step = 1;
 bool mouse_wheel_focuses_control = 1;
 
-enum channel_mask {
-	LEFT = 1,
-	RIGHT = 2,
-};
-
 static int elem_callback(snd_mixer_elem_t *elem, unsigned int mask)
 {
 	if (mask == SND_CTL_EVENT_MASK_REMOVE) {
@@ -542,7 +537,7 @@ static int on_mouse_key() {
 	case CMD_MIXER_MOUSE_CLICK_MUTE:
 		if (m.bstate & (BUTTON3_CLICKED|BUTTON3_DOUBLE_CLICKED|BUTTON3_TRIPLE_CLICKED))
 			channels = m.x - rect->x1 + 1;
-		return CMD_MIXER_TOGGLE_MUTE_LEFT + channels - 1;
+		return CMD_WITH_ARG(CMD_MIXER_TOGGLE_MUTE, channels);
 
 	case CMD_MIXER_MOUSE_CLICK_CONTROL_ENUM:
 		control = get_focus_control(TYPE_ENUM);
@@ -625,15 +620,11 @@ static void on_handle_key(int key)
 	case CMD_MIXER_CONTROL_N_PERCENT:
 		change_control_to_percent(arg, cmd - CMD_MIXER_CONTROL_N_PERCENT_LEFT + 1);
 		break;
-	case CMD_MIXER_TOGGLE_MUTE_LEFT:
-	case CMD_MIXER_TOGGLE_MUTE_RIGHT:
 	case CMD_MIXER_TOGGLE_MUTE:
-		toggle_mute(cmd - CMD_MIXER_TOGGLE_MUTE_LEFT + 1);
+		toggle_mute(arg);
 		break;
-	case CMD_MIXER_TOGGLE_CAPTURE_LEFT:
-	case CMD_MIXER_TOGGLE_CAPTURE_RIGHT:
 	case CMD_MIXER_TOGGLE_CAPTURE:
-		toggle_capture(cmd - CMD_MIXER_TOGGLE_CAPTURE_LEFT + 1);
+		toggle_capture(arg);
 		break;
 	case CMD_MIXER_BALANCE_CONTROL:
 		balance_volumes();

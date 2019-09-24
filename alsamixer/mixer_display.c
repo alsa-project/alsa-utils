@@ -549,14 +549,14 @@ static void display_control(unsigned int control_index)
 		display_string_in_field(cswitch_y - 1, frame_left - 2, switches[0] ? _("L") : "", 2, ALIGN_RIGHT);
 		clickable_set(
 				cswitch_y - 1, frame_left - 2, cswitch_y - 1, frame_left - 1,
-				CMD_MIXER_TOGGLE_CAPTURE_LEFT, control_index);
+				CMD_WITH_ARG(CMD_MIXER_TOGGLE_CAPTURE, LEFT), control_index);
 		if (control->flags & IS_ACTIVE)
 			wattrset(mixer_widget.window, switches[1] ? attrs.ctl_capture : attrs.ctl_nocapture);
 		/* TRANSLATORS: "right"; no more than two characters */
 		display_string_in_field(cswitch_y - 1, frame_left + 4, switches[1] ? _("R") : "", 2, ALIGN_LEFT);
 		clickable_set(
 				cswitch_y - 1, frame_left + 4, cswitch_y - 1, frame_left + 5,
-				CMD_MIXER_TOGGLE_CAPTURE_RIGHT, control_index);
+				CMD_WITH_ARG(CMD_MIXER_TOGGLE_CAPTURE, RIGHT), control_index);
 		/* TRANSLATORS: no more than eight characters */
 		s = _("CAPTURE");
 		if (switches[0] || switches[1]) {
@@ -575,7 +575,7 @@ static void display_control(unsigned int control_index)
 		}
 		clickable_set(
 				cswitch_y, frame_left - 2, cswitch_y, frame_left - 2 + 8,
-				CMD_MIXER_TOGGLE_CAPTURE, control_index);
+				CMD_WITH_ARG(CMD_MIXER_TOGGLE_CAPTURE, LEFT|RIGHT), control_index);
 	}
 
 	if (control->flags & TYPE_ENUM) {

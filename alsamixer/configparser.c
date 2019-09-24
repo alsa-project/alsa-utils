@@ -221,11 +221,11 @@ static int mixer_command_by_name(const char *name) {
 	}
 
 	if (words & W_LEFT)
-		channel |= 1;
+		channel |= LEFT;
 	if (words & W_RIGHT)
-		channel |= 2;
+		channel |= RIGHT;
 	if (!channel)
-		channel = 3;
+		channel = LEFT|RIGHT;
 
 	switch (words & ~(W_LEFT|W_RIGHT)) {
 		case W_CONTROL|W_UP:
@@ -240,9 +240,9 @@ static int mixer_command_by_name(const char *name) {
 			return (number > 100 ? 0 :
 					CMD_WITH_ARG(CMD_MIXER_CONTROL_N_PERCENT_LEFT + channel - 1, number));
 		case W_TOGGLE|W_MUTE:
-			return CMD_MIXER_TOGGLE_MUTE_LEFT + channel - 1;
+			return CMD_WITH_ARG(CMD_MIXER_TOGGLE_MUTE, channel);
 		case W_TOGGLE|W_CAPTURE:
-			return CMD_MIXER_TOGGLE_CAPTURE_LEFT + channel - 1;
+			return CMD_WITH_ARG(CMD_MIXER_TOGGLE_CAPTURE, channel);
 	}
 
 	// Other commands...
