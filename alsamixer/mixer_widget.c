@@ -572,6 +572,21 @@ static void on_handle_key(int key)
 	cmd = CMD_GET_CMD(cmd);
 
 	switch (cmd) {
+	case CMD_MIXER_CONTROL_DOWN_LEFT_N:
+	case CMD_MIXER_CONTROL_DOWN_RIGHT_N:
+	case CMD_MIXER_CONTROL_DOWN_N:
+		arg = (-arg);
+		// overwrite arg; fall-through
+	case CMD_MIXER_CONTROL_UP_LEFT_N:
+	case CMD_MIXER_CONTROL_UP_RIGHT_N:
+	case CMD_MIXER_CONTROL_UP_N:
+		change_control_relative(arg, cmd % 4);
+		break;
+	case CMD_MIXER_CONTROL_N_PERCENT_LEFT:
+	case CMD_MIXER_CONTROL_N_PERCENT_RIGHT:
+	case CMD_MIXER_CONTROL_N_PERCENT:
+		change_control_to_percent(arg, cmd % 4);
+		break;
 	case CMD_MIXER_CLOSE:
 		mixer_widget.close();
 		break;
@@ -604,21 +619,6 @@ static void on_handle_key(int key)
 		focus_control_index = arg;
 		clamp_focus_control_index();
 		refocus_control();
-		break;
-	case CMD_MIXER_CONTROL_UP_LEFT_N:
-	case CMD_MIXER_CONTROL_UP_RIGHT_N:
-	case CMD_MIXER_CONTROL_UP_N:
-		change_control_relative(arg, cmd - CMD_MIXER_CONTROL_UP_LEFT_N + 1);
-		break;
-	case CMD_MIXER_CONTROL_DOWN_LEFT_N:
-	case CMD_MIXER_CONTROL_DOWN_RIGHT_N:
-	case CMD_MIXER_CONTROL_DOWN_N:
-		change_control_relative(-arg, cmd - CMD_MIXER_CONTROL_DOWN_LEFT_N + 1);
-		break;
-	case CMD_MIXER_CONTROL_N_PERCENT_LEFT:
-	case CMD_MIXER_CONTROL_N_PERCENT_RIGHT:
-	case CMD_MIXER_CONTROL_N_PERCENT:
-		change_control_to_percent(arg, cmd - CMD_MIXER_CONTROL_N_PERCENT_LEFT + 1);
 		break;
 	case CMD_MIXER_TOGGLE_MUTE:
 		toggle_mute(arg);
