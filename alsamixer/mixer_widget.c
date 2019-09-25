@@ -55,7 +55,7 @@ unsigned int current_control_flags;
 bool control_values_changed;
 bool controls_changed;
 
-int mouse_wheel_step = 1;
+unsigned int mouse_wheel_step = 1;
 bool mouse_wheel_focuses_control = 1;
 
 static int elem_callback(snd_mixer_elem_t *elem, unsigned int mask)

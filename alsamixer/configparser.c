@@ -392,7 +392,7 @@ static int cfg_set(char **argv, unsigned int argc)
 
 	if (argc == 2) {
 		if (! strcmp(argv[0], "mouse_wheel_step")) {
-			mouse_wheel_step = strtoimax(argv[1], &endptr, 10);
+			mouse_wheel_step = strtoumax(argv[1], &endptr, 10);
 			if (!mouse_wheel_step || mouse_wheel_step > 10 || *endptr != '\0') {
 				mouse_wheel_step = 1;
 				error_message = _("invalid value");
