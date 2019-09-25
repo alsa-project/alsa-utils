@@ -1,9 +1,9 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
+#include <string.h>
 #include <unistd.h>
 #include <inttypes.h>
+#include <ctype.h>
 #include <errno.h>
 #include <pwd.h>
 #include CURSESINC
@@ -21,9 +21,9 @@
 static const char *error_message;
 static const char *error_cause;
 
-static int strlist_index(const char *haystack, int itemlen, const char *needle) {
-	int needle_len;
-	int pos;
+static int strlist_index(const char *haystack, unsigned int itemlen, const char *needle) {
+	unsigned int needle_len;
+	unsigned int pos;
 	const char *found;
 
 	needle_len = strlen(needle);
@@ -78,10 +78,10 @@ static int attr_by_name(const char *name) {
 		"blink    ", 9, name) + 1];
 };
 
+/* $ perl -e '$i=0; printf "W_%s = 0x%X,\n", uc, 1<<$i++ for sort @ARGV' \
+   bottom top page up down left right next previous toggle close help \
+   control playback capture all refresh set focus mode balance mute */
 enum command_word {
-	/* $ perl -e '$i=0; printf "W_%s = 0x%X,\n", uc, 1<<$i++ for sort @ARGV' \
-	   bottom top page up down left right next previous toggle close help \
-	   control playback capture all refresh set focus mode balance mute */
 	W_ALL = 0x1,
 	W_BALANCE = 0x2,
 	W_BOTTOM = 0x4,
@@ -285,7 +285,7 @@ static int* element_by_name(const char *name) {
 
 // === Configuration commands ===
 
-static int cfg_bind(char **argv, int argc) {
+static int cfg_bind(char **argv, unsigned int argc) {
 	const char *command_name;
 	command_enum command = 0;
 	union {
@@ -344,11 +344,12 @@ static int cfg_bind(char **argv, int argc) {
 	return 0;
 }
 
-static int cfg_color(char **argv, int argc)
+static int cfg_color(char **argv, unsigned int argc)
 {
 	short fg_color, bg_color;
+	unsigned int i;
 	int *element;
-	int attr, i;
+	int attr;
 
 	if (argc < 3)
 		return ERROR_MISSING_ARGUMENTS;
@@ -385,7 +386,7 @@ static int cfg_color(char **argv, int argc)
 	return 0;
 }
 
-static int cfg_set(char **argv, int argc)
+static int cfg_set(char **argv, unsigned int argc)
 {
 	char *endptr;
 
@@ -430,9 +431,9 @@ static int cfg_set(char **argv, int argc)
  *
  * This will modify contents of $line.
  */
-static size_t parse_line(char *line, char **args, size_t args_size)
+static unsigned int parse_line(char *line, char **args, unsigned int args_size)
 {
-	size_t count;
+	unsigned int count;
 
 	for (count = 0; count < args_size; ++count) {
 		while (*line && isspace(*line))
@@ -457,7 +458,7 @@ static size_t parse_line(char *line, char **args, size_t args_size)
 
 static int process_line(char *line) {
 	char *args[16];
-	size_t argc = parse_line(line, args, ARRAY_SIZE(args));
+	unsigned int argc = parse_line(line, args, ARRAY_SIZE(args));
 	int ret = 0;
 
 	if (argc >= 1) {
