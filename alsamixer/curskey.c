@@ -47,8 +47,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define HAVE_CURSES_DEFINE_KEY
-
 struct curskey_key_s {
 	char *keyname;
 	int keycode;
@@ -58,11 +56,9 @@ int KEY_RETURN = '\n';
 unsigned int curskey_keynames_size = 0; 
 struct curskey_key_s *curskey_keynames = NULL;
 // The starting keycode for enumerating meta/alt key combinations
-int CURSKEY_META_START;
+unsigned int CURSKEY_META_START = 0;
 // By default, curskey does not introduce new keybindings.
-int CURSKEY_KEY_MAX = KEY_MAX;
-// Can we use combinations with meta/alt?
-int CURSKEY_CAN_META_ = 0;
+unsigned int CURSKEY_KEY_MAX = KEY_MAX;
 
 // Names for non-printable/whitespace characters
 // and aliases for existing keys
@@ -102,10 +98,11 @@ static int curskey_key_cmp(const void *a, const void *b) {
 			((struct curskey_key_s*) b)->keyname);
 }
 
-static int curskey_find(const struct curskey_key_s *table, int size, const char *name) {
-	int start = 0;
-	int end = size;
-	int i, cmp;
+static int curskey_find(const struct curskey_key_s *table, unsigned int size, const char *name) {
+	unsigned int start = 0;
+	unsigned int end = size;
+	unsigned int i;
+	int cmp;
 
 	while (1) {
 		i = (start+end) / 2;
@@ -249,12 +246,12 @@ ERROR:
 }
 
 /* Defines meta escape sequences in ncurses.
+ *
+ * Returns 0 if meta keys are available, ERR otherwise.
  */
-void define_meta_keys() {
-	CURSKEY_CAN_META_ = 0;
-#ifdef HAVE_CURSES_DEFINE_KEY
-	CURSKEY_META_START = KEY_MAX + 1;
-	CURSKEY_META_START = 128; //KEY_MAX + 1;
+int curskey_define_meta_keys(unsigned int meta_start) {
+#ifdef NCURSES_VERSION
+	CURSKEY_META_START = meta_start;
 
 	int 	ch;
 	int	curs_keycode = CURSKEY_META_START;
@@ -267,8 +264,9 @@ void define_meta_keys() {
 	}
 
 	CURSKEY_KEY_MAX = CURSKEY_META_START + CURSKEY_META_END_CHARACTERS;
-	CURSKEY_CAN_META_ = 1;
+  return ERR;
 #endif
+  return 0;
 }
 
 /* Return the keycode for a key with modifiers applied.
@@ -294,7 +292,7 @@ int curskey_mod_key(int key, unsigned int modifiers) {
 	}
 
 	if (modifiers & CURSKEY_MOD_META) {
-		if (CURSKEY_CAN_META && (
+		if (CURSKEY_META_START && (
 				key >= 0 && key <= CURSKEY_META_END_CHARACTERS))
 			key = CURSKEY_META_START + key;
 		else
@@ -455,7 +453,6 @@ int curskey_parse(const char *def) {
  */
 int curskey_init() {
 	keypad(stdscr, TRUE);
-	define_meta_keys();
 	return create_ncurses_keynames();
 }
 

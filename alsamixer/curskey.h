@@ -37,16 +37,16 @@ extern int KEY_RETURN;
 #define CURSKEY_MOD_META  2U
 #define CURSKEY_MOD_ALT   2U
 
+extern unsigned int CURSKEY_META_START;
+
 /* Defines the range of characters which should be "meta-able" */
 #define CURSKEY_META_END_CHARACTERS 127
 
-extern int CURSKEY_CAN_META_;
-#define CURSKEY_CAN_META (CURSKEY_CAN_META_+0)
-
-extern int CURSKEY_META_START;
+/* Macro for checking if meta keys are available */
+#define CURSKEY_CAN_META (CURSKEY_META_START+0)
 
 // Holds the maximum keycode used by curskey
-extern int CURSKEY_KEY_MAX;
+extern unsigned int CURSKEY_KEY_MAX;
 
 /* Main functions */
 int curskey_init();
@@ -63,6 +63,7 @@ int curskey_unmod_key(int key, unsigned int *modifiers);
 
 int curskey_parse(const char *keydef);
 const char* curskey_get_keydef(int keycode);
+int curskey_define_meta_keys(unsigned int meta_start);
 
 /* Helper functions */
 int curskey_keycode(const char *keyname);
