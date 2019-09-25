@@ -21,21 +21,18 @@
 static const char *error_message;
 static const char *error_cause;
 
-extern int mouse_wheel_step;
-extern int mouse_wheel_focuses_control;
-
-static int strlist_index(const char *haystack, int padlen, const char *needle) {
+static int strlist_index(const char *haystack, int itemlen, const char *needle) {
 	int needle_len;
 	int pos;
 	const char *found;
 
 	needle_len = strlen(needle);
-	if (needle_len < padlen && needle[needle_len - 1] != ' ') {
+	if (needle_len <= itemlen && needle[needle_len - 1] != ' ') {
 		found = strstr(haystack, needle);
 		if (found) {
 			pos = (found - haystack);
-			if (pos % padlen == 0 && haystack[pos+needle_len] == ' ')
-				return pos / padlen;
+			if (pos % itemlen == 0 && (needle_len == itemlen || haystack[pos+needle_len] == ' '))
+				return pos / itemlen;
 		}
 	}
 
@@ -44,34 +41,20 @@ static int strlist_index(const char *haystack, int padlen, const char *needle) {
 
 static int color_by_name(const char *name) {
 	return strlist_index(
-		"default "
-		"black   "
-		"red     "
-		"green   "
-		"yellow  "
-		"blue    "
-		"magenta "
-		"cyan    "
-		"white   ", 8, name) - 1;
+		"default"
+		"black  "
+		"red    "
+		"green  "
+		"yellow "
+		"blue   "
+		"magenta"
+		"cyan   "
+		"white  ", 7, name) - 1;
 };
 
 static int attr_by_name(const char *name) {
-	int idx = strlist_index(
-		"bold      "
-		"reverse   "
-		"standout  "
-		"dim       "
-		"underline "
-#ifdef A_ITALIC
-		"italic    "
-#endif
-		"normal    "
-		"blink     ", 10, name);
-
-	if (idx < 0)
-		return -1;
-
 	return (int[]) {
+		-1,
 		A_BOLD,
 		A_REVERSE,
 		A_STANDOUT,
@@ -82,15 +65,23 @@ static int attr_by_name(const char *name) {
 #endif
 		A_NORMAL,
 		A_BLINK,
-	}[idx];
+	}[strlist_index(
+		"bold     "
+		"reverse  "
+		"standout "
+		"dim      "
+		"underline"
+#ifdef A_ITALIC
+		"italic   "
+#endif
+		"normal   "
+		"blink    ", 9, name) + 1];
 };
 
 enum command_word {
 	/* $ perl -e '$i=0; printf "W_%s = 0x%X,\n", uc, 1<<$i++ for sort @ARGV' \
-	   bottom top page up down left right next previous toggle \
-	   close help \
-	   control playback capture all refresh set focus mode balance mute
-	   */
+	   bottom top page up down left right next previous toggle close help \
+	   control playback capture all refresh set focus mode balance mute */
 	W_ALL = 0x1,
 	W_BALANCE = 0x2,
 	W_BOTTOM = 0x4,
@@ -117,34 +108,32 @@ enum command_word {
 	W_NUMBER = 0x4000000,
 };
 
-static const char *command_words =
-	/* $ perl -e 'printf "\"%-9s\"\n", lc for sort @ARGV' \
-	   bottom top page up down left right next previous toggle \
-	   close help \
-	   control playback capture all refresh set focus mode balance mute
-	   */
-	"all      "
-	"balance  "
-	"bottom   "
-	"capture  "
-	"close    "
-	"control  "
-	"down     "
-	"focus    "
-	"help     "
-	"left     "
-	"mode     "
-	"mute     "
-	"next     "
-	"page     "
-	"playback "
-	"previous "
-	"refresh  "
-	"right    "
-	"set      "
-	"toggle   "
-	"top      "
-	"up       ";
+/* $ perl -e 'printf "\"%-8s\" \\\n", lc for sort @ARGV' \
+   bottom top page up down left right next previous toggle close help \
+   control playback capture all refresh set focus mode balance mute */
+#define command_words \
+	"all     " \
+	"balance " \
+	"bottom  " \
+	"capture " \
+	"close   " \
+	"control " \
+	"down    " \
+	"focus   " \
+	"help    " \
+	"left    " \
+	"mode    " \
+	"mute    " \
+	"next    " \
+	"page    " \
+	"playback" \
+	"previous" \
+	"refresh " \
+	"right   " \
+	"set     " \
+	"toggle  " \
+	"top     " \
+	"up      "
 
 static unsigned int parse_words(const char *name, unsigned int *number) {
 	unsigned int words = 0;
@@ -174,7 +163,7 @@ static unsigned int parse_words(const char *name, unsigned int *number) {
 			}
 			word = W_NUMBER;
 		}
-		else if ((i = strlist_index(command_words, 9, buf)) >= 0)
+		else if ((i = strlist_index(command_words, 8, buf)) >= 0)
 			word = 1 << i;
 		else
 			return 0;
@@ -262,31 +251,31 @@ static int mixer_command_by_name(const char *name) {
 static int* element_by_name(const char *name) {
 	int idx = strlist_index(
 #ifdef TRICOLOR_VOLUME_BAR
-		"ctl_bar_hi         "
+		"ctl_bar_hi        "
 #endif
-		"ctl_bar_lo         "
+		"ctl_bar_lo        "
 #ifdef TRICOLOR_VOLUME_BAR
-		"ctl_bar_mi         "
+		"ctl_bar_mi        "
 #endif
-		"ctl_capture        "
-		"ctl_frame          "
-		"ctl_inactive       "
-		"ctl_label          "
-		"ctl_label_focus    "
-		"ctl_label_inactive "
-		"ctl_mark_focus     "
-		"ctl_mute           "
-		"ctl_nocapture      "
-		"ctl_nomute         "
-		"errormsg           "
-		"infomsg            "
-		"menu               "
-		"menu_selected      "
-		"mixer_active       "
-		"mixer_frame        "
-		"mixer_text         "
-		"textbox            "
-		"textfield          ", 19, name);
+		"ctl_capture       "
+		"ctl_frame         "
+		"ctl_inactive      "
+		"ctl_label         "
+		"ctl_label_focus   "
+		"ctl_label_inactive"
+		"ctl_mark_focus    "
+		"ctl_mute          "
+		"ctl_nocapture     "
+		"ctl_nomute        "
+		"errormsg          "
+		"infomsg           "
+		"menu              "
+		"menu_selected     "
+		"mixer_active      "
+		"mixer_frame       "
+		"mixer_text        "
+		"textbox           "
+		"textfield         ", 18, name);
 
 	if (idx < 0)
 		return NULL;
@@ -479,9 +468,9 @@ static int process_line(char *line) {
 			ret = ERROR_TOO_MUCH_ARGUMENTS;
 		else {
 			ret = strlist_index(
-				"bind  "
-				"color "
-				"set   ", 6, args[0]);
+				"bind "
+				"color"
+				"set  ", 5, args[0]);
 			switch (ret) {
 				case 0: ret = cfg_bind(args + 1, argc - 1); break;
 				case 1: ret = cfg_color(args + 1, argc - 1); break;
