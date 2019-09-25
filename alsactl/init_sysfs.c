@@ -43,7 +43,7 @@ static int sysfs_init(void)
 	dbg("sysfs_path='%s'", sysfs_path);
 
 	strlcpy(sysfs_test, sysfs_path, sizeof(sysfs_test));
-	strlcat(sysfs_test, "/kernel/uevent_helper", sizeof(sysfs_test));
+	strlcat(sysfs_test, "/kernel/uevent_seqnum", sizeof(sysfs_test));
 	if (access(sysfs_test, F_OK)) {
 		error("sysfs path '%s' is invalid\n", sysfs_path);
 		return -errno;
