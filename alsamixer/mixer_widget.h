@@ -33,7 +33,7 @@ extern bool control_values_changed;
 extern bool controls_changed;
 
 extern int mouse_wheel_step;
-extern int mouse_wheel_focuses_control;
+extern bool mouse_wheel_focuses_control;
 
 void create_mixer_object(struct snd_mixer_selem_regopt *selem_regopt);
 void create_mixer_widget(void);
