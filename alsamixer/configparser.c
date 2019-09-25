@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include <errno.h>
 #include <pwd.h>
 #include CURSESINC
@@ -150,6 +151,7 @@ static unsigned int parse_words(const char *name, unsigned int *number) {
 	unsigned int word;
 	unsigned int i;
 	char buf[16];
+	char *endptr;
 
 	while (*name) {
 		for (i = 0; i < sizeof(buf) - 1; ++i) {
@@ -165,8 +167,11 @@ static unsigned int parse_words(const char *name, unsigned int *number) {
 		buf[i] = '\0';
 
 		if (buf[0] >= '0' && buf[0] <= '9') {
-			if (number)
-				*number = atoi(buf);
+			if (number) {
+				*number = strtoumax(buf, &endptr, 10);
+				if (*endptr != '\0')
+					return 0;
+			}
 			word = W_NUMBER;
 		}
 		else if ((i = strlist_index(command_words, 9, buf)) >= 0)
@@ -393,10 +398,12 @@ static int cfg_color(char **argv, int argc)
 
 static int cfg_set(char **argv, int argc)
 {
+	char *endptr;
+
 	if (argc == 2) {
 		if (! strcmp(argv[0], "mouse_wheel_step")) {
-			mouse_wheel_step = atoi(argv[1]);
-			if (!mouse_wheel_step || mouse_wheel_step > 10) {
+			mouse_wheel_step = strtoimax(argv[1], &endptr, 10);
+			if (!mouse_wheel_step || mouse_wheel_step > 10 || *endptr != '\0') {
 				mouse_wheel_step = 1;
 				error_message = _("invalid value");
 				error_cause = argv[1];
@@ -404,7 +411,15 @@ static int cfg_set(char **argv, int argc)
 			}
 		}
 		else if (! strcmp(argv[0], "mouse_wheel_focuses_control")) {
-			mouse_wheel_focuses_control = atoi(argv[1]);
+			if (argv[1][0] == '0' && argv[1][1] == '\0')
+				mouse_wheel_focuses_control = 0;
+			else if (argv[1][0] == '1' && argv[1][1] == '\0')
+				mouse_wheel_focuses_control = 1;
+			else {
+				error_message = _("invalid value");
+				error_cause = argv[1];
+				return ERROR_CONFIG;
+			}
 		}
 		else {
 			error_message = _("unknown option");
