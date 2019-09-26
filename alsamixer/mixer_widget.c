@@ -37,6 +37,7 @@
 #include "mixer_controls.h"
 #include "mixer_display.h"
 #include "mixer_widget.h"
+#include "bindings.h"
 
 snd_mixer_t *mixer;
 char *mixer_device_name;
@@ -52,11 +53,6 @@ unsigned int current_control_flags;
 
 bool control_values_changed;
 bool controls_changed;
-
-enum channel_mask {
-	LEFT = 1,
-	RIGHT = 2,
-};
 
 static int elem_callback(snd_mixer_elem_t *elem, unsigned int mask)
 {
@@ -468,144 +464,73 @@ static void balance_volumes(void)
 
 static void on_handle_key(int key)
 {
-	switch (key) {
-	case 27:
-	case KEY_CANCEL:
-	case KEY_F(10):
+	int arg;
+	command_enum cmd;
+
+	if (key < ARRAY_SIZE(mixer_bindings))
+		cmd = mixer_bindings[key];
+	else
+		return;
+
+	arg = CMD_GET_ARGUMENT(cmd);
+	cmd = CMD_GET_COMMAND(cmd);
+
+	switch (cmd) {
+	case CMD_MIXER_CONTROL_DOWN_LEFT:
+	case CMD_MIXER_CONTROL_DOWN_RIGHT:
+	case CMD_MIXER_CONTROL_DOWN:
+		arg = (-arg);
+	case CMD_MIXER_CONTROL_UP_LEFT:
+	case CMD_MIXER_CONTROL_UP_RIGHT:
+	case CMD_MIXER_CONTROL_UP:
+		change_control_relative(arg, cmd % 4);
+		break;
+	case CMD_MIXER_CONTROL_SET_PERCENT_LEFT:
+	case CMD_MIXER_CONTROL_SET_PERCENT_RIGHT:
+	case CMD_MIXER_CONTROL_SET_PERCENT:
+		change_control_to_percent(arg, cmd % 4);
+		break;
+	case CMD_MIXER_CLOSE:
 		mixer_widget.close();
 		break;
-	case KEY_F(1):
-	case KEY_HELP:
-	case 'H':
-	case 'h':
-	case '?':
+	case CMD_MIXER_HELP:
 		show_help();
 		break;
-	case KEY_F(2):
-	case '/':
+	case CMD_MIXER_SYSTEM_INFORMATION:
 		create_proc_files_list();
 		break;
-	case KEY_F(3):
-		set_view_mode(VIEW_MODE_PLAYBACK);
+	case CMD_MIXER_TOGGLE_VIEW_MODE:
+		arg = (view_mode + 1) % VIEW_MODE_COUNT;
+	case CMD_MIXER_SET_VIEW_MODE:
+		set_view_mode((enum view_mode)(arg));
 		break;
-	case KEY_F(4):
-		set_view_mode(VIEW_MODE_CAPTURE);
-		break;
-	case KEY_F(5):
-		set_view_mode(VIEW_MODE_ALL);
-		break;
-	case '\t':
-		set_view_mode((enum view_mode)((view_mode + 1) % VIEW_MODE_COUNT));
-		break;
-	case KEY_F(6):
-	case 'S':
-	case 's':
+	case CMD_MIXER_SELECT_CARD:
 		create_card_select_list();
 		break;
-	case KEY_REFRESH:
-	case 12:
-	case 'L':
-	case 'l':
+	case CMD_MIXER_REFRESH:
 		clearok(mixer_widget.window, TRUE);
 		display_controls();
 		break;
-	case KEY_LEFT:
-	case 'P':
-	case 'p':
-		if (focus_control_index > 0) {
-			--focus_control_index;
-			refocus_control();
-		}
+	case CMD_MIXER_PREVIOUS:
+		arg = (-arg);
+	case CMD_MIXER_NEXT:
+		arg = focus_control_index + arg;
+	case CMD_MIXER_FOCUS_CONTROL:
+		focus_control_index = arg;
+		if (focus_control_index < 0)
+			focus_control_index = 0;
+		else if (focus_control_index >= controls_count)
+			focus_control_index = controls_count - 1;
+		refocus_control();
 		break;
-	case KEY_RIGHT:
-	case 'N':
-	case 'n':
-		if (focus_control_index < controls_count - 1) {
-			++focus_control_index;
-			refocus_control();
-		}
+	case CMD_MIXER_TOGGLE_MUTE:
+		toggle_mute(arg);
 		break;
-	case KEY_PPAGE:
-		change_control_relative(5, LEFT | RIGHT);
+	case CMD_MIXER_TOGGLE_CAPTURE:
+		toggle_capture(arg);
 		break;
-	case KEY_NPAGE:
-		change_control_relative(-5, LEFT | RIGHT);
-		break;
-#if 0
-	case KEY_BEG:
-	case KEY_HOME:
-		change_control_to_percent(100, LEFT | RIGHT);
-		break;
-#endif
-	case KEY_LL:
-	case KEY_END:
-		change_control_to_percent(0, LEFT | RIGHT);
-		break;
-	case KEY_UP:
-	case '+':
-	case 'K':
-	case 'k':
-	case 'W':
-	case 'w':
-		change_control_relative(1, LEFT | RIGHT);
-		break;
-	case KEY_DOWN:
-	case '-':
-	case 'J':
-	case 'j':
-	case 'X':
-	case 'x':
-		change_control_relative(-1, LEFT | RIGHT);
-		break;
-	case '0': case '1': case '2': case '3': case '4':
-	case '5': case '6': case '7': case '8': case '9':
-		change_control_to_percent((key - '0') * 10, LEFT | RIGHT);
-		break;
-	case 'Q':
-	case 'q':
-		change_control_relative(1, LEFT);
-		break;
-	case 'Y':
-	case 'y':
-	case 'Z':
-	case 'z':
-		change_control_relative(-1, LEFT);
-		break;
-	case 'E':
-	case 'e':
-		change_control_relative(1, RIGHT);
-		break;
-	case 'C':
-	case 'c':
-		change_control_relative(-1, RIGHT);
-		break;
-	case 'M':
-	case 'm':
-		toggle_mute(LEFT | RIGHT);
-		break;
-	case 'B':
-	case 'b':
-	case '=':
+	case CMD_MIXER_BALANCE_CONTROL:
 		balance_volumes();
-		break;
-	case '<':
-	case ',':
-		toggle_mute(LEFT);
-		break;
-	case '>':
-	case '.':
-		toggle_mute(RIGHT);
-		break;
-	case ' ':
-		toggle_capture(LEFT | RIGHT);
-		break;
-	case KEY_IC:
-	case ';':
-		toggle_capture(LEFT);
-		break;
-	case KEY_DC:
-	case '\'':
-		toggle_capture(RIGHT);
 		break;
 	}
 }

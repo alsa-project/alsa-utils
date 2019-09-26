@@ -3,6 +3,7 @@ LDADD = @CURSESLIB@
 
 bin_PROGRAMS = alsamixer
 alsamixer_SOURCES = card_select.c card_select.h \
+		bindings.c bindings.h \
 		cli.c \
 		colors.c colors.h \
 		device_name.c device_name.h \
