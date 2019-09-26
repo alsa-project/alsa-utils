@@ -506,6 +506,7 @@ void parse_config_file(const char *file_name)
 	}
 
 	curskey_init();
+	curskey_define_meta_keys(128);
 
 	lineno = 0;
 	line = buf;
