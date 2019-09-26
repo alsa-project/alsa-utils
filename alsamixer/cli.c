@@ -95,18 +95,18 @@ static void parse_options(int argc, char *argv[])
 		case 'D':
 			selem_regopt.device = optarg;
 			break;
-      case 'f':
-         config_file = optarg;
-         break;
-      case 'F':
-         config_file = NULL;
-         break;
-      case 'm':
-         use_mouse = 1;
-         break;
-      case 'M':
-         use_mouse = 0;
-         break;
+		case 'f':
+			config_file = optarg;
+			break;
+		case 'F':
+			config_file = NULL;
+			break;
+		case 'm':
+			use_mouse = 1;
+			break;
+		case 'M':
+			use_mouse = 0;
+			break;
 		case 'V':
 			if (*optarg == 'p' || *optarg == 'P')
 				view_mode = VIEW_MODE_PLAYBACK;

@@ -9,7 +9,7 @@ typedef uint16_t command_enum;
 extern command_enum mixer_bindings[KEY_MAX];
 extern uint8_t textbox_bindings[KEY_MAX]; // textbox commands don't take args
 
-/* Some commands, like `CMD_MIXER_CONTROL_UP` take a numeric argument.
+/* Some commands, like `CMD_MIXER_CONTROL_UP`, take a numeric argument.
  * The argument is stored in the higher bits, the command itself in the lower
  * bits.
  * These macros can be used to bind/extract arguments to/from a command.  */
@@ -59,8 +59,8 @@ enum mixer_command {
 
 enum textbox_command {
 	/* These commands are also used inside the menu widgets.
-   * `REQ_* - KEY_MAX` evalutes to something inbetween 1 and 17.
-   * KEY_MAX is substracted so the value fits in 8 bits. */
+	 * `REQ_* - KEY_MAX` evalutes to something inbetween 1 and 17.
+	 * KEY_MAX is substracted so the value fits in 8 bits. */
 	CMD_TEXTBOX___MIN_MENU_COMMAND = MIN_MENU_COMMAND - KEY_MAX,
 	CMD_TEXTBOX_TOP = REQ_FIRST_ITEM - KEY_MAX,
 	CMD_TEXTBOX_BOTTOM = REQ_LAST_ITEM - KEY_MAX,
