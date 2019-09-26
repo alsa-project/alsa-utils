@@ -28,6 +28,7 @@
 #include "widget.h"
 #include "textbox.h"
 #include "proc_files.h"
+#include "bindings.h"
 
 static struct widget proc_widget;
 static ITEM *items[7];
@@ -36,25 +37,12 @@ static MENU *menu;
 
 static void on_menu_key(int key)
 {
-	static const struct {
-		int key;
-		int request;
-	} key_map[] = {
-		{ KEY_DOWN, REQ_DOWN_ITEM },
-		{ KEY_UP, REQ_UP_ITEM },
-		{ KEY_HOME, REQ_FIRST_ITEM },
-		{ KEY_NPAGE, REQ_SCR_DPAGE },
-		{ KEY_PPAGE, REQ_SCR_UPAGE },
-		{ KEY_BEG, REQ_FIRST_ITEM },
-		{ KEY_END, REQ_LAST_ITEM },
-	};
-	unsigned int i;
-
-	for (i = 0; i < ARRAY_SIZE(key_map); ++i)
-		if (key_map[i].key == key) {
-			menu_driver(menu, key_map[i].request);
-			break;
-		}
+	if (key < ARRAY_SIZE(textbox_bindings)) {
+		key = textbox_bindings[key];
+		if (key >= CMD_TEXTBOX___MIN_MENU_COMMAND &&
+				key <= CMD_TEXTBOX___MAX_MENU_COMMAND)
+			menu_driver(menu, key + KEY_MAX);
+	}
 }
 
 static void on_handle_key(int key)
