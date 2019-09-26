@@ -611,7 +611,7 @@ static void display_control(unsigned int control_index)
 	display_string_centered_in_control(name_y, col, control->name, control_name_width);
 	clickable_set_relative(mixer_widget.window,
 			-1, (-1)*control_name_width, 0, -2,
-			CMD_WITH_ARG(CMD_MIXER_CONTROL_FOCUS_N, control_index), -1);
+			CMD_WITH_ARG(CMD_MIXER_CONTROL_FOCUS, control_index), -1);
 	if (channel_name_y > name_y) {
 		if (control->flags & IS_MULTICH) {
 			switch (control->flags & MULTICH_MASK) {

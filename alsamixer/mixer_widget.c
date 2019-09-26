@@ -503,8 +503,8 @@ static int on_mouse_key() {
 				focus_control_index = rect->arg1;
 				return CMD_WITH_ARG((
 							m.bstate & (BUTTON4_CLICKED|BUTTON4_PRESSED)
-							? CMD_MIXER_CONTROL_UP_N
-							: CMD_MIXER_CONTROL_DOWN_N
+							? CMD_MIXER_CONTROL_UP
+							: CMD_MIXER_CONTROL_DOWN
 						), 1);
 
 			case CMD_MIXER_MOUSE_CLICK_VOLUME_BAR:
@@ -514,8 +514,8 @@ static int on_mouse_key() {
 			default:
 				return CMD_WITH_ARG((
 							m.bstate & (BUTTON4_CLICKED|BUTTON4_PRESSED)
-							? CMD_MIXER_CONTROL_UP_N
-							: CMD_MIXER_CONTROL_DOWN_N
+							? CMD_MIXER_CONTROL_UP
+							: CMD_MIXER_CONTROL_DOWN
 						), mouse_wheel_step);
 		}
 	}
@@ -544,8 +544,8 @@ static int on_mouse_key() {
 		if (control &&
 			(snd_mixer_selem_get_enum_item(control->elem, 0, &index) >= 0)) {
 				return (index == 0
-					? CMD_WITH_ARG(CMD_MIXER_CONTROL_UP_N, 100)
-					: CMD_WITH_ARG(CMD_MIXER_CONTROL_DOWN_N, 1));
+					? CMD_WITH_ARG(CMD_MIXER_CONTROL_UP, 100)
+					: CMD_WITH_ARG(CMD_MIXER_CONTROL_DOWN, 1));
 		}
 		break;
 
@@ -572,14 +572,14 @@ static void on_handle_key(int key)
 	cmd = CMD_GET_CMD(cmd);
 
 	switch (cmd) {
-	case CMD_MIXER_CONTROL_DOWN_LEFT_N:
-	case CMD_MIXER_CONTROL_DOWN_RIGHT_N:
-	case CMD_MIXER_CONTROL_DOWN_N:
+	case CMD_MIXER_CONTROL_DOWN_LEFT:
+	case CMD_MIXER_CONTROL_DOWN_RIGHT:
+	case CMD_MIXER_CONTROL_DOWN:
 		arg = (-arg);
 		// overwrite arg; fall-through
-	case CMD_MIXER_CONTROL_UP_LEFT_N:
-	case CMD_MIXER_CONTROL_UP_RIGHT_N:
-	case CMD_MIXER_CONTROL_UP_N:
+	case CMD_MIXER_CONTROL_UP_LEFT:
+	case CMD_MIXER_CONTROL_UP_RIGHT:
+	case CMD_MIXER_CONTROL_UP:
 		change_control_relative(arg, cmd % 4);
 		break;
 	case CMD_MIXER_CONTROL_N_PERCENT_LEFT:
@@ -615,7 +615,7 @@ static void on_handle_key(int key)
 	case CMD_MIXER_NEXT:
 		arg = focus_control_index + arg;
 		// overwrite arg; fall-through
-	case CMD_MIXER_CONTROL_FOCUS_N:
+	case CMD_MIXER_CONTROL_FOCUS:
 		focus_control_index = arg;
 		clamp_focus_control_index();
 		refocus_control();

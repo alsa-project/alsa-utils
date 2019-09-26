@@ -9,7 +9,7 @@ typedef uint16_t command_enum;
 extern command_enum mixer_bindings[KEY_MAX];
 extern uint8_t textbox_bindings[KEY_MAX]; // textbox commands don't take args
 
-/* Some commands, like `CMD_MIXER_CONTROL_UP_N` take a numeric argument.
+/* Some commands, like `CMD_MIXER_CONTROL_UP` take a numeric argument.
  * The argument is stored in the higher bits, the command itself in the lower
  * bits.
  * These macros can be used to bind/extract arguments to/from a command.  */
@@ -25,12 +25,12 @@ extern uint8_t textbox_bindings[KEY_MAX]; // textbox commands don't take args
 
 enum mixer_command {
 	// `CMD % 4` should produce the channel mask
-	CMD_MIXER_CONTROL_DOWN_LEFT_N = 1,
-	CMD_MIXER_CONTROL_DOWN_RIGHT_N,
-	CMD_MIXER_CONTROL_DOWN_N,
-	CMD_MIXER_CONTROL_UP_LEFT_N = 5,
-	CMD_MIXER_CONTROL_UP_RIGHT_N,
-	CMD_MIXER_CONTROL_UP_N,
+	CMD_MIXER_CONTROL_DOWN_LEFT = 1,
+	CMD_MIXER_CONTROL_DOWN_RIGHT,
+	CMD_MIXER_CONTROL_DOWN,
+	CMD_MIXER_CONTROL_UP_LEFT = 5,
+	CMD_MIXER_CONTROL_UP_RIGHT,
+	CMD_MIXER_CONTROL_UP,
 	CMD_MIXER_CONTROL_N_PERCENT_LEFT = 9,
 	CMD_MIXER_CONTROL_N_PERCENT_RIGHT,
 	CMD_MIXER_CONTROL_N_PERCENT,
@@ -45,7 +45,7 @@ enum mixer_command {
 	CMD_MIXER_SET_VIEW_MODE,
 	CMD_MIXER_PREVIOUS,
 	CMD_MIXER_NEXT,
-	CMD_MIXER_CONTROL_FOCUS_N,
+	CMD_MIXER_CONTROL_FOCUS,
 	CMD_MIXER_TOGGLE_MUTE,
 	CMD_MIXER_TOGGLE_CAPTURE,
 	CMD_MIXER_BALANCE_CONTROL,

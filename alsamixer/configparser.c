@@ -211,7 +211,7 @@ static int mixer_command_by_name(const char *name) {
 		case W_CONTROL|W_BALANCE: return CMD_MIXER_BALANCE_CONTROL;
 		case W_CONTROL|W_FOCUS|W_NUMBER:
 			return ((number < 1 || number > 100) ? 0 :
-					CMD_WITH_ARG(CMD_MIXER_CONTROL_FOCUS_N, number - 1));
+					CMD_WITH_ARG(CMD_MIXER_CONTROL_FOCUS, number - 1));
 	}
 
 	if (words & W_LEFT)
@@ -228,7 +228,7 @@ static int mixer_command_by_name(const char *name) {
 		case W_CONTROL|W_DOWN|W_NUMBER:
 			return ((number < 1 || number > 100) ? 0 :
 				CMD_WITH_ARG(
-					(words & W_UP ? CMD_MIXER_CONTROL_UP_LEFT_N : CMD_MIXER_CONTROL_DOWN_LEFT_N)
+					(words & W_UP ? CMD_MIXER_CONTROL_UP_LEFT : CMD_MIXER_CONTROL_DOWN_LEFT)
 					+ channel - 1, number));
 		case W_CONTROL|W_SET|W_NUMBER:
 			return (number > 100 ? 0 :
@@ -288,6 +288,7 @@ static int* element_by_name(const char *name) {
 static int cfg_bind(char **argv, unsigned int argc) {
 	const char *command_name;
 	command_enum command = 0;
+	int keys[3] = { -1, -1, -1 };
 	union {
 		command_enum *mixer_bindings;
 		uint8_t *textbox_bindings;
@@ -315,21 +316,23 @@ static int cfg_bind(char **argv, unsigned int argc) {
 		return (argc < 2 ? ERROR_MISSING_ARGUMENTS : ERROR_TOO_MUCH_ARGUMENTS);
 	}
 
-	int keycode = curskey_parse(argv[0]);
-	if (keycode < 0 || keycode >= ARRAY_SIZE(mixer_bindings)) {
+	keys[0] = curskey_parse(argv[0]);
+	if (keys[0] < 0 || keys[0] >= ARRAY_SIZE(mixer_bindings)) {
 		error_message = _("invalid key");
 		error_cause = argv[0];
 		return ERROR_CONFIG;
 	}
 
-	if (bind_to.textbox_bindings == textbox_bindings) {
+	if (keys[0] == KEY_ENTER || keys[0] == '\n' || keys[0] == '\r') {
+		keys[0] = KEY_ENTER;
+		keys[1] = '\n';
+		keys[2] = '\r';
+	}
+
+	if (bind_to.textbox_bindings == textbox_bindings)
 		command = textbox_command_by_name(command_name);
-		bind_to.textbox_bindings[keycode] = command;
-	}
-	else {
+	else
 		command = mixer_command_by_name(command_name);
-		bind_to.mixer_bindings[keycode] = command;
-	}
 
 	if (!command) {
 		if (!strcmp(command_name, "none"))
@@ -339,6 +342,13 @@ static int cfg_bind(char **argv, unsigned int argc) {
 			error_cause = command_name;
 			return ERROR_CONFIG;
 		}
+	}
+
+	for (unsigned i = 0; i < ARRAY_SIZE(keys) && keys[i] != -1; ++i) {
+		if (bind_to.textbox_bindings == textbox_bindings)
+			bind_to.textbox_bindings[keys[i]] = command;
+		else
+			bind_to.mixer_bindings[keys[i]] = command;
 	}
 
 	return 0;
@@ -401,10 +411,8 @@ static int cfg_set(char **argv, unsigned int argc)
 			}
 		}
 		else if (! strcmp(argv[0], "mouse_wheel_focuses_control")) {
-			if (argv[1][0] == '0' && argv[1][1] == '\0')
-				mouse_wheel_focuses_control = 0;
-			else if (argv[1][0] == '1' && argv[1][1] == '\0')
-				mouse_wheel_focuses_control = 1;
+			if ((argv[1][0] == '0' || argv[1][0] == '1') && argv[1][1] == '\0')
+				mouse_wheel_focuses_control = argv[1][0] - '0';
 			else {
 				error_message = _("invalid value");
 				error_cause = argv[1];
