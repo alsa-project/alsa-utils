@@ -28,8 +28,7 @@ int menu_widget_handle_key(MENU *menu, int key)
 				/* If menu did not handle KEY_MOUSE is has to be removed from
 				 * input queue to prevent an infinite loop. */
 				key = wgetch(menu_win(menu));
-				if (key == KEY_MOUSE) {
-					getmouse(&m);
+				if (key == KEY_MOUSE && getmouse(&m) == OK) {
 					if (m.bstate & (BUTTON4_PRESSED|BUTTON4_CLICKED))
 						menu_driver(menu, REQ_UP_ITEM);
 #if NCURSES_MOUSE_VERSION > 1

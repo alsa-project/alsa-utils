@@ -481,7 +481,8 @@ static int on_mouse_key() {
 	struct control *control;
 	struct clickable_rect *rect;
 
-	getmouse(&m);
+	if (getmouse(&m) == ERR)
+		return 0;
 
 	if (m.bstate & (
 				BUTTON1_PRESSED|BUTTON1_RELEASED|
