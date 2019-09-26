@@ -28,10 +28,10 @@
 #include "utils.h"
 #include "colors.h"
 #include "widget.h"
+#include "menu_widget.h"
 #include "mixer_widget.h"
 #include "device_name.h"
 #include "card_select.h"
-#include "bindings.h"
 
 struct card {
 	struct card *next;
@@ -60,33 +60,15 @@ static void on_key_enter(void)
 	}
 }
 
-static void on_menu_key(int key)
-{
-	if (key < ARRAY_SIZE(textbox_bindings)) {
-		key = textbox_bindings[key];
-		if (key >= CMD_TEXTBOX___MIN_MENU_COMMAND &&
-				key <= CMD_TEXTBOX___MAX_MENU_COMMAND)
-			menu_driver(menu, key + KEY_MAX);
-	}
-}
-
 static void on_handle_key(int key)
 {
-	switch (key) {
-	case 27:
-	case KEY_CANCEL:
-	case 'q':
-	case 'Q':
-		list_widget.close();
-		break;
-	case 10:
-	case 13:
-	case KEY_ENTER:
-		on_key_enter();
-		break;
-	default:
-		on_menu_key(key);
-		break;
+	switch (menu_widget_handle_key(menu, key)) {
+		case KEY_ENTER:
+			on_key_enter();
+			break;
+		case KEY_CANCEL:
+			list_widget.close();
+			break;
 	}
 }
 

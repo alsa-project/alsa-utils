@@ -50,6 +50,7 @@ void initialize_curses(bool use_color)
 #endif
 	window_size_changed(); /* update screen_lines/cols */
 	init_colors(use_color);
+	mousemask(ALL_MOUSE_EVENTS, NULL);
 	snd_lib_error_set_handler(black_hole_error_handler);
 }
 

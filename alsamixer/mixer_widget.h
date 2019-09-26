@@ -32,6 +32,9 @@ extern unsigned int current_control_flags;
 extern bool control_values_changed;
 extern bool controls_changed;
 
+extern unsigned int mouse_wheel_step;
+extern bool mouse_wheel_focuses_control;
+
 void create_mixer_object(struct snd_mixer_selem_regopt *selem_regopt);
 void create_mixer_widget(void);
 void mixer_shutdown(void);
