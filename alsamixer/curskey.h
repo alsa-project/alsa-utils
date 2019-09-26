@@ -56,10 +56,10 @@ int curskey_mod_key(int key, unsigned int modifiers);
 int curskey_unmod_key(int key, unsigned int *modifiers);
 
 #define curskey_meta_key(KEY) \
-  curskey_mod_key(KEY, CURSKEY_MOD_META)
+	curskey_mod_key(KEY, CURSKEY_MOD_META)
 
 #define curskey_cntrl_key(KEY) \
-  curskey_mod_key(KEY, CURSKEY_MOD_CNTRL)
+	curskey_mod_key(KEY, CURSKEY_MOD_CNTRL)
 
 int curskey_parse(const char *keydef);
 const char* curskey_get_keydef(int keycode);

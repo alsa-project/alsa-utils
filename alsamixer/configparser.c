@@ -79,8 +79,8 @@ static int attr_by_name(const char *name) {
 };
 
 /* $ perl -e '$i=0; printf "W_%s = 0x%X,\n", uc, 1<<$i++ for sort @ARGV' \
-   bottom top page up down left right next previous toggle close help \
-   control playback capture all refresh set focus mode balance mute */
+	bottom top page up down left right next previous toggle close help \
+	control playback capture all refresh set focus mode balance mute */
 enum command_word {
 	W_ALL = 0x1,
 	W_BALANCE = 0x2,
@@ -109,8 +109,8 @@ enum command_word {
 };
 
 /* $ perl -e 'printf "\"%-8s\" \\\n", lc for sort @ARGV' \
-   bottom top page up down left right next previous toggle close help \
-   control playback capture all refresh set focus mode balance mute */
+	bottom top page up down left right next previous toggle close help \
+	control playback capture all refresh set focus mode balance mute */
 #define command_words \
 	"all     " \
 	"balance " \

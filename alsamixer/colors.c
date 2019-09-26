@@ -43,7 +43,7 @@ int get_color_pair(short fg, short bg)
 		return COLOR_PAIR(color_pairs_defined);
 	}
 
-   return 0;
+	return 0;
 }
 
 void init_colors(int use_color)

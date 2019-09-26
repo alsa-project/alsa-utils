@@ -153,10 +153,10 @@ int main(int argc, char *argv[])
 
 	initialize_curses(use_color, use_mouse);
 
-   if (config_file == (const char*) 1)
-      parse_default_config_file();
-   else if (config_file)
-      parse_config_file(config_file);
+	if (config_file == (const char*) 1)
+		parse_default_config_file();
+	else if (config_file)
+		parse_config_file(config_file);
 
 	create_mixer_widget();
 

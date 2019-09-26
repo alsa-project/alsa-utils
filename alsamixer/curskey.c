@@ -264,9 +264,9 @@ int curskey_define_meta_keys(unsigned int meta_start) {
 	}
 
 	CURSKEY_KEY_MAX = CURSKEY_META_START + CURSKEY_META_END_CHARACTERS;
-  return ERR;
+	return ERR;
 #endif
-  return 0;
+	return 0;
 }
 
 /* Return the keycode for a key with modifiers applied.
