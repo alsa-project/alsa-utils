@@ -253,9 +253,9 @@ int curskey_define_meta_keys(unsigned int meta_start) {
 #ifdef NCURSES_VERSION
 	CURSKEY_META_START = meta_start;
 
-	int 	ch;
-	int	curs_keycode = CURSKEY_META_START;
-	char 	key_sequence[3] = "\e ";
+	int ch;
+	int curs_keycode = CURSKEY_META_START;
+	char key_sequence[3] = "\e ";
 
 	for (ch = 0; ch <= CURSKEY_META_END_CHARACTERS; ++ch) {
 		key_sequence[1] = ch;
@@ -264,9 +264,9 @@ int curskey_define_meta_keys(unsigned int meta_start) {
 	}
 
 	CURSKEY_KEY_MAX = CURSKEY_META_START + CURSKEY_META_END_CHARACTERS;
-	return ERR;
-#endif
 	return 0;
+#endif
+	return ERR;
 }
 
 /* Return the keycode for a key with modifiers applied.

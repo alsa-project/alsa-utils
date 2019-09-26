@@ -33,9 +33,9 @@
 extern int KEY_RETURN;
 
 /* Modifiers */
-#define CURSKEY_MOD_CNTRL 1U
-#define CURSKEY_MOD_META  2U
-#define CURSKEY_MOD_ALT   2U
+#define CURSKEY_MOD_CNTRL	1U
+#define CURSKEY_MOD_META	2U
+#define CURSKEY_MOD_ALT		CURSKEY_MOD_META
 
 extern unsigned int CURSKEY_META_START;
 
