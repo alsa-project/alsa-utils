@@ -28,42 +28,26 @@
 #include "widget.h"
 #include "textbox.h"
 #include "proc_files.h"
-#include "bindings.h"
+#include "menu_widget.h"
 
 static struct widget proc_widget;
 static ITEM *items[7];
 static unsigned int items_count;
 static MENU *menu;
 
-static void on_menu_key(int key)
-{
-	if (key < ARRAY_SIZE(textbox_bindings)) {
-		key = textbox_bindings[key];
-		if (key >= CMD_TEXTBOX___MIN_MENU_COMMAND &&
-				key <= CMD_TEXTBOX___MAX_MENU_COMMAND)
-			menu_driver(menu, key + KEY_MAX);
-	}
-}
-
 static void on_handle_key(int key)
 {
 	ITEM *item;
 
-	switch (key) {
-	case 27:
-	case KEY_CANCEL:
-		proc_widget.close();
-		break;
-	case 10:
-	case 13:
-	case KEY_ENTER:
-		item = current_item(menu);
-		if (item)
-			show_textfile(item_name(item));
-		break;
-	default:
-		on_menu_key(key);
-		break;
+	switch (menu_widget_handle_key(menu, key)) {
+		case KEY_ENTER:
+			item = current_item(menu);
+			if (item)
+				show_textfile(item_name(item));
+			break;
+		case KEY_CANCEL:
+			proc_widget.close();
+			break;
 	}
 }
 
