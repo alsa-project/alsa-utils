@@ -91,7 +91,7 @@ static bool create(void)
 		columns = screen_cols;
 
 	widget_init(&list_widget, rows, columns, SCREEN_CENTER, SCREEN_CENTER,
-		    attr_menu, WIDGET_BORDER | WIDGET_SUBWINDOW);
+		    attrs.menu, WIDGET_BORDER | WIDGET_SUBWINDOW);
 
 	title = _("Sound Card");
 	mvwprintw(list_widget.window, 0, (columns - 2 - get_mbs_width(title)) / 2, " %s ", title);
@@ -223,8 +223,8 @@ void create_card_select_list(void)
 	menu = new_menu(items);
 	if (!menu)
 		fatal_error("cannot create menu");
-	set_menu_fore(menu, attr_menu_selected);
-	set_menu_back(menu, attr_menu);
+	set_menu_fore(menu, attrs.menu_selected);
+	set_menu_back(menu, attrs.menu);
 	set_menu_mark(menu, NULL);
 	if (initial_item)
 		set_current_item(menu, initial_item);
