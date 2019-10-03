@@ -76,13 +76,14 @@ static void on_form_key(int key)
 		{ KEY_RIGHT, REQ_NEXT_CHAR },
 		{ KEY_HOME, REQ_BEG_FIELD },
 		{ KEY_BACKSPACE, REQ_DEL_PREV },
+		{ 127, REQ_DEL_PREV },
 		{ KEY_DC, REQ_DEL_CHAR },
 		{ KEY_BEG, REQ_BEG_FIELD },
 		{ KEY_END, REQ_END_FIELD },
 	};
 	unsigned int i;
 
-	if (key >= 32 && key < 256) {
+	if (key >= 32 && key < 256 && key != 127) {
 		form_driver(form, key);
 		return;
 	}
@@ -170,8 +171,7 @@ void create_device_name_form(void)
 	fields[0] = new_field(1, 32, 1, 1, 0, 0);
 	if (!fields[0])
 		fatal_error("cannot create field");
-	field_opts_off(fields[0], O_ACTIVE);
-	field_opts_off(fields[0], O_EDIT);
+	field_opts_off(fields[0], O_ACTIVE|O_EDIT);
 	set_field_fore(fields[0], attrs.textbox);
 	set_field_back(fields[0], attrs.textbox);
 	set_field_buffer(fields[0], 0, _("Device name:"));
@@ -179,9 +179,7 @@ void create_device_name_form(void)
 	fields[1] = new_field(1, 32, 2, 1, 0, 0);
 	if (!fields[1])
 		fatal_error("cannot create field");
-	field_opts_off(fields[1], O_AUTOSKIP);
-	field_opts_off(fields[1], O_NULLOK);
-	field_opts_off(fields[1], O_STATIC);
+	field_opts_off(fields[1], O_AUTOSKIP|O_NULLOK|O_STATIC);
 	set_field_fore(fields[1], attrs.textfield);
 	set_field_back(fields[1], attrs.textfield);
 	set_field_buffer(fields[1], 0, mixer_device_name);
