@@ -51,40 +51,9 @@ static void on_handle_key(int key)
 	}
 }
 
-static bool create(void)
+static void create(void)
 {
-	int rows, columns;
-	const char *title;
-
-	if (screen_lines < 3 || screen_cols < 20) {
-		proc_widget.close();
-		beep();
-		return FALSE;
-	}
-	scale_menu(menu, &rows, &columns);
-	rows += 2;
-	columns += 2;
-	if (rows > screen_lines)
-		rows = screen_lines;
-	if (columns > screen_cols)
-		columns = screen_cols;
-
-	widget_init(&proc_widget, rows, columns, SCREEN_CENTER, SCREEN_CENTER,
-		    attrs.menu, WIDGET_BORDER | WIDGET_SUBWINDOW);
-
-	title = _("Select File");
-	mvwprintw(proc_widget.window, 0, (columns - 2 - get_mbs_width(title)) / 2, " %s ", title);
-	set_menu_win(menu, proc_widget.window);
-	set_menu_sub(menu, proc_widget.subwindow);
-	return TRUE;
-}
-
-static void on_window_size_changed(void)
-{
-	unpost_menu(menu);
-	if (!create())
-		return;
-	post_menu(menu);
+	menu_widget_create(&proc_widget, menu, _("Select File"));
 }
 
 static void on_close(void)
@@ -111,7 +80,7 @@ static void add_item(const char *file_name)
 
 static struct widget proc_widget = {
 	.handle_key = on_handle_key,
-	.window_size_changed = on_window_size_changed,
+	.window_size_changed = create,
 	.close = on_close,
 };
 
@@ -134,8 +103,5 @@ void create_proc_files_list(void)
 	set_menu_mark(menu, NULL);
 	menu_opts_off(menu, O_SHOWDESC);
 
-	if (!create())
-		return;
-
-	post_menu(menu);
+	create();
 }

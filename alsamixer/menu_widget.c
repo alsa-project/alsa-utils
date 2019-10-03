@@ -61,3 +61,32 @@ int menu_widget_handle_key(MENU *menu, int key)
 		return -1;
 	}
 }
+
+void menu_widget_create(struct widget *widget, MENU *menu, const char *title)
+{
+	int rows, columns;
+
+	if (menu)
+		unpost_menu(menu);
+
+	if (screen_lines < 3 || screen_cols < 10) {
+		widget->close();
+		beep();
+		return;
+	}
+	scale_menu(menu, &rows, &columns);
+	rows += 2;
+	columns += 2;
+	if (rows > screen_lines)
+		rows = screen_lines;
+	if (columns > screen_cols)
+		columns = screen_cols;
+
+	widget_init(widget, rows, columns, SCREEN_CENTER, SCREEN_CENTER,
+		    attrs.menu, WIDGET_BORDER | WIDGET_SUBWINDOW);
+
+	mvwprintw(widget->window, 0, (columns - 2 - get_mbs_width(title)) / 2, " %s ", title);
+	set_menu_win(menu, widget->window);
+	set_menu_sub(menu, widget->subwindow);
+	post_menu(menu);
+}

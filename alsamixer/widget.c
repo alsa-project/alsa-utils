@@ -87,8 +87,8 @@ void widget_init(struct widget *widget, int lines_, int cols, int y, int x,
 		set_panel_userptr(widget->panel, widget);
 	}
 
-	if (!widget->handle_key)
-		widget->handle_key = widget_handle_key;
+	//if (!widget->handle_key)
+	//	widget->handle_key = widget_handle_key;
 
 	if (old_window)
 		delwin(old_window);
