@@ -6,5 +6,6 @@
 unsigned int get_mbs_width(const char *s);
 unsigned int get_max_mbs_width(const char *const *s, unsigned int count);
 const char *mbs_at_width(const char *s, int *width, int dir);
+char *read_file(const char *file_name, unsigned int *file_size);
 
 #endif

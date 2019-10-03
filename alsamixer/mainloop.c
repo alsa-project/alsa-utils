@@ -40,7 +40,7 @@ static void black_hole_error_handler(const char *file, int line,
 {
 }
 
-void initialize_curses(bool use_color)
+void initialize_curses(bool use_color, bool use_mouse)
 {
 	curses_initialized = initscr();
 	cbreak();
@@ -50,7 +50,8 @@ void initialize_curses(bool use_color)
 #endif
 	window_size_changed(); /* update screen_lines/cols */
 	init_colors(use_color);
-	mousemask(ALL_MOUSE_EVENTS, NULL);
+	if (use_mouse)
+		mousemask(ALL_MOUSE_EVENTS, NULL);
 	snd_lib_error_set_handler(black_hole_error_handler);
 }
 

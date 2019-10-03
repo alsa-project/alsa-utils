@@ -27,8 +27,11 @@
 #include "gettext_curses.h"
 #include "mixer_widget.h"
 #include "mainloop.h"
+#include "configparser.h"
 
 static int use_color = 1;
+static int use_mouse = 1;
+static const char* config_file = CONFIG_DEFAULT;
 static struct snd_mixer_selem_regopt selem_regopt = {
 	.ver = 1,
 	.abstract = SND_MIXER_SABSTRACT_NONE,
@@ -42,6 +45,10 @@ static void show_help(void)
 	       "  -h, --help              this help\n"
 	       "  -c, --card=NUMBER       sound card number or id\n"
 	       "  -D, --device=NAME       mixer device name\n"
+	       "  -m, --mouse             enable mouse\n"
+	       "  -M, --no-mouse          disable mouse\n"
+	       "  -f, --config=FILE       configuration file\n"
+	       "  -F, --no-config         do not load configuration file\n"
 	       "  -V, --view=MODE         starting view mode: playback/capture/all"));
 	puts(_("Debugging options:\n"
 	       "  -g, --no-color          toggle using of colors\n"
@@ -50,11 +57,15 @@ static void show_help(void)
 
 static void parse_options(int argc, char *argv[])
 {
-	static const char short_options[] = "hc:D:V:gsa:";
+	static const char short_options[] = "hc:D:f:FmMV:gsa:";
 	static const struct option long_options[] = {
 		{ .name = "help", .val = 'h' },
 		{ .name = "card", .has_arg = 1, .val = 'c' },
+		{ .name = "config", .has_arg = 1, .val = 'f' },
+		{ .name = "no-config", .val = 'F' },
 		{ .name = "device", .has_arg = 1, .val = 'D' },
+		{ .name = "mouse", .val = 'm' },
+		{ .name = "no-mouse", .val = 'M' },
 		{ .name = "view", .has_arg = 1, .val = 'V' },
 		{ .name = "no-color", .val = 'g' },
 		{ .name = "abstraction", .has_arg = 1, .val = 'a' },
@@ -82,6 +93,18 @@ static void parse_options(int argc, char *argv[])
 			break;
 		case 'D':
 			selem_regopt.device = optarg;
+			break;
+		case 'f':
+			config_file = optarg;
+			break;
+		case 'F':
+			config_file = NULL;
+			break;
+		case 'm':
+			use_mouse = 1;
+			break;
+		case 'M':
+			use_mouse = 0;
 			break;
 		case 'V':
 			if (*optarg == 'p' || *optarg == 'P')
@@ -127,7 +150,12 @@ int main(int argc, char *argv[])
 
 	create_mixer_object(&selem_regopt);
 
-	initialize_curses(use_color);
+	initialize_curses(use_color, use_mouse);
+
+	if (config_file == CONFIG_DEFAULT)
+		parse_default_config_file();
+	else if (config_file)
+		parse_config_file(config_file);
 
 	create_mixer_widget();
 
