@@ -50,7 +50,7 @@ void show_error(const char *msg, int err)
 		lines[1] = strerror(err);
 		count = 2;
 	}
-	create_text_box(lines, count, _("Error"), attr_errormsg);
+	create_text_box(lines, count, _("Error"), attrs.errormsg);
 }
 
 void show_alsa_error(const char *msg, int err)
@@ -64,7 +64,7 @@ void show_alsa_error(const char *msg, int err)
 		lines[1] = snd_strerror(err);
 		count = 2;
 	}
-	create_text_box(lines, count, _("Error"), attr_errormsg);
+	create_text_box(lines, count, _("Error"), attrs.errormsg);
 }
 
 static char *read_file(const char *file_name, unsigned int *file_size)
@@ -126,14 +126,14 @@ void show_textfile(const char *file_name)
 		if (buf[i] == '\t')
 			buf[i] = ' ';
 	}
-	create_text_box(lines, line_count, file_name, attr_textbox);
+	create_text_box(lines, line_count, file_name, attrs.textbox);
 	free(lines);
 	free(buf);
 }
 
 void show_text(const char *const *lines, unsigned int count, const char *title)
 {
-	create_text_box(lines, count, title, attr_textbox);
+	create_text_box(lines, count, title, attrs.textbox);
 }
 
 /**********************************************************************/

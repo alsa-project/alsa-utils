@@ -122,7 +122,7 @@ static bool create(void)
 	}
 	widget_init(&form_widget,
 		    6, 36, SCREEN_CENTER, SCREEN_CENTER,
-		    attr_textbox, WIDGET_BORDER | WIDGET_SUBWINDOW | WIDGET_CURSOR_VISIBLE);
+		    attrs.textbox, WIDGET_BORDER | WIDGET_SUBWINDOW | WIDGET_CURSOR_VISIBLE);
 	title = _("Sound Card");
 	mvwprintw(form_widget.window, 0, (36 - 2 - get_mbs_width(title)) / 2, " %s ", title);
 
@@ -172,8 +172,8 @@ void create_device_name_form(void)
 		fatal_error("cannot create field");
 	field_opts_off(fields[0], O_ACTIVE);
 	field_opts_off(fields[0], O_EDIT);
-	set_field_fore(fields[0], attr_textbox);
-	set_field_back(fields[0], attr_textbox);
+	set_field_fore(fields[0], attrs.textbox);
+	set_field_back(fields[0], attrs.textbox);
 	set_field_buffer(fields[0], 0, _("Device name:"));
 
 	fields[1] = new_field(1, 32, 2, 1, 0, 0);
@@ -182,8 +182,8 @@ void create_device_name_form(void)
 	field_opts_off(fields[1], O_AUTOSKIP);
 	field_opts_off(fields[1], O_NULLOK);
 	field_opts_off(fields[1], O_STATIC);
-	set_field_fore(fields[1], attr_textfield);
-	set_field_back(fields[1], attr_textfield);
+	set_field_fore(fields[1], attrs.textfield);
+	set_field_back(fields[1], attrs.textfield);
 	set_field_buffer(fields[1], 0, mixer_device_name);
 
 	form = new_form(fields);
