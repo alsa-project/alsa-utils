@@ -34,8 +34,6 @@
 #include "textbox.h"
 #include "bindings.h"
 
-#define MAX_FILE_SIZE 1048576
-
 static void create_text_box(const char *const *lines, unsigned int count,
 			    const char *title, int attrs);
 
@@ -67,38 +65,6 @@ void show_alsa_error(const char *msg, int err)
 	create_text_box(lines, count, _("Error"), attrs.errormsg);
 }
 
-static char *read_file(const char *file_name, unsigned int *file_size)
-{
-	FILE *f;
-	int err;
-	char *buf;
-	unsigned int allocated = 2048;
-	unsigned int bytes_read;
-
-	f = fopen(file_name, "r");
-	if (!f) {
-		err = errno;
-		buf = casprintf(_("Cannot open file \"%s\"."), file_name);
-		show_error(buf, err);
-		free(buf);
-		return NULL;
-	}
-	*file_size = 0;
-	buf = NULL;
-	do {
-		allocated *= 2;
-		buf = crealloc(buf, allocated);
-		bytes_read = fread(buf + *file_size, 1, allocated - *file_size, f);
-		*file_size += bytes_read;
-	} while (*file_size == allocated && allocated < MAX_FILE_SIZE);
-	fclose(f);
-	if (*file_size > 0 && buf[*file_size - 1] != '\n' && *file_size < allocated) {
-		buf[*file_size] = '\n';
-		++*file_size;
-	}
-	return buf;
-}
-
 void show_textfile(const char *file_name)
 {
 	char *buf;
@@ -109,8 +75,12 @@ void show_textfile(const char *file_name)
 	const char *start_line;
 
 	buf = read_file(file_name, &file_size);
-	if (!buf)
+	if (!buf) {
+		int err = errno;
+		buf = casprintf(_("Cannot open file \"%s\"."), file_name);
+		show_error(buf, err);
 		return;
+	}
 	line_count = 0;
 	for (i = 0; i < file_size; ++i)
 		line_count += buf[i] == '\n';

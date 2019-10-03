@@ -3,7 +3,7 @@
 
 #include CURSESINC
 
-void initialize_curses(bool use_color);
+void initialize_curses(bool use_color, bool use_mouse);
 void mainloop(void);
 void app_shutdown(void);
 

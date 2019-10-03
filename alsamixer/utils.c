@@ -22,7 +22,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
+#include <errno.h>
+#include <stdio.h>
 #include "utils.h"
+#include "mem.h"
 
 /*
  * mbs_at_width - compute screen position in a string
@@ -109,3 +112,36 @@ unsigned int get_max_mbs_width(const char *const *s, unsigned int count)
 	}
 	return max_width;
 }
+
+#define MAX_FILE_SIZE 1048576
+char *read_file(const char *file_name, unsigned int *file_size)
+{
+	FILE *f;
+	int err;
+	char *buf;
+	unsigned int allocated = 2048;
+	unsigned int bytes_read;
+
+	f = fopen(file_name, "r");
+	if (!f) {
+		err = errno;
+		free(buf);
+		errno = err;
+		return NULL;
+	}
+	*file_size = 0;
+	buf = NULL;
+	do {
+		allocated *= 2;
+		buf = crealloc(buf, allocated);
+		bytes_read = fread(buf + *file_size, 1, allocated - *file_size, f);
+		*file_size += bytes_read;
+	} while (*file_size == allocated && allocated < MAX_FILE_SIZE);
+	fclose(f);
+	if (*file_size > 0 && buf[*file_size - 1] != '\n' && *file_size < allocated) {
+		buf[*file_size] = '\n';
+		++*file_size;
+	}
+	return buf;
+}
+
