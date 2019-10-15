@@ -342,6 +342,8 @@ static int run_dispatcher(int epfd, int sigfd, int infd, struct list_head *srcs,
 
 		count = epoll_wait(epfd, epev, max_ev_count, 200);
 		if (count < 0) {
+			if (errno == EINTR)
+				continue;
 			err = count;
 			break;
 		}
