@@ -340,7 +340,7 @@ static int run_dispatcher(int epfd, int sigfd, int infd, struct list_head *srcs,
 		int count;
 		int i;
 
-		count = epoll_wait(epfd, epev, max_ev_count, 200);
+		count = epoll_wait(epfd, epev, max_ev_count, -1);
 		if (count < 0) {
 			if (errno == EINTR)
 				continue;
