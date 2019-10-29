@@ -82,10 +82,28 @@ static int irq_mmap_process_frames(struct libasound_state *state,
 	int err;
 
 	if (state->use_waiter) {
+		unsigned int msec_per_buffer;
 		unsigned short revents;
 
+		// Wait during msec equivalent to all audio data frames in
+		// buffer instead of period, for safe.
+		err = snd_pcm_hw_params_get_buffer_time(state->hw_params,
+							&msec_per_buffer, NULL);
+		if (err < 0)
+			return err;
+		msec_per_buffer /= 1000;
+
 		// Wait for hardware IRQ when no avail space in buffer.
-		err = xfer_libasound_wait_event(state, -1, &revents);
+		err = xfer_libasound_wait_event(state, msec_per_buffer,
+						&revents);
+		if (err == -ETIMEDOUT) {
+			logging(state,
+				"No event occurs for PCM substream during %u "
+				"msec. The implementaion of kernel driver or "
+				"userland backend causes this issue.\n",
+				msec_per_buffer);
+			return err;
+		}
 		if (err < 0)
 			return err;
 		if (revents & POLLERR) {
