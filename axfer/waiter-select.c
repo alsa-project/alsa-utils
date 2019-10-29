@@ -91,7 +91,7 @@ static int select_wait_event(struct waiter_context *waiter, int timeout_msec)
 			pfd->revents |= POLLHUP;
 	}
 
-	return 0;
+	return err;
 }
 
 static void select_release(struct waiter_context *waiter)
