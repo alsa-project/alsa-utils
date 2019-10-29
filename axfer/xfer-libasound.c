@@ -343,21 +343,28 @@ static int prepare_waiter(struct libasound_state *state)
 int xfer_libasound_wait_event(struct libasound_state *state, int timeout_msec,
 			      unsigned short *revents)
 {
-	int err;
+	int count;
 
 	if (state->waiter_type != WAITER_TYPE_DEFAULT) {
 		struct waiter_context *waiter = state->waiter;
+		int err;
 
-		err = waiter_context_wait_event(waiter, timeout_msec);
-		if (err < 0)
-			return err;
+		count = waiter_context_wait_event(waiter, timeout_msec);
+		if (count < 0)
+			return count;
+		if (count == 0 && timeout_msec > 0)
+			return -ETIMEDOUT;
 
 		err = snd_pcm_poll_descriptors_revents(state->handle,
 				waiter->pfds, waiter->pfd_count, revents);
-	} else {
-		err = snd_pcm_wait(state->handle, timeout_msec);
 		if (err < 0)
 			return err;
+	} else {
+		count = snd_pcm_wait(state->handle, timeout_msec);
+		if (count < 0)
+			return count;
+		if (count == 0 && timeout_msec > 0)
+			return -ETIMEDOUT;
 
 		if (snd_pcm_stream(state->handle) == SND_PCM_STREAM_PLAYBACK)
 			*revents = POLLOUT;
@@ -365,7 +372,7 @@ int xfer_libasound_wait_event(struct libasound_state *state, int timeout_msec,
 			*revents = POLLIN;
 	}
 
-	return err;
+	return 0;
 }
 
 static int configure_hw_params(struct libasound_state *state,
