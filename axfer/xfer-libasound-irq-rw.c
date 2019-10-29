@@ -21,12 +21,21 @@ struct rw_closure {
 
 static int wait_for_avail(struct libasound_state *state)
 {
+	unsigned int msec_per_buffer;
 	unsigned short revents;
 	unsigned short event;
 	int err;
 
+	// Wait during msec equivalent to all audio data frames in buffer
+	// instead of period, for safe.
+	err = snd_pcm_hw_params_get_buffer_time(state->hw_params,
+						&msec_per_buffer, NULL);
+	if (err < 0)
+		return err;
+	msec_per_buffer /= 1000;
+
 	// Wait for hardware IRQ when no available space.
-	err = xfer_libasound_wait_event(state, -1, &revents);
+	err = xfer_libasound_wait_event(state, msec_per_buffer, &revents);
 	if (err < 0)
 		return err;
 
