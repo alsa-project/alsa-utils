@@ -19,6 +19,32 @@ struct rw_closure {
 	struct frame_cache cache;
 };
 
+static int wait_for_avail(struct libasound_state *state)
+{
+	unsigned short revents;
+	unsigned short event;
+	int err;
+
+	// Wait for hardware IRQ when no available space.
+	err = xfer_libasound_wait_event(state, -1, &revents);
+	if (err < 0)
+		return err;
+
+	// TODO: error reporting.
+	if (revents & POLLERR)
+		return -EIO;
+
+	if (snd_pcm_stream(state->handle) == SND_PCM_STREAM_CAPTURE)
+		event = POLLIN;
+	else
+		event = POLLOUT;
+
+	if (!(revents & event))
+		return -EAGAIN;
+
+	return 0;
+}
+
 static int read_frames(struct libasound_state *state, unsigned int *frame_count,
 		       unsigned int avail_count, struct mapper_context *mapper,
 		       struct container_context *cntrs)
@@ -134,21 +160,9 @@ static int r_process_frames_nonblocking(struct libasound_state *state,
 	}
 
 	if (state->use_waiter) {
-		unsigned short revents;
-
-		// Wait for hardware IRQ when no available space.
-		err = xfer_libasound_wait_event(state, -1, &revents);
+		err = wait_for_avail(state);
 		if (err < 0)
 			goto error;
-		if (revents & POLLERR) {
-			// TODO: error reporting.
-			err = -EIO;
-			goto error;
-		}
-		if (!(revents & POLLIN)) {
-			err = -EAGAIN;
-			goto error;
-		}
 	}
 
 	// Check available space on the buffer.
@@ -300,21 +314,9 @@ static int w_process_frames_nonblocking(struct libasound_state *state,
 	int err;
 
 	if (state->use_waiter) {
-		unsigned short revents;
-
-		// Wait for hardware IRQ when no left space.
-		err = xfer_libasound_wait_event(state, -1, &revents);
+		err = wait_for_avail(state);
 		if (err < 0)
 			goto error;
-		if (revents & POLLERR) {
-			// TODO: error reporting.
-			err = -EIO;
-			goto error;
-		}
-		if (!(revents & POLLOUT)) {
-			err = -EAGAIN;
-			goto error;
-		}
 	}
 
 	// Check available space on the buffer.
