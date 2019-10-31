@@ -453,6 +453,7 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 	unsigned int size;
 	unsigned int idx = 0;
 	const char *chmap_type = NULL;
+	int lf = 1;
 
 	if (tlv_size < 2 * sizeof(unsigned int)) {
 		printf("TLV size error!\n");
@@ -480,6 +481,7 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 			decode_tlv(spaces + 2, tlv + idx, tlv[idx+1] + 8);
 			idx += 2 + (tlv[idx+1] + sizeof(unsigned int) - 1) / sizeof(unsigned int);
 		}
+		lf = 0;
 		break;
 	case SND_CTL_TLVT_DB_SCALE:
 		printf("dBscale-");
@@ -581,7 +583,8 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 		}
 		break;
 	}
-	putc('\n', stdout);
+	if (lf)
+		putc('\n', stdout);
 }
 
 static int show_control(const char *space, snd_hctl_elem_t *elem,
