@@ -361,6 +361,7 @@ static void my_exit(struct context *context, int exitcode)
 	if (context->batch)
 		free(context->batch);
 	free(context);
+	snd_config_update_free_global();
 	exit(exitcode);
 }
 
