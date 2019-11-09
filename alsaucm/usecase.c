@@ -171,6 +171,54 @@ static int parse_line(struct context *context, char *line)
 	return 0;
 }
 
+static void my_exit(struct context *context, int exitcode)
+{
+	if (context->uc_mgr)
+		snd_use_case_mgr_close(context->uc_mgr);
+	if (context->arga > 0)
+		free(context->argv);
+	if (context->card)
+		free(context->card);
+	if (context->batch)
+		free(context->batch);
+	free(context);
+	snd_config_update_free_global();
+	exit(exitcode);
+}
+
+static void do_initial_open(struct context *context)
+{
+	const char **list;
+	int err;
+
+	if (!context->no_open && context->card == NULL) {
+		err = snd_use_case_card_list(&list);
+		if (err < 0) {
+			fprintf(stderr, "%s: unable to obtain card list: %s\n",
+					context->command, snd_strerror(err));
+			my_exit(context, EXIT_FAILURE);
+		}
+		if (err == 0) {
+			printf("No card found\n");
+			my_exit(context, EXIT_SUCCESS);
+		}
+		context->card = strdup(list[0]);
+		snd_use_case_free_list(list, err);
+	}
+
+	/* open library */
+	if (!context->no_open) {
+		err = snd_use_case_mgr_open(&context->uc_mgr,
+					    context->card);
+		if (err < 0) {
+			fprintf(stderr,
+				"%s: error failed to open sound card %s: %s\n",
+				context->command, context->card, snd_strerror(err));
+			my_exit(context, EXIT_FAILURE);
+		}
+	}
+}
+
 static int do_one(struct context *context, struct cmd *cmd, char **argv)
 {
 	const char **list, *str;
@@ -178,6 +226,10 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 	int err, i, j, entries;
 
 	if (cmd->opencard && context->uc_mgr == NULL) {
+		if (!context->no_open) {
+			do_initial_open(context);
+			context->no_open = 1;
+		}
 		fprintf(stderr, "%s: command '%s' requires an open card\n",
 				context->command, cmd->id);
 		return 0;
@@ -350,21 +402,6 @@ static int do_commands(struct context *context)
 	return 0;
 }
 
-static void my_exit(struct context *context, int exitcode)
-{
-	if (context->uc_mgr)
-		snd_use_case_mgr_close(context->uc_mgr);
-	if (context->arga > 0)
-		free(context->argv);
-	if (context->card)
-		free(context->card);
-	if (context->batch)
-		free(context->batch);
-	free(context);
-	snd_config_update_free_global();
-	exit(exitcode);
-}
-
 enum {
 	OPT_VERSION = 1,
 };
@@ -383,7 +420,6 @@ int main(int argc, char *argv[])
 	};
 	struct context *context;
 	const char *command = argv[0];
-	const char **list;
 	int c, err, option_index;
 	char cmd[MAX_BUF];
 	FILE *in;
@@ -419,32 +455,6 @@ int main(int argc, char *argv[])
 			break;
 		default:
 			fprintf(stderr, "Try '%s --help' for more information.\n", command);
-			my_exit(context, EXIT_FAILURE);
-		}
-	}
-
-	if (!context->no_open && context->card == NULL) {
-		err = snd_use_case_card_list(&list);
-		if (err < 0) {
-			fprintf(stderr, "%s: unable to obtain card list: %s\n", command, snd_strerror(err));
-			my_exit(context, EXIT_FAILURE);
-		}
-		if (err == 0) {
-			printf("No card found\n");
-			my_exit(context, EXIT_SUCCESS);
-		}
-		context->card = strdup(list[0]);
-		snd_use_case_free_list(list, err);
-	}
-
-	/* open library */
-	if (!context->no_open) {
-		err = snd_use_case_mgr_open(&context->uc_mgr,
-					    context->card);
-		if (err < 0) {
-			fprintf(stderr,
-				"%s: error failed to open sound card %s: %s\n",
-				command, context->card, snd_strerror(err));
 			my_exit(context, EXIT_FAILURE);
 		}
 	}
