@@ -13,7 +13,7 @@ alsatplg_SOURCES = topology.c
 AM_CPPFLAGS = \
          -Wall -I$(top_srcdir)/include
 
-alsatplg_LDADD = -lasound
+alsatplg_LDADD = $(ALSA_TOPOLOGY_LIBS)
 
 EXTRA_DIST = alsatplg.rst
 

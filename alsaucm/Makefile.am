@@ -10,8 +10,6 @@ alsaucm_SOURCES = usecase.c
 AM_CPPFLAGS = \
          -Wall -I$(top_srcdir)/include
 
-alsaucm_LDADD = -lasound
-
 %.1: %.rst
 	rst2man $< > $@
 
