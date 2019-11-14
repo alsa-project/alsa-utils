@@ -229,10 +229,11 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 		if (!context->no_open) {
 			do_initial_open(context);
 			context->no_open = 1;
+		} else {
+			fprintf(stderr, "%s: command '%s' requires an open card\n",
+					context->command, cmd->id);
+			return 0;
 		}
-		fprintf(stderr, "%s: command '%s' requires an open card\n",
-				context->command, cmd->id);
-		return 0;
 	}
 	switch (cmd->code) {
 	case OM_OPEN:
