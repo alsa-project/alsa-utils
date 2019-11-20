@@ -44,7 +44,7 @@
 #include <assert.h>
 #include <termios.h>
 #include <signal.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <sys/uio.h>
 #include <sys/time.h>
 #include <sys/stat.h>

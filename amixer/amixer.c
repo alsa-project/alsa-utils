@@ -28,7 +28,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <alsa/asoundlib.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <stdint.h>
 #include "amixer.h"
 #include "../alsamixer/volume_mapping.h"

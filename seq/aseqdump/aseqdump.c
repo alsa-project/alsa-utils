@@ -25,7 +25,7 @@
 #include <string.h>
 #include <signal.h>
 #include <getopt.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <alsa/asoundlib.h>
 #include "aconfig.h"
 #include "version.h"
