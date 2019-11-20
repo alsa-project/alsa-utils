@@ -3015,7 +3015,7 @@ static int new_capture_file(char *name, char *namebuf, size_t namelen,
 			    int filecount)
 {
 	char *s;
-	char buf[PATH_MAX+1];
+	char buf[PATH_MAX-10];
 	time_t t;
 	struct tm *tmp;
 
@@ -3122,7 +3122,7 @@ static void capture(char *orig_name)
 	int tostdout=0;		/* boolean which describes output stream */
 	int filecount=0;	/* number of files written */
 	char *name = orig_name;	/* current filename */
-	char namebuf[PATH_MAX+1];
+	char namebuf[PATH_MAX+2];
 	off64_t count, rest;		/* number of bytes to capture */
 	struct stat statbuf;
 
