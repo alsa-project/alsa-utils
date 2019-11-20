@@ -54,6 +54,8 @@
 #include "formats.h"
 #include "version.h"
 
+#define ABS(a)  (a) < 0 ? -(a) : (a)
+
 #ifdef SND_CHMAP_API_VERSION
 #define CONFIG_SUPPORT_CHMAP	1
 #endif
@@ -1741,7 +1743,7 @@ static void print_vu_meter_stereo(int *perc, int *maxperc)
 			line[bar_length + 6 + 1 + p] = '+';
 		else
 			line[bar_length - p - 1] = '+';
-		if (maxperc[c] > 99)
+		if (ABS(maxperc[c]) > 99)
 			sprintf(tmp, "MAX");
 		else
 			sprintf(tmp, "%02d%%", maxperc[c]);
