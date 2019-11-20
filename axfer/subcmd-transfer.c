@@ -11,6 +11,7 @@
 #include "misc.h"
 
 #include <signal.h>
+#include <inttypes.h>
 
 struct context {
 	struct xfer_context xfer;
@@ -389,7 +390,8 @@ static int context_process_frames(struct context *ctx,
 
 	if (!ctx->xfer.quiet) {
 		fprintf(stderr,
-			"%s: Expected %lu frames, Actual %lu frames\n",
+			"%s: Expected %" PRIu64 "frames, "
+			"Actual %" PRIu64 "frames\n",
 			snd_pcm_stream_name(direction), expected_frame_count,
 			*actual_frame_count);
 		if (ctx->interrupted) {

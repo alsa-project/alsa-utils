@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <inttypes.h>
 
 static const char *const cntr_type_labels[] = {
 	[CONTAINER_TYPE_PARSER] = "parser",
@@ -356,10 +357,10 @@ int container_context_pre_process(struct container_context *cntr,
 		fprintf(stderr, "  frames/second: %u\n",
 			cntr->frames_per_second);
 		if (cntr->type == CONTAINER_TYPE_PARSER) {
-			fprintf(stderr, "  frames: %lu\n",
+			fprintf(stderr, "  frames: %" PRIu64 "\n",
 				*frame_count);
 		} else {
-			fprintf(stderr, "  max frames: %lu\n",
+			fprintf(stderr, "  max frames: %" PRIu64 "\n",
 				*frame_count);
 		}
 	}
@@ -427,7 +428,7 @@ int container_context_post_process(struct container_context *cntr,
 	assert(frame_count);
 
 	if (cntr->verbose && cntr->handled_byte_count > 0) {
-		fprintf(stderr, "  Handled bytes: %lu\n",
+		fprintf(stderr, "  Handled bytes: %" PRIu64 "\n",
 			cntr->handled_byte_count);
 	}
 
