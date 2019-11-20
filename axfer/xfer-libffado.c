@@ -440,7 +440,7 @@ static int xfer_libffado_pre_process(struct xfer_context *xfer,
 	}
 	if (*samples_per_frame != channels) {
 		fprintf(stderr,
-			"The number of samples per frame should be %i.\n",
+			"The number of samples per frame should be %u.\n",
 			channels);
 		return -EINVAL;
 	}

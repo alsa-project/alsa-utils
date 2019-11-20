@@ -31,7 +31,7 @@ static int dump_device(snd_ctl_t *handle, const char *id, const char *name,
 	       snd_pcm_info_get_name(info));
 
 	count = snd_pcm_info_get_subdevices_count(info);
-	printf("  Subdevices: %i/%i\n",
+	printf("  Subdevices: %i/%u\n",
 	       snd_pcm_info_get_subdevices_avail(info), count);
 
 	for (i = 0; i < count; ++i) {

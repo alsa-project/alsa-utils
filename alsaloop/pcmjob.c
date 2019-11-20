@@ -120,7 +120,7 @@ static int setparams_stream(struct loopback_handle *lhandle,
 	}
 	err = snd_pcm_hw_params_set_rate_resample(handle, params, lhandle->resample);
 	if (err < 0) {
-		logit(LOG_CRIT, "Resample setup failed for %s (val %i): %s\n", lhandle->id, lhandle->resample, snd_strerror(err));
+		logit(LOG_CRIT, "Resample setup failed for %s (val %u): %s\n", lhandle->id, lhandle->resample, snd_strerror(err));
 		return err;
 	}
 	err = snd_pcm_hw_params_set_access(handle, params, lhandle->access);
@@ -135,13 +135,13 @@ static int setparams_stream(struct loopback_handle *lhandle,
 	}
 	err = snd_pcm_hw_params_set_channels(handle, params, lhandle->channels);
 	if (err < 0) {
-		logit(LOG_CRIT, "Channels count (%i) not available for %s: %s\n", lhandle->channels, lhandle->id, snd_strerror(err));
+		logit(LOG_CRIT, "Channels count (%u) not available for %s: %s\n", lhandle->channels, lhandle->id, snd_strerror(err));
 		return err;
 	}
 	rrate = lhandle->rate_req;
 	err = snd_pcm_hw_params_set_rate_near(handle, params, &rrate, 0);
 	if (err < 0) {
-		logit(LOG_CRIT, "Rate %iHz not available for %s: %s\n", lhandle->rate_req, lhandle->id, snd_strerror(err));
+		logit(LOG_CRIT, "Rate %uHz not available for %s: %s\n", lhandle->rate_req, lhandle->id, snd_strerror(err));
 		return err;
 	}
 	rrate = 0;
@@ -152,7 +152,7 @@ static int setparams_stream(struct loopback_handle *lhandle,
 	    !lhandle->loopback->src_enable &&
 #endif
 	    (int)rrate != lhandle->rate) {
-		logit(LOG_CRIT, "Rate does not match (requested %iHz, got %iHz, resample %i)\n", lhandle->rate, rrate, lhandle->resample);
+		logit(LOG_CRIT, "Rate does not match (requested %uHz, got %uHz, resample %u)\n", lhandle->rate, rrate, lhandle->resample);
 		return -EINVAL;
 	}
 	lhandle->pitch = (double)lhandle->rate_req / (double)lhandle->rate;
@@ -1613,7 +1613,7 @@ __again:
 	if (count > loop->play->buffer_size)
 		count = loop->play->buffer_size;
 	if (err != count) {
-		logit(LOG_CRIT, "%s: initial playback fill error (%i/%i/%i)\n", loop->id, err, (int)count, loop->play->buffer_size);
+		logit(LOG_CRIT, "%s: initial playback fill error (%i/%i/%u)\n", loop->id, err, (int)count, loop->play->buffer_size);
 		err = -EIO;
 		goto __error;
 	}

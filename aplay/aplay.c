@@ -3346,7 +3346,7 @@ static void playbackv(char **names, unsigned int count)
 		}
 		alloced = 1;
 	} else if (count != channels) {
-		error(_("You need to specify %d files"), channels);
+		error(_("You need to specify %u files"), channels);
 		prg_exit(EXIT_FAILURE);
 	}
 

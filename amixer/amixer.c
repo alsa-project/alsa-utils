@@ -465,7 +465,7 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 	size = tlv[idx++];
 	tlv_size -= 2 * sizeof(unsigned int);
 	if (size > tlv_size) {
-		printf("TLV size error (%i, %i, %i)!\n", type, size, tlv_size);
+		printf("TLV size error (%u, %u, %u)!\n", type, size, tlv_size);
 		return;
 	}
 	switch (type) {
@@ -576,7 +576,7 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 		break;
 #endif
 	default:
-		printf("unk-%i-", type);
+		printf("unk-%u-", type);
 		while (size > 0) {
 			printf("0x%08x,", tlv[idx++]);
 			size -= sizeof(unsigned int);
@@ -611,7 +611,7 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 	}
 	count = snd_ctl_elem_info_get_count(info);
 	type = snd_ctl_elem_info_get_type(info);
-	printf("%s; type=%s,access=%s,values=%i", space, control_type(info), control_access(info), count);
+	printf("%s; type=%s,access=%s,values=%u", space, control_type(info), control_access(info), count);
 	switch (type) {
 	case SND_CTL_ELEM_TYPE_INTEGER:
 		printf(",min=%li,max=%li,step=%li\n", 

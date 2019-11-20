@@ -187,7 +187,7 @@ static int init_space(struct space **space, int card)
 		return -ENOMEM;
 	res->ctl_id_changed = ~0;
 	res->linenum = -1;
-	sprintf(device, "hw:%u", card);
+	sprintf(device, "hw:%d", card);
 	err = snd_hctl_open(&res->ctl_handle, device, 0);
 	if (err < 0)
 		goto error;
@@ -734,7 +734,7 @@ dbvalue:
 			elem = snd_hctl_elem_next(elem);
 		}
 		snd_ctl_elem_id_free(id);
-		sprintf(res, "%u", index);
+		sprintf(res, "%d", index);
 		dbg("do_ctl_count found %s controls", res);
 		return res;
 	}

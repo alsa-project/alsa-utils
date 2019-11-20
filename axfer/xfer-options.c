@@ -238,7 +238,7 @@ static int validate_options(struct xfer_context *xfer)
 		xfer->frames_per_second *= 1000;
 	if (xfer->frames_per_second < 2000 ||
 	    xfer->frames_per_second > 192000) {
-		fprintf(stderr, "bad speed value '%i'\n", val);
+		fprintf(stderr, "bad speed value '%u'\n", val);
 		return -EINVAL;
 	}
 
