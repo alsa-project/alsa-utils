@@ -188,22 +188,19 @@ static void my_exit(struct context *context, int exitcode)
 
 static void do_initial_open(struct context *context)
 {
-	const char **list;
-	int err;
+	int card, err;
+	char name[16];
 
 	if (!context->no_open && context->card == NULL) {
-		err = snd_use_case_card_list(&list);
+		card = -1;
+		err = snd_card_next(&card);
 		if (err < 0) {
-			fprintf(stderr, "%s: unable to obtain card list: %s\n",
+			fprintf(stderr, "%s: no sound card found: %s\n",
 					context->command, snd_strerror(err));
 			my_exit(context, EXIT_FAILURE);
 		}
-		if (err == 0) {
-			printf("No card found\n");
-			my_exit(context, EXIT_SUCCESS);
-		}
-		context->card = strdup(list[0]);
-		snd_use_case_free_list(list, err);
+		snprintf(name, sizeof(name), "hw:%d", card);
+		context->card = strdup(name);
 	}
 
 	/* open library */
