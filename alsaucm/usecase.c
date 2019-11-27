@@ -38,23 +38,11 @@
 #include <getopt.h>
 #include <alsa/asoundlib.h>
 #include <alsa/use-case.h>
+#include "usecase.h"
 #include "aconfig.h"
 #include "version.h"
 
 #define MAX_BUF 256
-
-struct context {
-	snd_use_case_mgr_t *uc_mgr;
-	const char *command;
-	char *card;
-	char **argv;
-	int argc;
-	int arga;
-	char *batch;
-	unsigned int interactive:1;
-	unsigned int no_open:1;
-	unsigned int do_exit:1;
-};
 
 enum uc_cmd {
 	/* management */
@@ -63,6 +51,7 @@ enum uc_cmd {
 	OM_RESET,
 	OM_RELOAD,
 	OM_LISTCARDS,
+	OM_DUMP,
 	OM_LIST2,
 	OM_LIST1,
 
@@ -88,11 +77,13 @@ static struct cmd cmds[] = {
 	{ OM_RESET, 0, 1, "reset" },
 	{ OM_RELOAD, 0, 1, "reload" },
 	{ OM_LISTCARDS, 0, 0, "listcards" },
+	{ OM_DUMP, 1, 1, "dump" },
 	{ OM_LIST1, 1, 1, "list1" },
 	{ OM_LIST2, 1, 1, "list" },
 	{ OM_SET, 2, 1, "set" },
 	{ OM_GET, 1, 1, "get" },
 	{ OM_GETI, 1, 1, "geti" },
+	{ OM_DUMP, 1, 1, "dump" },
 	{ OM_HELP, 0, 0, "help" },
 	{ OM_QUIT, 0, 0, "quit" },
 	{ OM_HELP, 0, 0, "h" },
@@ -117,6 +108,7 @@ static void dump_help(struct context *context)
 "  reset                      reset sound card to default state\n"
 "  reload                     reload configuration\n"
 "  listcards                  list available cards\n"
+"  dump FORMAT                dump all config information (format: text)\n"
 "  list IDENTIFIER            list command, for items with value + comment\n"
 "  list1 IDENTIFIER           list command, for items without comments\n"
 "  get IDENTIFIER             get string value\n"
@@ -185,7 +177,6 @@ static void my_exit(struct context *context, int exitcode)
 	snd_config_update_free_global();
 	exit(exitcode);
 }
-
 static void do_initial_open(struct context *context)
 {
 	int card, err;
@@ -287,6 +278,9 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 				printf("    %s\n", list[i*2+1]);
 		}
 		snd_use_case_free_list(list, err);
+		break;
+	case OM_DUMP:
+		dump(context, argv[0]);
 		break;
 	case OM_LIST1:
 	case OM_LIST2:

@@ -5,7 +5,7 @@ if USE_RST2MAN
 man_MANS = alsaucm.1
 endif
 
-alsaucm_SOURCES = usecase.c
+alsaucm_SOURCES = usecase.c dump.c
 
 AM_CPPFLAGS = \
          -Wall -I$(top_srcdir)/include
