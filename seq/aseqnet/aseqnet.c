@@ -37,7 +37,7 @@ static void usage(void);
 static void init_buf(void);
 static void init_pollfds(void);
 static void close_files(void);
-static void init_seq(char *source, char *dest);
+static void init_seq(char *source, char *dest, char *name);
 static int get_port(char *service);
 static void sigterm_exit(int sig);
 static void init_server(int port);
@@ -87,6 +87,7 @@ static const struct option long_option[] = {
 	{"port", 1, NULL, 'p'},
 	{"source", 1, NULL, 's'},
 	{"dest", 1, NULL, 'd'},
+	{"name", 1, NULL, 'n'},
 	{"help", 0, NULL, 'h'},
 	{"verbose", 0, NULL, 'v'},
 	{"info", 0, NULL, 'i'},
@@ -98,13 +99,14 @@ int main(int argc, char **argv)
 	int c;
 	int port = DEFAULT_PORT;
 	char *source = NULL, *dest = NULL;
+	char *name = NULL;
 
 #ifdef ENABLE_NLS
 	setlocale(LC_ALL, "");
 	textdomain(PACKAGE);
 #endif
 
-	while ((c = getopt_long(argc, argv, "p:s:d:vi", long_option, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "p:s:d:n:,vi", long_option, NULL)) != -1) {
 		switch (c) {
 		case 'p':
 			if (isdigit(*optarg))
@@ -117,6 +119,9 @@ int main(int argc, char **argv)
 			break;
 		case 'd':
 			dest = optarg;
+			break;
+		case 'n':
+			name = optarg;
 			break;
 		case 'v':
 			verbose++;
@@ -134,7 +139,7 @@ int main(int argc, char **argv)
 	signal(SIGTERM, sigterm_exit);
 
 	init_buf();
-	init_seq(source, dest);
+	init_seq(source, dest, name);
 
 	if (optind >= argc) {
 		server_mode = 1;
@@ -170,6 +175,7 @@ static void usage(void)
 	printf(_("  -p,--port # : specify TCP port (digit or service name)\n"));
 	printf(_("  -s,--source addr : read from given addr (client:port)\n"));
 	printf(_("  -d,--dest addr : write to given addr (client:port)\n"));
+	printf(_("  -n,--name value : use a specific midi process name\n"));
 	printf(_("  -v, --verbose : print verbose messages\n"));
 	printf(_("  -i, --info : print certain received events\n"));
 }
@@ -223,7 +229,7 @@ static void close_files(void)
 /*
  * initialize sequencer
  */
-static void init_seq(char *source, char *dest)
+static void init_seq(char *source, char *dest, char* name)
 {
 	snd_seq_addr_t addr;
 	int err, counti, counto;
@@ -252,10 +258,14 @@ static void init_seq(char *source, char *dest)
 	snd_seq_nonblock(handle, 1);
 
 	/* set client info */
-	if (server_mode)
-		snd_seq_set_client_name(handle, "Net Server");
-	else
-		snd_seq_set_client_name(handle, "Net Client");
+	if (name)
+		snd_seq_set_client_name(handle, name);
+	else {
+		if (server_mode)
+			snd_seq_set_client_name(handle, "Net Server");
+		else
+			snd_seq_set_client_name(handle, "Net Client");
+	}
 
 	/* create a port */
 	seq_port = snd_seq_create_simple_port(handle, "Network",
