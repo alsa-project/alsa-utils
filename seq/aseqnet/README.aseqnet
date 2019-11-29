@@ -50,4 +50,6 @@ The available options are:
   -s addr : explicit read-subscription to the given address
             (client:addr).
   -d addr : explicit write-subscription to the given address.
+  -n name : specify the midi name of the process.
+            Default value is either 'Net Client' or 'Net Server'.
   -v      : verbose mode.
