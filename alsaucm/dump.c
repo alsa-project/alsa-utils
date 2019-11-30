@@ -73,9 +73,9 @@ static char *tesc(const char *s, char *buf, size_t buf_len)
 		buf_len--;
 	}
 	while (*s && buf_len > 2) {
-		if (*s == '\"') {
+		if (*s == '"') {
 			if (buf_len > 3) {
-				*dst++ = '"';
+				*dst++ = '\\';
 				*dst++ = *s++;
 				buf_len -= 2;
 				continue;
@@ -240,9 +240,9 @@ static char *jesc(const char *s, char *buf, size_t buf_len)
 	*dst++ = c;
 	buf_len--;
 	while (*s && buf_len > 2) {
-		if (*s == '\"') {
+		if (*s == '"') {
 			if (buf_len > 3) {
-				*dst++ = '"';
+				*dst++ = '\\';
 				*dst++ = *s++;
 				buf_len -= 2;
 				continue;
