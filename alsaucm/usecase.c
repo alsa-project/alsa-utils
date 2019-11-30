@@ -108,7 +108,7 @@ static void dump_help(struct context *context)
 "  reset                      reset sound card to default state\n"
 "  reload                     reload configuration\n"
 "  listcards                  list available cards\n"
-"  dump FORMAT                dump all config information (format: text)\n"
+"  dump FORMAT                dump all config information (format: text,json)\n"
 "  list IDENTIFIER            list command, for items with value + comment\n"
 "  list1 IDENTIFIER           list command, for items without comments\n"
 "  get IDENTIFIER             get string value\n"
