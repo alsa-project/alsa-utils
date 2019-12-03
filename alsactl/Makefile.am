@@ -7,6 +7,8 @@ man_MANS += alsactl_init.7
 endif
 EXTRA_DIST=alsactl.1 alsactl_init.xml
 
+AM_CFLAGS = -D_GNU_SOURCE
+
 alsactl_SOURCES=alsactl.c state.c lock.c utils.c init_parse.c daemon.c \
                 monitor.c
 
