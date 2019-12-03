@@ -70,6 +70,11 @@ AM_CONDITIONAL(HAVE_TOPOLOGY, test "$have_topology" = "yes")
 AM_CONDITIONAL(HAVE_SAMPLERATE, test "$have_samplerate" = "yes")
 AM_CONDITIONAL(HAVE_FFADO, test "$have_ffado" = "yes")
 
+# old libasound with the topology routines in the main library
+if test "x$have_topology" = "xyes" -a "x$ALSA_TOPOLOGY_LIBS" = "x"; then
+  ALSA_TOPOLOGY_LIBS="$ALSA_LIBS"
+fi
+
 dnl Use tinyalsa
 alsabat_backend_tiny=
 AC_ARG_ENABLE(alsabat_backend_tiny,
