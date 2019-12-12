@@ -43,23 +43,154 @@ _("Usage: %s [OPTIONS]...\n"
 "\n"
 "-h, --help              help\n"
 "-c, --compile=FILE      compile file\n"
+"-n, --normalize=FILE    normalize file\n"
 "-v, --verbose=LEVEL     set verbosity level (0...1)\n"
 "-o, --output=FILE       set output file\n"
 ), name);
 }
 
-int main(int argc, char *argv[])
+static int _compar(const void *a, const void *b)
+{
+	const snd_config_t *c1 = *(snd_config_t **)a;
+	const snd_config_t *c2 = *(snd_config_t **)b;
+	const char *id1, *id2;
+	if (snd_config_get_id(c1, &id1)) return 0;
+	if (snd_config_get_id(c2, &id2)) return 0;
+	return strcmp(id1, id2);
+}
+
+static snd_config_t *normalize_config(const char *id, snd_config_t *src)
+{
+	snd_config_t *dst, **a;
+	snd_config_iterator_t i, next;
+	int index, count;
+
+	if (snd_config_get_type(src) != SND_CONFIG_TYPE_COMPOUND) {
+		if (snd_config_copy(&dst, src) >= 0)
+			return dst;
+		return NULL;
+	}
+	if (snd_config_make_compound(&dst, id, 0))
+		return NULL;
+	count = 0;
+	snd_config_for_each(i, next, src)
+		count++;
+	a = malloc(sizeof(dst) * count);
+	if (a == NULL)
+		return NULL;
+	index = 0;
+	snd_config_for_each(i, next, src) {
+		snd_config_t *s = snd_config_iterator_entry(i);
+		a[index++] = s;
+	}
+	qsort(a, count, sizeof(a[0]), _compar);
+	for (index = 0; index < count; index++) {
+		snd_config_t *s = a[index];
+		const char *id2;
+		if (snd_config_get_id(s, &id2)) {
+			snd_config_delete(dst);
+			return NULL;
+		}
+		s = normalize_config(id2, s);
+		if (s == NULL || snd_config_add(dst, s)) {
+			snd_config_delete(dst);
+			return NULL;
+		}
+	}
+	return dst;
+}
+
+static int compile(const char *source_file, const char *output_file, int verbose)
 {
 	snd_tplg_t *snd_tplg;
-	static const char short_options[] = "hc:v:o:";
+	int err;
+
+	snd_tplg = snd_tplg_new();
+	if (snd_tplg == NULL) {
+		fprintf(stderr, _("failed to create new topology context\n"));
+		return 1;
+	}
+
+	snd_tplg_verbose(snd_tplg, verbose);
+
+	err = snd_tplg_build_file(snd_tplg, source_file, output_file);
+	if (err < 0) {
+		fprintf(stderr, _("failed to compile context %s\n"), source_file);
+		snd_tplg_free(snd_tplg);
+		unlink(output_file);
+		return 1;
+	}
+
+	snd_tplg_free(snd_tplg);
+	return 1;
+}
+
+static int normalize(const char *source_file, const char *output_file)
+{
+	snd_input_t *input;
+	snd_output_t *output;
+	snd_config_t *top, *norm;
+	int err;
+
+	err = snd_input_stdio_open(&input, source_file, "r");
+	if (err < 0) {
+		fprintf(stderr, "Unable to open source file '%s': %s\n", source_file, snd_strerror(-err));
+		return 0;
+	}
+
+	err = snd_config_top(&top);
+	if (err < 0) {
+		snd_input_close(input);
+		return 1;
+	}
+
+	err = snd_config_load(top, input);
+	snd_input_close(input);
+	if (err < 0) {
+	snd_config_delete(top);
+		fprintf(stderr, "Unable to parse source file '%s': %s\n", source_file, snd_strerror(-err));
+		snd_config_delete(top);
+		return 1;
+	}
+
+	err = snd_output_stdio_open(&output, output_file, "w+");
+	if (err < 0) {
+		fprintf(stderr, "Unable to open output file '%s': %s\n", output_file, snd_strerror(-err));
+		snd_config_delete(top);
+		return 1;
+	}
+
+	norm = normalize_config(NULL, top);
+	if (norm == NULL) {
+		fprintf(stderr, "Unable to normalize configuration (out of memory?)\n");
+		snd_output_close(output);
+		snd_config_delete(top);
+		return 1;
+	}
+
+	err = snd_config_save(norm, output);
+	snd_output_close(output);
+	snd_config_delete(top);
+	if (err < 0) {
+		fprintf(stderr, "Unable to save normalized contents: %s\n", snd_strerror(-err));
+		return 1;
+	}
+
+	return 0;
+}
+
+int main(int argc, char *argv[])
+{
+	static const char short_options[] = "hc:n:v:o:";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"verbose", 1, NULL, 'v'},
 		{"compile", 1, NULL, 'c'},
+		{"normalize", 1, NULL, 'n'},
 		{"output", 1, NULL, 'o'},
 		{0, 0, 0, 0},
 	};
-	char *source_file = NULL, *output_file = NULL;
+	char *source_file = NULL, *normalize_file = NULL, *output_file = NULL;
 	int c, err, verbose = 0, option_index;
 
 #ifdef ENABLE_NLS
@@ -81,6 +212,9 @@ int main(int argc, char *argv[])
 		case 'c':
 			source_file = optarg;
 			break;
+		case 'n':
+			normalize_file = optarg;
+			break;
 		case 'o':
 			output_file = optarg;
 			break;
@@ -90,28 +224,19 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (source_file == NULL || output_file == NULL) {
+	if (source_file && normalize_file) {
+		fprintf(stderr, "Cannot normalize and compile at a time!\n");
+		return 1;
+	}
+
+	if ((source_file == NULL && normalize_file == NULL) || output_file == NULL) {
 		usage(argv[0]);
 		return 1;
 	}
 
-	snd_tplg = snd_tplg_new();
-	if (snd_tplg == NULL) {
-		fprintf(stderr, _("failed to create new topology context\n"));
-		return 1;
-	}
-
-	snd_tplg_verbose(snd_tplg, verbose);
-
-	err = snd_tplg_build_file(snd_tplg, source_file, output_file);
-	if (err < 0) {
-		fprintf(stderr, _("failed to compile context %s\n"), source_file);
-		snd_tplg_free(snd_tplg);
-		unlink(output_file);
-		return 1;
-	}
-
-	snd_tplg_free(snd_tplg);
+	if (source_file)
+		err = compile(source_file, output_file, verbose);
+	else
+		err = normalize(normalize_file, output_file);
 	return 0;
 }
-
