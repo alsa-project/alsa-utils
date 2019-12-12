@@ -46,6 +46,7 @@ _("Usage: %s [OPTIONS]...\n"
 "-n, --normalize=FILE    normalize file\n"
 "-v, --verbose=LEVEL     set verbosity level (0...1)\n"
 "-o, --output=FILE       set output file\n"
+"-s, --sort              sort the identifiers in the normalized output\n"
 ), name);
 }
 
@@ -59,7 +60,7 @@ static int _compar(const void *a, const void *b)
 	return strcmp(id1, id2);
 }
 
-static snd_config_t *normalize_config(const char *id, snd_config_t *src)
+static snd_config_t *normalize_config(const char *id, snd_config_t *src, int sort)
 {
 	snd_config_t *dst, **a;
 	snd_config_iterator_t i, next;
@@ -70,8 +71,6 @@ static snd_config_t *normalize_config(const char *id, snd_config_t *src)
 			return dst;
 		return NULL;
 	}
-	if (snd_config_make_compound(&dst, id, 0))
-		return NULL;
 	count = 0;
 	snd_config_for_each(i, next, src)
 		count++;
@@ -83,20 +82,28 @@ static snd_config_t *normalize_config(const char *id, snd_config_t *src)
 		snd_config_t *s = snd_config_iterator_entry(i);
 		a[index++] = s;
 	}
-	qsort(a, count, sizeof(a[0]), _compar);
+	if (sort)
+		qsort(a, count, sizeof(a[0]), _compar);
+	if (snd_config_make_compound(&dst, id, count == 1)) {
+		free(a);
+		return NULL;
+	}
 	for (index = 0; index < count; index++) {
 		snd_config_t *s = a[index];
 		const char *id2;
 		if (snd_config_get_id(s, &id2)) {
 			snd_config_delete(dst);
+			free(a);
 			return NULL;
 		}
-		s = normalize_config(id2, s);
+		s = normalize_config(id2, s, sort);
 		if (s == NULL || snd_config_add(dst, s)) {
 			snd_config_delete(dst);
+			free(a);
 			return NULL;
 		}
 	}
+	free(a);
 	return dst;
 }
 
@@ -125,7 +132,7 @@ static int compile(const char *source_file, const char *output_file, int verbose
 	return 1;
 }
 
-static int normalize(const char *source_file, const char *output_file)
+static int normalize(const char *source_file, const char *output_file, int sort)
 {
 	snd_input_t *input;
 	snd_output_t *output;
@@ -160,7 +167,7 @@ static int normalize(const char *source_file, const char *output_file)
 		return 1;
 	}
 
-	norm = normalize_config(NULL, top);
+	norm = normalize_config(NULL, top, sort);
 	if (norm == NULL) {
 		fprintf(stderr, "Unable to normalize configuration (out of memory?)\n");
 		snd_output_close(output);
@@ -170,6 +177,7 @@ static int normalize(const char *source_file, const char *output_file)
 
 	err = snd_config_save(norm, output);
 	snd_output_close(output);
+	snd_config_delete(norm);
 	snd_config_delete(top);
 	if (err < 0) {
 		fprintf(stderr, "Unable to save normalized contents: %s\n", snd_strerror(-err));
@@ -181,17 +189,18 @@ static int normalize(const char *source_file, const char *output_file)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hc:n:v:o:";
+	static const char short_options[] = "hc:n:v:o:s";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"verbose", 1, NULL, 'v'},
 		{"compile", 1, NULL, 'c'},
 		{"normalize", 1, NULL, 'n'},
 		{"output", 1, NULL, 'o'},
+		{"sort", 0, NULL, 's'},
 		{0, 0, 0, 0},
 	};
 	char *source_file = NULL, *normalize_file = NULL, *output_file = NULL;
-	int c, err, verbose = 0, option_index;
+	int c, err, verbose = 0, sort = 0, option_index;
 
 #ifdef ENABLE_NLS
 	setlocale(LC_ALL, "");
@@ -218,6 +227,9 @@ int main(int argc, char *argv[])
 		case 'o':
 			output_file = optarg;
 			break;
+		case 's':
+			sort = 1;
+			break;
 		default:
 			fprintf(stderr, _("Try `%s --help' for more information.\n"), argv[0]);
 			return 1;
@@ -237,6 +249,8 @@ int main(int argc, char *argv[])
 	if (source_file)
 		err = compile(source_file, output_file, verbose);
 	else
-		err = normalize(normalize_file, output_file);
+		err = normalize(normalize_file, output_file, sort);
+
+	snd_output_close(log);
 	return 0;
 }
