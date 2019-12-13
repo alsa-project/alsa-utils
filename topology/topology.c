@@ -98,6 +98,8 @@ static snd_config_t *normalize_config(const char *id, snd_config_t *src, int sor
 		}
 		s = normalize_config(id2, s, sort);
 		if (s == NULL || snd_config_add(dst, s)) {
+			if (s)
+				snd_config_delete(s);
 			snd_config_delete(dst);
 			free(a);
 			return NULL;
