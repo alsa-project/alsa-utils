@@ -1,4 +1,5 @@
 /*
+  Copyright(c) 2019 Red Hat Inc.
   Copyright(c) 2014-2015 Intel Corporation
   Copyright(c) 2010-2011 Texas Instruments Incorporated,
   All rights reserved.
@@ -44,165 +45,205 @@ _("Usage: %s [OPTIONS]...\n"
 "-h, --help              help\n"
 "-c, --compile=FILE      compile file\n"
 "-n, --normalize=FILE    normalize file\n"
+"-u, --dump=FILE         dump (reparse) file\n"
 "-v, --verbose=LEVEL     set verbosity level (0...1)\n"
 "-o, --output=FILE       set output file\n"
 "-s, --sort              sort the identifiers in the normalized output\n"
+"-g, --group             save configuration by group indexes\n"
+"-x, --nocheck           save configuration without additional integrity checks\n"
 ), name);
 }
 
-static int _compar(const void *a, const void *b)
+static int load(snd_tplg_t **tplg, const char *source_file, int cflags)
 {
-	const snd_config_t *c1 = *(snd_config_t **)a;
-	const snd_config_t *c2 = *(snd_config_t **)b;
-	const char *id1, *id2;
-	if (snd_config_get_id(c1, &id1)) return 0;
-	if (snd_config_get_id(c2, &id2)) return 0;
-	return strcmp(id1, id2);
-}
+	int fd, err;
+	char *buf, *buf2;
+	size_t size, pos;
+	ssize_t r;
 
-static snd_config_t *normalize_config(const char *id, snd_config_t *src, int sort)
-{
-	snd_config_t *dst, **a;
-	snd_config_iterator_t i, next;
-	int index, count;
-
-	if (snd_config_get_type(src) != SND_CONFIG_TYPE_COMPOUND) {
-		if (snd_config_copy(&dst, src) >= 0)
-			return dst;
-		return NULL;
-	}
-	count = 0;
-	snd_config_for_each(i, next, src)
-		count++;
-	a = malloc(sizeof(dst) * count);
-	if (a == NULL)
-		return NULL;
-	index = 0;
-	snd_config_for_each(i, next, src) {
-		snd_config_t *s = snd_config_iterator_entry(i);
-		a[index++] = s;
-	}
-	if (sort)
-		qsort(a, count, sizeof(a[0]), _compar);
-	if (snd_config_make_compound(&dst, id, count == 1)) {
-		free(a);
-		return NULL;
-	}
-	for (index = 0; index < count; index++) {
-		snd_config_t *s = a[index];
-		const char *id2;
-		if (snd_config_get_id(s, &id2)) {
-			snd_config_delete(dst);
-			free(a);
-			return NULL;
-		}
-		s = normalize_config(id2, s, sort);
-		if (s == NULL || snd_config_add(dst, s)) {
-			if (s)
-				snd_config_delete(s);
-			snd_config_delete(dst);
-			free(a);
-			return NULL;
+	if (strcmp(source_file, "-") == 0) {
+		fd = fileno(stdin);
+	} else {
+		fd = open(source_file, O_RDONLY);
+		if (fd < 0) {
+			fprintf(stderr, _("Unable to open input file '%s': %s\n"),
+				source_file, strerror(-errno));
+			return 1;
 		}
 	}
-	free(a);
-	return dst;
-}
 
-static int compile(const char *source_file, const char *output_file, int verbose)
-{
-	snd_tplg_t *snd_tplg;
-	int err;
+	size = 16*1024;
+	pos = 0;
+	buf = malloc(size);
+	if (buf == NULL)
+		goto _nomem;
+	while (1) {
+		r = read(fd, buf + pos, size - pos);
+		if (r < 0 && (errno == EAGAIN || errno == EINTR))
+			continue;
+		if (r <= 0)
+			break;
+		pos += r;
+		size += 8*1024;
+		buf2 = realloc(buf, size);
+		if (buf2 == NULL) {
+			free(buf);
+			goto _nomem;
+		}
+		buf = buf2;
+	}
+	if (fd != fileno(stdin))
+		close(fd);
+	if (r < 0) {
+		fprintf(stderr, _("Read error: %s\n"), strerror(-errno));
+		free(buf);
+		goto _err;
+	}
 
-	snd_tplg = snd_tplg_new();
-	if (snd_tplg == NULL) {
+	*tplg = snd_tplg_create(cflags);
+	if (*tplg == NULL) {
 		fprintf(stderr, _("failed to create new topology context\n"));
+		free(buf);
 		return 1;
 	}
 
-	snd_tplg_verbose(snd_tplg, verbose);
-
-	err = snd_tplg_build_file(snd_tplg, source_file, output_file);
+	err = snd_tplg_load(*tplg, buf, pos);
+	free(buf);
 	if (err < 0) {
-		fprintf(stderr, _("failed to compile context %s\n"), source_file);
-		snd_tplg_free(snd_tplg);
-		unlink(output_file);
+		fprintf(stderr, _("Unable to load configuration: %s\n"),
+			snd_strerror(-err));
+		snd_tplg_free(*tplg);
 		return 1;
 	}
 
-	snd_tplg_free(snd_tplg);
+	return 0;
+
+_nomem:
+	fprintf(stderr, _("No enough memory\n"));
+_err:
+	if (fd != fileno(stdin))
+		close(fd);
+	free(buf);
 	return 1;
 }
 
-static int normalize(const char *source_file, const char *output_file, int sort)
+static int save(const char *output_file, void *buf, size_t size)
 {
-	snd_input_t *input;
-	snd_output_t *output;
-	snd_config_t *top, *norm;
-	int err;
+	char *fname = NULL;
+	int fd;
+	ssize_t r;
 
-	err = snd_input_stdio_open(&input, source_file, "r");
-	if (err < 0) {
-		fprintf(stderr, "Unable to open source file '%s': %s\n", source_file, snd_strerror(-err));
-		return 0;
+	if (strcmp(output_file, "-") == 0) {
+		fd = fileno(stdout);
+	} else {
+		fname = alloca(strlen(output_file) + 5);
+		strcpy(fname, output_file);
+		strcat(fname, ".new");
+		fd = open(fname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+		if (fd < 0) {
+			fprintf(stderr, _("Unable to open output file '%s': %s\n"),
+				fname, strerror(-errno));
+			return 1;
+		}
 	}
 
-	err = snd_config_top(&top);
-	if (err < 0) {
-		snd_input_close(input);
+	r = 0;
+	while (size > 0) {
+		r = write(fd, buf, size);
+		if (r < 0 && (errno == EAGAIN || errno == EINTR))
+			continue;
+		if (r < 0)
+			break;
+		size -= r;
+		buf += r;
+	}
+
+	if (r < 0) {
+		fprintf(stderr, _("Write error: %s\n"), strerror(-errno));
+		if (fd != fileno(stdout)) {
+			remove(fname);
+			close(fd);
+		}
 		return 1;
 	}
 
-	err = snd_config_load(top, input);
-	snd_input_close(input);
-	if (err < 0) {
-	snd_config_delete(top);
-		fprintf(stderr, "Unable to parse source file '%s': %s\n", source_file, snd_strerror(-err));
-		snd_config_delete(top);
-		return 1;
-	}
+	if (fd != fileno(stdout))
+		close(fd);
 
-	err = snd_output_stdio_open(&output, output_file, "w+");
-	if (err < 0) {
-		fprintf(stderr, "Unable to open output file '%s': %s\n", output_file, snd_strerror(-err));
-		snd_config_delete(top);
-		return 1;
-	}
-
-	norm = normalize_config(NULL, top, sort);
-	if (norm == NULL) {
-		fprintf(stderr, "Unable to normalize configuration (out of memory?)\n");
-		snd_output_close(output);
-		snd_config_delete(top);
-		return 1;
-	}
-
-	err = snd_config_save(norm, output);
-	snd_output_close(output);
-	snd_config_delete(norm);
-	snd_config_delete(top);
-	if (err < 0) {
-		fprintf(stderr, "Unable to save normalized contents: %s\n", snd_strerror(-err));
+	if (fname && rename(fname, output_file)) {
+		fprintf(stderr, _("Unable to rename file '%s' to '%s': %s\n"),
+			fname, output_file, strerror(-errno));
 		return 1;
 	}
 
 	return 0;
 }
 
+static int dump(const char *source_file, const char *output_file, int cflags, int sflags)
+{
+	snd_tplg_t *tplg;
+	char *text;
+	int err;
+
+	err = load(&tplg, source_file, cflags);
+	if (err)
+		return err;
+	err = snd_tplg_save(tplg, &text, sflags);
+	snd_tplg_free(tplg);
+	if (err < 0) {
+		fprintf(stderr, _("Unable to save parsed configuration: %s\n"),
+			snd_strerror(-err));
+		return 1;
+	}
+	err = save(output_file, text, strlen(text));
+	free(text);
+	return err;
+}
+
+static int compile(const char *source_file, const char *output_file, int cflags)
+{
+	snd_tplg_t *tplg;
+	void *bin;
+	size_t size;
+	int err;
+
+	err = load(&tplg, source_file, cflags);
+	if (err)
+		return err;
+	err = snd_tplg_build_bin(tplg, &bin, &size);
+	snd_tplg_free(tplg);
+	if (err < 0 || size == 0) {
+		fprintf(stderr, _("failed to compile context %s\n"), source_file);
+		return 1;
+	}
+	err = save(output_file, bin, size);
+	free(bin);
+	return err;
+}
+
+#define OP_COMPILE	1
+#define OP_NORMALIZE	2
+#define OP_DUMP		3
+
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hc:n:v:o:s";
+	static const char short_options[] = "hc:n:u:v:o:sgxz";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"verbose", 1, NULL, 'v'},
 		{"compile", 1, NULL, 'c'},
 		{"normalize", 1, NULL, 'n'},
+		{"dump", 1, NULL, 'u'},
 		{"output", 1, NULL, 'o'},
 		{"sort", 0, NULL, 's'},
+		{"group", 0, NULL, 'g'},
+		{"nocheck", 0, NULL, 'x'},
+		{"dapm-nosort", 0, NULL, 'z'},
 		{0, 0, 0, 0},
 	};
-	char *source_file = NULL, *normalize_file = NULL, *output_file = NULL;
-	int c, err, verbose = 0, sort = 0, option_index;
+	char *source_file = NULL;
+	char *output_file = NULL;
+	int c, err, op = 'c', cflags = 0, sflags = 0, option_index;
 
 #ifdef ENABLE_NLS
 	setlocale(LC_ALL, "");
@@ -218,19 +259,32 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			return 0;
 		case 'v':
-			verbose = atoi(optarg);
+			cflags |= SND_TPLG_CREATE_VERBOSE;
+			break;
+		case 'z':
+			cflags |= SND_TPLG_CREATE_DAPM_NOSORT;
 			break;
 		case 'c':
-			source_file = optarg;
-			break;
 		case 'n':
-			normalize_file = optarg;
+		case 'u':
+			if (source_file) {
+				fprintf(stderr, _("Cannot combine operations (compile, normalize, dump)\n"));
+				return 1;
+			}
+			source_file = optarg;
+			op = c;
 			break;
 		case 'o':
 			output_file = optarg;
 			break;
 		case 's':
-			sort = 1;
+			sflags |= SND_TPLG_SAVE_SORT;
+			break;
+		case 'g':
+			sflags |= SND_TPLG_SAVE_GROUPS;
+			break;
+		case 'x':
+			sflags |= SND_TPLG_SAVE_NOCHECK;
 			break;
 		default:
 			fprintf(stderr, _("Try `%s --help' for more information.\n"), argv[0]);
@@ -238,21 +292,29 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (source_file && normalize_file) {
-		fprintf(stderr, "Cannot normalize and compile at a time!\n");
-		return 1;
-	}
-
-	if ((source_file == NULL && normalize_file == NULL) || output_file == NULL) {
+	if (source_file == NULL || output_file == NULL) {
 		usage(argv[0]);
 		return 1;
 	}
 
-	if (source_file)
-		err = compile(source_file, output_file, verbose);
-	else
-		err = normalize(normalize_file, output_file, sort);
+	if (op == 'n') {
+		if (sflags != 0 && sflags != SND_TPLG_SAVE_SORT) {
+			fprintf(stderr, _("Wrong parameters for the normalize operation!\n"));
+			return 1;
+		}
+		/* normalize has predefined output */
+		sflags = SND_TPLG_SAVE_SORT;
+	}
+
+	switch (op) {
+	case 'c':
+		err = compile(source_file, output_file, cflags);
+		break;
+	default:
+		err = dump(source_file, output_file, cflags, sflags);
+		break;
+	}
 
 	snd_output_close(log);
-	return 0;
+	return err ? 1 : 0;
 }
