@@ -34,10 +34,11 @@
 #include <alsa/asoundlib.h>
 #include <alsa/topology.h>
 #include "gettext.h"
+#include "version.h"
 
 static snd_output_t *log;
 
-static void usage(char *name)
+static void usage(const char *name)
 {
 	printf(
 _("Usage: %s [OPTIONS]...\n"
@@ -51,7 +52,18 @@ _("Usage: %s [OPTIONS]...\n"
 "-s, --sort              sort the identifiers in the normalized output\n"
 "-g, --group             save configuration by group indexes\n"
 "-x, --nocheck           save configuration without additional integrity checks\n"
+"-V, --version           print version\n"
 ), name);
+}
+
+static void version(const char *name)
+{
+	printf(
+_("%s version %s\n"
+"libasound version %s\n"
+"libatopology version %s\n"
+), name, SND_UTIL_VERSION_STR,
+   snd_asoundlib_version(), snd_tplg_version());
 }
 
 static int load(snd_tplg_t **tplg, const char *source_file, int cflags)
@@ -227,7 +239,7 @@ static int compile(const char *source_file, const char *output_file, int cflags)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hc:n:u:v:o:sgxz";
+	static const char short_options[] = "hc:n:u:v:o:sgxzV";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"verbose", 1, NULL, 'v'},
@@ -239,6 +251,7 @@ int main(int argc, char *argv[])
 		{"group", 0, NULL, 'g'},
 		{"nocheck", 0, NULL, 'x'},
 		{"dapm-nosort", 0, NULL, 'z'},
+		{"version", 0, NULL, 'V'},
 		{0, 0, 0, 0},
 	};
 	char *source_file = NULL;
@@ -286,6 +299,9 @@ int main(int argc, char *argv[])
 		case 'x':
 			sflags |= SND_TPLG_SAVE_NOCHECK;
 			break;
+		case 'V':
+			version(argv[0]);
+			return 0;
 		default:
 			fprintf(stderr, _("Try `%s --help' for more information.\n"), argv[0]);
 			return 1;

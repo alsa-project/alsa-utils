@@ -47,6 +47,9 @@ Available options:
   **-h**, **--help**
     this help
 
+  **-V**, **--version**
+    show the utility version and versions of used libraries
+
   **-c**, **--compile** `FILE`
     source configuration file for the compilation
 
