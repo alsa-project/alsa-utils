@@ -769,6 +769,41 @@ if [ -z "$WITHALL" ]; then
 	withall
 fi
 
+# Check if wget is installed, and supports --post-file.
+if ! wget --help 2>/dev/null | grep -q post-file; then
+	# We couldn't find a suitable wget. If --upload was passed, tell the user to upload manually.
+	if [ "$UPLOAD" != "yes" ]; then
+		:
+	elif [ -n "$DIALOG" ]; then
+		if [ -z "$PASTEBIN" ]; then
+			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to http://www.alsa-project.org.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to http://www.alsa-project.org/cardinfo-db/ and submit your post." 25 100
+		else
+			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to http://www.pastebin.ca.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to http://www.pastebin.ca/upload.php and submit your post." 25 100
+		fi
+	else
+		if [ -z "$PASTEBIN" ]; then
+			echo ""
+			echo "Could not automatically upload output to http://www.alsa-project.org"
+			echo "Possible reasons are:"
+			echo "    1. Couldn't find 'wget' in your PATH"
+			echo "    2. Your version of wget is less than 1.8.2"
+			echo ""
+			echo "Please manually upload $NFILE to http://www.alsa-project.org/cardinfo-db/ and submit your post."
+			echo ""
+		else
+			echo ""
+			echo "Could not automatically upload output to http://www.pastebin.ca"
+			echo "Possible reasons are:"
+			echo "    1. Couldn't find 'wget' in your PATH"
+			echo "    2. Your version of wget is less than 1.8.2"
+			echo ""
+			echo "Please manually upload $NFILE to http://www.pastebin.ca/upload.php and submit your post."
+			echo ""
+		fi
+	fi
+	UPLOAD="no"
+fi
+
 if [ "$UPLOAD" = "ask" ]; then
 	if [ -n "$DIALOG" ]; then
 		dialog --backtitle "$BGTITLE" --title "Information collected" --yes-label " UPLOAD / SHARE " --no-label " SAVE LOCALLY " --defaultno --yesno "\n\nAutomatically upload ALSA information to $WWWSERVICE?" 10 80
@@ -822,10 +857,6 @@ if [ "$UPLOAD" = "no" ]; then
 
 fi # UPLOAD
 
-# Test that wget is installed, and supports --post-file. Upload $FILE if it does, and prompt user to upload file if it does not.
-if [[ -n "${WGET}" ]] && [[ -x "${WGET}" ]] && [[ $(wget --help | grep post-file) ]]
-then
-
 if [[ -n $DIALOG ]]
 then
 	dialog --backtitle "$BGTITLE" --infobox "Uploading information to $WWWSERVICE ..." 6 70
@@ -873,37 +904,3 @@ fi
 echo "Your ALSA information is located at $FINAL_URL"
 echo "Please inform the person helping you."
 echo ""
-
-# We couldnt find a suitable wget, so tell the user to upload manually.
-else
-	mv -f $FILE $NFILE || exit 1
-	KEEP_OUTPUT="yes"
-	if [[ -z $DIALOG ]]
-	then
-		if [[ -z $PASTEBIN ]]; then
-		echo ""
-		echo "Could not automatically upload output to http://www.alsa-project.org"
-		echo "Possible reasons are:"
-		echo "    1. Couldnt find 'wget' in your PATH"
-		echo "    2. Your version of wget is less than 1.8.2"
-		echo ""
-		echo "Please manually upload $NFILE to http://www.alsa-project.org/cardinfo-db/ and submit your post."
-		echo ""
-		else
-		echo ""
-		echo "Could not automatically upload output to http://www.pastebin.ca"
-		echo "Possible reasons are:"
-		echo "    1. Couldnt find 'wget' in your PATH"
-		echo "    2. Your version of wget is less than 1.8.2"
-		echo ""
-		echo "Please manually upload $NFILE to http://www.pastebin.ca/upload.php and submit your post."
-		echo ""
-		fi
-	else
-		if [[ -z $PASTEBIN ]]; then
-			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to http://www.alsa-project.org.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to http://www.alsa-project,org/cardinfo-db/ and submit your post." 25 100
-		else
-			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to http://www.pastebin.ca.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to http://www.pastebin.ca/upload.php and submit your post." 25 100
-		fi
-	fi
-fi
