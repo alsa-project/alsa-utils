@@ -144,12 +144,12 @@ withamixer() {
         echo "!!Amixer output" >> $FILE
         echo "!!-------------" >> $FILE
         echo "" >> $FILE
-	for i in $(grep "]: " /proc/asound/cards | awk -F ' ' '{ print $1 }') ; do
-		CARD_NAME=$(grep "^ *$i " $TEMPDIR/alsacards.tmp | awk '{ print $2 }')
-		echo "!!-------Mixer controls for card $i $CARD_NAME]" >> $FILE
+	for f in /proc/asound/card*/id; do
+		[ -f "$f" ] && read -r CARD_NAME < "$f" || continue
+		echo "!!-------Mixer controls for card $CARD_NAME" >> $FILE
 		echo "" >>$FILE
-		amixer -c$i info >> $FILE 2>&1
-		amixer -c$i >> $FILE 2>&1
+		amixer -c "$CARD_NAME" info >> $FILE 2>&1
+		amixer -c "$CARD_NAME" >> $FILE 2>&1
 		echo "" >> $FILE
 	done
 	echo "" >> $FILE
