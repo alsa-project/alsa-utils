@@ -349,9 +349,7 @@ case "$1" in
 		;;
 	--stdout)
 		DIALOG=""
-		UPLOAD="no"
 		WELCOME="no"
-		TOSTDOUT="yes"
 		;;
 esac
 done
@@ -720,6 +718,7 @@ if [ -n "$1" ]; then
 			fi
 			cat $FILE
 			rm $FILE
+			exit
 			;;
 		--about)
 			echo "Written/Tested by the following users of #alsa on irc.freenode.net:"
@@ -793,10 +792,8 @@ fi
 
 if [ "$UPLOAD" = "no" ]; then
 
-	if [ -z "$TOSTDOUT" ]; then
-		mv -f $FILE $NFILE || exit 1
-		KEEP_OUTPUT="yes"
-	fi
+	mv -f $FILE $NFILE || exit 1
+	KEEP_OUTPUT="yes"
 
 	if [[ -n $DIALOG ]]
 	then
@@ -815,11 +812,9 @@ if [ "$UPLOAD" = "no" ]; then
 			echo "Your ALSA information is in $NFILE"
 			echo ""
 		else
-			if [ -z "$TOSTDOUT" ]; then
-				echo ""
-				echo "Your ALSA information is in $NFILE"
-				echo ""
-			fi
+			echo ""
+			echo "Your ALSA information is in $NFILE"
+			echo ""
 		fi
 	fi
 
