@@ -455,7 +455,9 @@ fi
 cat /proc/asound/modules 2>/dev/null | awk '{ print $2 }' > $TEMPDIR/alsamodules.tmp
 cat /proc/asound/cards > $TEMPDIR/alsacards.tmp
 if [[ ! -z "$LSPCI" ]]; then
-  lspci | grep -i "multi\|audio">$TEMPDIR/lspci.tmp
+	for class in 0401 0402 0403; do
+		lspci -vvnn -d "::$class" | sed -n '/^[^\t]/,+1p'
+	done > $TEMPDIR/lspci.tmp
 fi
 
 #Check for HDA-Intel cards codec#*
@@ -583,12 +585,6 @@ echo "!!PCI Soundcards installed in the system" >> $FILE
 echo "!!--------------------------------------" >> $FILE
 echo "" >> $FILE
 cat $TEMPDIR/lspci.tmp >> $FILE
-echo "" >> $FILE
-echo "" >> $FILE
-echo "!!Advanced information - PCI Vendor/Device/Subsystem ID's" >> $FILE
-echo "!!-------------------------------------------------------" >> $FILE
-echo "" >> $FILE
-lspci -vvn |grep -A1 040[1-3] >> $FILE
 echo "" >> $FILE
 echo "" >> $FILE
 fi
