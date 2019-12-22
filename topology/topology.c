@@ -44,9 +44,10 @@ static void usage(const char *name)
 _("Usage: %s [OPTIONS]...\n"
 "\n"
 "-h, --help              help\n"
-"-c, --compile=FILE      compile file\n"
-"-n, --normalize=FILE    normalize file\n"
-"-u, --dump=FILE         dump (reparse) file\n"
+"-c, --compile=FILE      compile configuration file\n"
+"-d, --decode=FILE       decode binary topology file\n"
+"-n, --normalize=FILE    normalize configuration file\n"
+"-u, --dump=FILE         dump (reparse) configuration file\n"
 "-v, --verbose=LEVEL     set verbosity level (0...1)\n"
 "-o, --output=FILE       set output file\n"
 "-s, --sort              sort the identifiers in the normalized output\n"
@@ -66,10 +67,10 @@ _("%s version %s\n"
    snd_asoundlib_version(), snd_tplg_version());
 }
 
-static int load(snd_tplg_t **tplg, const char *source_file, int cflags)
+static int load(const char *source_file, void **dst, size_t *dst_size)
 {
-	int fd, err;
-	char *buf, *buf2;
+	int fd;
+	void *buf, *buf2;
 	size_t size, pos;
 	ssize_t r;
 
@@ -112,22 +113,8 @@ static int load(snd_tplg_t **tplg, const char *source_file, int cflags)
 		goto _err;
 	}
 
-	*tplg = snd_tplg_create(cflags);
-	if (*tplg == NULL) {
-		fprintf(stderr, _("failed to create new topology context\n"));
-		free(buf);
-		return 1;
-	}
-
-	err = snd_tplg_load(*tplg, buf, pos);
-	free(buf);
-	if (err < 0) {
-		fprintf(stderr, _("Unable to load configuration: %s\n"),
-			snd_strerror(-err));
-		snd_tplg_free(*tplg);
-		return 1;
-	}
-
+	*dst = buf;
+	*dst_size = pos;
 	return 0;
 
 _nomem:
@@ -137,6 +124,28 @@ _err:
 		close(fd);
 	free(buf);
 	return 1;
+}
+
+static int load_topology(snd_tplg_t **tplg, char *config,
+			 size_t config_size, int cflags)
+{
+	int err;
+
+	*tplg = snd_tplg_create(cflags);
+	if (*tplg == NULL) {
+		fprintf(stderr, _("failed to create new topology context\n"));
+		return 1;
+	}
+
+	err = snd_tplg_load(*tplg, config, config_size);
+	if (err < 0) {
+		fprintf(stderr, _("Unable to load configuration: %s\n"),
+			snd_strerror(-err));
+		snd_tplg_free(*tplg);
+		return 1;
+	}
+
+	return 0;
 }
 
 static int save(const char *output_file, void *buf, size_t size)
@@ -194,10 +203,15 @@ static int save(const char *output_file, void *buf, size_t size)
 static int dump(const char *source_file, const char *output_file, int cflags, int sflags)
 {
 	snd_tplg_t *tplg;
-	char *text;
+	char *config, *text;
+	size_t size;
 	int err;
 
-	err = load(&tplg, source_file, cflags);
+	err = load(source_file, (void **)&config, &size);
+	if (err)
+		return err;
+	err = load_topology(&tplg, config, size, cflags);
+	free(config);
 	if (err)
 		return err;
 	err = snd_tplg_save(tplg, &text, sflags);
@@ -215,17 +229,23 @@ static int dump(const char *source_file, const char *output_file, int cflags, in
 static int compile(const char *source_file, const char *output_file, int cflags)
 {
 	snd_tplg_t *tplg;
+	char *config;
 	void *bin;
-	size_t size;
+	size_t config_size, size;
 	int err;
 
-	err = load(&tplg, source_file, cflags);
+	err = load(source_file, (void **)&config, &config_size);
+	if (err)
+		return err;
+	err = load_topology(&tplg, config, config_size, cflags);
+	free(config);
 	if (err)
 		return err;
 	err = snd_tplg_build_bin(tplg, &bin, &size);
 	snd_tplg_free(tplg);
 	if (err < 0 || size == 0) {
-		fprintf(stderr, _("failed to compile context %s\n"), source_file);
+		fprintf(stderr, _("failed to compile context %s: %s\n"),
+			source_file, snd_strerror(-err));
 		return 1;
 	}
 	err = save(output_file, bin, size);
@@ -233,17 +253,50 @@ static int compile(const char *source_file, const char *output_file, int cflags)
 	return err;
 }
 
-#define OP_COMPILE	1
-#define OP_NORMALIZE	2
-#define OP_DUMP		3
+static int decode(const char *source_file, const char *output_file,
+		  int cflags, int dflags, int sflags)
+{
+	snd_tplg_t *tplg;
+	void *bin;
+	char *text;
+	size_t size;
+	int err;
+
+	if (load(source_file, &bin, &size))
+		return 1;
+	tplg = snd_tplg_create(cflags);
+	if (tplg == NULL) {
+		fprintf(stderr, _("failed to create new topology context\n"));
+		return 1;
+	}
+	err = snd_tplg_decode(tplg, bin, size, dflags);
+	free(bin);
+	if (err < 0) {
+		snd_tplg_free(tplg);
+		fprintf(stderr, _("failed to decode context %s: %s\n"),
+			source_file, snd_strerror(-err));
+		return 1;
+	}
+	err = snd_tplg_save(tplg, &text, sflags);
+	snd_tplg_free(tplg);
+	if (err < 0) {
+		fprintf(stderr, _("Unable to save parsed configuration: %s\n"),
+			snd_strerror(-err));
+		return 1;
+	}
+	err = save(output_file, text, strlen(text));
+	free(text);
+	return err;
+}
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hc:n:u:v:o:sgxzV";
+	static const char short_options[] = "hc:d:n:u:v:o:sgxzV";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"verbose", 1, NULL, 'v'},
 		{"compile", 1, NULL, 'c'},
+		{"decode", 1, NULL, 'd'},
 		{"normalize", 1, NULL, 'n'},
 		{"dump", 1, NULL, 'u'},
 		{"output", 1, NULL, 'o'},
@@ -256,7 +309,7 @@ int main(int argc, char *argv[])
 	};
 	char *source_file = NULL;
 	char *output_file = NULL;
-	int c, err, op = 'c', cflags = 0, sflags = 0, option_index;
+	int c, err, op = 'c', cflags = 0, dflags = 0, sflags = 0, option_index;
 
 #ifdef ENABLE_NLS
 	setlocale(LC_ALL, "");
@@ -278,6 +331,7 @@ int main(int argc, char *argv[])
 			cflags |= SND_TPLG_CREATE_DAPM_NOSORT;
 			break;
 		case 'c':
+		case 'd':
 		case 'n':
 		case 'u':
 			if (source_file) {
@@ -325,6 +379,9 @@ int main(int argc, char *argv[])
 	switch (op) {
 	case 'c':
 		err = compile(source_file, output_file, cflags);
+		break;
+	case 'd':
+		err = decode(source_file, output_file, cflags, dflags, sflags);
 		break;
 	default:
 		err = dump(source_file, output_file, cflags, sflags);

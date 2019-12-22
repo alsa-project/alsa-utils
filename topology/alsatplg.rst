@@ -53,6 +53,9 @@ Available options:
   **-c**, **--compile** `FILE`
     source configuration file for the compilation
 
+  **-d**, **--decode** `FILE`
+    source binary topology file for the decode
+
   **-n**, **--normalize** `FILE`
     parse and save the configuration file in the normalized format
 
