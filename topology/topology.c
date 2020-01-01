@@ -53,6 +53,7 @@ _("Usage: %s [OPTIONS]...\n"
 "-s, --sort              sort the identifiers in the normalized output\n"
 "-g, --group             save configuration by group indexes\n"
 "-x, --nocheck           save configuration without additional integrity checks\n"
+"-z, --dapm-nosort       do not sort the DAPM widgets\n"
 "-V, --version           print version\n"
 ), name);
 }
