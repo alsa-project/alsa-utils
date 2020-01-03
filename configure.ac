@@ -49,6 +49,7 @@ AC_CHECK_LIB([asound], [snd_seq_client_info_get_pid], [HAVE_SEQ_CLIENT_INFO_GET_
 if test "$HAVE_SEQ_CLIENT_INFO_GET_PID" = "yes" ; then
     AC_DEFINE([HAVE_SEQ_CLIENT_INFO_GET_PID], 1, [alsa-lib supports snd_seq_client_info_get_pid])
 fi
+AC_CHECK_LIB([atopology], [snd_tplg_save], [have_topology="no"])
 
 #
 # NOTE: The library 'libffado' (at least v2.4.1) executes ctor/dtor of instances
@@ -69,11 +70,6 @@ AM_CONDITIONAL(HAVE_UCM, test "$have_ucm" = "yes")
 AM_CONDITIONAL(HAVE_TOPOLOGY, test "$have_topology" = "yes")
 AM_CONDITIONAL(HAVE_SAMPLERATE, test "$have_samplerate" = "yes")
 AM_CONDITIONAL(HAVE_FFADO, test "$have_ffado" = "yes")
-
-# old libasound with the topology routines in the main library
-if test "x$have_topology" = "xyes" -a "x$ALSA_TOPOLOGY_LIBS" = "x"; then
-  ALSA_TOPOLOGY_LIBS="$ALSA_LIBS"
-fi
 
 dnl Use tinyalsa
 alsabat_backend_tiny=
