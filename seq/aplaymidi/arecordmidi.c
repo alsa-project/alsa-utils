@@ -740,7 +740,7 @@ int main(int argc, char *argv[])
 		{"metronome", 1, NULL, 'm'},
 		{"timesig", 1, NULL, 'i'},
 		{"num-events", 1, NULL, 'n'},
-		{ }
+		{0}
 	};
 
 	char *filename = NULL;

@@ -58,7 +58,7 @@ static void parse_options(int argc, char *argv[])
 		{ .name = "view", .has_arg = 1, .val = 'V' },
 		{ .name = "no-color", .val = 'g' },
 		{ .name = "abstraction", .has_arg = 1, .val = 'a' },
-		{ }
+		{ 0 }
 	};
 	int option;
 	int card_index;

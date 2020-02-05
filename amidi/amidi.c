@@ -469,7 +469,7 @@ int main(int argc, char *argv[])
 		{"active-sensing", 0, NULL, 'a'},
 		{"clock", 0, NULL, 'c'},
 		{"sysex-interval", 1, NULL, 'i'},
-		{ }
+		{0}
 	};
 	int c, err, ok = 0;
 	int ignore_active_sensing = 1;

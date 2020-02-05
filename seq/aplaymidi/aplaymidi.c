@@ -869,7 +869,7 @@ int main(int argc, char *argv[])
 		{"list", 0, NULL, 'l'},
 		{"port", 1, NULL, 'p'},
 		{"delay", 1, NULL, 'd'},
-		{}
+		{0}
 	};
 	int c;
 	int do_list = 0;
