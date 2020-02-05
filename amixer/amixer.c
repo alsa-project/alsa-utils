@@ -620,7 +620,7 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 		       snd_ctl_elem_info_get_step(info));
 		break;
 	case SND_CTL_ELEM_TYPE_INTEGER64:
-		printf(",min=%Li,max=%Li,step=%Li\n", 
+		printf(",min=%lli,max=%lli,step=%lli\n",
 		       snd_ctl_elem_info_get_min64(info),
 		       snd_ctl_elem_info_get_max64(info),
 		       snd_ctl_elem_info_get_step64(info));
@@ -662,7 +662,7 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 				printf("%li", snd_ctl_elem_value_get_integer(control, idx));
 				break;
 			case SND_CTL_ELEM_TYPE_INTEGER64:
-				printf("%Li", snd_ctl_elem_value_get_integer64(control, idx));
+				printf("%lli", snd_ctl_elem_value_get_integer64(control, idx));
 				break;
 			case SND_CTL_ELEM_TYPE_ENUMERATED:
 				printf("%u", snd_ctl_elem_value_get_enumerated(control, idx));

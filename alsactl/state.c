@@ -336,9 +336,9 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 		long long max = snd_ctl_elem_info_get_max64(info);
 		long long step = snd_ctl_elem_info_get_step64(info);
 		if (step)
-			sprintf(buf, "%Li - %Li (step %Li)", min, max, step);
+			sprintf(buf, "%lli - %lli (step %lli)", min, max, step);
 		else
-			sprintf(buf, "%Li - %Li", min, max);
+			sprintf(buf, "%lli - %lli", min, max);
 		err = snd_config_string_add(comment, "range", buf);
 		if (err < 0) {
 			error("snd_config_string_add: %s", snd_strerror(err));
