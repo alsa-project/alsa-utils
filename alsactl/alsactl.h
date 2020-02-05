@@ -13,15 +13,15 @@ void cerror_(const char *fcn, long line, int cond, const char *fmt, ...);
 void dbg_(const char *fcn, long line, const char *fmt, ...);
 
 #if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
-#define info(...) do { info_(__FUNCTION__, __LINE__, __VA_ARGS__); } while (0)
-#define error(...) do { error_(__FUNCTION__, __LINE__, __VA_ARGS__); } while (0)
-#define cerror(cond, ...) do { cerror_(__FUNCTION__, __LINE__, (cond) != 0, __VA_ARGS__); } while (0)
-#define dbg(...) do { dbg_(__FUNCTION__, __LINE__, __VA_ARGS__); } while (0)
+#define info(...) do { info_(__func__, __LINE__, __VA_ARGS__); } while (0)
+#define error(...) do { error_(__func__, __LINE__, __VA_ARGS__); } while (0)
+#define cerror(cond, ...) do { cerror_(__func__, __LINE__, (cond) != 0, __VA_ARGS__); } while (0)
+#define dbg(...) do { dbg_(__func__, __LINE__, __VA_ARGS__); } while (0)
 #else
-#define info(args...) do { info_(__FUNCTION__, __LINE__, ##args); }  while (0)
-#define error(args...) do { error_(__FUNCTION__, __LINE__, ##args); }  while (0)
-#define cerror(cond, ...) do { error_(__FUNCTION__, __LINE__, (cond) != 0, ##args); } while (0)
-#define dbg(args...) do { dbg_(__FUNCTION__, __LINE__, ##args); }  while (0)
+#define info(args...) do { info_(__func__, __LINE__, ##args); }  while (0)
+#define error(args...) do { error_(__func__, __LINE__, ##args); }  while (0)
+#define cerror(cond, ...) do { error_(__func__, __LINE__, (cond) != 0, ##args); } while (0)
+#define dbg(args...) do { dbg_(__func__, __LINE__, ##args); }  while (0)
 #endif	
 
 int init(const char *file, const char *cardname);
