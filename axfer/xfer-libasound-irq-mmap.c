@@ -146,9 +146,10 @@ static int irq_mmap_process_frames(struct libasound_state *state,
 	// TODO: Perhaps, the complex layout can be supported as a variation of
 	// vector type. However, there's no driver with this layout.
 	if (layout->vector == NULL) {
-		frame_buf = areas[0].addr;
-		frame_buf += snd_pcm_frames_to_bytes(state->handle,
-						     frame_offset);
+		char *buf;
+		buf = areas[0].addr;
+		buf += snd_pcm_frames_to_bytes(state->handle, frame_offset);
+		frame_buf = buf;
 	} else {
 		int i;
 		for (i = 0; i < layout->samples_per_frame; ++i) {

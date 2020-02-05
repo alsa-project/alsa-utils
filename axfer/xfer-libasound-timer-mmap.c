@@ -100,8 +100,8 @@ static void *get_buffer(struct libasound_state *state,
 
 	if (layout->vector == NULL) {
 		char *buf;
-		buf = areas[0].addr + snd_pcm_frames_to_bytes(state->handle,
-							      frame_offset);
+		buf = areas[0].addr;
+		buf += snd_pcm_frames_to_bytes(state->handle, frame_offset);
 		frame_buf = buf;
 	} else {
 		int i;

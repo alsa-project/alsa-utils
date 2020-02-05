@@ -231,7 +231,7 @@ int generate_input_data(struct bat *bat, void *buffer, int bytes, int frames)
 		load = 0;
 
 		while (1) {
-			err = fread(buffer + load, 1, bytes - load, bat->fp);
+			err = fread((char *)buffer + load, 1, bytes - load, bat->fp);
 			if (0 == err) {
 				if (feof(bat->fp)) {
 					fprintf(bat->log,

@@ -633,7 +633,7 @@ static void handle_big_sysex(snd_seq_event_t *ev)
 		check_snd("sync output", err);
 		if (sleep(1))
 			fatal("aborted");
-		ev->data.ext.ptr += MIDI_BYTES_PER_SEC;
+		ev->data.ext.ptr = (char *)ev->data.ext.ptr + MIDI_BYTES_PER_SEC;
 		length -= MIDI_BYTES_PER_SEC;
 	}
 	ev->data.ext.len = length;

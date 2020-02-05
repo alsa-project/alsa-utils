@@ -442,7 +442,7 @@ static ssize_t xwrite(int fd, const void *buf, size_t count)
 	size_t offset = 0;
 
 	while (offset < count) {
-		written = write(fd, buf + offset, count - offset);
+		written = write(fd, (char *)buf + offset, count - offset);
 		if (written <= 0)
 			return written;
 
@@ -1210,7 +1210,7 @@ static int test_au(int fd, void *buffer)
 	hwparams.channels = BE_INT(ap->channels);
 	if (hwparams.channels < 1 || hwparams.channels > 256)
 		return -1;
-	if ((size_t)safe_read(fd, buffer + sizeof(AuHeader), BE_INT(ap->hdr_size) - sizeof(AuHeader)) != BE_INT(ap->hdr_size) - sizeof(AuHeader)) {
+	if ((size_t)safe_read(fd, (char *)buffer + sizeof(AuHeader), BE_INT(ap->hdr_size) - sizeof(AuHeader)) != BE_INT(ap->hdr_size) - sizeof(AuHeader)) {
 		error(_("read error"));
 		prg_exit(EXIT_FAILURE);
 	}
