@@ -18,8 +18,10 @@ jobs:
       with:
         repository: alsa-project/alsa-lib
         ref: master
+        path: alsa-lib
     - name: Configure alsa-lib
       run: |
+        cd alsa-lib
         libtoolize --force --copy --automake
         aclocal
         autoheader
@@ -30,18 +32,24 @@ jobs:
         echo "Version: $(cat version)"
     - name: Build alsa-lib
       run: |
+        cd alsa-lib
         make
     - name: Install alsa-lib
       run: |
+        cd alsa-lib
         make install
 
     - name: Checkout
       uses: actions/checkout@v2
+      with:
+        path: alsa-utils
     - name: Checkout all tags
       run: |
+        cd alsa-utils
         git fetch --prune --unshallow
     - name: Modify version
       run: |
+        cd alsa-utils
         mv configure.ac configure.ac.old
         version=$(git describe | sed -e 's/v//')
         echo "Version: ${version}"
@@ -50,6 +58,7 @@ jobs:
         grep AC_INIT configure.ac
     - name: Configure
       run: |
+        cd alsa-utils
         aclocal
         gettextize -c -f --no-changelog
         aclocal -I m4
@@ -61,29 +70,36 @@ jobs:
         echo "Version: $(cat version)"
     - name: Build
       run: |
+        cd alsa-utils
         make
     - name: Install test
       run: |
+        cd alsa-utils
         make install
     - name: Create package
       run: |
+        cd alsa-utils
         make dist-bzip2
     - name: Unpack package
       run: |
-        tar xjf alsa-utils-$(cat version).tar.bz2
         mkdir artifacts
-        cp alsa-utils-$(cat version).tar.bz2 artifacts
+        cd alsa-utils
+        tar xjf alsa-utils-$(cat version).tar.bz2
+        cp alsa-utils-$(cat version).tar.bz2 ../artifacts
     - name: Configure package
       run: |
+        cd alsa-utils
         cd alsa-utils-$(cat version)
         export CFLAGS="-O2 -Wall -W -Wunused-const-variable=0 -pipe -g"
         ./configure
     - name: Build package
       run: |
+        cd alsa-utils
         cd alsa-utils-$(cat version)
         make
     - name: Install package
       run: |
+        cd alsa-utils
         cd alsa-utils-$(cat version)
         make install
     - name: Archive package
