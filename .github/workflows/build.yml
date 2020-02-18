@@ -1,0 +1,147 @@
+name: Build alsa-utils
+
+on: [push, pull_request]
+
+jobs:
+  fedora_latest_build:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    steps:
+    - name: Prepare environment
+      run: |
+        dnf -y upgrade
+        dnf -y install @development-tools libtool bzip2 gettext-devel ncurses-devel
+
+    - name: Checkout alsa-lib
+      uses: actions/checkout@v2
+      with:
+        repository: alsa-project/alsa-lib
+        ref: master
+    - name: Configure alsa-lib
+      run: |
+        libtoolize --force --copy --automake
+        aclocal
+        autoheader
+        automake --foreign --copy --add-missing
+        autoconf
+        export CFLAGS="-O2 -Wall -W -Wunused-const-variable=0 -pipe -g"
+        ./configure
+        echo "Version: $(cat version)"
+    - name: Build alsa-lib
+      run: |
+        make
+    - name: Install alsa-lib
+      run: |
+        make install
+
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Checkout all tags
+      run: |
+        git fetch --prune --unshallow
+    - name: Modify version
+      run: |
+        mv configure.ac configure.ac.old
+        version=$(git describe | sed -e 's/v//')
+        echo "Version: ${version}"
+        sed -r "s/AC_INIT\(alsa-utils,.*\)/AC_INIT(alsa-utils, ${version})/" < configure.ac.old > configure.ac.tmp
+        sed -e 's;po/Makefile.in;;' < configure.ac.tmp > configure.ac
+        grep AC_INIT configure.ac
+    - name: Configure
+      run: |
+        aclocal
+        gettextize -c -f --no-changelog
+        aclocal -I m4
+        autoheader
+        automake --foreign --copy --add-missing
+        autoconf
+        export CFLAGS="-O2 -Wall -W -Wunused-const-variable=0 -pipe -g"
+        ./configure
+        echo "Version: $(cat version)"
+    - name: Build
+      run: |
+        make
+    - name: Install test
+      run: |
+        make install
+    - name: Create package
+      run: |
+        make dist-bzip2
+    - name: Unpack package
+      run: |
+        tar xjf alsa-utils-$(cat version).tar.bz2
+        mkdir artifacts
+        cp alsa-utils-$(cat version).tar.bz2 artifacts
+    - name: Configure package
+      run: |
+        cd alsa-utils-$(cat version)
+        export CFLAGS="-O2 -Wall -W -Wunused-const-variable=0 -pipe -g"
+        ./configure
+    - name: Build package
+      run: |
+        cd alsa-utils-$(cat version)
+        make
+    - name: Install package
+      run: |
+        cd alsa-utils-$(cat version)
+        make install
+    - name: Archive package
+      uses: actions/upload-artifact@v1
+      with:
+        name: alsa-utils-test-package
+        path: artifacts/
+
+  ubuntu_last_build:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:latest
+    steps:
+    - name: Prepare
+      run: |
+        apt-get update
+        apt-get -y install apt-utils
+        apt-get -y full-upgrade
+        apt-get install -y git build-essential pkg-config m4 autoconf automake libtool gettext ncurses-dev
+
+    - name: Checkout alsa-lib
+      uses: actions/checkout@v2
+      with:
+        repository: alsa-project/alsa-lib
+        ref: master
+    - name: Configure alsa-lib
+      run: |
+        libtoolize --force --copy --automake
+        aclocal
+        autoheader
+        automake --foreign --copy --add-missing
+        autoconf
+        export CFLAGS="-O2 -Wall -W -Wunused-const-variable=0 -pipe -g"
+        ./configure
+    - name: Build alsa-lib
+      run: |
+        make
+    - name: Install alsa-lib
+      run: |
+        make install
+
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Configure
+      run: |
+        mv configure.ac configure.ac.old
+        sed -e 's;po/Makefile.in;;' < configure.ac.old > configure.ac
+        aclocal
+        gettextize -c -f --no-changelog
+        aclocal -I m4
+        autoheader
+        automake --foreign --copy --add-missing
+        autoconf
+        export CFLAGS="-O2 -Wall -W -Wunused-const-variable=0 -pipe -g"
+        ./configure
+    - name: Build
+      run: |
+        make
+    - name: Install
+      run: |
+        make install
