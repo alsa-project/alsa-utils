@@ -52,6 +52,7 @@ jobs:
         cd alsa-utils
         mv configure.ac configure.ac.old
         version=$(git describe | sed -e 's/v//')
+        if test -z "$version"; then version=$(git describe --tags | sed -e 's/v//'); fi
         echo "Version: ${version}"
         sed -r "s/AC_INIT\(alsa-utils,.*\)/AC_INIT(alsa-utils, ${version})/" < configure.ac.old > configure.ac.tmp
         sed -e 's;po/Makefile.in;;' < configure.ac.tmp > configure.ac
