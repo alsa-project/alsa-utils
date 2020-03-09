@@ -1951,8 +1951,16 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 	}
 	if (loop->sync != SYNC_TYPE_NONE) {
 		snd_pcm_sframes_t pqueued, cqueued;
-		pqueued = get_queued_playback_samples(loop);
-		cqueued = get_queued_capture_samples(loop);
+
+		/* Reduce cumulative error by interleaving playback vs capture reading order */
+		if (loop->total_queued_count & 1) {
+			pqueued = get_queued_playback_samples(loop);
+			cqueued = get_queued_capture_samples(loop);
+		} else {
+			cqueued = get_queued_capture_samples(loop);
+			pqueued = get_queued_playback_samples(loop);
+		}
+
 		if (verbose > 4)
 			snd_output_printf(loop->output, "%s: queued %li/%li samples\n", loop->id, pqueued, cqueued);
 		if (pqueued > 0)
