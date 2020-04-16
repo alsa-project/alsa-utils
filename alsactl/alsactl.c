@@ -161,7 +161,7 @@ static void do_nice(int use_nice, int sched_idle)
 	if (sched_idle) {
 		if (sched_getparam(0, &sched_param) >= 0) {
 			sched_param.sched_priority = 0;
-			if (sched_setscheduler(0, SCHED_IDLE, &sched_param))
+			if (sched_setscheduler(0, SCHED_IDLE, &sched_param) == -1)
 				error("sched_setparam failed: %s", strerror(errno));
 		} else {
 			error("sched_getparam failed: %s", strerror(errno));
