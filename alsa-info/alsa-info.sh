@@ -238,6 +238,23 @@ withdmesg() {
 	echo "" >> $FILE
 }
 
+withpackages() {
+	local RPM="$(which rpmquery 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null)"
+	local DPKG="$(which dpkg 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null)"
+	[ -n "$RPM$DPKG" ] || return
+	local PATTERN='(alsa-(lib|oss|plugins|tools|(topology|ucm)-conf|utils)|libalsa|tinycompress)'
+	{
+        echo "!!Packages installed"
+        echo "!!--------------------"
+        echo ""
+	{
+		if [ -x "$RPM" ]; then "$RPM" -a; fi
+		if [ -x "$DPKG" ]; then "$DPKG" -l; fi
+	} | grep -E "$PATTERN"
+	echo ""
+	} >> "$FILE"
+}
+
 withall() {
 	withdevices
 	withconfigs
@@ -247,6 +264,7 @@ withall() {
 	withmodules
 	withsysfs
 	withdmesg
+	withpackages
 	WITHALL="no"
 }
 
@@ -357,6 +375,7 @@ information about your ALSA installation and sound related hardware.
   aplay
   amixer
   alsactl
+  rpm, dpkg
   /proc/asound/
   /sys/class/sound/
   ~/.asoundrc (etc.)
@@ -699,6 +718,10 @@ if [ -n "$1" ]; then
 			withconfigs
 			WITHALL="no"
 			;;
+		--with-packages)
+			withpackages
+			WITHALL="no"
+			;;
 		--stdout)
 			UPLOAD="no"
 			if [ -z "$WITHALL" ]; then
@@ -730,6 +753,7 @@ if [ -n "$1" ]; then
 			echo "	    /etc/asound.conf if they exist)" 
 			echo "	--with-devices (shows the device nodes in /dev/snd/)"
 			echo "	--with-dmesg (shows the ALSA/HDA kernel messages)"
+			echo "	--with-packages (includes known packages installed)"
 			echo ""
 			echo "	--output FILE (specify the file to output for no-upload mode)"
 			echo "	--update (check server for script updates)"
