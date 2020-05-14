@@ -96,7 +96,9 @@ static struct arg args[] = {
 { 's', "syslog", "use syslog for messages" },
 { INTARG | 'n', "nice", "set the process priority (see 'man nice')" },
 { 'c', "sched-idle", "set the process scheduling policy to idle (SCHED_IDLE)" },
+#ifdef HAVE_ALSA_USE_CASE_H
 { 'D', "ucm-defaults", "execute also the UCM 'defaults' section" },
+#endif
 { HEADER, NULL, "Available commands:" },
 { CARDCMD, "store", "save current driver setup for one or each soundcards" },
 { EMPCMD, NULL, "  to configuration file" },

@@ -19,8 +19,12 @@
  *
  */
 
+#include "aconfig.h"
 #include <stddef.h>
 #include "alsactl.h"
+
+#ifdef HAVE_ALSA_USE_CASE_H
+
 #include <alsa/use-case.h>
 
 /*
@@ -48,3 +52,12 @@ _error:
 	snd_use_case_mgr_close(uc_mgr);
 	return err;
 }
+
+#else
+
+int init_ucm(int flags, int cardno)
+{
+	return 0;
+}
+
+#endif
