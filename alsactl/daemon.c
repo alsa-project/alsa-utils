@@ -293,7 +293,7 @@ static long read_pid_file(const char *pidfile)
 static int write_pid_file(const char *pidfile)
 {
 	int fd, err;
-	char pid_txt[12];
+	char pid_txt[14];
 
 	sprintf(pid_txt, "%10li\n", (long)getpid());
 	fd = open(pidfile, O_WRONLY|O_CREAT|O_EXCL, 0600);
