@@ -142,6 +142,11 @@ Set the process priority (see 'man nice')
 \fI\-c, \-\-sched-idle\fP
 Set the process scheduling policy to idle (SCHED_IDLE).
 
+.TP
+\fI\-D, \-\-ucm-defaults\fP
+Execute also the 'defaults' section from the UCM configuration. The standard
+behaviour is to execute only 'once' section.
+
 .SH FILES
 \fI/var/lib/alsa/asound.state\fP (or whatever file you specify with the
 \fB\-f\fP flag) is used to store current settings for your

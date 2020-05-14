@@ -19,12 +19,14 @@
  *
  */
 
+#include <stddef.h>
+#include "alsactl.h"
 #include <alsa/use-case.h>
 
 /*
  * Keep it as simple as possible. Execute commands from the SectionOnce only.
  */
-int init_ucm(int cardno)
+int init_ucm(int flags, int cardno)
 {
 	snd_use_case_mgr_t *uc_mgr;
 	char id[32];
@@ -35,6 +37,14 @@ int init_ucm(int cardno)
 	if (err < 0)
 		return err;
 	err = snd_use_case_set(uc_mgr, "_once", NULL);
+	if (err < 0)
+		goto _error;
+	if ((flags & FLAG_UCM_DEFAULTS) != 0) {
+		err = snd_use_case_set(uc_mgr, "_defaults", NULL);
+		if (err < 0)
+			goto _error;
+	}
+_error:
 	snd_use_case_mgr_close(uc_mgr);
 	return err;
 }

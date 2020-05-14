@@ -25,13 +25,15 @@ void error_handler(const char *file, int line, const char *function, int err, co
 #define dbg(args...) do { dbg_(__func__, __LINE__, ##args); }  while (0)
 #endif	
 
-int init(const char *file, const char *cardname);
-int init_ucm(int cardno);
+#define FLAG_UCM_DEFAULTS	(1<<0)
+
+int init(const char *file, int flags, const char *cardname);
+int init_ucm(int flags, int cardno);
 int state_lock(const char *file, int timeout);
 int state_unlock(int fd, const char *file);
 int save_state(const char *file, const char *cardname);
-int load_state(const char *file, const char *initfile, const char *cardname,
-	       int do_init);
+int load_state(const char *file, const char *initfile, int initflags,
+	       const char *cardname, int do_init);
 int power(const char *argv[], int argc);
 int monitor(const char *name);
 int state_daemon(const char *file, const char *cardname, int period,

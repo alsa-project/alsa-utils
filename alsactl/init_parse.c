@@ -1742,7 +1742,7 @@ static int parse(struct space *space, const char *filename)
 	return err ? err : -abs(space->exit_code);
 }
 
-int init(const char *filename, const char *cardname)
+int init(const char *filename, int flags, const char *cardname)
 {
 	struct space *space;
 	int err = 0, lasterr = 0, card, first;
@@ -1762,7 +1762,7 @@ int init(const char *filename, const char *cardname)
 				break;
 			}
 			first = 0;
-			err = init_ucm(card);
+			err = init_ucm(flags, card);
 			if (err == 0)
 				continue;
 			err = init_space(&space, card);
@@ -1787,7 +1787,7 @@ int init(const char *filename, const char *cardname)
 			error("Cannot find soundcard '%s'...", cardname);
 			goto error;
 		}
-		err = init_ucm(card);
+		err = init_ucm(flags, card);
 		if (err == 0)
 			return 0;
 		memset(&space, 0, sizeof(space));

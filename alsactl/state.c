@@ -1645,8 +1645,8 @@ out:
 	return err;
 }
 
-int load_state(const char *file, const char *initfile, const char *cardname,
-	       int do_init)
+int load_state(const char *file, const char *initfile, int initflags,
+	       const char *cardname, int do_init)
 {
 	int err, finalerr = 0;
 	snd_config_t *config;
@@ -1704,7 +1704,7 @@ single:
 			if (!do_init)
 				break;
 			sprintf(cardname1, "%i", card);
-			err = init(initfile, cardname1);
+			err = init(initfile, initflags, cardname1);
 			if (err < 0) {
 				finalerr = err;
 				initfailed(card, "init", err);
@@ -1743,7 +1743,7 @@ single:
 			/* do a check if controls matches state file */
  			if (do_init && set_controls(card, config, 0)) {
 				sprintf(cardname1, "%i", card);
-				err = init(initfile, cardname1);
+				err = init(initfile, initflags, cardname1);
 				if (err < 0) {
 					initfailed(card, "init", err);
 					finalerr = err;
@@ -1766,7 +1766,7 @@ single:
 		}
 		/* do a check if controls matches state file */
 		if (do_init && set_controls(cardno, config, 0)) {
-			err = init(initfile, cardname);
+			err = init(initfile, initflags, cardname);
 			if (err < 0) {
 				initfailed(cardno, "init", err);
 				finalerr = err;

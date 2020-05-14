@@ -96,6 +96,7 @@ static struct arg args[] = {
 { 's', "syslog", "use syslog for messages" },
 { INTARG | 'n', "nice", "set the process priority (see 'man nice')" },
 { 'c', "sched-idle", "set the process scheduling policy to idle (SCHED_IDLE)" },
+{ 'D', "ucm-defaults", "execute also the UCM 'defaults' section" },
 { HEADER, NULL, "Available commands:" },
 { CARDCMD, "store", "save current driver setup for one or each soundcards" },
 { EMPCMD, NULL, "  to configuration file" },
@@ -191,6 +192,7 @@ int main(int argc, char *argv[])
 	int daemoncmd = 0;
 	int use_nice = NO_NICE;
 	int sched_idle = 0;
+	int initflags = 0;
 	struct arg *a;
 	struct option *o;
 	int i, j, k, res;
@@ -262,6 +264,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'I':
 			init_fallback = 0;
+			break;
+		case 'D':
+			initflags |= FLAG_UCM_DEFAULTS;
 			break;
 		case 'r':
 			statefile = optarg;
@@ -357,7 +362,7 @@ int main(int argc, char *argv[])
 	snd_lib_error_set_handler(error_handler);
 
 	if (!strcmp(cmd, "init")) {
-		res = init(initfile, cardname);
+		res = init(initfile, initflags, cardname);
 		snd_config_update_free_global();
 	} else if (!strcmp(cmd, "store")) {
 		res = save_state(cfgfile, cardname);
@@ -366,7 +371,7 @@ int main(int argc, char *argv[])
 		   !strcmp(cmd, "nrestore")) {
 		if (removestate)
 			remove(statefile);
-		res = load_state(cfgfile, initfile, cardname, init_fallback);
+		res = load_state(cfgfile, initfile, initflags, cardname, init_fallback);
 		if (!strcmp(cmd, "rdaemon")) {
 			do_nice(use_nice, sched_idle);
 			res = state_daemon(cfgfile, cardname, period, pidfile);
