@@ -25,6 +25,7 @@ void dbg_(const char *fcn, long line, const char *fmt, ...);
 #endif	
 
 int init(const char *file, const char *cardname);
+int init_ucm(int cardno);
 int state_lock(const char *file, int timeout);
 int state_unlock(int fd, const char *file);
 int save_state(const char *file, const char *cardname);
