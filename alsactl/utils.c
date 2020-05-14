@@ -177,3 +177,19 @@ void dbg_(const char *fcn, long line, const char *fmt, ...)
 	}
 	va_end(ap);
 }
+
+void error_handler(const char *file, int line, const char *function, int err, const char *fmt, ...)
+{
+	char buf[2048];
+	va_list arg;
+
+	va_start(arg, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, arg);
+	va_end(arg);
+	if (use_syslog)
+		syslog(LOG_ERR, "alsa-lib %s:%i:(%s) %s%s%s\n", file, line, function,
+				buf, err ? ": " : "", err ? snd_strerror(err) : "");
+	else
+		fprintf(stderr, "alsa-lib %s:%i:(%s) %s%s%s\n", file, line, function,
+				buf, err ? ": " : "", err ? snd_strerror(err) : "");
+}

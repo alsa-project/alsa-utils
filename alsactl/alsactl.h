@@ -11,6 +11,7 @@ void info_(const char *fcn, long line, const char *fmt, ...);
 void error_(const char *fcn, long line, const char *fmt, ...);
 void cerror_(const char *fcn, long line, int cond, const char *fmt, ...);
 void dbg_(const char *fcn, long line, const char *fmt, ...);
+void error_handler(const char *file, int line, const char *function, int err, const char *fmt, ...);
 
 #if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
 #define info(...) do { info_(__func__, __LINE__, __VA_ARGS__); } while (0)

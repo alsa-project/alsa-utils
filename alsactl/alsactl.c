@@ -354,6 +354,8 @@ int main(int argc, char *argv[])
 			syslog(LOG_INFO, "alsactl " SND_UTIL_VERSION_STR " daemon started");
 	}
 
+	snd_lib_error_set_handler(error_handler);
+
 	if (!strcmp(cmd, "init")) {
 		res = init(initfile, cardname);
 		snd_config_update_free_global();
