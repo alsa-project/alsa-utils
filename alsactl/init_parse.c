@@ -1745,7 +1745,7 @@ static int parse(struct space *space, const char *filename)
 int init(const char *filename, const char *cardname)
 {
 	struct space *space;
-	int err = 0, card, first;
+	int err = 0, lasterr = 0, card, first;
 	
 	sysfs_init();
 	if (!cardname) {
@@ -1767,11 +1767,17 @@ int init(const char *filename, const char *cardname)
 				space->rootdir = new_root_dir(filename);
 				if (space->rootdir != NULL)
 					err = parse(space, filename);
+				if (err <= -99) { /* non-fatal errors */
+					if (lasterr == 0)
+						lasterr = err;
+					err = 0;
+				}
 				free_space(space);
 			}
 			if (err < 0)
 				break;
 		}
+		err = lasterr;
 	} else {
 		card = snd_card_get_index(cardname);
 		if (card < 0) {
