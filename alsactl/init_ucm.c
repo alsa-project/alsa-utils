@@ -40,7 +40,7 @@ int init_ucm(int flags, int cardno)
 	err = snd_use_case_mgr_open(&uc_mgr, id);
 	if (err < 0)
 		return err;
-	err = snd_use_case_set(uc_mgr, "_once", NULL);
+	err = snd_use_case_set(uc_mgr, "_boot", NULL);
 	if (err < 0)
 		goto _error;
 	if ((flags & FLAG_UCM_DEFAULTS) != 0) {
