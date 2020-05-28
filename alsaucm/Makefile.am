@@ -15,17 +15,6 @@ AM_CPPFLAGS = \
 %.1: %.rst
 	rst2man $< > $@
 
-udevrules_DATA = \
-	89-alsa-ucm.rules
+EXTRA_DIST = alsaucm.rst
 
-edit = \
-	$(SED) -r -e 's,@bindir\@,$(bindir),g' \
-		  -e 's,@mydatadir\@,$(mydatadir),g' \
-							< $< > $@ || rm $@
-
-89-alsa-ucm.rules: 89-alsa-ucm.rules.in
-	$(edit)
-
-EXTRA_DIST = alsaucm.rst 89-alsa-ucm.rules.in
-
-CLEANFILES = alsaucm.1 89-alsa-ucm.rules
+CLEANFILES = alsaucm.1
