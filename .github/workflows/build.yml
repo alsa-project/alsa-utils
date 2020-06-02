@@ -117,6 +117,7 @@ jobs:
     steps:
     - name: Prepare
       run: |
+        export DEBIAN_FRONTEND=noninteractive
         apt-get update
         apt-get -y install apt-utils
         apt-get -y full-upgrade
