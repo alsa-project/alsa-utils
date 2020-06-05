@@ -16,7 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE
+#endif
 #include "aconfig.h"
 #include <limits.h>
 #include <stdlib.h>
