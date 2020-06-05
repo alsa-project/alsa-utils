@@ -192,16 +192,22 @@ static int convert_prange(long val, long min, long max)
 	int tmp;
 
 	if (range == 0)
-		return 0;
+		return min;
 	val -= min;
 	tmp = rint((double)val/(double)range * 100);
 	return tmp;
 }
 
-/* Function to convert from percentage to volume. val = percentage */
+/* Function to convert from percentage to volume. perc = percentage */
+static long convert_prange1(long perc, long min, long max)
+{
+	long tmp;
 
-#define convert_prange1(val, min, max) \
-	ceil((val) * ((max) - (min)) * 0.01 + (min))
+	tmp = rint(perc * (max - min) * 0.01);
+	if (tmp == 0 && perc > 0)
+		tmp++;
+	return tmp + min;
+}
 
 struct volume_ops {
 	int (*get_range)(snd_mixer_elem_t *elem, long *min, long *max);
