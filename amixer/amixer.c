@@ -203,7 +203,7 @@ static long convert_prange1(long perc, long min, long max)
 {
 	long tmp;
 
-	tmp = rint(perc * (max - min) * 0.01);
+	tmp = rint((double)perc * (double)(max - min) * 0.01);
 	if (tmp == 0 && perc > 0)
 		tmp++;
 	return tmp + min;
