@@ -3037,6 +3037,7 @@ static int new_capture_file(char *name, char *namebuf, size_t namelen,
 
 	/* get a copy of the original filename */
 	strncpy(buf, name, sizeof(buf));
+	buf[sizeof(buf)-1] = '\0';
 
 	/* separate extension from filename */
 	s = buf + strlen(buf);
