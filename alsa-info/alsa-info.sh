@@ -239,8 +239,10 @@ withdmesg() {
 }
 
 withpackages() {
-	local RPM="$(which rpmquery 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null)"
-	local DPKG="$(which dpkg 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null)"
+	local RPM
+	local DPKG
+	RPM="$(which rpmquery 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null)"
+	DPKG="$(which dpkg 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null)"
 	[ -n "$RPM$DPKG" ] || return
 	local PATTERN='(alsa-(lib|oss|plugins|tools|(topology|ucm)-conf|utils)|libalsa|tinycompress)'
 	{
