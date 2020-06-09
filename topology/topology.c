@@ -106,13 +106,13 @@ static int load(const char *source_file, void **dst, size_t *dst_size)
 		}
 		buf = buf2;
 	}
-	if (fd != fileno(stdin))
-		close(fd);
 	if (r < 0) {
 		fprintf(stderr, _("Read error: %s\n"), strerror(-errno));
-		free(buf);
 		goto _err;
 	}
+
+	if (fd != fileno(stdin))
+		close(fd);
 
 	*dst = buf;
 	*dst_size = pos;
