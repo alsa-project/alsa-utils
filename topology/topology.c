@@ -183,7 +183,9 @@ static int save(const char *output_file, void *buf, size_t size)
 	if (r < 0) {
 		fprintf(stderr, _("Write error: %s\n"), strerror(-errno));
 		if (fd != fileno(stdout)) {
-			remove(fname);
+			if (fname && remove(fname))
+				fprintf(stderr, _("Unable to remove file %s: %s\n"),
+						fname, strerror(-errno));
 			close(fd);
 		}
 		return 1;
