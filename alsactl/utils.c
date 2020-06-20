@@ -107,7 +107,7 @@ static void syslog_(int prio, const char *fcn, long line,
 {
 	char buf[1024];
 
-	snprintf(buf, sizeof(buf), "%s: %s:%ld", command, fcn, line);
+	snprintf(buf, sizeof(buf), "%s: %s:%ld: ", command, fcn, line);
 	buf[sizeof(buf)-1] = '\0';
 	vsnprintf(buf + strlen(buf), sizeof(buf)-strlen(buf), fmt, ap);
 	buf[sizeof(buf)-1] = '\0';
