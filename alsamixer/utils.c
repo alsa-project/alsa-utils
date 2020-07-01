@@ -127,7 +127,6 @@ char *read_file(const char *file_name, unsigned int *file_size)
 	f = fopen(file_name, "r");
 	if (!f) {
 		err = errno;
-		free(buf);
 		errno = err;
 		return NULL;
 	}
