@@ -34,8 +34,8 @@ PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin
 BGTITLE="ALSA-Info v $SCRIPT_VERSION"
 PASTEBINKEY="C9cRIO8m/9y8Cs0nVs0FraRx7U0pHsuc"
 
-WGET=$(which wget 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null)
-REQUIRES="mktemp grep pgrep whereis awk date uname cat sort dmesg amixer alsactl"
+WGET=$(command -v wget)
+REQUIRES="mktemp grep pgrep awk date uname cat sort dmesg amixer alsactl"
 
 #
 # Define some simple functions
@@ -241,10 +241,10 @@ withdmesg() {
 withpackages() {
 	local RPM
 	local DPKG
-	RPM="$(which rpmquery 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null)"
-	DPKG="$(which dpkg 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null)"
+	RPM="$(command -v rpmquery)"
+	DPKG="$(command -v dpkg)"
 	[ -n "$RPM$DPKG" ] || return
-	local PATTERN='(alsa-(lib|oss|plugins|tools|(topology|ucm)-conf|utils)|libalsa|tinycompress)'
+	local PATTERN='(alsa-(lib|oss|plugins|tools|(topology|ucm)-conf|utils|sof-firmware)|libalsa|tinycompress|sof-firmware)'
 	{
         echo "!!Packages installed"
         echo "!!--------------------"
@@ -278,7 +278,7 @@ get_alsa_library_version() {
 			. /etc/lsb-release
 			case "$DISTRIB_ID" in
 				Ubuntu)
-					if which dpkg > /dev/null ; then
+					if command -v dpkg > /dev/null ; then
 						ALSA_LIB_VERSION=$(dpkg -l libasound2 | tail -1 | awk '{ print $3 }' | cut -f 1 -d -)
 					fi
 
@@ -292,7 +292,7 @@ get_alsa_library_version() {
 					;;
 			esac
 		elif [ -f /etc/debian_version ]; then
-			if which dpkg > /dev/null ; then
+			if command -v dpkg > /dev/null ; then
 				ALSA_LIB_VERSION=$(dpkg -l libasound2 | tail -1 | awk '{ print $3 }' | cut -f 1 -d -)
 			fi
 
@@ -306,7 +306,7 @@ get_alsa_library_version() {
 
 # Basic requires
 for prg in $REQUIRES; do
-  t=$(which $prg 2> /dev/null)
+  t=$(command -v $prg)
   if test -z "$t"; then
     echo "This script requires $prg utility to continue."
     exit 1
@@ -314,15 +314,15 @@ for prg in $REQUIRES; do
 done
 
 # Run checks to make sure the programs we need are installed.
-LSPCI=$(which lspci 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null);
-TPUT=$(which tput 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null);
-DIALOG=$(which dialog 2>/dev/null | sed 's|^[^/]*||' 2>/dev/null);
+LSPCI="$(command -v lspci)"
+TPUT="$(command -v tput)"
+DIALOG="$(command -v dialog)"
 
 # Check to see if sysfs is enabled in the kernel. We'll need this later on
 SYSFS=$(mount | grep sysfs | awk '{ print $3 }');
 
 # Check modprobe config files for sound related options
-SNDOPTIONS=$(modprobe -c|sed -n 's/^options \(snd[-_][^ ]*\)/\1:/p')
+SNDOPTIONS=$(modprobe -c | sed -n 's/^options \(snd[-_][^ ]*\)/\1:/p')
 
 KEEP_OUTPUT=
 NFILE=""
@@ -409,7 +409,6 @@ if [ "$PROCEED" = "yes" ]; then
 if [ -z "$LSPCI" ]; then
 	if [ -d /sys/bus/pci ]; then
 		echo "This script requires lspci. Please install it, and re-run this script."
-		exit 0
 	fi
 fi
 
@@ -425,12 +424,12 @@ ALSA_DRIVER_VERSION=$(cat /proc/asound/version | head -n1 | awk '{ print $7 }' |
 get_alsa_library_version
 ALSA_UTILS_VERSION=$(amixer -v | awk '{ print $3 }')
 
-ESDINST=$(which esd 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null)
-PAINST=$(which pulseaudio 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null)
-ARTSINST=$(which artsd 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null)
-JACKINST=$(which jackd 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null)
-ROARINST=$(which roard 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null)
-DMIDECODE=$(which dmidecode 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null)
+ESDINST=$(command -v esd)
+PAINST=$(command -v pulseaudio)
+ARTSINST=$(command -v artsd)
+JACKINST=$(command -v jackd)
+ROARINST=$(command -v roard)
+DMIDECODE=$(command -v dmidecode)
 
 #Check for DMI data
 if [ -d /sys/class/dmi/id ]; then
