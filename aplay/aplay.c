@@ -1284,7 +1284,7 @@ static int setup_chmap(void)
 		}
 		if (i >= hw_chmap->channels) {
 			char buf[256];
-			error(_("Channel %d doesn't match with hw_parmas"), ch);
+			error(_("Channel %d doesn't match with hw_params"), ch);
 			snd_pcm_chmap_print(hw_chmap, sizeof(buf), buf);
 			fprintf(stderr, "hardware chmap = %s\n", buf);
 			free(hw_chmap);
