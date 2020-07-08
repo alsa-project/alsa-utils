@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: alsa-utils 1.0.23\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-01-10 09:07+0100\n"
-"PO-Revision-Date: 2020-07-08 15:01+0100\n"
+"PO-Revision-Date: 2020-07-08 16:05+0100\n"
 "Last-Translator: Olivier Humbert <trebmuh@tuxfamily.org>\n"
 "Language-Team: French <fr@li.org>\n"
 "Language: fr\n"
@@ -1277,7 +1277,7 @@ msgstr "séquenceur ouvert : %d:%d\n"
 #: seq/aseqnet/aseqnet.c:279
 #, c-format
 msgid "invalid source address %s\n"
-msgstr "addresse source %s incorrecte\n"
+msgstr "adresse source %s incorrecte\n"
 
 #: seq/aseqnet/aseqnet.c:309
 #, c-format
@@ -1704,7 +1704,7 @@ msgid "Time per period = %lf\n"
 msgstr "Temps par période = %lf\n"
 
 #~ msgid "Warning: format is changed to S16_LE\n"
-#~ msgstr "Avertissemen t: le format est changé en S16_LE\n"
+#~ msgstr "Avertissement : le format est changé en S16_LE\n"
 
 #~ msgid "Warning: format is changed to S24_3LE\n"
 #~ msgstr "Avertissement : le format est changé en S24_3LE\n"
