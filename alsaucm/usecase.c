@@ -130,6 +130,8 @@ static int parse_line(struct context *context, char *line)
 							*line == '\n'))
 			line++;
 		c = *line;
+		if (c == '\0')
+			return 0;
 		if (c == '\"' || c == '\'') {
 			start = ++line;
 			while (*line && *line != c)
