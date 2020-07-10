@@ -758,7 +758,7 @@ msgstr "Les numéros de canal ne correspondent pas entre hw_params et la carte d
 #: aplay/aplay.c:1251
 #, c-format
 msgid "Warning: unable to get channel map\n"
-msgstr "Avertissement : impossible d'obtenir la carte de canal"
+msgstr "Avertissement : impossible d'obtenir la carte de canal\n"
 
 #: aplay/aplay.c:1284
 #, c-format
