@@ -455,7 +455,7 @@ msgstr ""
 "    --buffer-size=#     la durée du tampon est de # trames\n"
 "-A, --avail-min=#       l'espace minimum disponible pour le réveil est de\n"
 "# microsecondes\n"
-"-R, --start-delay=#     le délai pour le démarrage PCM automtique est de \n
+"-R, --start-delay=#     le délai pour le démarrage PCM automtique est de \n"
 "# microsecondes (relatif à la taille du tampon si\n"
 "<= 0)\n"
 "-T, --stop-delay=#      # microsecondes de délai depuis xrun avant l'arrêt\n"
@@ -772,7 +772,7 @@ msgstr "Configuration erronée pour ce PCM : pas de configuration disponible"
 #: aplay/aplay.c:1314
 #, c-format
 msgid "HW Params of device \"%s\":\n"
-msgstr "Params HW pour le périphérique" \"%s\" :\n"
+msgstr "Params HW pour le périphérique \"%s\" :\n"
 
 #: aplay/aplay.c:1334
 msgid "Access type not available"
@@ -874,7 +874,7 @@ msgstr "État :\n"
 #: aplay/aplay.c:1642
 #, c-format
 msgid "xrun: prepare error: %s"
-msgstr "xrun ; erreur de préparation : %s""
+msgstr "xrun : erreur de préparation : %s"
 
 #: aplay/aplay.c:1648
 #, c-format
