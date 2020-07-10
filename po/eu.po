@@ -1,0 +1,1716 @@
+# Basque translation for alsa-utils
+# Copyright (C) 2011 The ALSA Team
+# This file is distributed under the same license as the alsa-utils package.
+# Porrumentzio <porrumentzio@riseup.net>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: alsa-utils 1.0.23\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-01-10 09:07+0100\n"
+"PO-Revision-Date: 2020-07-26 12:01+0200\n"
+"Last-Translator: Porrumentzio <porrumentzio@riseup.net>\n"
+"Language-Team: Librezale <librezale@librezale.eus>\n"
+"Language: eu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.3.1\n"
+
+#: alsamixer/card_select.c:126 alsamixer/device_name.c:126
+msgid "Sound Card"
+msgstr "Soinu-txartela"
+
+#: alsamixer/card_select.c:181
+msgid "(default)"
+msgstr "(lehenetsia)"
+
+#: alsamixer/card_select.c:191
+msgid "cannot enumerate sound cards"
+msgstr "ezin dira zerrendatu soinu-txartelak"
+
+#: alsamixer/card_select.c:215
+msgid "enter device name..."
+msgstr "sartu gailuaren izena..."
+
+#: alsamixer/cli.c:40
+msgid "Usage: alsamixer [options]"
+msgstr "Erabilera: alsamixer [aukerak]"
+
+# capture --> atzemate, hartze, kaptura(tze)...?
+#: alsamixer/cli.c:41
+msgid ""
+"Useful options:\n"
+"  -h, --help              this help\n"
+"  -c, --card=NUMBER       sound card number or id\n"
+"  -D, --device=NAME       mixer device name\n"
+"  -V, --view=MODE         starting view mode: playback/capture/all"
+msgstr ""
+"Aukera erabilgarriak:\n"
+"  -h, --help              lagunta-koadro hau\n"
+"  -c, --card=ZENBAKIA     soinu-txartelaren zenbakia edo id-a\n"
+"  -D, --device=IZENA      nahasgailuaren izena\n"
+"  -V, --view=MODUA        hasteko ikuspegia: erreprodukzioa/kapturatzea/"
+"guztiak"
+
+#: alsamixer/cli.c:46
+msgid ""
+"Debugging options:\n"
+"  -g, --no-color          toggle using of colors\n"
+"  -a, --abstraction=NAME  mixer abstraction level: none/basic"
+msgstr ""
+"Arazketa aukerak:\n"
+"  -g, --no-color          kolore gabeko interfazea\n"
+"  -a, --abstraction=IZENA nahasgailuaren abstrakzio maila: bat ere ez / "
+"oinarrizkoa"
+
+#: alsamixer/cli.c:77
+#, c-format
+msgid "invalid card index: %s\n"
+msgstr "txartel-indize baliogabea: %s\n"
+
+#: alsamixer/cli.c:103
+#, c-format
+msgid "unknown abstraction level: %s\n"
+msgstr "abstrakzio-maila ezezaguna: %s\n"
+
+#: alsamixer/cli.c:108
+#, c-format
+msgid "unknown option: %c\n"
+msgstr "aukera ezezaguna: %c\n"
+
+#: alsamixer/cli.c:110
+msgid "try `alsamixer --help' for more information\n"
+msgstr "probatu `alsamixer --help' xehetasunetarako\n"
+
+#: alsamixer/device_name.c:177
+msgid "Device name:"
+msgstr "Gailu-izena:"
+
+#: alsamixer/die.c:37
+#, c-format
+msgid "%s: %s\n"
+msgstr "%s: %s\n"
+
+#: alsamixer/mixer_display.c:98
+msgid "Card:"
+msgstr "Txartela:"
+
+#: alsamixer/mixer_display.c:99
+msgid "Chip:"
+msgstr "Txipa:"
+
+#: alsamixer/mixer_display.c:100
+msgid "View:"
+msgstr "Ikuspegia:"
+
+#: alsamixer/mixer_display.c:101
+msgid "Item:"
+msgstr "Elementua:"
+
+#: alsamixer/mixer_display.c:104
+msgid "F1:  Help"
+msgstr "F1:  Laguntza"
+
+#: alsamixer/mixer_display.c:105
+msgid "F2:  System information"
+msgstr "F2:  Sistemaren informazioa"
+
+#: alsamixer/mixer_display.c:106
+msgid "F6:  Select sound card"
+msgstr "F6:  Hautatu soinu-txartela"
+
+# Esc --> Ihes / Esc
+#: alsamixer/mixer_display.c:107
+msgid "Esc: Exit"
+msgstr "Esc: Irten"
+
+#: alsamixer/mixer_display.c:174
+msgid "(unplugged)"
+msgstr "(deskonektatuta)"
+
+#: alsamixer/mixer_display.c:192
+msgid "Playback"
+msgstr "Erreprodukzioa"
+
+#: alsamixer/mixer_display.c:193
+msgid "Capture"
+msgstr "Kapturtzea"
+
+#: alsamixer/mixer_display.c:194
+msgid "All"
+msgstr "Guztiak"
+
+#: alsamixer/mixer_display.c:234
+msgid "mute"
+msgstr "mututu"
+
+#: alsamixer/mixer_display.c:275 alsamixer/mixer_display.c:285
+msgid "dB gain:"
+msgstr "dB irabazia:"
+
+#: alsamixer/mixer_display.c:285
+#, c-format
+msgid " [%s %s, %s]"
+msgstr " [%s %s, %s]"
+
+#: alsamixer/mixer_display.c:294 alsamixer/mixer_display.c:300
+#: alsamixer/mixer_display.c:306 alsamixer/mixer_display.c:312
+msgid "Off"
+msgstr "Itzalita"
+
+#: alsamixer/mixer_display.c:300 alsamixer/mixer_display.c:312
+msgid "On"
+msgstr "Piztuta"
+
+#: alsamixer/mixer_display.c:363
+msgid "The sound device was unplugged."
+msgstr "Soinu-txartela deskonektatu egin da."
+
+#: alsamixer/mixer_display.c:364
+msgid "Press F6 to select another sound card."
+msgstr "Sakatu F6 beste soinu-txartel bat hautatzeko."
+
+#: alsamixer/mixer_display.c:379
+msgid "This sound device does not have any playback controls."
+msgstr "Soinu-txartel honek ez du erreprodukzio kontrolik."
+
+#: alsamixer/mixer_display.c:381
+msgid "This sound device does not have any capture controls."
+msgstr "Soinu-txartel honek ez du kapturatze kontrolik."
+
+#: alsamixer/mixer_display.c:383
+msgid "This sound device does not have any controls."
+msgstr "Soinu-txartel honek ez du kontrolik."
+
+#. TRANSLATORS: playback on; one character
+#: alsamixer/mixer_display.c:516 alsamixer/mixer_display.c:521
+msgid "O"
+msgstr "O"
+
+#. TRANSLATORS: playback muted; one character
+#: alsamixer/mixer_display.c:518 alsamixer/mixer_display.c:522
+msgid "M"
+msgstr "M"
+
+#. TRANSLATORS: "left"; no more than two characters
+#: alsamixer/mixer_display.c:536
+msgid "L"
+msgstr "L"
+
+#. TRANSLATORS: "right"; no more than two characters
+#: alsamixer/mixer_display.c:540
+msgid "R"
+msgstr "R"
+
+#. TRANSLATORS: no more than eight characters
+#: alsamixer/mixer_display.c:542
+msgid "CAPTURE"
+msgstr "KAPTURATZEA"
+
+#: alsamixer/mixer_display.c:592
+msgid "Front"
+msgstr "Aurrealdekoa"
+
+#: alsamixer/mixer_display.c:595
+msgid "Rear"
+msgstr "Atzealdekoa"
+
+#: alsamixer/mixer_display.c:598 speaker-test/speaker-test.c:125
+msgid "Center"
+msgstr "Erdialdekoa"
+
+#: alsamixer/mixer_display.c:601
+msgid "Woofer"
+msgstr "Wooferra"
+
+#: alsamixer/mixer_display.c:604
+msgid "Side"
+msgstr "Aldekoa"
+
+#: alsamixer/mixer_widget.c:91 alsamixer/mixer_widget.c:96
+msgid "cannot open mixer"
+msgstr "ezin da ireki nahasgailua"
+
+#: alsamixer/mixer_widget.c:102 alsamixer/mixer_widget.c:179
+msgid "cannot load mixer controls"
+msgstr "ezin dira kargatu nahasgailu-kontrolak"
+
+#: alsamixer/mixer_widget.c:169
+#, c-format
+msgid "Cannot open mixer device '%s'."
+msgstr "Ezin da ireki '%s' nahasgailua."
+
+#: alsamixer/mixer_widget.c:190
+msgid "Esc     Exit"
+msgstr "Esc     Irten"
+
+#: alsamixer/mixer_widget.c:191
+msgid "F1 ? H  Help"
+msgstr "F1 ? H  Laguntza"
+
+#: alsamixer/mixer_widget.c:192
+msgid "F2 /    System information"
+msgstr "F2 /    Sistemaren informazioa"
+
+#: alsamixer/mixer_widget.c:193
+msgid "F3      Show playback controls"
+msgstr "F3      Erakutsi erreprodukzio kontrolak"
+
+#: alsamixer/mixer_widget.c:194
+msgid "F4      Show capture controls"
+msgstr "F4      Erakutsi kaptura kontrolak"
+
+#: alsamixer/mixer_widget.c:195
+msgid "F5      Show all controls"
+msgstr "F5      Erakutsi kontrol guztiak"
+
+#: alsamixer/mixer_widget.c:196
+msgid "Tab     Toggle view mode (F3/F4/F5)"
+msgstr "Tab     Aldatu ikuspegi modua (F3/F4/F5)"
+
+#: alsamixer/mixer_widget.c:197
+msgid "F6 S    Select sound card"
+msgstr "F6 S    Hautatu soinu-txartela"
+
+#: alsamixer/mixer_widget.c:198
+msgid "L       Redraw screen"
+msgstr "L       Pantaila birmarraztu"
+
+#: alsamixer/mixer_widget.c:200
+msgid "Left    Move to the previous control"
+msgstr "←       Mugitu ezkerreko kontrolera"
+
+#: alsamixer/mixer_widget.c:201
+msgid "Right   Move to the next control"
+msgstr "→       Mugitu eskuineko kontrolera"
+
+#: alsamixer/mixer_widget.c:203
+msgid "Up/Down    Change volume"
+msgstr "↑ ↓     Bolumena aldatu"
+
+#: alsamixer/mixer_widget.c:204
+msgid "+ -        Change volume"
+msgstr "+ -     Bolumena aldatu"
+
+#: alsamixer/mixer_widget.c:205
+msgid "Page Up/Dn Change volume in big steps"
+msgstr "Orria↑/↓   Aldatu bolumena urrats handinaka"
+
+#: alsamixer/mixer_widget.c:206
+msgid "End        Set volume to 0%"
+msgstr "Amaiera    Ezarri bolumena %0n"
+
+#: alsamixer/mixer_widget.c:207
+msgid "0-9        Set volume to 0%-90%"
+msgstr "0-9        Ezarri bolumena %0-%90 bitartean"
+
+#: alsamixer/mixer_widget.c:208
+msgid "Q W E      Increase left/both/right volumes"
+msgstr "Q W E      Handitu ezker/bi/eskuin bolumenak"
+
+#. TRANSLATORS: or Y instead of Z
+#: alsamixer/mixer_widget.c:210
+msgid "Z X C      Decrease left/both/right volumes"
+msgstr "Z X C      Txikitu ezker/bi/eskuin bolumenak"
+
+#: alsamixer/mixer_widget.c:211
+msgid "B          Balance left and right volumes"
+msgstr "B          Orekatu ezker eta eskuin bolumenak"
+
+#: alsamixer/mixer_widget.c:213
+msgid "M          Toggle mute"
+msgstr "M          Mututu/Desmututu"
+
+#. TRANSLATORS: or , .
+#: alsamixer/mixer_widget.c:215
+msgid "< >        Toggle left/right mute"
+msgstr "< >        Mututu/Desmututu ezker/eskuin"
+
+#: alsamixer/mixer_widget.c:217
+msgid "Space      Toggle capture"
+msgstr "Zuriunea   Gaitu/Desgaitu kapturatzea"
+
+#. TRANSLATORS: or Insert Delete
+#: alsamixer/mixer_widget.c:219
+msgid "; '        Toggle left/right capture"
+msgstr "; '        Gaitu/Desgaitu ezker/eskuin kapturatzea"
+
+#: alsamixer/mixer_widget.c:221
+msgid "Authors:"
+msgstr "Egileak:"
+
+#: alsamixer/mixer_widget.c:222
+msgid "  Tim Janik"
+msgstr "  Tim Janik"
+
+#: alsamixer/mixer_widget.c:223
+msgid "  Jaroslav Kysela <perex@perex.cz>"
+msgstr "  Jaroslav Kysela <perex@perex.cz>"
+
+#: alsamixer/mixer_widget.c:224
+msgid "  Clemens Ladisch <clemens@ladisch.de>"
+msgstr "  Clemens Ladisch <clemens@ladisch.de>"
+
+#: alsamixer/mixer_widget.c:226
+msgid "Help"
+msgstr "Laguntza"
+
+#: alsamixer/proc_files.c:103
+msgid "Select File"
+msgstr "Hautatu fitxategia"
+
+#: alsamixer/textbox.c:52 alsamixer/textbox.c:66
+msgid "Error"
+msgstr "Errorea"
+
+#: alsamixer/textbox.c:80
+#, c-format
+msgid "Cannot open file \"%s\"."
+msgstr "Ezin da ireki \"%s\" fitxategia."
+
+#: aplay/aplay.c:178
+msgid "raw data"
+msgstr "datu gordinak"
+
+#: aplay/aplay.c:179
+msgid "VOC"
+msgstr "VOC"
+
+#: aplay/aplay.c:181
+msgid "WAVE"
+msgstr "WAVE"
+
+#: aplay/aplay.c:182
+msgid "Sparc Audio"
+msgstr "Sparc Audio"
+
+#: aplay/aplay.c:203
+#, c-format
+msgid ""
+"Usage: %s [OPTION]... [FILE]...\n"
+"\n"
+"-h, --help              help\n"
+"    --version           print current version\n"
+"-l, --list-devices      list all soundcards and digital audio devices\n"
+"-L, --list-pcms         list device names\n"
+"-D, --device=NAME       select PCM by name\n"
+"-q, --quiet             quiet mode\n"
+"-t, --file-type TYPE    file type (voc, wav, raw or au)\n"
+"-c, --channels=#        channels\n"
+"-f, --format=FORMAT     sample format (case insensitive)\n"
+"-r, --rate=#            sample rate\n"
+"-d, --duration=#        interrupt after # seconds\n"
+"-s, --samples=#         interrupt after # samples per channel\n"
+"-M, --mmap              mmap stream\n"
+"-N, --nonblock          nonblocking mode\n"
+"-F, --period-time=#     distance between interrupts is # microseconds\n"
+"-B, --buffer-time=#     buffer duration is # microseconds\n"
+"    --period-size=#     distance between interrupts is # frames\n"
+"    --buffer-size=#     buffer duration is # frames\n"
+"-A, --avail-min=#       min available space for wakeup is # microseconds\n"
+"-R, --start-delay=#     delay for automatic PCM start is # microseconds \n"
+"                        (relative to buffer size if <= 0)\n"
+"-T, --stop-delay=#      delay for automatic PCM stop is # microseconds from "
+"xrun\n"
+"-v, --verbose           show PCM structure and setup (accumulative)\n"
+"-V, --vumeter=TYPE      enable VU meter (TYPE: mono or stereo)\n"
+"-I, --separate-channels one file for each channel\n"
+"-i, --interactive       allow interactive operation from stdin\n"
+"-m, --chmap=ch1,ch2,..  Give the channel map to override or follow\n"
+"    --disable-resample  disable automatic rate resample\n"
+"    --disable-channels  disable automatic channel conversions\n"
+"    --disable-format    disable automatic format conversions\n"
+"    --disable-softvol   disable software volume control (softvol)\n"
+"    --test-position     test ring buffer position\n"
+"    --test-coef=#       test coefficient for ring buffer position (default "
+"8)\n"
+"                        expression for validation is: coef * (buffer_size / "
+"2)\n"
+"    --test-nowait       do not wait for ring buffer - eats whole CPU\n"
+"    --max-file-time=#   start another output file when the old file has "
+"recorded\n"
+"                        for this many seconds\n"
+"    --process-id-file   write the process ID here\n"
+"    --use-strftime      apply the strftime facility to the output file name\n"
+"    --dump-hw-params    dump hw_params of the device\n"
+"    --fatal-errors      treat all errors as fatal\n"
+msgstr ""
+"Usage: %s [OPTION]... [FILE]...\n"
+"\n"
+"-h, --help              laguntza\n"
+"    --version           erakutsi oraingo bertsioa\n"
+"-l, --list-devices      zerrendatu soinu-txartel eta audio-digital gailu "
+"guztiak\n"
+"-L, --list-pcms         zerrendatu gailuen izenak\n"
+"-D, --device=IZENA      hautatu PCM izenaren arabera\n"
+"-q, --quiet             modu isila\n"
+"-t, --file-type MOTA    fitxategi mota (voc, wav, raw edo au)\n"
+"-c, --channels=#        kanalak\n"
+"-f, --format=FORMATUA   laginaren formatua (ez dira bereizten maiuskulak eta "
+"minuskulak)\n"
+"-r, --rate=#            lagin-tasa\n"
+"-d, --duration=#        gelditu # segundu ostean\n"
+"-s, --samples=#         gelditu kanaleko # lagin ostean\n"
+"-M, --mmap              mmap stream-a\n"
+"-N, --nonblock          nonblocking modua\n"
+"-F, --period-time=#     geldialdien arteko distantzia # mikrosegundokoa da\n"
+"-B, --buffer-time=#     bufferraren iraupena # mikrosegunfokoa da\n"
+"    --period-size=#     geldialdien arteko distantzia # laginekoa da\n"
+"    --buffer-size=#     bufferraren iraupena # laginekoa da\n"
+"-A, --avail-min=#       esnatzeko gutxieneko espazio eskuragarria # "
+"mikrosegundo da\n"
+"-R, --start-delay=#     PCM automatikoki hasteko atzerapena # mikrosegundo "
+"da \n"
+"                        (buffer-tamainaren erlatiboa baldin eta <= 0)\n"
+"-T, --stop-delay=#       PCM automatikoki gelditzeko atzerapena # "
+"mikrosegundo da xrun-etik\n"
+"-v, --verbose           erakutsi PCM egitura eta ezarpena (pilagarria)\n"
+"-V, --vumeter=MOTA      gaitu VU neurgailua (MOTA: mono edo stereo)\n"
+"-I, --separate-channels fitxategi bat kanaleko\n"
+"-i, --interactive       baimendu ekintza interaktiboa stdin-etik\n"
+"-m, --chmap=ch1,ch2,..  Eman kanal-mapa gainidatzi edo jarraitzeko\n"
+"    --disable-resample  desgaitu tasa birlagintze automatikoa\n"
+"    --disable-channels  desgaitu kanal bihurketa automatikoa\n"
+"    --disable-format    desgaitu formatu bihurketa automatikoa\n"
+"    --disable-softvol   desgaitu software volume control (softvol)\n"
+"    --test-position     probatu eraztun-bufferraren kokalekua\n"
+"    --test-coef=#       probatu eraztun-bufferraren kokalekuarentzako "
+"koefizientea (lehenetsia 8)\n"
+"                        baliozkotzeko adierazpena hau da: koef * "
+"(buffer_tamaina / 2)\n"
+"    --test-nowait       ez itxaron eraztun-bufferrari - PUZ osoa erabiliko "
+"du\n"
+"    --max-file-time=#   beste irteera-fitxategi bat abiarazi, fitxategi "
+"zaharrak\n"
+"                        segundo askotarako grabatu duenean\n"
+"    --process-id-file   erakutsi hemen prozesuaren IDa\n"
+"    --use-strftime      aplikatu strftime instalazioa irteera-fitxategiaren "
+"izenari \n"
+"    --dump-hw-params    ezkutatu gailuaren hw parametroak\n"
+"    --fatal-errors      jo errore guztiak larritzat\n"
+
+#: aplay/aplay.c:248 speaker-test/speaker-test.c:1023
+#, c-format
+msgid "Recognized sample formats are:"
+msgstr "Hauek dira onartutako lagin-formatuak:"
+
+#: aplay/aplay.c:254
+#, c-format
+msgid ""
+"\n"
+"Some of these may not be available on selected hardware\n"
+msgstr ""
+"\n"
+"Baliteke horietako batzuk erabilgarri ez egotea hautatutako hardwarean\n"
+
+#: aplay/aplay.c:255
+#, c-format
+msgid "The available format shortcuts are:\n"
+msgstr "Hauek dira formatu laster-tekla erabilgarriak:\n"
+
+#: aplay/aplay.c:256
+#, c-format
+msgid "-f cd (16 bit little endian, 44100, stereo)\n"
+msgstr "-f cd (16 bit bukaera txikia, 44100, estereo)\n"
+
+#: aplay/aplay.c:257
+#, c-format
+msgid "-f cdr (16 bit big endian, 44100, stereo)\n"
+msgstr "-f cdr (16 bit bukaera handia, 44100, estereo)\n"
+
+#: aplay/aplay.c:258
+#, c-format
+msgid "-f dat (16 bit little endian, 48000, stereo)\n"
+msgstr "-f dat (16 bit bukaera txikia, 48000, estereo)\n"
+
+#: aplay/aplay.c:272
+msgid "no soundcards found..."
+msgstr "ez da soinu-txartelik aurkitu..."
+
+#: aplay/aplay.c:275
+#, c-format
+msgid "**** List of %s Hardware Devices ****\n"
+msgstr "**** %s hardware gailuen zerrenda ****\n"
+
+#: aplay/aplay.c:304
+#, c-format
+msgid "card %i: %s [%s], device %i: %s [%s]\n"
+msgstr "%i txartela: %s [%s], %i gailua: %s [%s]\n"
+
+#: aplay/aplay.c:310
+#, c-format
+msgid "  Subdevices: %i/%i\n"
+msgstr "  Azpigailuak: %i/%i\n"
+
+#: aplay/aplay.c:317
+#, c-format
+msgid "  Subdevice #%i: %s\n"
+msgstr "  #%i azpigailua: %s\n"
+
+#: aplay/aplay.c:398
+#, c-format
+msgid "Aborted by signal %s...\n"
+msgstr "%s seinaleak abortatuta...\n"
+
+#: aplay/aplay.c:553
+msgid "command should be named either arecord or aplay"
+msgstr "komandoa arecord edo aplay gisa izendatu behar da"
+
+#: aplay/aplay.c:597
+#, c-format
+msgid "unrecognized file format %s"
+msgstr "%s fitxategi-formatu ezezaguna"
+
+#: aplay/aplay.c:604
+#, c-format
+msgid "invalid channels argument '%s'"
+msgstr "kanalen '%s' argumentu baliogabea"
+
+#: aplay/aplay.c:608
+#, c-format
+msgid "value %i for channels is invalid"
+msgstr "kanalentzako %i balio baliogabea"
+
+#: aplay/aplay.c:627
+#, c-format
+msgid "wrong extended format '%s'"
+msgstr "'%s' formatu hedatua ez da zuzena"
+
+#: aplay/aplay.c:635
+#, c-format
+msgid "invalid rate argument '%s'"
+msgstr "'%s' tasa argumentu baliogabea"
+
+#: aplay/aplay.c:642
+#, c-format
+msgid "bad speed value %i"
+msgstr "%i abiadura balio okerra"
+
+#: aplay/aplay.c:648
+msgid "duration and samples arguments cannot be used together"
+msgstr "iraupen eta lagin argumentuak ezin dira elkarrekin erabili"
+
+#: aplay/aplay.c:653
+#, c-format
+msgid "invalid duration argument '%s'"
+msgstr "'%s' iraupen argumentu baliogabea"
+
+#: aplay/aplay.c:660
+msgid "samples and duration arguments cannot be used together"
+msgstr "lagin eta iraupen argumentuak ezin dira elkarrekin erabili"
+
+#: aplay/aplay.c:665
+#, c-format
+msgid "invalid samples argument '%s'"
+msgstr "'%s' lagin argumentu baliogabea"
+
+#: aplay/aplay.c:677
+#, c-format
+msgid "invalid period time argument '%s'"
+msgstr "'%s' periodo-denbora argumentu baliogabea"
+
+#: aplay/aplay.c:684
+#, c-format
+msgid "invalid buffer time argument '%s'"
+msgstr "'%s' buffer-denbora argumentu baliogabea"
+
+#: aplay/aplay.c:691
+#, c-format
+msgid "invalid period size argument '%s'"
+msgstr "'%s' periodo-tamaina argumentu baliogabea"
+
+#: aplay/aplay.c:698
+#, c-format
+msgid "invalid buffer size argument '%s'"
+msgstr "'%s' buffer-tamaina argumentu baliogabea"
+
+#: aplay/aplay.c:705
+#, c-format
+msgid "invalid min available space argument '%s'"
+msgstr "'%s' gutxieneko espazio erabilgarri argumentu baliogabea"
+
+#: aplay/aplay.c:712
+#, c-format
+msgid "invalid start delay argument '%s'"
+msgstr "'%s' haste-atzerapen argumentu baliogabea"
+
+#: aplay/aplay.c:719
+#, c-format
+msgid "invalid stop delay argument '%s'"
+msgstr "'%s' gelditze-atzerapen argumentu baliogabea"
+
+#: aplay/aplay.c:774
+#, c-format
+msgid "invalid test coef argument '%s'"
+msgstr "'%s' koef. proba argumentu baliogabea"
+
+#: aplay/aplay.c:786
+#, c-format
+msgid "invalid max file time argument '%s'"
+msgstr "'%s' gehienezko fitxategi-denbora argumentu baliogabea"
+
+#: aplay/aplay.c:806 speaker-test/speaker-test.c:666
+#, c-format
+msgid "Unable to parse channel map string: %s\n"
+msgstr "Ezin da kanal-maparen katea analizatu: %s\n"
+
+#: aplay/aplay.c:812
+#, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr "Probatu `%s --help' xehetasun gehiagorako.\n"
+
+#: aplay/aplay.c:828
+#, c-format
+msgid "audio open error: %s"
+msgstr "audio irekitze errorea: %s"
+
+#: aplay/aplay.c:833
+#, c-format
+msgid "info error: %s"
+msgstr "informazio errorea: %s"
+
+#: aplay/aplay.c:840
+#, c-format
+msgid "nonblock setting error: %s"
+msgstr "nonblock-en konfigurazio-ezarpen errorea: %s"
+
+#: aplay/aplay.c:850 aplay/aplay.c:974 aplay/aplay.c:1264 aplay/aplay.c:1458
+#: aplay/aplay.c:1979 aplay/aplay.c:2009
+msgid "not enough memory"
+msgstr "ez dago behar adina memoria"
+
+#: aplay/aplay.c:874
+#, c-format
+msgid "Cannot create process ID file %s: %s"
+msgstr "Ezin da sortu %s prozesuaren ID fitxategia: %s"
+
+#: aplay/aplay.c:964
+#, c-format
+msgid "read error (called from line %i)"
+msgstr "irakurtzean errorea (%i lerrotik deitua)"
+
+#: aplay/aplay.c:1031
+#, c-format
+msgid "unknown length of 'fmt ' chunk (read %u, should be %u at least)"
+msgstr "'fmt' chunk luzera ezezaguna (%u irakurri, %u izan behar du gutxienez)"
+
+#: aplay/aplay.c:1042
+#, c-format
+msgid ""
+"unknown length of extensible 'fmt ' chunk (read %u, should be %u at least)"
+msgstr ""
+"'fmt' chunk hedagarri luzera ezezaguna (%u irakurri, %u izan behar du "
+"gutxienez)"
+
+#: aplay/aplay.c:1047
+msgid "wrong format tag in extensible 'fmt ' chunk"
+msgstr "formatua ez da zuzena 'fmt' chunk hedagarrian"
+
+#: aplay/aplay.c:1054
+#, c-format
+msgid "can't play WAVE-file format 0x%04x which is not PCM or FLOAT encoded"
+msgstr ""
+"ezin da erreproduzitu PCM edo FLOAT kodetua ez den 0x%04x WAVE-fitxategiaren "
+"formatua"
+
+#: aplay/aplay.c:1059
+#, c-format
+msgid "can't play WAVE-files with %d tracks"
+msgstr "ezin dira erreproduzitu %d pista dituzten WAVE-fitxategiak"
+
+#: aplay/aplay.c:1067 aplay/aplay.c:1193
+#, c-format
+msgid "Warning: format is changed to U8\n"
+msgstr "Abisua: formatua U8-ra aldatu da\n"
+
+#: aplay/aplay.c:1077 aplay/aplay.c:1090 aplay/aplay.c:1101
+#, c-format
+msgid "Warning: format is changed to %s\n"
+msgstr "Abisua: formatua %s-(e)ra aldatu da\n"
+
+#: aplay/aplay.c:1106
+#, c-format
+msgid ""
+" can't play WAVE-files with sample %d bits in %d bytes wide (%d channels)"
+msgstr ""
+" ezin dira erreproduzitu %d byteko zabaleran %d lagin-bita duten WAVE-"
+"fitxategiak (%d kanal)"
+
+#: aplay/aplay.c:1129
+#, c-format
+msgid " can't play WAVE-files with sample %d bits wide"
+msgstr ""
+" ezin dira erreproduzitu %d lagin-biteko zabalera duten WAVE-fitxategiak"
+
+#: aplay/aplay.c:1187
+#, c-format
+msgid "Warning: format is changed to MU_LAW\n"
+msgstr "Abisua: formatua MU_LAW-era aldatu da\n"
+
+#: aplay/aplay.c:1199
+#, c-format
+msgid "Warning: format is changed to S16_BE\n"
+msgstr "Abisua: formatua S16_BE-ra aldatu da\n"
+
+#: aplay/aplay.c:1212 aplay/aplay.c:2294 aplay/aplay.c:2301 aplay/aplay.c:2831
+msgid "read error"
+msgstr "irakurtze errorea"
+
+#: aplay/aplay.c:1242
+msgid "Channel numbers don't match between hw_params and channel map"
+msgstr "Kanal-zenbakiak ez datoz bat hw parametro eta kanal-maparen artean"
+
+#: aplay/aplay.c:1251
+#, c-format
+msgid "Warning: unable to get channel map\n"
+msgstr "Abisua: ezin dat kanal-mapa eskuratu\n"
+
+#: aplay/aplay.c:1284
+#, c-format
+msgid "Channel %d doesn't match with hw_parmas"
+msgstr "%d kanala ez dator bat hw parametroekin"
+
+#: aplay/aplay.c:1310
+msgid "Broken configuration for this PCM: no configurations available"
+msgstr ""
+"PCM honetarako konfigurazio hautsia: ez dago konfigurazio erabilgarririk"
+
+#: aplay/aplay.c:1314
+#, c-format
+msgid "HW Params of device \"%s\":\n"
+msgstr "\"%s\" gailuaren HW parametroak:\n"
+
+#: aplay/aplay.c:1334
+msgid "Access type not available"
+msgstr "Sarbide-mota ez dago erabilgarri"
+
+#: aplay/aplay.c:1339
+msgid "Sample format non available"
+msgstr "Lagin formatua ez dago erabilgarri"
+
+#: aplay/aplay.c:1345
+msgid "Channels count non available"
+msgstr "Kanal zenbaketa ez dago erabilgarri"
+
+#: aplay/aplay.c:1360
+#, c-format
+msgid "Warning: rate is not accurate (requested = %iHz, got = %iHz)\n"
+msgstr ""
+"Abisua: lagin-tasa ez da zehatza (eskatutakoa = %iHz, eskuratutakoa = %iHz)\n"
+
+#: aplay/aplay.c:1366
+#, c-format
+msgid "         please, try the plug plugin %s\n"
+msgstr "         probatu %s konektatze-plugina\n"
+
+#: aplay/aplay.c:1403
+msgid "Unable to install hw params:"
+msgstr "Ezin dira hw parametroak instalatu:"
+
+#: aplay/aplay.c:1410
+#, c-format
+msgid "Can't use period equal to buffer size (%lu == %lu)"
+msgstr "Ezin da bufferraren tamaina bereko periodoa erabili (%lu == %lu)"
+
+#: aplay/aplay.c:1441
+msgid "unable to install sw params:"
+msgstr "ezin dira sw parametroak instalatu:"
+
+#: aplay/aplay.c:1476
+#, c-format
+msgid "snd_pcm_mmap_begin problem: %s"
+msgstr "snd_pcm_mmap_begin arazoa: %s"
+
+#: aplay/aplay.c:1505
+#, c-format
+msgid "stdin O_NONBLOCK flag setup failed\n"
+msgstr "stdin O_NONBLOCK marka ezartzeak huts egin du\n"
+
+#: aplay/aplay.c:1529
+#, c-format
+msgid "\rPAUSE command ignored (no hw support)\n"
+msgstr "\rPAUSE komandoa ezikusi da (ez du hw sostengurik)\n"
+
+#: aplay/aplay.c:1537
+#, c-format
+msgid "pause push error: %s"
+msgstr "pause push errorea: %s"
+
+#: aplay/aplay.c:1548
+#, c-format
+msgid "pause release error: %s"
+msgstr "pause release errorea: %s"
+
+#: aplay/aplay.c:1564
+#, c-format
+msgid ""
+"\r=== PAUSE ===                                                            "
+msgstr ""
+"\r=== PAUSE ===                                                            "
+
+#: aplay/aplay.c:1606
+#, c-format
+msgid "status error: %s"
+msgstr "egoera errorea: %s"
+
+#: aplay/aplay.c:1611
+#, c-format
+msgid "fatal %s: %s"
+msgstr "%s larria: %s"
+
+#: aplay/aplay.c:1612 aplay/aplay.c:1623 aplay/aplay.c:1626 aplay/aplay.c:1634
+msgid "underrun"
+msgstr "underrun (azpiratzea)"
+
+#: aplay/aplay.c:1612 aplay/aplay.c:1623 aplay/aplay.c:1634
+msgid "overrun"
+msgstr "overrun (gainditzea)"
+
+#: aplay/aplay.c:1622 aplay/aplay.c:1633
+#, c-format
+msgid "%s!!! (at least %.3f ms long)\n"
+msgstr "%s!!! (behintzat %.3f ms luze)\n"
+
+#: aplay/aplay.c:1638
+#, c-format
+msgid "Status:\n"
+msgstr "Egoera:\n"
+
+#: aplay/aplay.c:1642
+#, c-format
+msgid "xrun: prepare error: %s"
+msgstr "xrun: prestakuntza errorea: %s"
+
+#: aplay/aplay.c:1648
+#, c-format
+msgid "Status(DRAINING):\n"
+msgstr "Egoera(HUSTEN):\n"
+
+#: aplay/aplay.c:1652
+#, c-format
+msgid "capture stream format change? attempting recover...\n"
+msgstr "kaptura-fluxu formatua aldatu? berreskuratzea saiatzen...\n"
+
+#: aplay/aplay.c:1654
+#, c-format
+msgid "xrun(DRAINING): prepare error: %s"
+msgstr "xrun(HUSTEN): prestakuntza errorea: %s"
+
+#: aplay/aplay.c:1661
+#, c-format
+msgid "Status(R/W):\n"
+msgstr "Egoera(Irak/Idat):\n"
+
+#: aplay/aplay.c:1664
+#, c-format
+msgid "read/write error, state = %s"
+msgstr "irakurtze/idazte errorea, egoera = %s"
+
+#: aplay/aplay.c:1674
+#, c-format
+msgid "Suspended. Trying resume. "
+msgstr "Etenda. Berrekiten saiatzen. "
+
+#: aplay/aplay.c:1679
+#, c-format
+msgid "Failed. Restarting stream. "
+msgstr "Huts egin du. Fluxua berrabiarazten. "
+
+#: aplay/aplay.c:1681
+#, c-format
+msgid "suspend: prepare error: %s"
+msgstr "eten: prestakuntza errorea: %s"
+
+#: aplay/aplay.c:1686
+#, c-format
+msgid "Done.\n"
+msgstr "Egina.\n"
+
+#: aplay/aplay.c:1708
+#, c-format
+msgid " !clip  "
+msgstr " !clip  "
+
+#: aplay/aplay.c:1855
+#, c-format
+msgid "Unsupported bit size %d.\n"
+msgstr "Euskarririk gabeko %d bit-tamaina.\n"
+
+#: aplay/aplay.c:1889
+#, c-format
+msgid "Max peak (%li samples): 0x%08x "
+msgstr "Gehiengo gailurra (%li lagin): 0x%08x "
+
+#: aplay/aplay.c:1923
+#, c-format
+msgid ""
+"Suspicious buffer position (%li total): avail = %li, delay = %li, buffer = "
+"%li\n"
+msgstr ""
+"Buffer-kokaleku susmagarria (%li guztira) eskurag = %li, atzerapena = %li, "
+"bufferra = %li\n"
+
+#: aplay/aplay.c:2051
+#, c-format
+msgid "write error: %s"
+msgstr "idazte errorea: %s"
+
+#: aplay/aplay.c:2099
+#, c-format
+msgid "writev error: %s"
+msgstr "writev errorea: %s"
+
+#: aplay/aplay.c:2143
+#, c-format
+msgid "read error: %s"
+msgstr "irakurtze errorea: %s"
+
+#: aplay/aplay.c:2187
+#, c-format
+msgid "readv error: %s"
+msgstr "readv errorea: %s"
+
+#: aplay/aplay.c:2235
+msgid "can't allocate buffer for silence"
+msgstr "ezin da esleitu bufferra isiltasunerako"
+
+#: aplay/aplay.c:2244 aplay/aplay.c:2472 aplay/aplay.c:2477 aplay/aplay.c:2527
+#: aplay/aplay.c:2536 aplay/aplay.c:2543 aplay/aplay.c:2553 aplay/aplay.c:2559
+#: aplay/aplay.c:2631 aplay/aplay.c:2661 aplay/aplay.c:2675
+msgid "write error"
+msgstr "idazte errorea"
+
+#: aplay/aplay.c:2257
+#, c-format
+msgid "voc_pcm_flush - silence error"
+msgstr "voc_pcm_flush - isiltasun errorea"
+
+#: aplay/aplay.c:2260
+msgid "voc_pcm_flush error"
+msgstr "voc_pcm_flush errorea"
+
+#: aplay/aplay.c:2285
+msgid "malloc error"
+msgstr "malloc errorea"
+
+#: aplay/aplay.c:2289
+#, c-format
+msgid "Playing Creative Labs Channel file '%s'...\n"
+msgstr "'%s' Creative Labs Channel fitxategia erreproduzitzen...\n"
+
+#: aplay/aplay.c:2357 aplay/aplay.c:2452
+msgid "can't play packed .voc files"
+msgstr "ezin dira erreproduzitu paketatutako .voc fitxategiak"
+
+#: aplay/aplay.c:2412
+#, c-format
+msgid "can't play loops; %s isn't seekable\n"
+msgstr "ezin dira begiztak erreproduzitu; %s ez da bilagarria\n"
+
+#: aplay/aplay.c:2461
+#, c-format
+msgid "unknown blocktype %d. terminate."
+msgstr "%d bloke-mota ezezaguna. Amaitu."
+
+#: aplay/aplay.c:2595
+#, c-format
+msgid "Wave doesn't support %s format..."
+msgstr "Wave-ek ez du %s formatua onartzen..."
+
+#: aplay/aplay.c:2655
+#, c-format
+msgid "Sparc Audio doesn't support %s format..."
+msgstr "Sparc Audio-k ez du %s formatua onartzen..."
+
+#: aplay/aplay.c:2736
+msgid "Playing"
+msgstr "Erreproduzitzen"
+
+#: aplay/aplay.c:2736
+msgid "Recording"
+msgstr "Grabatzen"
+
+#: aplay/aplay.c:2740
+#, c-format
+msgid "Rate %d Hz, "
+msgstr "Tasa %d Hz, "
+
+#: aplay/aplay.c:2742
+#, c-format
+msgid "Mono"
+msgstr "Mono"
+
+#: aplay/aplay.c:2744
+#, c-format
+msgid "Stereo"
+msgstr "Estereo"
+
+#: aplay/aplay.c:2746
+#, c-format
+msgid "Channels %i"
+msgstr "Kanalak %i"
+
+#: aplay/aplay.c:3344 aplay/aplay.c:3397
+#, c-format
+msgid "You need to specify %d files"
+msgstr "%d fitxategiak zehaztu behar dituzu"
+
+#: seq/aconnect/aconnect.c:49
+#, c-format
+msgid "aconnect - ALSA sequencer connection manager\n"
+msgstr "aconnect - ALSA konexio sekuentziadorearen kudeatzailea\n"
+
+#: seq/aconnect/aconnect.c:50
+#, c-format
+msgid "Copyright (C) 1999-2000 Takashi Iwai\n"
+msgstr "Copyright (C) 1999-2000 Takashi Iwai\n"
+
+#: seq/aconnect/aconnect.c:51
+#, c-format
+msgid "Usage:\n"
+msgstr "Erabilera:\n"
+
+#: seq/aconnect/aconnect.c:52
+#, c-format
+msgid " * Connection/disconnection between two ports\n"
+msgstr " * Bi ataken arteko konexio/deskonexioak\n"
+
+#: seq/aconnect/aconnect.c:53
+#, c-format
+msgid "   aconnect [-options] sender receiver\n"
+msgstr "   aconnect [-aukerak] bidaltzailea hartzailea\n"
+
+#: seq/aconnect/aconnect.c:54
+#, c-format
+msgid "     sender, receiver = client:port pair\n"
+msgstr "     bidaltzailea, hartzailea = bezeroa:ataka parea\n"
+
+#: seq/aconnect/aconnect.c:55
+#, c-format
+msgid "     -d,--disconnect     disconnect\n"
+msgstr "     -d,--disconnect     deskonektatu\n"
+
+#: seq/aconnect/aconnect.c:56
+#, c-format
+msgid "     -e,--exclusive      exclusive connection\n"
+msgstr "     -e,--exclusive      konexio esklusiboa\n"
+
+#: seq/aconnect/aconnect.c:57
+#, c-format
+msgid "     -r,--real #         convert real-time-stamp on queue\n"
+msgstr "     -r,--real #         sartu denbora-errealeko-zigilua ilaran\n"
+
+#: seq/aconnect/aconnect.c:58
+#, c-format
+msgid "     -t,--tick #         convert tick-time-stamp on queue\n"
+msgstr "     -t,--tick #         sartu denbora-marka-zigilua ilaran\n"
+
+#: seq/aconnect/aconnect.c:59
+#, c-format
+msgid " * List connected ports (no subscription action)\n"
+msgstr " * Zerrendatu konektatutako atakak (harpidetza-ekintzarik ez)\n"
+
+#: seq/aconnect/aconnect.c:60
+#, c-format
+msgid "   aconnect -i|-o [-options]\n"
+msgstr "   aconnect -i|-o [-aukerak]\n"
+
+#: seq/aconnect/aconnect.c:61
+#, c-format
+msgid "     -i,--input          list input (readable) ports\n"
+msgstr ""
+"     -i,--input          zerrendatu sarrera-atakak (irakurgarriak)\n"
+"\n"
+
+#: seq/aconnect/aconnect.c:62
+#, c-format
+msgid "     -o,--output         list output (writable) ports\n"
+msgstr "     -o,--output         zerrendatu irteera-atakak (idazgarriak)\n"
+
+#: seq/aconnect/aconnect.c:63
+#, c-format
+msgid "     -l,--list           list current connections of each port\n"
+msgstr ""
+"     -l,--list           zerrendatu ataka bakoitzak orain dituen loturak\n"
+
+#: seq/aconnect/aconnect.c:64
+#, c-format
+msgid " * Remove all exported connections\n"
+msgstr ""
+" * Ezabatu esportatutako konexio guztiak\n"
+"\n"
+
+#: seq/aconnect/aconnect.c:65
+#, c-format
+msgid "     -x, --removeall\n"
+msgstr "     -x, --removeall\n"
+
+#: seq/aconnect/aconnect.c:132
+msgid "Connecting To"
+msgstr "Hona konektatzen"
+
+#: seq/aconnect/aconnect.c:133
+msgid "Connected From"
+msgstr "Hemendik konektatuta"
+
+#: seq/aconnect/aconnect.c:171
+#, c-format
+msgid "client %d: '%s' [type=%s"
+msgstr "%d bezeroa: '%s' [mota=%s"
+
+#: seq/aconnect/aconnect.c:175
+msgid "user"
+msgstr "erabiltzailea"
+
+#: seq/aconnect/aconnect.c:175
+msgid "kernel"
+msgstr "kernela"
+
+#: seq/aconnect/aconnect.c:323
+#, c-format
+msgid "can't open sequencer\n"
+msgstr "ezin da ireki sekuentziadorea\n"
+
+#: seq/aconnect/aconnect.c:351
+#, c-format
+msgid "can't get client id\n"
+msgstr "ezin da lortu bezeroaren IDa\n"
+
+#: seq/aconnect/aconnect.c:358
+#, c-format
+msgid "can't set client info\n"
+msgstr "ezin da zehaztu bezeroaren informazioa\n"
+
+#: seq/aconnect/aconnect.c:365
+#, c-format
+msgid "invalid sender address %s\n"
+msgstr "%s bidaltzaile-helbide baliogabea\n"
+
+#: seq/aconnect/aconnect.c:370 seq/aseqnet/aseqnet.c:290
+#, c-format
+msgid "invalid destination address %s\n"
+msgstr "%s hartzaile-helbide baliogabea\n"
+
+#: seq/aconnect/aconnect.c:384
+#, c-format
+msgid "No subscription is found\n"
+msgstr "Ez da harpidetzarik aurkitu\n"
+
+#: seq/aconnect/aconnect.c:389
+#, c-format
+msgid "Disconnection failed (%s)\n"
+msgstr "Deskonektatzeak huts egin du (%s)\n"
+
+#: seq/aconnect/aconnect.c:395
+#, c-format
+msgid "Connection is already subscribed\n"
+msgstr "Konexioa jada harpidetua dago\n"
+
+#: seq/aconnect/aconnect.c:400
+#, c-format
+msgid "Connection failed (%s)\n"
+msgstr "Konexioak huts egin du (%s)\n"
+
+#: seq/aseqnet/aseqnet.c:164
+#, c-format
+msgid "aseqnet - network client/server on ALSA sequencer\n"
+msgstr "aseqnet - ALSA sekuentziadorearen sarerako bezeroa/zerbitzaria\n"
+
+#: seq/aseqnet/aseqnet.c:165
+#, c-format
+msgid "  Copyright (C) 1999 Takashi Iwai\n"
+msgstr "  Copyright (C) 1999 Takashi Iwai\n"
+
+#: seq/aseqnet/aseqnet.c:166
+#, c-format
+msgid "usage:\n"
+msgstr "erabilera:\n"
+
+#: seq/aseqnet/aseqnet.c:167
+#, c-format
+msgid "  server mode: aseqnet [-options]\n"
+msgstr "  zerbitzari modua: aseqnet [-aukerak]\n"
+
+#: seq/aseqnet/aseqnet.c:168
+#, c-format
+msgid "  client mode: aseqnet [-options] server_host\n"
+msgstr "  bezero modua: aseqnet [-aukerak] zerbitzari_ostalaria\n"
+
+#: seq/aseqnet/aseqnet.c:169
+#, c-format
+msgid "options:\n"
+msgstr "aukerak:\n"
+
+#: seq/aseqnet/aseqnet.c:170
+#, c-format
+msgid "  -p,--port # : specify TCP port (digit or service name)\n"
+msgstr "  -p,--port # : zehaztu TCP ataka (zerbitzuaren digitua edo izena)\n"
+
+#: seq/aseqnet/aseqnet.c:171
+#, c-format
+msgid "  -s,--source addr : read from given addr (client:port)\n"
+msgstr ""
+"  -s,--source helbidea : irakurri emandako helbidetik (bezeroa:ataka)\n"
+
+#: seq/aseqnet/aseqnet.c:172
+#, c-format
+msgid "  -d,--dest addr : write to given addr (client:port)\n"
+msgstr "  -d,--dest helbidea : idatzi emandako helbidean (bezeroa:ataka)\n"
+
+#: seq/aseqnet/aseqnet.c:173
+#, c-format
+msgid "  -v, --verbose : print verbose messages\n"
+msgstr "  -v, --verbose : erakutsi mezu xehatuak\n"
+
+#: seq/aseqnet/aseqnet.c:174
+#, c-format
+msgid "  -i, --info : print certain received events\n"
+msgstr "  -i, --info : erakutsi jasotako zenbait gertaera\n"
+
+#: seq/aseqnet/aseqnet.c:188
+#, c-format
+msgid "can't malloc\n"
+msgstr "ezin da malloc exekutatu\n"
+
+#: seq/aseqnet/aseqnet.c:213
+#, c-format
+msgid "closing files..\n"
+msgstr "fitxategiak ixten...\n"
+
+#: seq/aseqnet/aseqnet.c:272
+#, c-format
+msgid "sequencer opened: %d:%d\n"
+msgstr "sekuentziadorea ireki da: %d:%d\n"
+
+#: seq/aseqnet/aseqnet.c:279
+#, c-format
+msgid "invalid source address %s\n"
+msgstr "%s iturburu-helbide baliogabea\n"
+
+#: seq/aseqnet/aseqnet.c:309
+#, c-format
+msgid "service '%s' is not found in /etc/services\n"
+msgstr "ez da aurkitu '%s' zerbitzua /etc/services direktorioan\n"
+
+#: seq/aseqnet/aseqnet.c:377
+#, c-format
+msgid "too many connections!\n"
+msgstr "konexio gehiegi!\n"
+
+#: seq/aseqnet/aseqnet.c:388
+#, c-format
+msgid "accepted[%d]\n"
+msgstr "onartua[%d]\n"
+
+#: seq/aseqnet/aseqnet.c:411
+#, c-format
+msgid "can't get address %s\n"
+msgstr "ezin da %s helbidea lortu\n"
+
+#: seq/aseqnet/aseqnet.c:422
+#, c-format
+msgid "ok.. connected\n"
+msgstr "ados... konektatuta\n"
+
+#: seq/aseqnet/aseqnet.c:518
+#, c-format
+msgid "Channel %2d: Control event : %5d\n"
+msgstr "%2d kanala: kontrol-gertaera : %5d\n"
+
+#: seq/aseqnet/aseqnet.c:522
+#, c-format
+msgid "Channel %2d: Pitchbender   : %5d\n"
+msgstr "%2d kanala: Tonu aldatzailea   : %5d\n"
+
+#: seq/aseqnet/aseqnet.c:526
+#, c-format
+msgid "Channel %2d: Note On event : %5d\n"
+msgstr "%2d kanala: 'Oharra gaituta' gertaera : %5d\n"
+
+#: seq/aseqnet/aseqnet.c:530
+#, c-format
+msgid "Channel %2d: Note Off event: %5d\n"
+msgstr "%2d kanala: 'Oharra desgaituta' gertaera : %5d\n"
+
+#: seq/aseqnet/aseqnet.c:585
+#, c-format
+msgid "disconnected\n"
+msgstr "deskonektatuta\n"
+
+#: speaker-test/speaker-test.c:121
+msgid "Front Left"
+msgstr "Aurrealde ezkerra"
+
+#: speaker-test/speaker-test.c:122
+msgid "Front Right"
+msgstr "Aurrealde eskuina"
+
+#: speaker-test/speaker-test.c:123
+msgid "Rear Left"
+msgstr "Atzealde ezkerra"
+
+#: speaker-test/speaker-test.c:124
+msgid "Rear Right"
+msgstr "Atzealde eskuina"
+
+#: speaker-test/speaker-test.c:126
+msgid "LFE"
+msgstr "LFE"
+
+#: speaker-test/speaker-test.c:127
+msgid "Side Left"
+msgstr "Ezker aldea"
+
+#: speaker-test/speaker-test.c:128
+msgid "Side Right"
+msgstr "Eskuin aldea"
+
+#: speaker-test/speaker-test.c:129
+msgid "Channel 9"
+msgstr "9 kanala"
+
+#: speaker-test/speaker-test.c:130
+msgid "Channel 10"
+msgstr "10 kanala"
+
+#: speaker-test/speaker-test.c:131
+msgid "Channel 11"
+msgstr "11 kanala"
+
+#: speaker-test/speaker-test.c:132
+msgid "Channel 12"
+msgstr "12 kanala"
+
+#: speaker-test/speaker-test.c:133
+msgid "Channel 13"
+msgstr "13 kanala"
+
+#: speaker-test/speaker-test.c:134
+msgid "Channel 14"
+msgstr "14 kanala"
+
+#: speaker-test/speaker-test.c:135
+msgid "Channel 15"
+msgstr "15 kanala"
+
+#: speaker-test/speaker-test.c:136
+msgid "Channel 16"
+msgstr "16 kanala"
+
+#: speaker-test/speaker-test.c:519
+#, c-format
+msgid "Broken configuration for playback: no configurations available: %s\n"
+msgstr ""
+"Erreprodukziorako konfigurazio hautsia: ez dago konfigurazio erabilgarririk: "
+"%s\n"
+
+#: speaker-test/speaker-test.c:526
+#, c-format
+msgid "Access type not available for playback: %s\n"
+msgstr "Sarbide mota ez erabilgarri erreprodukziorako: %s\n"
+
+#: speaker-test/speaker-test.c:533
+#, c-format
+msgid "Sample format not available for playback: %s\n"
+msgstr "Lagin formatua ez erabilgarri erreprodukziorako: %s\n"
+
+#: speaker-test/speaker-test.c:540
+#, c-format
+msgid "Channels count (%i) not available for playbacks: %s\n"
+msgstr "Kanal zenbaketa (%i) ez erabilgarri erreprodukzioetarako: %s \n"
+
+#: speaker-test/speaker-test.c:548
+#, c-format
+msgid "Rate %iHz not available for playback: %s\n"
+msgstr "%iHz lagin-tasa ez erabilgarri erreprodukziorako: %s\n"
+
+#: speaker-test/speaker-test.c:553
+#, c-format
+msgid "Rate doesn't match (requested %iHz, get %iHz, err %d)\n"
+msgstr ""
+"Lagin-tasa ez dator bat (eskatutakoa %iHz, eskuratutakoa %iHz, errorea %d)\n"
+
+#: speaker-test/speaker-test.c:557
+#, c-format
+msgid "Rate set to %iHz (requested %iHz)\n"
+msgstr "Lagin-tasa %iHz-tan ezarria (eskatutakoa %iHz)\n"
+
+#: speaker-test/speaker-test.c:563
+#, c-format
+msgid "Buffer size range from %lu to %lu\n"
+msgstr "Buffer tamainaren barrutia %lu(e)tik %lu(e)ra\n"
+
+#: speaker-test/speaker-test.c:564
+#, c-format
+msgid "Period size range from %lu to %lu\n"
+msgstr "Periodo tamainaren barrutia %lu(e)tik %lu(e)ra\n"
+
+#: speaker-test/speaker-test.c:566
+#, c-format
+msgid "Requested period time %u us\n"
+msgstr "Eskatutako periodo denbora %u µs\n"
+
+#: speaker-test/speaker-test.c:569
+#, c-format
+msgid "Unable to set period time %u us for playback: %s\n"
+msgstr "Ezin da ezarri periodo denbora %u µs gisa erreprodukziorako: %s\n"
+
+#: speaker-test/speaker-test.c:575
+#, c-format
+msgid "Requested buffer time %u us\n"
+msgstr "Eskatutako buffer denbora %u µs\n"
+
+#: speaker-test/speaker-test.c:578
+#, c-format
+msgid "Unable to set buffer time %u us for playback: %s\n"
+msgstr "Ezin da ezarri buffer denbora %u µs gisa erreprodukziorako: %s\n"
+
+#: speaker-test/speaker-test.c:587
+#, c-format
+msgid "Using max buffer size %lu\n"
+msgstr "Buffer tamaina handiena erabiltzen: %lu\n"
+
+#: speaker-test/speaker-test.c:590
+#, c-format
+msgid "Unable to set buffer size %lu for playback: %s\n"
+msgstr "Ezin da ezarri buffer tamaina %lu gisa erreprodukziorako: %s\n"
+
+#: speaker-test/speaker-test.c:596
+#, c-format
+msgid "Periods = %u\n"
+msgstr "Periodoak = %u\n"
+
+#: speaker-test/speaker-test.c:599
+#, c-format
+msgid "Unable to set nperiods %u for playback: %s\n"
+msgstr "Ezin dira ezarri nperiods-ak %u gisa erreprodukziorako: %s\n"
+
+#: speaker-test/speaker-test.c:608
+#, c-format
+msgid "Unable to set hw params for playback: %s\n"
+msgstr "Ezin dira ezarri hw parametroak erreprodukziorako: %s\n"
+
+#: speaker-test/speaker-test.c:614
+#, c-format
+msgid "was set period_size = %lu\n"
+msgstr "period_size ezarri da = %lu\n"
+
+#: speaker-test/speaker-test.c:615
+#, c-format
+msgid "was set buffer_size = %lu\n"
+msgstr "buffer_size ezarri da = %lu\n"
+
+#: speaker-test/speaker-test.c:617
+#, c-format
+msgid "buffer to small, could not use\n"
+msgstr "buffer txikiegia, ezin izan da erabili\n"
+
+#: speaker-test/speaker-test.c:630
+#, c-format
+msgid "Unable to determine current swparams for playback: %s\n"
+msgstr "Ezin dira zehaztu oraingo sw parametroak erreprodukziorako: %s\n"
+
+#: speaker-test/speaker-test.c:637
+#, c-format
+msgid "Unable to set start threshold mode for playback: %s\n"
+msgstr "Ezin da ezarri 'hasi atalasea' modua erreprodukziorako: %s\n"
+
+#: speaker-test/speaker-test.c:644
+#, c-format
+msgid "Unable to set avail min for playback: %s\n"
+msgstr "Ezin da ezarri 'avail min' erreprodukziorako: %s\n"
+
+#: speaker-test/speaker-test.c:651
+#, c-format
+msgid "Unable to set sw params for playback: %s\n"
+msgstr "Ezin dira ezarri sw parametroak erreprodukziorako: %s\n"
+
+#: speaker-test/speaker-test.c:671
+#, c-format
+msgid "Unable to set channel map: %s\n"
+msgstr "Ezin da ezarri kanal-mapa: %s\n"
+
+#: speaker-test/speaker-test.c:696
+#, c-format
+msgid "Can't recovery from underrun, prepare failed: %s\n"
+msgstr ""
+"Ezin da berreskuratu azpiratzetik (underrun), prestakuntzak huts egin du: "
+"%s\n"
+
+#: speaker-test/speaker-test.c:707
+#, c-format
+msgid "Can't recovery from suspend, prepare failed: %s\n"
+msgstr "Ezin da berreskuratu esekitzetik, prestakuntzak huts egin du: %s\n"
+
+#: speaker-test/speaker-test.c:771 speaker-test/speaker-test.c:1272
+#, c-format
+msgid "No enough memory\n"
+msgstr "Ez dago behar adina memoria\n"
+
+#: speaker-test/speaker-test.c:776
+#, c-format
+msgid "Cannot open WAV file %s\n"
+msgstr "Ezin da ireki %s WAV fitxategia\n"
+
+#: speaker-test/speaker-test.c:780 speaker-test/speaker-test.c:809
+#, c-format
+msgid "Invalid WAV file %s\n"
+msgstr "%s WAV fitxategi baliogabea\n"
+
+#: speaker-test/speaker-test.c:785
+#, c-format
+msgid "Not a WAV file: %s\n"
+msgstr "Ez da WAV fitxategia: %s\n"
+
+#: speaker-test/speaker-test.c:789
+#, c-format
+msgid "Unsupported WAV format %d for %s\n"
+msgstr "Euskarririk gabeko %d WAV formatua %s(r)entzat\n"
+
+#: speaker-test/speaker-test.c:794
+#, c-format
+msgid "%s is not a mono stream (%d channels)\n"
+msgstr "%s ez da mono bidalketa (%d kanal)\n"
+
+#: speaker-test/speaker-test.c:799
+#, c-format
+msgid "Sample rate doesn't match (%d) for %s\n"
+msgstr "Lagin-tasa ez dator bat (%d) %s(r)ekin\n"
+
+#: speaker-test/speaker-test.c:804
+#, c-format
+msgid "Unsupported sample format bits %d for %s\n"
+msgstr "Euskarririk gabeko %d lagin formatu bitak %s(r)entzat\n"
+
+#: speaker-test/speaker-test.c:865
+#, c-format
+msgid "Undefined channel %d\n"
+msgstr "%d kanal zehaztugabea\n"
+
+#: speaker-test/speaker-test.c:916
+#, c-format
+msgid "Write error: %d,%s\n"
+msgstr "Idazte errorea: %d,%s\n"
+
+#: speaker-test/speaker-test.c:918
+#, c-format
+msgid "xrun_recovery failed: %d,%s\n"
+msgstr "xrun_recovery ekintzak huts egin du: %d,%s\n"
+
+#: speaker-test/speaker-test.c:1004
+#, c-format
+msgid ""
+"Usage: speaker-test [OPTION]... \n"
+"-h,--help\thelp\n"
+"-D,--device\tplayback device\n"
+"-r,--rate\tstream rate in Hz\n"
+"-c,--channels\tcount of channels in stream\n"
+"-f,--frequency\tsine wave frequency in Hz\n"
+"-F,--format\tsample format\n"
+"-b,--buffer\tring buffer size in us\n"
+"-p,--period\tperiod size in us\n"
+"-P,--nperiods\tnumber of periods\n"
+"-t,--test\tpink=use pink noise, sine=use sine wave, wav=WAV file\n"
+"-l,--nloops\tspecify number of loops to test, 0 = infinite\n"
+"-s,--speaker\tsingle speaker test. Values 1=Left, 2=right, etc\n"
+"-w,--wavfile\tUse the given WAV file as a test sound\n"
+"-W,--wavdir\tSpecify the directory containing WAV files\n"
+"-m,--chmap\tSpecify the channel map to override\n"
+"-X,--force-frequency\tforce frequencies outside the 30-8000hz range\n"
+"-S,--scale\tScale of generated test tones in percent (default=80)\n"
+"\n"
+msgstr ""
+"Erabilera: speaker-test [AUKERA]... \n"
+"-h,--help\tlaguntza\n"
+"-D,--device\terreprodukzio gailua\n"
+"-r,--rate\tbidalketaren lagin-tasa Hz-tan\n"
+"-c,--channels\tbidalt¡keta burutzen ari diren kanalen zenbaketa\n"
+"-f,--frequency\tuhin sinusoidalaren frekuentzia Hz-tan\n"
+"-F,--format\tlagin formatua\n"
+"-b,--buffer\teraztun-bufferraren tamaina µs-tan\n"
+"-p,--period\tperiodo taimaina µs-tan\n"
+"-P,--nperiods\tperiodo kopurua\n"
+"-t,--test\tpink=erabili soinu arrosa, sine=erabili uhin sinusoidala, wav=WAV "
+"fitxategia\n"
+"-l,--nloops\tzehaztu proba egiteko begizta kopurua, 0 = mugagabe\n"
+"-s,--speaker\tbozgorailu bakarreko proba. Balioak: 1=Ezkerra, 2=Eskuina, "
+"etb.\n"
+"-w,--wavfile\tErabili emandako WAV fitxategia probarako soinutzat\n"
+"-W,--wavdir\tZehaztu WAV fitxategiak dituen direktorioa\n"
+"-m,--chmap\tZehaztu gainidatziko den kanal-mapa\n"
+"-X,--force-frequency\tbehartu 30-8.000Hz barruti kanpoko frekuentziak\n"
+"-S,--scale\tSortutako proba-tonuen eskala portzentaian (lehenetsia=80)\n"
+"\n"
+
+#: speaker-test/speaker-test.c:1136
+#, c-format
+msgid "Invalid number of periods %d\n"
+msgstr "%d periodo kopuru baliogabea\n"
+
+#: speaker-test/speaker-test.c:1152 speaker-test/speaker-test.c:1156
+#, c-format
+msgid "Invalid test type %s\n"
+msgstr "%s proba mota baliogabea\n"
+
+#: speaker-test/speaker-test.c:1189
+#, c-format
+msgid "Unknown option '%c'\n"
+msgstr "'%c' aukera ezezaguna\n"
+
+#: speaker-test/speaker-test.c:1203
+#, c-format
+msgid "Invalid parameter for -s option.\n"
+msgstr "-s aukerarako parametro baliogabea.\n"
+
+#: speaker-test/speaker-test.c:1218
+#, c-format
+msgid "Playback device is %s\n"
+msgstr "Erreprodukzio gailua %s da\n"
+
+#: speaker-test/speaker-test.c:1219
+#, c-format
+msgid "Stream parameters are %iHz, %s, %i channels\n"
+msgstr "Erreprodukzio parametroak %iHz, %s, %i kanal dira\n"
+
+#: speaker-test/speaker-test.c:1222
+#, c-format
+msgid "Using 16 octaves of pink noise\n"
+msgstr "Soinu arroseko 16 zortzidun erabiltzen\n"
+
+#: speaker-test/speaker-test.c:1225
+#, c-format
+msgid "Sine wave rate is %.4fHz\n"
+msgstr "Uhin sinusoidalaren tasa %.4fHz da\n"
+
+#: speaker-test/speaker-test.c:1228
+#, c-format
+msgid "WAV file(s)\n"
+msgstr ""
+"WAV fitxategia(k)\n"
+"\n"
+
+#: speaker-test/speaker-test.c:1238
+#, c-format
+msgid "Playback open error: %d,%s\n"
+msgstr "Erreprodukzio irekitze errorea: %d,%s\n"
+
+#: speaker-test/speaker-test.c:1244
+#, c-format
+msgid "Setting of hwparams failed: %s\n"
+msgstr "hwparams-eko hobespenek huts egin dute: %s\n"
+
+#: speaker-test/speaker-test.c:1248
+#, c-format
+msgid "Setting of swparams failed: %s\n"
+msgstr "swparams-eko hobespenek huts egin dute: %s\n"
+
+#: speaker-test/speaker-test.c:1295 speaker-test/speaker-test.c:1317
+#, c-format
+msgid "Transfer failed: %s\n"
+msgstr "Bidalketak huts egin du: %s\n"
+
+#: speaker-test/speaker-test.c:1303
+#, c-format
+msgid "Time per period = %lf\n"
+msgstr "Denbora periodoko = %lf\n"

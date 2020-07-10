@@ -1,0 +1,381 @@
+# Basque translation for alsa-utils
+# Copyright (C) 2011 The ALSA Team
+# This file is distributed under the same license as the alsa-utils package.
+# Porrumentzio <porrumentzio@riseup.net>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: alsaconf\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-12-02 12:37+0100\n"
+"PO-Revision-Date: 2020-09-11 09:40+0200\n"
+"Last-Translator: Porrumentzio <porrumentzio@riseup.net>\n"
+"Language-Team: Librezale <Librezale@librezale.eus>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: eu\n"
+"X-Generator: Poedit 2.4.1\n"
+
+#: ../alsaconf.in:36
+msgid "-s"
+msgstr "-s"
+
+#: ../alsaconf.in:80
+msgid "ALSA configurator"
+msgstr "ALSA konfiguratzailea"
+
+#: ../alsaconf.in:82
+msgid ""
+"usage: alsaconf [options]\n"
+"  -l|--legacy    check only legacy non-isapnp cards\n"
+"  -m|--modinfo   read module descriptions instead of reading card db\n"
+"  -s|--sound wav-file\n"
+"                 use the specified wav file as a test sound\n"
+"  -u|--uid uid   set the uid for the ALSA devices (default = 0) "
+"[obsoleted]\n"
+"  -g|--gid gid   set the gid for the ALSA devices (default = 0) "
+"[obsoleted]\n"
+"  -d|--devmode mode\n"
+"                 set the permission for ALSA devices (default = 0666) "
+"[obs.]\n"
+"  -r|--strict    set strict device mode (equiv. with -g 17 -d 0660) "
+"[obsoleted]\n"
+"  -L|--log file  logging on the specified file (for debugging purpose "
+"only)\n"
+"  -p|--probe card-name\n"
+"                 probe a legacy non-isapnp card and print module options\n"
+"  -P|--listprobe list the supported legacy card modules\n"
+"  -c|--config file\n"
+"                 specify the module config file\n"
+"  -R|--resources list available DMA and IRQ resources with debug for "
+"legacy\n"
+"  -h|--help      what you're reading"
+msgstr ""
+"erabilera: alsaconf [aukerak]\n"
+"  -l|--legacy    egiaztatu soilik isapnp ez diren txartel zaharrak\n"
+"  -m|--modinfo   irakurri moduluen deskribapenak txartelen dBak beharrean\n"
+"  -s|--sound wav-fitxategia\n"
+"                 erabili zehaztutako wav fitxategia soinu-proba gisa\n"
+"  -u|--uid UID   ezarri ALSA gailuetarako UIDak (lehenetsia = 0) "
+"[zaharkitua]\n"
+"  -g|--gid GID   ezarri ALSA gailuetarako GIDak (lehenetsia = 0) "
+"[zaharkitua]\n"
+"  -d|--devmode modua\n"
+"                 ezarri ALSA gailuentzat baimenak (lehenetsia = 0666) "
+"[zaharkitua]\n"
+"  -r|--strict    ezarri gailu zorrotz modua (-g 17 -d 0660 komanduaren "
+"baliokide [zahark.]\n"
+"  -L|--log fitxategia  zehaztutako fitxategian gordetzea erregistroa "
+"(arazte-xedetarako soilik)\n"
+"  -p|--probe txartel-izena\n"
+"                 probatu isapnp ez diren txartel zaharrak eta erakutsi "
+"moduluen aukerak\n"
+"  -P|--listprobe zerrendatu onartutako txartel zaharren moduluak\n"
+"  -c|--config fitxategia\n"
+"                 zehaztu moduluen konfigurazio fitxategia\n"
+"  -R|--resources zerrendatu DMA eta IRQ baliabide eskuragarriak txartel "
+"zaharrak arazteko\n"
+"  -h|--help      laguntza-koadro hau"
+
+#: ../alsaconf.in:252
+msgid "You must be root to use this script."
+msgstr "Root izan behar duzu script hau erabiltzeko."
+
+#: ../alsaconf.in:294
+msgid "ERROR: The config file doesn't exist: "
+msgstr "ERROREA: Konfigurazio-fitxategia ez dago: "
+
+#: ../alsaconf.in:336
+msgid "Error, dialog or whiptail not found."
+msgstr "Errorea: ez da aurkituelkarrizketa-koadro edo whiptail-ik."
+
+#: ../alsaconf.in:342
+msgid "Error, awk not found. Can't continue."
+msgstr "Errorea: ez da aurkitu awk-ik. Ezin da aurrera egin."
+
+#: ../alsaconf.in:439
+msgid ""
+"\n"
+"                   ALSA  CONFIGURATOR\n"
+"                   version %s\n"
+"\n"
+"            This script is a configurator for\n"
+"    Advanced Linux Sound Architecture (ALSA) driver.\n"
+"\n"
+"\n"
+"  If ALSA is already running, you should close all sound\n"
+"  apps now and stop the sound driver.\n"
+"  alsaconf will try to do this, but it's not 100%% sure."
+msgstr ""
+"\n"
+"                   ALSA  KONFIGURATZAILEA\n"
+"                   %s bertsioa\n"
+"\n"
+"            Script hau honetarako konfiguratzailea da:\n"
+"    Advanced Linux Sound Architecture (ALSA) kontrolatzailea.\n"
+"\n"
+"\n"
+"  ALSA jada lanean ari bada, itxi soinu-aplikazio guztiak\n"
+"  eta geldiarazi soinu-kontrolatzailea.\n"
+"  alsaconf hau burutzen saiatuko da, baina ez da erabat fidagarria."
+
+#: ../alsaconf.in:455
+msgid ""
+"\n"
+"\n"
+"     OK, sound driver is configured.\n"
+"\n"
+"                  ALSA  CONFIGURATOR\n"
+"\n"
+"          will prepare the card for playing now.\n"
+"\n"
+"     Now I'll run alsasound init script, then I'll use\n"
+"     amixer to raise the default volumes.\n"
+"     You can change the volume later via a mixer\n"
+"     program such as alsamixer or gamix.\n"
+"  \n"
+"  "
+msgstr ""
+"\n"
+"\n"
+"     Ados, soinu-kontrolatzailea konfiguratu da.\n"
+"\n"
+"                  ALSA  KONFIGURATZAILEAk\n"
+"\n"
+"             txartela erabiltzeko prest jarriko du.\n"
+"\n"
+"     Orain alsasound init script-a abiaraziko du, ondoren\n"
+"     amixer erabiliko dut bolumen lehenetsiak igotzeko.\n"
+"     Bolumena gero aldatu dezakezu alsamixer edo gamix\n"
+"     bezalako nahasgailu-programa bat erabilita.\n"
+"  \n"
+"  "
+
+#: ../alsaconf.in:518 ../alsaconf.in:523 ../alsaconf.in:528 ../alsaconf.in:533
+msgid "Can't create temp file, exiting..."
+msgstr "Ezin da aldi baterako fitxategirik sortu, irteten..."
+
+#: ../alsaconf.in:643
+msgid "Building card database.."
+msgstr "Txartel-datu-basea eraikitzen..."
+
+#: ../alsaconf.in:647
+msgid "No card database is found.."
+msgstr "Ez da txartel-datu-baserik aurkitu..."
+
+#: ../alsaconf.in:652
+msgid "Searching sound cards"
+msgstr "Soinu-txartelak bilatzen"
+
+#: ../alsaconf.in:806
+msgid ""
+"\n"
+"Configuring %s\n"
+"Do you want to modify %s (and %s if present)?"
+msgstr ""
+"\n"
+"%s konfiguratzen\n"
+"%s aldatu nahi duzu (eta baita %s, baldin badago)?"
+
+#: ../alsaconf.in:811
+msgid ""
+"\n"
+"Configuring %s\n"
+"Do you want to modify %s?"
+msgstr ""
+"\n"
+"%s konfiguratzen\n"
+"%s aldatu nahi duzu?"
+
+#: ../alsaconf.in:900
+msgid "Running modules-update..."
+msgstr "Modulu-eguneraketa egiten..."
+
+#: ../alsaconf.in:903
+msgid "Running update-modules..."
+msgstr "Eguneraketa-moduluak egiten..."
+
+#: ../alsaconf.in:915
+msgid ""
+"\n"
+"       The mixer is set up now for for playing.\n"
+"       Shall I try to play a sound sample now?\n"
+"\n"
+"                           NOTE:\n"
+"If you have a big amplifier, lower your volumes or say no.\n"
+"    Otherwise check that your speaker volume is open,\n"
+"          and look if you can hear test sound.\n"
+msgstr ""
+"\n"
+"       Nahasgailua orain erreproduzitzeko konfiguratuta dago.\n"
+"       Nahi duzu orain bertan soinu-proba egitea?\n"
+"\n"
+"                           OHARRA:\n"
+"Anplifikadore handirik baduzu, jaitsi bolumena edo erantzun ezetz.\n"
+"    Bestela ziurtatu zure bozgorailuaren bolumena aktibo dagoela\n"
+"          eta begiratu probako soinua entzun dezakezun.\n"
+
+#: ../alsaconf.in:932
+msgid "Saving the mixer setup used for this in /etc/asound.state."
+msgstr ""
+"Honetarako erabilitako nahasgailuaren konfigurazioa /etc/asound.state "
+"fitxategian gordetzen."
+
+#: ../alsaconf.in:936
+msgid ""
+"\n"
+"===============================================================================\n"
+"\n"
+" Now ALSA is ready to use.\n"
+" For adjustment of volumes, use your favorite mixer.\n"
+"\n"
+" Have a lot of fun!\n"
+"\n"
+msgstr ""
+"\n"
+"===============================================================================\n"
+"\n"
+" Orain ALSA erabiltzeko prest dago.\n"
+" Bolumenak egokitzeko erabili nahi duzun nahasgailua.\n"
+"\n"
+" Gozatu!\n"
+"\n"
+
+#: ../alsaconf.in:1244
+msgid "WARNING"
+msgstr "ABISUA"
+
+#: ../alsaconf.in:1245
+msgid ""
+"\n"
+"   Probing legacy ISA cards might make\n"
+"   your system unstable.\n"
+"\n"
+"        Do you want to proceed?\n"
+"\n"
+msgstr ""
+"\n"
+"   ISA txartel zaharrak probatzeak zure sistema\n"
+"   desegonkortu lezake.\n"
+"\n"
+"        Aurrera egin nahi duzu?\n"
+"\n"
+
+#: ../alsaconf.in:1268
+msgid ""
+"No legacy drivers are available\n"
+"   for your machine"
+msgstr ""
+"Ez dago kontrolatzaile zaharrik\n"
+"   eskuragarri zure gailuan"
+
+#: ../alsaconf.in:1273
+msgid "Driver Selection"
+msgstr "Kontrolatzaile hautapena"
+
+#: ../alsaconf.in:1274
+msgid ""
+"           Probing legacy ISA cards\n"
+"\n"
+"        Please select the drivers to probe:"
+msgstr ""
+"           ISA txartel zaharrak probatzea\n"
+"\n"
+"        Hautatu probatzeko kontrolatzaileak:"
+
+#: ../alsaconf.in:1281
+msgid ""
+"\n"
+" Shall I try all possible DMA and IRQ combinations?\n"
+" With this option, some unconventional configuration\n"
+" might be found, but it will take much longer time."
+msgstr ""
+"\n"
+"DMA eta IRQ konbinazio guztiak probatzea nahi duzu?\n"
+"Aukera honekin konfigurazio ezohikoren bat aurkitu liteke,\n"
+"baina denbora askoz ere gehiago hartuko du."
+
+#: ../alsaconf.in:1291
+msgid "Probing legacy cards..   This may take a few minutes.."
+msgstr "Txartel zaharrak probatzen   Honek minutu batzuk hartu litzake..."
+
+#: ../alsaconf.in:1292
+msgid "Probing: "
+msgstr "Probatzen: "
+
+#: ../alsaconf.in:1298
+msgid " : FOUND!!"
+msgstr " : AURKITU DA!!"
+
+#: ../alsaconf.in:1304
+msgid "Result"
+msgstr "Emaitza"
+
+#: ../alsaconf.in:1305
+msgid "No legacy cards found"
+msgstr "Ez da txartel zaharrik aurkitu"
+
+#: ../alsaconf.in:1364
+msgid ""
+"\n"
+" Looks like you having a Thinkpad 600E or 770 notebook.\n"
+" On this notebook, CS4236 driver should be used\n"
+" although CS46xx chip is detected.\n"
+"\n"
+" Shall I try to snd-cs4236 driver and probe\n"
+" the legacy ISA configuration?"
+msgstr ""
+"\n"
+" Badirudi Thinkpad 600E edo 770 eramangarri bat duzula.\n"
+" Eramangarri honetan CS4236 kontrolatzailea erabili beharko litzake\n"
+" nahiz eta CS46xx txipa detektatu.\n"
+"\n"
+" Nahi duzu snd-cs4236 kontrolatzailea eta ISA\n"
+" konfigurazio zaharra probatzea?"
+
+#: ../alsaconf.in:1378
+msgid ""
+"\n"
+" Looks like you having a Dell Dimension machine.\n"
+" On this machine, CS4232 driver should be used\n"
+" although CS46xx chip is detected.\n"
+"\n"
+" Shall I try to snd-cs4232 driver and probe\n"
+" the legacy ISA configuration?"
+msgstr ""
+"\n"
+" Badirudi Dell Dimension gailua duzula.\n"
+" Eramangarri honetan CS4232 kontrolatzailea erabili beharko litzake\n"
+" nahiz eta CS46xx txipa detektatu.\n"
+"\n"
+" Nahi duzu snd-cs42362kontrolatzailea eta ISA\n"
+" konfigurazio zaharra probatzea?"
+
+#: ../alsaconf.in:1395
+msgid "Soundcard Selection"
+msgstr "Soinu-txatel hautapena"
+
+#: ../alsaconf.in:1396
+msgid ""
+"\n"
+"         Following card(s) are found on your system.\n"
+"         Choose a soundcard to configure:\n"
+msgstr ""
+"\n"
+"         Txartel hau(ek) dago/daude zure sisteman.\n"
+"         Hautatu konfiguratzeko soinu-txartel bat:\n"
+
+#: ../alsaconf.in:1409
+msgid ""
+"\n"
+"        No supported PnP or PCI card found.\n"
+"\n"
+" Would you like to probe legacy ISA sound cards/chips?\n"
+"\n"
+msgstr ""
+"\n"
+"        Ez da aurkitu onartutako PnP edo PCI txartelik.\n"
+"\n"
+" Nahi duzu ISA soinu-txartel edo -txipak probatzea?\n"
+"\n"
