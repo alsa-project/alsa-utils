@@ -8,14 +8,14 @@ msgstr ""
 "Project-Id-Version: alsa-utils 1.0.23\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-01-10 09:07+0100\n"
-"PO-Revision-Date: 2020-07-10 15:47+0200\n"
+"PO-Revision-Date: 2020-07-26 12:01+0200\n"
 "Last-Translator: Porrumentzio <porrumentzio@riseup.net>\n"
 "Language-Team: French <fr@li.org>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.3\n"
+"X-Generator: Poedit 2.3.1\n"
 
 #: alsamixer/card_select.c:126 alsamixer/device_name.c:126
 msgid "Sound Card"
@@ -278,17 +278,14 @@ msgid "L       Redraw screen"
 msgstr "L       Pantaila birmarraztu"
 
 #: alsamixer/mixer_widget.c:200
-#, fuzzy
 msgid "Left    Move to the previous control"
 msgstr "←       Mugitu ezkerreko kontrolera"
 
 #: alsamixer/mixer_widget.c:201
-#, fuzzy
 msgid "Right   Move to the next control"
 msgstr "→       Mugitu eskuineko kontrolera"
 
 #: alsamixer/mixer_widget.c:203
-#, fuzzy
 msgid "Up/Down    Change volume"
 msgstr "↑ ↓     Bolumena aldatu"
 
@@ -1050,7 +1047,7 @@ msgid "Stereo"
 msgstr "Estereo"
 
 #: aplay/aplay.c:2746
-#, fuzzy, c-format
+#, c-format
 msgid "Channels %i"
 msgstr "Kanalak %i"
 
@@ -1095,17 +1092,17 @@ msgid "     -d,--disconnect     disconnect\n"
 msgstr "     -d,--disconnect     deskonektatu\n"
 
 #: seq/aconnect/aconnect.c:56
-#, fuzzy, c-format
+#, c-format
 msgid "     -e,--exclusive      exclusive connection\n"
 msgstr "     -e,--exclusive      konexio esklusiboa\n"
 
 #: seq/aconnect/aconnect.c:57
-#, fuzzy, c-format
+#, c-format
 msgid "     -r,--real #         convert real-time-stamp on queue\n"
 msgstr "     -r,--real #         sartu denbora-errealeko-zigilua ilaran\n"
 
 #: seq/aconnect/aconnect.c:58
-#, fuzzy, c-format
+#, c-format
 msgid "     -t,--tick #         convert tick-time-stamp on queue\n"
 msgstr "     -t,--tick #         sartu denbora-marka-zigilua ilaran\n"
 
@@ -1327,12 +1324,12 @@ msgid "Channel %2d: Pitchbender   : %5d\n"
 msgstr "%2d kanala: Tonu aldatzailea   : %5d\n"
 
 #: seq/aseqnet/aseqnet.c:526
-#, fuzzy, c-format
+#, c-format
 msgid "Channel %2d: Note On event : %5d\n"
 msgstr "%2d kanala: 'Oharra gaituta' gertaera : %5d\n"
 
 #: seq/aseqnet/aseqnet.c:530
-#, fuzzy, c-format
+#, c-format
 msgid "Channel %2d: Note Off event: %5d\n"
 msgstr "%2d kanala: 'Oharra desgaituta' gertaera : %5d\n"
 
@@ -1342,22 +1339,18 @@ msgid "disconnected\n"
 msgstr "deskonektatuta\n"
 
 #: speaker-test/speaker-test.c:121
-#, fuzzy
 msgid "Front Left"
 msgstr "Aurrealde ezkerra"
 
 #: speaker-test/speaker-test.c:122
-#, fuzzy
 msgid "Front Right"
 msgstr "Aurrealde eskuina"
 
 #: speaker-test/speaker-test.c:123
-#, fuzzy
 msgid "Rear Left"
 msgstr "Atzealde ezkerra"
 
 #: speaker-test/speaker-test.c:124
-#, fuzzy
 msgid "Rear Right"
 msgstr "Atzealde eskuina"
 
@@ -1366,12 +1359,10 @@ msgid "LFE"
 msgstr "LFE"
 
 #: speaker-test/speaker-test.c:127
-#, fuzzy
 msgid "Side Left"
 msgstr "Ezker aldea"
 
 #: speaker-test/speaker-test.c:128
-#, fuzzy
 msgid "Side Right"
 msgstr "Eskuin aldea"
 
@@ -1521,7 +1512,7 @@ msgid "Unable to determine current swparams for playback: %s\n"
 msgstr "Ezin dira zehaztu oraingo sw parametroak erreprodukziorako: %s\n"
 
 #: speaker-test/speaker-test.c:637
-#, fuzzy, c-format
+#, c-format
 msgid "Unable to set start threshold mode for playback: %s\n"
 msgstr "Ezin da ezarri 'hasi atalasea' modua erreprodukziorako: %s\n"
 
