@@ -2174,7 +2174,9 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 		count = chunk_size;
 	}
 
-	while (count > 0 && !in_aborting) {
+	while (count > 0) {
+		if (in_aborting)
+			goto abort;
 		unsigned int channel;
 		void *bufs[channels];
 		size_t offset = result;
@@ -2206,6 +2208,7 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
 			count -= r;
 		}
 	}
+abort:
 	return rcount;
 }
 
