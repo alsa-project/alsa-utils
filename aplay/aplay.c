@@ -3206,11 +3206,12 @@ static void capture(char *orig_name)
 			size_t c = (rest <= (off64_t)chunk_bytes) ?
 				(size_t)rest : chunk_bytes;
 			size_t f = c * 8 / bits_per_frame;
-			if (pcm_read(audiobuf, f) != f) {
+			size_t read = pcm_read(audiobuf, f);
+			size_t save;
+			if (read != f)
 				in_aborting = 1;
-				break;
-			}
-			if (xwrite(fd, audiobuf, c) != c) {
+			save = read * bits_per_frame / 8;
+			if (xwrite(fd, audiobuf, save) != save) {
 				perror(name);
 				in_aborting = 1;
 				break;
