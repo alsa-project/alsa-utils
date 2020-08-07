@@ -1613,8 +1613,7 @@ static void xrun(void)
 	if ((res = snd_pcm_status(handle, status))<0) {
 		error(_("status error: %s"), snd_strerror(res));
 		prg_exit(EXIT_FAILURE);
-	}
-	if (snd_pcm_status_get_state(status) == SND_PCM_STATE_XRUN) {
+	} else if (snd_pcm_status_get_state(status) == SND_PCM_STATE_XRUN) {
 		if (fatal_errors) {
 			error(_("fatal %s: %s"),
 					stream == SND_PCM_STREAM_PLAYBACK ? _("underrun") : _("overrun"),
@@ -1651,7 +1650,7 @@ static void xrun(void)
 			prg_exit(EXIT_FAILURE);
 		}
 		return;		/* ok, data should be accepted again */
-	} if (snd_pcm_status_get_state(status) == SND_PCM_STATE_DRAINING) {
+	} else if (snd_pcm_status_get_state(status) == SND_PCM_STATE_DRAINING) {
 		if (verbose) {
 			fprintf(stderr, _("Status(DRAINING):\n"));
 			snd_pcm_status_dump(status, log);
