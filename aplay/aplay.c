@@ -2135,7 +2135,9 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 		count = chunk_size;
 	}
 
-	while (count > 0 && !in_aborting) {
+	while (count > 0) {
+		if (in_aborting)
+			goto abort;
 		if (test_position)
 			do_test_position();
 		check_stdin();
@@ -2161,6 +2163,7 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 			data += r * bits_per_frame / 8;
 		}
 	}
+abort:
 	return rcount;
 }
 
