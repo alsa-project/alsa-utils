@@ -1,7 +1,7 @@
-# French translation for alsa-utils
+# Basque translation for alsa-utils
 # Copyright (C) 2011 The ALSA Team
 # This file is distributed under the same license as the alsa-utils package.
-# Christoph J. Thompson <cjsthompson@gmail.com>, 2011.
+# Porrumentzio <porrumentzio@riseup.net>, 2020.
 #
 msgid ""
 msgstr ""
@@ -10,8 +10,8 @@ msgstr ""
 "POT-Creation-Date: 2018-01-10 09:07+0100\n"
 "PO-Revision-Date: 2020-07-26 12:01+0200\n"
 "Last-Translator: Porrumentzio <porrumentzio@riseup.net>\n"
-"Language-Team: French <fr@li.org>\n"
-"Language: fr\n"
+"Language-Team: Librezale <librezale@librezale.eus>\n"
+"Language: eu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -1714,12 +1714,3 @@ msgstr "Bidalketak huts egin du: %s\n"
 #, c-format
 msgid "Time per period = %lf\n"
 msgstr "Denbora periodoko = %lf\n"
-
-#~ msgid "Warning: format is changed to S16_LE\n"
-#~ msgstr "Avertissement: le format est changé en S16_LE\n"
-
-#~ msgid "Warning: format is changed to S24_3LE\n"
-#~ msgstr "Avertissement: le format est changé en S24_3LE\n"
-
-#~ msgid "Warning: format is changed to S24_LE\n"
-#~ msgstr "Avertissement: le format est changé en S24_LE\n"
