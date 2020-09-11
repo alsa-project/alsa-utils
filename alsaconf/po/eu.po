@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: alsaconf\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2005-12-02 12:37+0100\n"
-"PO-Revision-Date: 2020-09-09 19:02+0200\n"
+"PO-Revision-Date: 2020-09-11 09:40+0200\n"
 "Last-Translator: Porrumentzio <porrumentzio@riseup.net>\n"
 "Language-Team: Librezale <Librezale@librezale.eus>\n"
 "MIME-Version: 1.0\n"
@@ -80,7 +80,7 @@ msgstr ""
 
 #: ../alsaconf.in:252
 msgid "You must be root to use this script."
-msgstr "Administratzaile izan behar duzu script hau erabiltzeko."
+msgstr "Root izan behar duzu script hau erabiltzeko."
 
 #: ../alsaconf.in:294
 msgid "ERROR: The config file doesn't exist: "
