@@ -969,13 +969,14 @@ static int xrun_sync(struct loopback *loop)
 					"sync: playback silence added %li samples\n", (long)diff);
 			play->buf_pos -= diff;
 			play->buf_pos %= play->buf_size;
-			if ((err = snd_pcm_format_set_silence(play->format, play->buf + play->buf_pos * play->channels, diff)) < 0)
+			err =  snd_pcm_format_set_silence(play->format, play->buf + play->buf_pos * play->frame_size,
+							  diff * play->channels);
+			if (err < 0)
 				return err;
 			play->buf_count += diff;
 		}
 		if ((err = snd_pcm_prepare(play->handle)) < 0) {
 			logit(LOG_CRIT, "%s prepare failed: %s\n", play->id, snd_strerror(err));
-
 			return err;
 		}
 		delay1 = writeit(play);
@@ -1001,7 +1002,9 @@ static int xrun_sync(struct loopback *loop)
 					"sync: playback short, silence filling %li / buf_count=%li\n", (long)delay1, play->buf_count);
 			if (delay1 > diff)
 				delay1 = diff;
-			if ((err = snd_pcm_format_set_silence(play->format, play->buf + play->buf_pos * play->channels, delay1)) < 0)
+			err = snd_pcm_format_set_silence(play->format, play->buf + play->buf_pos * play->frame_size,
+							 delay1 * play->channels);
+			if (err < 0)
 				return err;
 			play->buf_pos += delay1;
 			play->buf_pos %= play->buf_size;
