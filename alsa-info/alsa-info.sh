@@ -438,6 +438,7 @@ if [ -d /sys/class/dmi/id ]; then
     DMI_SYSTEM_PRODUCT_NAME=$(cat /sys/class/dmi/id/product_name 2>/dev/null)
     DMI_SYSTEM_PRODUCT_VERSION=$(cat /sys/class/dmi/id/product_version 2>/dev/null)
     DMI_SYSTEM_FIRMWARE_VERSION=$(cat /sys/class/dmi/id/bios_version 2>/dev/null)
+    DMI_SYSTEM_SKU=$(cat /sys/class/dmi/id/product_sku 2>/dev/null)
     DMI_BOARD_VENDOR=$(cat /sys/class/dmi/id/board_vendor 2>/dev/null)
     DMI_BOARD_NAME=$(cat /sys/class/dmi/id/board_name 2>/dev/null)
 elif [ -x $DMIDECODE ]; then
@@ -445,6 +446,7 @@ elif [ -x $DMIDECODE ]; then
     DMI_SYSTEM_PRODUCT_NAME=$($DMIDECODE -s system-product-name 2>/dev/null)
     DMI_SYSTEM_PRODUCT_VERSION=$($DMIDECODE -s system-version 2>/dev/null)
     DMI_SYSTEM_FIRMWARE_VERSION=$($DMIDECODE -s bios-version 2>/dev/null)
+    DMI_SYSTEM_SKU=$($DMIDECODE -s system-sku-number 2>/dev/null)
     DMI_BOARD_VENDOR=$($DMIDECODE -s baseboard-manufacturer 2>/dev/null)
     DMI_BOARD_NAME=$($DMIDECODE -s baseboard-product-name 2>/dev/null)
 fi
@@ -503,6 +505,7 @@ echo "Manufacturer:      $DMI_SYSTEM_MANUFACTURER" >> $FILE
 echo "Product Name:      $DMI_SYSTEM_PRODUCT_NAME" >> $FILE
 echo "Product Version:   $DMI_SYSTEM_PRODUCT_VERSION" >> $FILE
 echo "Firmware Version:  $DMI_SYSTEM_FIRMWARE_VERSION" >> $FILE
+echo "System SKU:        $DMI_SYSTEM_SKU" >> $FILE
 echo "Board Vendor:      $DMI_BOARD_VENDOR" >> $FILE
 echo "Board Name:        $DMI_BOARD_NAME" >> $FILE
 echo "" >> $FILE
