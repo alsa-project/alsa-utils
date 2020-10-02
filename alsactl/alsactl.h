@@ -25,7 +25,8 @@ void error_handler(const char *file, int line, const char *function, int err, co
 #define dbg(args...) do { dbg_(__func__, __LINE__, ##args); }  while (0)
 #endif	
 
-#define FLAG_UCM_DEFAULTS	(1<<0)
+#define FLAG_UCM_DISABLED	(1<<0)
+#define FLAG_UCM_DEFAULTS	(1<<1)
 
 int init(const char *file, int flags, const char *cardname);
 int init_ucm(int flags, int cardno);

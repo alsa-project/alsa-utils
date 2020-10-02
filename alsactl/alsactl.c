@@ -98,6 +98,7 @@ static struct arg args[] = {
 { 'c', "sched-idle", "set the process scheduling policy to idle (SCHED_IDLE)" },
 #ifdef HAVE_ALSA_USE_CASE_H
 { 'D', "ucm-defaults", "execute also the UCM 'defaults' section" },
+{ 'U', "no-ucm", "don't init with UCM" },
 #endif
 { HEADER, NULL, "Available commands:" },
 { CARDCMD, "store", "save current driver setup for one or each soundcards" },
@@ -269,6 +270,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'D':
 			initflags |= FLAG_UCM_DEFAULTS;
+			break;
+		case 'U':
+			initflags |= FLAG_UCM_DISABLED;
 			break;
 		case 'r':
 			statefile = optarg;
