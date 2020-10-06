@@ -147,6 +147,11 @@ Set the process scheduling policy to idle (SCHED_IDLE).
 Execute also the 'defaults' section from the UCM configuration. The standard
 behaviour is to execute only 'once' section.
 
+.TP
+\fI\-U, \-\-no-ucm\fP
+Skip the UCM init even if available. It may be useful for the test the
+legacy init configuration.
+
 .SH FILES
 \fI/var/lib/alsa/asound.state\fP (or whatever file you specify with the
 \fB\-f\fP flag) is used to store current settings for your
