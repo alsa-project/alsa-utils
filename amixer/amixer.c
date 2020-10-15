@@ -1165,7 +1165,8 @@ static int cset(int argc, char *argv[], int roflag, int keep_handle)
 	snd_ctl_elem_info_get_id(info, id);     /* FIXME: Remove it when hctl find works ok !!! */
 	if (!roflag) {
 		snd_ctl_elem_value_set_id(control, id);
-		if ((err = snd_ctl_elem_read(handle, control)) < 0) {
+		if (snd_ctl_elem_info_is_readable(info) &&
+		    (err = snd_ctl_elem_read(handle, control)) < 0) {
 			if (ignore_error)
 				return 0;
 			error("Cannot read the given element from control %s\n", card);
