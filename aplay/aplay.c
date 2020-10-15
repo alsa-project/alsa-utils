@@ -1765,12 +1765,12 @@ static void print_vu_meter(signed int *perc, signed int *maxperc)
 }
 
 /* peak handler */
-static void compute_max_peak(u_char *data, size_t count)
+static void compute_max_peak(u_char *data, size_t samples)
 {
 	signed int val, max, perc[2], max_peak[2];
-	static	int	run = 0;
-	size_t ocount = count;
-	int	format_little_endian = snd_pcm_format_little_endian(hwparams.format);	
+	static int run = 0;
+	size_t osamples = samples;
+	int format_little_endian = snd_pcm_format_little_endian(hwparams.format);
 	int ichans, c;
 
 	if (vumeter == VUMETER_STEREO)
@@ -1784,7 +1784,7 @@ static void compute_max_peak(u_char *data, size_t count)
 		signed char *valp = (signed char *)data;
 		signed char mask = snd_pcm_format_silence(hwparams.format);
 		c = 0;
-		while (count-- > 0) {
+		while (samples-- > 0) {
 			val = *valp++ ^ mask;
 			val = abs(val);
 			if (max_peak[c] < val)
@@ -1799,9 +1799,8 @@ static void compute_max_peak(u_char *data, size_t count)
 		signed short mask = snd_pcm_format_silence_16(hwparams.format);
 		signed short sval;
 
-		count /= 2;
 		c = 0;
-		while (count-- > 0) {
+		while (samples-- > 0) {
 			if (format_little_endian)
 				sval = le16toh(*valp);
 			else
@@ -1819,9 +1818,8 @@ static void compute_max_peak(u_char *data, size_t count)
 		unsigned char *valp = data;
 		signed int mask = snd_pcm_format_silence_32(hwparams.format);
 
-		count /= 3;
 		c = 0;
-		while (count-- > 0) {
+		while (samples-- > 0) {
 			if (format_little_endian) {
 				val = valp[0] | (valp[1]<<8) | (valp[2]<<16);
 			} else {
@@ -1844,9 +1842,8 @@ static void compute_max_peak(u_char *data, size_t count)
 		signed int *valp = (signed int *)data;
 		signed int mask = snd_pcm_format_silence_32(hwparams.format);
 
-		count /= 4;
 		c = 0;
-		while (count-- > 0) {
+		while (samples-- > 0) {
 			if (format_little_endian)
 				val = le32toh(*valp);
 			else
@@ -1895,8 +1892,8 @@ static void compute_max_peak(u_char *data, size_t count)
 		print_vu_meter(perc, maxperc);
 		fflush(stderr);
 	}
-	else if(verbose==3) {
-		fprintf(stderr, _("Max peak (%li samples): 0x%08x "), (long)ocount, max_peak[0]);
+	else if (verbose==3) {
+		fprintf(stderr, _("Max peak (%li samples): 0x%08x "), (long)osamples, max_peak[0]);
 		for (val = 0; val < 20; val++)
 			if (val <= perc[0] / 5)
 				putc('#', stderr);
