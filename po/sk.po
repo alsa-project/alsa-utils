@@ -1,0 +1,1724 @@
+# Slovak translations for the alsa-utils package.
+# Copyright (C) 2009 The ALSA Team
+# This file is distributed under the same license as the alsa-utils package.
+# Jose Riha <jose1711@gmail.com>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: alsa-utils 1.0.23\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-10-18 14:55+0200\n"
+"PO-Revision-Date: 2020-10-18 15:13+0200\n"
+"Last-Translator: Jose Riha <jose1711@gmail.com>\n"
+"Language-Team: Slovak\n"
+"Language: sk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.4.1\n"
+
+#: alsamixer/card_select.c:77 alsamixer/device_name.c:127
+msgid "Sound Card"
+msgstr "Zvuková karta"
+
+#: alsamixer/card_select.c:115
+msgid "(default)"
+msgstr "(predvolená)"
+
+#: alsamixer/card_select.c:125
+msgid "cannot enumerate sound cards"
+msgstr "Chyba počas vyčíslovania zvukových kariet"
+
+#: alsamixer/card_select.c:147
+msgid "enter device name..."
+msgstr "zadajte názov zariadenia..."
+
+#: alsamixer/cli.c:43
+msgid "Usage: alsamixer [options]"
+msgstr "Použitie: alsamixer [možnosti]"
+
+#: alsamixer/cli.c:44
+msgid ""
+"Useful options:\n"
+"  -h, --help              this help\n"
+"  -c, --card=NUMBER       sound card number or id\n"
+"  -D, --device=NAME       mixer device name\n"
+"  -m, --mouse             enable mouse\n"
+"  -M, --no-mouse          disable mouse\n"
+"  -f, --config=FILE       configuration file\n"
+"  -F, --no-config         do not load configuration file\n"
+"  -V, --view=MODE         starting view mode: playback/capture/all"
+msgstr ""
+"Užitočné možnosti:\n"
+"  -h, --help              tento pomocník\n"
+"  -c, --card=ČÍSLO        číslo zvukovej karty alebo id\n"
+"  -D, --device=NÁZOV      názov zariadenia mixéra\n"
+"  -m, --mouse             povoliť myš\n"
+"  -M, --no-mouse          vypnúť myš\n"
+"  -f, --config=SÚBOR      súbor s konfiguráciou\n"
+"  -F, --no-config         nenačítať súbor s konfiguráciou\n"
+"  -V, --view=REŽIM        spustiť v režime zobrazenia: playback/capture/all (prehrávanie/záznam/všetko)"
+
+#: alsamixer/cli.c:53
+msgid ""
+"Debugging options:\n"
+"  -g, --no-color          toggle using of colors\n"
+"  -a, --abstraction=NAME  mixer abstraction level: none/basic"
+msgstr ""
+"Možnosti pre ladenie:\n"
+"  -g, --no-color          bez farby\n"
+"  -a, --abstraction=NÁZOV úroveň abstrakcie mixéra: none/basic"
+
+#: alsamixer/cli.c:88
+#, c-format
+msgid "invalid card index: %s\n"
+msgstr "neplatné číslo karty: %s\n"
+
+#: alsamixer/cli.c:126
+#, c-format
+msgid "unknown abstraction level: %s\n"
+msgstr "neznáma úroveň abstrakcie: %s\n"
+
+#: alsamixer/cli.c:131
+#, c-format
+msgid "unknown option: %c\n"
+msgstr "neznáma voľba: %c\n"
+
+#: alsamixer/cli.c:133
+msgid "try `alsamixer --help' for more information\n"
+msgstr "skúste `alsamixer --help' pre viac informácií\n"
+
+#: alsamixer/device_name.c:177
+msgid "Device name:"
+msgstr "Názov zariadenia:"
+
+#: alsamixer/die.c:37
+#, c-format
+msgid "%s: %s\n"
+msgstr "%s: %s\n"
+
+#: alsamixer/mixer_display.c:99
+msgid "Card:"
+msgstr "Karta:"
+
+#: alsamixer/mixer_display.c:100
+msgid "Chip:"
+msgstr "Čip:"
+
+#: alsamixer/mixer_display.c:101
+msgid "View:"
+msgstr "Pohľad:"
+
+#: alsamixer/mixer_display.c:102
+msgid "Item:"
+msgstr "Položka:"
+
+#: alsamixer/mixer_display.c:105
+msgid "F1:  Help"
+msgstr "F1:  Pomocník"
+
+#: alsamixer/mixer_display.c:106
+msgid "F2:  System information"
+msgstr "F2:  Informácie o systéme"
+
+#: alsamixer/mixer_display.c:107
+msgid "F6:  Select sound card"
+msgstr "F6:  Výber zvukovej karty"
+
+#: alsamixer/mixer_display.c:108
+msgid "Esc: Exit"
+msgstr "Esc: Ukončiť"
+
+#: alsamixer/mixer_display.c:179
+msgid "(unplugged)"
+msgstr "(odpojená)"
+
+#: alsamixer/mixer_display.c:197
+msgid "Playback"
+msgstr "Prehrávanie"
+
+#: alsamixer/mixer_display.c:198
+msgid "Capture"
+msgstr "Záznam"
+
+#: alsamixer/mixer_display.c:199
+msgid "All"
+msgstr "Všetko"
+
+#: alsamixer/mixer_display.c:240
+msgid "mute"
+msgstr "stlmiť"
+
+#: alsamixer/mixer_display.c:281 alsamixer/mixer_display.c:291
+msgid "dB gain:"
+msgstr "dB zisk:"
+
+#: alsamixer/mixer_display.c:291
+#, c-format
+msgid " [%s %s, %s]"
+msgstr " [%s %s; %s]"
+
+#: alsamixer/mixer_display.c:300 alsamixer/mixer_display.c:306
+#: alsamixer/mixer_display.c:312 alsamixer/mixer_display.c:318
+msgid "Off"
+msgstr "Vyp"
+
+#: alsamixer/mixer_display.c:306 alsamixer/mixer_display.c:318
+msgid "On"
+msgstr "Zap"
+
+#: alsamixer/mixer_display.c:370
+msgid "The sound device was unplugged."
+msgstr "Zvukové zariadenie bolo odpojené."
+
+#: alsamixer/mixer_display.c:371
+msgid "Press F6 to select another sound card."
+msgstr "Stlačte F6 pre výber inej zvukovej karty."
+
+#: alsamixer/mixer_display.c:386
+msgid "This sound device does not have any playback controls."
+msgstr "Toto zvukové zariadenie neposkytuje ovládacie prvky pre prehrávanie."
+
+#: alsamixer/mixer_display.c:388
+msgid "This sound device does not have any capture controls."
+msgstr "Toto zvukové zariadenie neposkytuje ovládacie prvky pre zaznamenávanie."
+
+#: alsamixer/mixer_display.c:390
+msgid "This sound device does not have any controls."
+msgstr "Toto zvukové zariadenie neposkytuje žiadne ovládacie prvky."
+
+#. TRANSLATORS: playback on; one character
+#: alsamixer/mixer_display.c:523 alsamixer/mixer_display.c:528
+msgid "O"
+msgstr "O"
+
+#. TRANSLATORS: playback muted; one character
+#: alsamixer/mixer_display.c:525 alsamixer/mixer_display.c:529
+msgid "M"
+msgstr "M"
+
+#. TRANSLATORS: "left"; no more than two characters
+#: alsamixer/mixer_display.c:545
+msgid "L"
+msgstr "Ľ"
+
+#. TRANSLATORS: "right"; no more than two characters
+#: alsamixer/mixer_display.c:551
+msgid "R"
+msgstr "P"
+
+#. TRANSLATORS: no more than eight characters
+#: alsamixer/mixer_display.c:555
+msgid "CAPTURE"
+msgstr "ZÁZNAM"
+
+#: alsamixer/mixer_display.c:611
+msgid "Front"
+msgstr "Predné"
+
+#: alsamixer/mixer_display.c:614
+msgid "Rear"
+msgstr "Zadné"
+
+#: alsamixer/mixer_display.c:617 speaker-test/speaker-test.c:124
+msgid "Center"
+msgstr "Stredné"
+
+#: alsamixer/mixer_display.c:620
+msgid "Woofer"
+msgstr "Basy"
+
+#: alsamixer/mixer_display.c:623
+msgid "Side"
+msgstr "Bočné"
+
+#: alsamixer/mixer_widget.c:91 alsamixer/mixer_widget.c:96
+msgid "cannot open mixer"
+msgstr "Chyba pri otváraní mixéra"
+
+#: alsamixer/mixer_widget.c:102 alsamixer/mixer_widget.c:179
+msgid "cannot load mixer controls"
+msgstr "Chyba pri načítavaní ovládacích prvkov mixéra"
+
+#: alsamixer/mixer_widget.c:169
+#, c-format
+msgid "Cannot open mixer device '%s'."
+msgstr "Chyba pri otváraní zariadenia mixéra '%s'."
+
+#: alsamixer/mixer_widget.c:190
+msgid "Esc     Exit"
+msgstr "Esc     Ukončiť"
+
+#: alsamixer/mixer_widget.c:191
+msgid "F1 ? H  Help"
+msgstr "F1 ? H  Pomocník"
+
+#: alsamixer/mixer_widget.c:192
+msgid "F2 /    System information"
+msgstr "F2 /    Informácie o systéme"
+
+#: alsamixer/mixer_widget.c:193
+msgid "F3      Show playback controls"
+msgstr "F3      Zobraziť ovládacie prvky prehrávania"
+
+#: alsamixer/mixer_widget.c:194
+msgid "F4      Show capture controls"
+msgstr "F4      Zobraziť ovládacie prvky zaznamenávania"
+
+#: alsamixer/mixer_widget.c:195
+msgid "F5      Show all controls"
+msgstr "F5      Zobraziť všetky ovládacie prvky"
+
+#: alsamixer/mixer_widget.c:196
+msgid "Tab     Toggle view mode (F3/F4/F5)"
+msgstr "Tab     Prepnúť režim zobrazenia (F3/F4/F5)"
+
+#: alsamixer/mixer_widget.c:197
+msgid "F6 S    Select sound card"
+msgstr "F6 S    Výber zvukovej karty"
+
+#: alsamixer/mixer_widget.c:198
+msgid "L       Redraw screen"
+msgstr "L       Aktualizovať obrazovku"
+
+#: alsamixer/mixer_widget.c:200
+msgid "Left    Move to the previous control"
+msgstr "Doľava   Prejsť na predchádzajúci ovládací prvok"
+
+#: alsamixer/mixer_widget.c:201
+msgid "Right   Move to the next control"
+msgstr "Doprava  Prejsť na ďalší ovládací prvok"
+
+#: alsamixer/mixer_widget.c:203
+msgid "Up/Down    Change volume"
+msgstr "Hore/Dole   Zmena hlasitosti"
+
+#: alsamixer/mixer_widget.c:204
+msgid "+ -        Change volume"
+msgstr "+ -         Zmena hlasitosti"
+
+#: alsamixer/mixer_widget.c:205
+msgid "Page Up/Dn Change volume in big steps"
+msgstr "PageUp/Down Zmeniť hlasitosť vo veľkých skokoch"
+
+#: alsamixer/mixer_widget.c:206
+msgid "End        Set volume to 0%"
+msgstr "End         Nastaviť hlasitosť na 0%"
+
+#: alsamixer/mixer_widget.c:207
+msgid "0-9        Set volume to 0%-90%"
+msgstr "0-9         Nastaviť hlasitosť na 0%-90%"
+
+#: alsamixer/mixer_widget.c:208
+msgid "Q W E      Increase left/both/right volumes"
+msgstr "Q W E       Zvýšiť hlasitosť pre ľavý/oba/pravý kanál(y)"
+
+#. TRANSLATORS: or Y instead of Z
+#: alsamixer/mixer_widget.c:210
+msgid "Z X C      Decrease left/both/right volumes"
+msgstr "Y X C       Znížiť hlasitosť pre ľavý/oba/pravý kanál(y)"
+
+#: alsamixer/mixer_widget.c:211
+msgid "B          Balance left and right volumes"
+msgstr "B           Synchronizovať hlasitosť ľavého a pravého kanála"
+
+#: alsamixer/mixer_widget.c:213
+msgid "M          Toggle mute"
+msgstr "M           Prepnúť stlmenie"
+
+#. TRANSLATORS: or , .
+#: alsamixer/mixer_widget.c:215
+msgid "< >        Toggle left/right mute"
+msgstr ", .         Prepnúť stlmenie ľavého/pravého kanála"
+
+#: alsamixer/mixer_widget.c:217
+msgid "Space      Toggle capture"
+msgstr "Medzerník   Vypnúť/zapnúť zaznamenávanie"
+
+#. TRANSLATORS: or Insert Delete
+#: alsamixer/mixer_widget.c:219
+msgid "; '        Toggle left/right capture"
+msgstr "; '         Prepnúť zaznamenávanie ľavého/pravého kanála"
+
+#: alsamixer/mixer_widget.c:221
+msgid "Authors:"
+msgstr "Autori:"
+
+#: alsamixer/mixer_widget.c:222
+msgid "  Tim Janik"
+msgstr "  Tim Janik"
+
+#: alsamixer/mixer_widget.c:223
+msgid "  Jaroslav Kysela <perex@perex.cz>"
+msgstr "  Jaroslav Kysela <perex@perex.cz>"
+
+#: alsamixer/mixer_widget.c:224
+msgid "  Clemens Ladisch <clemens@ladisch.de>"
+msgstr "  Clemens Ladisch <clemens@ladisch.de>"
+
+#: alsamixer/mixer_widget.c:226
+msgid "Help"
+msgstr "Pomocník"
+
+#: alsamixer/proc_files.c:56
+msgid "Select File"
+msgstr "Vybrať súbor"
+
+#: alsamixer/textbox.c:51 alsamixer/textbox.c:65
+msgid "Error"
+msgstr "Chyba"
+
+#: alsamixer/textbox.c:80
+#, c-format
+msgid "Cannot open file \"%s\"."
+msgstr "Chyba pri otváraní súboru \"%s\"."
+
+#: aplay/aplay.c:180
+msgid "raw data"
+msgstr "surové dáta"
+
+#: aplay/aplay.c:181
+msgid "VOC"
+msgstr "VOC"
+
+#: aplay/aplay.c:183
+msgid "WAVE"
+msgstr "WAVE"
+
+#: aplay/aplay.c:184
+msgid "Sparc Audio"
+msgstr "Sparc-Audio"
+
+#: aplay/aplay.c:205
+#, c-format
+msgid ""
+"Usage: %s [OPTION]... [FILE]...\n"
+"\n"
+"-h, --help              help\n"
+"    --version           print current version\n"
+"-l, --list-devices      list all soundcards and digital audio devices\n"
+"-L, --list-pcms         list device names\n"
+"-D, --device=NAME       select PCM by name\n"
+"-q, --quiet             quiet mode\n"
+"-t, --file-type TYPE    file type (voc, wav, raw or au)\n"
+"-c, --channels=#        channels\n"
+"-f, --format=FORMAT     sample format (case insensitive)\n"
+"-r, --rate=#            sample rate\n"
+"-d, --duration=#        interrupt after # seconds\n"
+"-s, --samples=#         interrupt after # samples per channel\n"
+"-M, --mmap              mmap stream\n"
+"-N, --nonblock          nonblocking mode\n"
+"-F, --period-time=#     distance between interrupts is # microseconds\n"
+"-B, --buffer-time=#     buffer duration is # microseconds\n"
+"    --period-size=#     distance between interrupts is # frames\n"
+"    --buffer-size=#     buffer duration is # frames\n"
+"-A, --avail-min=#       min available space for wakeup is # microseconds\n"
+"-R, --start-delay=#     delay for automatic PCM start is # microseconds \n"
+"                        (relative to buffer size if <= 0)\n"
+"-T, --stop-delay=#      delay for automatic PCM stop is # microseconds from "
+"xrun\n"
+"-v, --verbose           show PCM structure and setup (accumulative)\n"
+"-V, --vumeter=TYPE      enable VU meter (TYPE: mono or stereo)\n"
+"-I, --separate-channels one file for each channel\n"
+"-i, --interactive       allow interactive operation from stdin\n"
+"-m, --chmap=ch1,ch2,..  Give the channel map to override or follow\n"
+"    --disable-resample  disable automatic rate resample\n"
+"    --disable-channels  disable automatic channel conversions\n"
+"    --disable-format    disable automatic format conversions\n"
+"    --disable-softvol   disable software volume control (softvol)\n"
+"    --test-position     test ring buffer position\n"
+"    --test-coef=#       test coefficient for ring buffer position (default "
+"8)\n"
+"                        expression for validation is: coef * (buffer_size / "
+"2)\n"
+"    --test-nowait       do not wait for ring buffer - eats whole CPU\n"
+"    --max-file-time=#   start another output file when the old file has "
+"recorded\n"
+"                        for this many seconds\n"
+"    --process-id-file   write the process ID here\n"
+"    --use-strftime      apply the strftime facility to the output file "
+"name\n"
+"    --dump-hw-params    dump hw_params of the device\n"
+"    --fatal-errors      treat all errors as fatal\n"
+msgstr ""
+"Syntax: %s [VOĽBA]... [SÚBOR]...\n"
+"\n"
+"-h, --help              pomocník\n"
+"    --version           zobraziť aktuálnu verziu\n"
+"-l, --list-devices      vypísať zoznam všetkých zvukových kariet a "
+"digitálnych zvukových zariadení na systéme\n"
+"-L, --list-pcms         vypísať zoznam s názvami zariadení\n"
+"-D, --device=NAME       vybrať zariadenie PCM podľa mena\n"
+"-q, --quiet             tichý režim\n"
+"-t, --file-type TYPE    typ súboru (voc, wav, raw alebo au)\n"
+"-c, --channels=#        kanály\n"
+"-f, --format=FORMAT     formát vzorkovania (na veľkosti znakov nezáleží)\n"
+"-r, --rate=#            formát vzorkovania\n"
+"-d, --duration=#        prerušiť po # sekundách\n"
+"-s, --samples=#         prerušiť po # vzorkách na kanál\n"
+"-M, --mmap              mmap prúd\n"
+"-N, --nonblock          režim bez blokovania\n"
+"-F, --period-time=#     vzdialenosť medzi prerušeniami je # mikrosekúnd\n"
+"-B, --buffer-time=#     dĺžka vyrovnávacej pamäte je # mikrosekúnd\n"
+"    --period-size=#     vzdialenosť medzi prerušeniami je # snímkov\n"
+"    --buffer-size=#     dĺžka vyrovnávacej pamäte je # snímkov\n"
+"-A, --avail-min=#       min. dostupný priestor pre prebudenie (wakeup) je # "
+"mikrosekúnd\n"
+"-R, --start-delay=#     oneskorenie pri automatickom štarte PCM je # "
+"mikrosekúnd \n"
+"                        (relatívne k veľkosti vyrovnávacej pamäte ak <= 0)\n"
+"-T, --stop-delay=#      oneskorenie pri automatickom zastavení PCM je # "
+"mikrosekúnd od xrun\n"
+"-v, --verbose           zobraziť štruktúru a nastavenie PCM (akumulatívne)\n"
+"-V, --vumeter=TYPE      povoliť VU meter (typ: mono alebo stereo)\n"
+"-I, --separate-channels jeden súbor pre každý kanál\n"
+"-i, --interactive       povoliť interaktívne ovládanie cez štandardný vstup "
+"(stdin)\n"
+"-m, --chmap=ch1,ch2,..  nastaviť mapu kanálov, ktorá sa má použiť alebo "
+"ignorovať\n"
+"    --disable-resample  vypnúť automatickú zmenu frekvencie vzorkovania\n"
+"    --disable-channels  vypnúť automatickú konverziu kanálov\n"
+"    --disable-format    vypnúť automatickú konverziu formátu\n"
+"    --disable-softvol   vypnúť softvérovú zmenu hlasitosti (softvol)\n"
+"    --test-position     testovať pozíciu v ring bufferi\n"
+"    --test-coef=#       testovací koeficient pre kontrolu pozície v ring "
+"bufferi (predvolené 8)\n"
+"                        vzorec pre kontrolu je: koef * (velkost_buffera / "
+"2)\n"
+"    --test-nowait       nečakať na ring buffer - zhltne celý procesorový "
+"čas\n"
+"    --max-file-time=#   začať zápis do ďalšieho súboru po tom, ako je v "
+"aktuálnom súbore zaznamenaných # sekúnd\n"
+"    --process-id-file   zapísať číslo procesu do súboru\n"
+"    --use-strftime      formátovať názov súboru funkciou strftime\n"
+"    --dump-hw-params    vypísať hardvérové parametre (hw_params) "
+"zariadenia\n"
+"    --fatal-errors      všetky chyby vyhodnotiť ako závažné\n"
+
+#: aplay/aplay.c:250 speaker-test/speaker-test.c:945
+#, c-format
+msgid "Recognized sample formats are:"
+msgstr "Podporované formáty vzorkovania sú:"
+
+#: aplay/aplay.c:256
+#, c-format
+msgid ""
+"\n"
+"Some of these may not be available on selected hardware\n"
+msgstr ""
+"\n"
+"Niektoré z nich nemusia byť dostupné na vybranom hardvéri.\n"
+
+#: aplay/aplay.c:257
+#, c-format
+msgid "The available format shortcuts are:\n"
+msgstr "Dostupné skratky formátov sú:\n"
+
+#: aplay/aplay.c:258
+#, c-format
+msgid "-f cd (16 bit little endian, 44100, stereo)\n"
+msgstr "-f cd (16 bitov, Little Endian, 44100 Hz, stereo)\n"
+
+#: aplay/aplay.c:259
+#, c-format
+msgid "-f cdr (16 bit big endian, 44100, stereo)\n"
+msgstr "-f cdr (16 bitov, Big Endian, 44100 Hz, stereo)\n"
+
+#: aplay/aplay.c:260
+#, c-format
+msgid "-f dat (16 bit little endian, 48000, stereo)\n"
+msgstr "-f dat (16 bitov, Little Endian, 48000 Hz, stereo)\n"
+
+#: aplay/aplay.c:274
+msgid "no soundcards found..."
+msgstr "neboli nájdené žiadne zvukové karty..."
+
+#: aplay/aplay.c:277
+#, c-format
+msgid "**** List of %s Hardware Devices ****\n"
+msgstr "**** Zoznam hardvérových zariadení (%s) ****\n"
+
+#: aplay/aplay.c:306
+#, c-format
+msgid "card %i: %s [%s], device %i: %s [%s]\n"
+msgstr "karta %i: %s [%s], zariadenie %i: %s [%s]\n"
+
+#: aplay/aplay.c:312
+#, c-format
+msgid "  Subdevices: %i/%i\n"
+msgstr "  Podriadené zariadenia: %i/%i\n"
+
+#: aplay/aplay.c:319
+#, c-format
+msgid "  Subdevice #%i: %s\n"
+msgstr "  Podriadené zariadenie #%i: %s\n"
+
+#: aplay/aplay.c:400
+#, c-format
+msgid "Aborted by signal %s...\n"
+msgstr "Zrušené signálom %s ...\n"
+
+#: aplay/aplay.c:555
+msgid "command should be named either arecord or aplay"
+msgstr "príkaz by sa mal volať buď arecord alebo aplay"
+
+#: aplay/aplay.c:599
+#, c-format
+msgid "unrecognized file format %s"
+msgstr "nerozpoznaný formát súboru %s"
+
+#: aplay/aplay.c:606
+#, c-format
+msgid "invalid channels argument '%s'"
+msgstr "neplatný argument kanála '%s'"
+
+#: aplay/aplay.c:610
+#, c-format
+msgid "value %i for channels is invalid"
+msgstr "hodnota %i pre kanále je neplatná"
+
+#: aplay/aplay.c:629
+#, c-format
+msgid "wrong extended format '%s'"
+msgstr "neplatný rozšírený formát '%s'"
+
+#: aplay/aplay.c:637
+#, c-format
+msgid "invalid rate argument '%s'"
+msgstr "neplatný argument frekvencie '%s'"
+
+#: aplay/aplay.c:644
+#, c-format
+msgid "bad speed value %i"
+msgstr "nesprávna hodnota rýchlosti %i"
+
+#: aplay/aplay.c:650
+msgid "duration and samples arguments cannot be used together"
+msgstr "argumenty pre trvanie a počet vzoriek nesmú byť použité spolu"
+
+#: aplay/aplay.c:655
+#, c-format
+msgid "invalid duration argument '%s'"
+msgstr "neplatný argument trvania '%s'"
+
+#: aplay/aplay.c:662
+msgid "samples and duration arguments cannot be used together"
+msgstr "argumenty pre počet vzoriek a trvanie nesmú byť použité spolu"
+
+#: aplay/aplay.c:667
+#, c-format
+msgid "invalid samples argument '%s'"
+msgstr "neplatný argument vzoriek '%s'"
+
+#: aplay/aplay.c:679
+#, c-format
+msgid "invalid period time argument '%s'"
+msgstr "neplatný argument času periódy '%s'"
+
+#: aplay/aplay.c:686
+#, c-format
+msgid "invalid buffer time argument '%s'"
+msgstr "neplatný argument času vyrovnávacej pamäte '%s'"
+
+#: aplay/aplay.c:693
+#, c-format
+msgid "invalid period size argument '%s'"
+msgstr "neplatný argument veľkosti periódy '%s'"
+
+#: aplay/aplay.c:700
+#, c-format
+msgid "invalid buffer size argument '%s'"
+msgstr "neplatný argument veľkosti vyrovnávacej pamäte '%s'"
+
+#: aplay/aplay.c:707
+#, c-format
+msgid "invalid min available space argument '%s'"
+msgstr "neplatný argument min. dostupného miesta '%s'"
+
+#: aplay/aplay.c:714
+#, c-format
+msgid "invalid start delay argument '%s'"
+msgstr "neplatný argument oneskorenia pri štarte '%s'"
+
+#: aplay/aplay.c:721
+#, c-format
+msgid "invalid stop delay argument '%s'"
+msgstr "neplatný argument oneskorenia pri zastavení '%s'"
+
+#: aplay/aplay.c:776
+#, c-format
+msgid "invalid test coef argument '%s'"
+msgstr "neplatný argument testovacieho koeficienta '%s'"
+
+#: aplay/aplay.c:788
+#, c-format
+msgid "invalid max file time argument '%s'"
+msgstr "neplatný argument pre max. čas súboru '%s'"
+
+#: aplay/aplay.c:808 speaker-test/speaker-test.c:571
+#, c-format
+msgid "Unable to parse channel map string: %s\n"
+msgstr "Chyba pri dekódovaní reťazca s mapou kanálov: %s\n"
+
+#: aplay/aplay.c:814
+#, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr "Skúste `%s --help' pre ďalšie informácie.\n"
+
+#: aplay/aplay.c:830
+#, c-format
+msgid "audio open error: %s"
+msgstr "chyba pri otváraní zariadenia: %s"
+
+#: aplay/aplay.c:835
+#, c-format
+msgid "info error: %s"
+msgstr "chyba pri čítaní informácií o zariadení: %s"
+
+#: aplay/aplay.c:842
+#, c-format
+msgid "nonblock setting error: %s"
+msgstr "chyba pri nastavovaní režimu bez blokovania: %s"
+
+#: aplay/aplay.c:852 aplay/aplay.c:976 aplay/aplay.c:1266 aplay/aplay.c:1466
+#: aplay/aplay.c:1986 aplay/aplay.c:2016
+msgid "not enough memory"
+msgstr "nedostatok pamäte"
+
+#: aplay/aplay.c:876
+#, c-format
+msgid "Cannot create process ID file %s: %s"
+msgstr "Chyba pri vytváraní súboru s ID procesu %s: %s"
+
+#: aplay/aplay.c:966
+#, c-format
+msgid "read error (called from line %i)"
+msgstr "chyba pri čítaní (volané na riadku %i)"
+
+#: aplay/aplay.c:1033
+#, c-format
+msgid "unknown length of 'fmt ' chunk (read %u, should be %u at least)"
+msgstr "neznáma dĺžka 'fmt ' bloku (prečítané %u, malo by byť aspoň %u)"
+
+#: aplay/aplay.c:1044
+#, c-format
+msgid ""
+"unknown length of extensible 'fmt ' chunk (read %u, should be %u at least)"
+msgstr ""
+"neznáma dĺžka rozšíreného 'fmt ' bloku (prečítané %u, malo by byť aspoň %u)"
+
+#: aplay/aplay.c:1049
+msgid "wrong format tag in extensible 'fmt ' chunk"
+msgstr "neznámy formát značky rozšíreného 'fmt ' bloku"
+
+#: aplay/aplay.c:1056
+#, c-format
+msgid "can't play WAVE-file format 0x%04x which is not PCM or FLOAT encoded"
+msgstr "nie je možné prehrať WAV súbor vo formáte 0x%04x, ktorý nie je kódovaný ako PCM alebo FLOAT"
+
+#: aplay/aplay.c:1061
+#, c-format
+msgid "can't play WAVE-files with %d tracks"
+msgstr "nie je možné prehrať súbory WAV s %d stopami"
+
+#: aplay/aplay.c:1069 aplay/aplay.c:1195
+#, c-format
+msgid "Warning: format is changed to U8\n"
+msgstr "Varovanie: formát bol zmenený na U8\n"
+
+#: aplay/aplay.c:1079 aplay/aplay.c:1092 aplay/aplay.c:1103
+#, c-format
+msgid "Warning: format is changed to %s\n"
+msgstr "Varovanie: formát bol zmenený na %s\n"
+
+#: aplay/aplay.c:1108
+#, c-format
+msgid ""
+" can't play WAVE-files with sample %d bits in %d bytes wide (%d channels)"
+msgstr ""
+" nie je možné prehrať súbory WAV s vzorkovaním %d bitov v %d bajtoch (%d "
+"kanálov)"
+
+#: aplay/aplay.c:1131
+#, c-format
+msgid " can't play WAVE-files with sample %d bits wide"
+msgstr " nie je možné prehrať súbory WAV o šírke vzorky %d bitov"
+
+#: aplay/aplay.c:1189
+#, c-format
+msgid "Warning: format is changed to MU_LAW\n"
+msgstr "Varovanie: formát bol zmenený na MU_LAW\n"
+
+#: aplay/aplay.c:1201
+#, c-format
+msgid "Warning: format is changed to S16_BE\n"
+msgstr "Varovanie: formát bol zmenený na S16_BE\n"
+
+#: aplay/aplay.c:1214 aplay/aplay.c:2307 aplay/aplay.c:2314 aplay/aplay.c:2839
+msgid "read error"
+msgstr "chyba pri čítaní"
+
+#: aplay/aplay.c:1244
+msgid "Channel numbers don't match between hw_params and channel map"
+msgstr "Počet kanálov medzi hw_params a mapou kanálov nesedí"
+
+#: aplay/aplay.c:1253
+#, c-format
+msgid "Warning: unable to get channel map\n"
+msgstr "Varovanie: nie je možné získať mapu kanálov\n"
+
+#: aplay/aplay.c:1287
+#, c-format
+msgid "Channel %d doesn't match with hw_params"
+msgstr "Kanál %d nesedí s hardvérovými parametrami (hw_params)"
+
+#: aplay/aplay.c:1314
+msgid "Broken configuration for this PCM: no configurations available"
+msgstr ""
+"Neplatná konfigurácia pre toto zariadenie PCM: žiadne dostupné konfigurácie"
+
+#: aplay/aplay.c:1318
+#, c-format
+msgid "HW Params of device \"%s\":\n"
+msgstr "HW parametre zariadenia \"%s\":\n"
+
+#: aplay/aplay.c:1338
+msgid "Access type not available"
+msgstr "Typ prístupu nie je dostupný"
+
+#: aplay/aplay.c:1343
+msgid "Sample format non available"
+msgstr "Formát vzorkovania nie je dostupný"
+
+#: aplay/aplay.c:1349
+msgid "Channels count non available"
+msgstr "Počet kanálov nie je dostupný"
+
+#: aplay/aplay.c:1364
+#, c-format
+msgid "Warning: rate is not accurate (requested = %iHz, got = %iHz)\n"
+msgstr ""
+"Varovanie: frekvencia je nepresná (vyžiadané: %i Hz, obdržané: %i Hz)\n"
+
+#: aplay/aplay.c:1370
+#, c-format
+msgid "         please, try the plug plugin %s\n"
+msgstr "         vyskúšajte, prosím, doplnok plug: %s\n"
+
+#: aplay/aplay.c:1407
+msgid "Unable to install hw params:"
+msgstr "Chyba pri nastavovaní hw parametrov:"
+
+#: aplay/aplay.c:1414
+#, c-format
+msgid "Can't use period equal to buffer size (%lu == %lu)"
+msgstr ""
+"Nie je možné použiť periódu rovnakú ako veľkosť vyrovnávacej pamäte (%lu == "
+"%lu)"
+
+#: aplay/aplay.c:1420
+msgid "Unable to get current sw params."
+msgstr "chyba pri nastavovaní softvérových parametrov:"
+
+#: aplay/aplay.c:1449
+msgid "unable to install sw params:"
+msgstr "chyba pri nastavovaní sw parametrov:"
+
+#: aplay/aplay.c:1484
+#, c-format
+msgid "snd_pcm_mmap_begin problem: %s"
+msgstr "problém s snd_pcm_mmap_begin: %s"
+
+#: aplay/aplay.c:1513
+#, c-format
+msgid "stdin O_NONBLOCK flag setup failed\n"
+msgstr "chyba pri nastavovaní príznaku O_NONBLOCK\n"
+
+#: aplay/aplay.c:1537
+#, c-format
+msgid "\rPAUSE command ignored (no hw support)\n"
+msgstr "\rpríkaz PAUSE ignorovaný (chýba podpora v hardvéri)\n"
+
+#: aplay/aplay.c:1545
+#, c-format
+msgid "pause push error: %s"
+msgstr "chyba pri pozastavení: %s"
+
+#: aplay/aplay.c:1556
+#, c-format
+msgid "pause release error: %s"
+msgstr "chyba pri ukončovaní pozastavenia: %s"
+
+#: aplay/aplay.c:1572
+#, c-format
+msgid ""
+"\r=== PAUSE ===                                                            "
+msgstr ""
+"\r=== PAUZA ===                                                            "
+
+#: aplay/aplay.c:1614
+#, c-format
+msgid "status error: %s"
+msgstr "chyba stavu: %s"
+
+#: aplay/aplay.c:1619
+#, c-format
+msgid "fatal %s: %s"
+msgstr "fatálna %s: %s"
+
+#: aplay/aplay.c:1620 aplay/aplay.c:1631 aplay/aplay.c:1634 aplay/aplay.c:1642
+msgid "underrun"
+msgstr "podtečenie"
+
+#: aplay/aplay.c:1620 aplay/aplay.c:1631 aplay/aplay.c:1642
+msgid "overrun"
+msgstr "pretečenie"
+
+#: aplay/aplay.c:1630 aplay/aplay.c:1641
+#, c-format
+msgid "%s!!! (at least %.3f ms long)\n"
+msgstr "%s!!! (o dĺžke aspoň %.3f ms)\n"
+
+#: aplay/aplay.c:1646
+#, c-format
+msgid "Status:\n"
+msgstr "Stav:\n"
+
+#: aplay/aplay.c:1650
+#, c-format
+msgid "xrun: prepare error: %s"
+msgstr "xrun: chyba pri inicializácii: %s"
+
+#: aplay/aplay.c:1656
+#, c-format
+msgid "Status(DRAINING):\n"
+msgstr "Stav (VYČERPANIE):\n"
+
+#: aplay/aplay.c:1660
+#, c-format
+msgid "capture stream format change? attempting recover...\n"
+msgstr "zmena formátu prúdu zaznamenávaných dát? pokúšam sa zotaviť...\n"
+
+#: aplay/aplay.c:1662
+#, c-format
+msgid "xrun(DRAINING): prepare error: %s"
+msgstr "xrun (VYČERPANIE): chyba počas inicializácie: %s"
+
+#: aplay/aplay.c:1669
+#, c-format
+msgid "Status(R/W):\n"
+msgstr "Stav (R/W):\n"
+
+#: aplay/aplay.c:1672
+#, c-format
+msgid "read/write error, state = %s"
+msgstr "chyba čítania/zápisu, stav = %s"
+
+#: aplay/aplay.c:1682
+#, c-format
+msgid "Suspended. Trying resume. "
+msgstr "Pozastavené. Pokúšam sa prebudiť. "
+
+#: aplay/aplay.c:1688
+#, c-format
+msgid "Failed. Restarting stream. "
+msgstr "Zlyhalo. Reštartujem stream. "
+
+#: aplay/aplay.c:1691
+#, c-format
+msgid "suspend: prepare error: %s"
+msgstr "Pozastavenie: chyba pri inicializácií: %s"
+
+#: aplay/aplay.c:1696
+#, c-format
+msgid "Done.\n"
+msgstr "Hotovo.\n"
+
+#: aplay/aplay.c:1718
+#, c-format
+msgid " !clip  "
+msgstr " !orezanie  "
+
+#: aplay/aplay.c:1862
+#, c-format
+msgid "Unsupported bit size %d.\n"
+msgstr "Nepodporovaná bitová dĺžka %d.\n"
+
+#: aplay/aplay.c:1896
+#, c-format
+msgid "Max peak (%li samples): 0x%08x "
+msgstr "Max. hodnota (%li vzoriek): 0x%08x "
+
+#: aplay/aplay.c:1930
+#, c-format
+msgid ""
+"Suspicious buffer position (%li total): avail = %li, delay = %li, buffer = "
+"%li\n"
+msgstr ""
+"Podozrivá pozícia vyrovnávacej pämate (celkom %li): dostupné = %li, "
+"oneskorenie = %li, vyr. pamäť = %li\n"
+
+#: aplay/aplay.c:2058
+#, c-format
+msgid "write error: %s"
+msgstr "Chyba pri zápise: %s"
+
+#: aplay/aplay.c:2106
+#, c-format
+msgid "writev error: %s"
+msgstr "Chyba pri zápise vektora: %s"
+
+#: aplay/aplay.c:2152
+#, c-format
+msgid "read error: %s"
+msgstr "Chyba pri čítaní: %s"
+
+#: aplay/aplay.c:2199
+#, c-format
+msgid "readv error: %s"
+msgstr "Chyba pri čítaní vektora: %s"
+
+#: aplay/aplay.c:2248
+msgid "can't allocate buffer for silence"
+msgstr "Nepodarilo sa alokovať vyrovnávaciu pamäť pre ticho"
+
+#: aplay/aplay.c:2257 aplay/aplay.c:2485 aplay/aplay.c:2490 aplay/aplay.c:2540
+#: aplay/aplay.c:2549 aplay/aplay.c:2556 aplay/aplay.c:2566 aplay/aplay.c:2572
+#: aplay/aplay.c:2644 aplay/aplay.c:2674 aplay/aplay.c:2688
+msgid "write error"
+msgstr "Chyba pri zápise"
+
+#: aplay/aplay.c:2270
+#, c-format
+msgid "voc_pcm_flush - silence error"
+msgstr "voc_pcm_flush - chyba pri nastavovaní ticha"
+
+#: aplay/aplay.c:2273
+msgid "voc_pcm_flush error"
+msgstr "chyba voc_pcm_flush"
+
+#: aplay/aplay.c:2298
+msgid "malloc error"
+msgstr "chyba malloc"
+
+#: aplay/aplay.c:2302
+#, c-format
+msgid "Playing Creative Labs Channel file '%s'...\n"
+msgstr "Prehrávam súbor Creative Labs Channel '%s'...\n"
+
+#: aplay/aplay.c:2370 aplay/aplay.c:2465
+msgid "can't play packed .voc files"
+msgstr "Nie je možné prehrať komprimované súbory .voc"
+
+#: aplay/aplay.c:2425
+#, c-format
+msgid "can't play loops; %s isn't seekable\n"
+msgstr "Nedokážem prehrať slučku; v %s nie je možné skákať\n"
+
+#: aplay/aplay.c:2474
+#, c-format
+msgid "unknown blocktype %d. terminate."
+msgstr "Neznámy typ bloku %d. Končím."
+
+#: aplay/aplay.c:2608
+#, c-format
+msgid "Wave doesn't support %s format..."
+msgstr "Wave nepodporuje formát %s..."
+
+#: aplay/aplay.c:2668
+#, c-format
+msgid "Sparc Audio doesn't support %s format..."
+msgstr "Sparc audio nepodporuje formát %s..."
+
+#: aplay/aplay.c:2743
+msgid "Playing"
+msgstr "Prehrávam"
+
+#: aplay/aplay.c:2743
+msgid "Recording"
+msgstr "Nahrávam"
+
+#: aplay/aplay.c:2747
+#, c-format
+msgid "Rate %d Hz, "
+msgstr "Frekvencia: %d Hz, "
+
+#: aplay/aplay.c:2749
+#, c-format
+msgid "Mono"
+msgstr "Mono"
+
+#: aplay/aplay.c:2751
+#, c-format
+msgid "Stereo"
+msgstr "Stereo"
+
+#: aplay/aplay.c:2753
+#, c-format
+msgid "Channels %i"
+msgstr "%i Kanály"
+
+#: aplay/aplay.c:3356
+#, c-format
+msgid "You need to specify %u files"
+msgstr "Musíte zadať %u súborov"
+
+#: aplay/aplay.c:3409
+#, c-format
+msgid "You need to specify %d files"
+msgstr "Musíte zadať %d súborov."
+
+#: seq/aconnect/aconnect.c:49
+#, c-format
+msgid "aconnect - ALSA sequencer connection manager\n"
+msgstr "aconnect - Správca spojení pre ALSA sekvencér\n"
+
+#: seq/aconnect/aconnect.c:50
+#, c-format
+msgid "Copyright (C) 1999-2000 Takashi Iwai\n"
+msgstr "Autorské práva © 1999-2000 Takashi Iwai\n"
+
+#: seq/aconnect/aconnect.c:51
+#, c-format
+msgid "Usage:\n"
+msgstr "Syntax:\n"
+
+#: seq/aconnect/aconnect.c:52
+#, c-format
+msgid " * Connection/disconnection between two ports\n"
+msgstr " * Vytvorenie/zrušenie spojenia dvoch prípojok (portov)\n"
+
+#: seq/aconnect/aconnect.c:53
+#, c-format
+msgid "   aconnect [-options] sender receiver\n"
+msgstr "   aconnect [-možnosti] odosielateľ prijímateľ\n"
+
+#: seq/aconnect/aconnect.c:54
+#, c-format
+msgid "     sender, receiver = client:port pair\n"
+msgstr "     odosielateľ, prijímateľ = pár klient:port\n"
+
+#: seq/aconnect/aconnect.c:55
+#, c-format
+msgid "     -d,--disconnect     disconnect\n"
+msgstr "     -d,--disconnect     zrušiť spojenie\n"
+
+#: seq/aconnect/aconnect.c:56
+#, c-format
+msgid "     -e,--exclusive      exclusive connection\n"
+msgstr "     -e,--exclusive      výhradné spojenie\n"
+
+#: seq/aconnect/aconnect.c:57
+#, c-format
+msgid "     -r,--real #         convert real-time-stamp on queue\n"
+msgstr "     -r,--real #         konvertovať príznak reálneho času zdroja\n"
+
+#: seq/aconnect/aconnect.c:58
+#, c-format
+msgid "     -t,--tick #         convert tick-time-stamp on queue\n"
+msgstr "     -t,--tick #         konvertovať príznak tiknutia času zdroja\n"
+
+#: seq/aconnect/aconnect.c:59
+#, c-format
+msgid " * List connected ports (no subscription action)\n"
+msgstr " * Zobraziť pripojené prípojky (porty), bez vytvárania spojení\n"
+
+#: seq/aconnect/aconnect.c:60
+#, c-format
+msgid "   aconnect -i|-o [-options]\n"
+msgstr "   aconnect -i|-o [-možnosti]\n"
+
+#: seq/aconnect/aconnect.c:61
+#, c-format
+msgid "     -i,--input          list input (readable) ports\n"
+msgstr ""
+"     -i,--input          zobraziť vstupné (čitateľné) prípojky (porty)\n"
+
+#: seq/aconnect/aconnect.c:62
+#, c-format
+msgid "     -o,--output         list output (writable) ports\n"
+msgstr ""
+"     -o,--output         zobraziť výstupné (zapisovateľné) prípojky "
+"(porty)\n"
+
+#: seq/aconnect/aconnect.c:63
+#, c-format
+msgid "     -l,--list           list current connections of each port\n"
+msgstr ""
+"     -l,--list           zobraziť aktuálne spojenia pri každej prípojke "
+"(porte)\n"
+
+#: seq/aconnect/aconnect.c:64
+#, c-format
+msgid " * Remove all exported connections\n"
+msgstr " * Odstrániť všetky exportované spojenia\n"
+
+#: seq/aconnect/aconnect.c:65
+#, c-format
+msgid "     -x, --removeall\n"
+msgstr "     -x,--removeall\n"
+
+#: seq/aconnect/aconnect.c:132
+msgid "Connecting To"
+msgstr "Pripájam k"
+
+#: seq/aconnect/aconnect.c:133
+msgid "Connected From"
+msgstr "Pripojené z"
+
+#: seq/aconnect/aconnect.c:171
+#, c-format
+msgid "client %d: '%s' [type=%s"
+msgstr "klient %d: '%s' [typ=%s"
+
+#: seq/aconnect/aconnect.c:175
+msgid "user"
+msgstr "Používateľ"
+
+#: seq/aconnect/aconnect.c:175
+msgid "kernel"
+msgstr "Jadro"
+
+#: seq/aconnect/aconnect.c:323
+#, c-format
+msgid "can't open sequencer\n"
+msgstr "Chyba pri otváraní sekvencéra\n"
+
+#: seq/aconnect/aconnect.c:351
+#, c-format
+msgid "can't get client id\n"
+msgstr "Chyba pri čítaní id klienta\n"
+
+#: seq/aconnect/aconnect.c:358
+#, c-format
+msgid "can't set client info\n"
+msgstr "Chyba pri nastavovaní informácií o klientovi\n"
+
+#: seq/aconnect/aconnect.c:365
+#, c-format
+msgid "invalid sender address %s\n"
+msgstr "Neplatná adresa odosielateľa %s\n"
+
+#: seq/aconnect/aconnect.c:370 seq/aseqnet/aseqnet.c:290
+#, c-format
+msgid "invalid destination address %s\n"
+msgstr "Neplatná adresa cieľa %s\n"
+
+#: seq/aconnect/aconnect.c:384
+#, c-format
+msgid "No subscription is found\n"
+msgstr "Spojenie sa nenašlo\n"
+
+#: seq/aconnect/aconnect.c:389
+#, c-format
+msgid "Disconnection failed (%s)\n"
+msgstr "Chyba pri rušení spojenia (%s)\n"
+
+#: seq/aconnect/aconnect.c:395
+#, c-format
+msgid "Connection is already subscribed\n"
+msgstr "Spojenie je už zaregistrované\n"
+
+#: seq/aconnect/aconnect.c:400
+#, c-format
+msgid "Connection failed (%s)\n"
+msgstr "Chyba spojenia (%s)\n"
+
+#: seq/aseqnet/aseqnet.c:164
+#, c-format
+msgid "aseqnet - network client/server on ALSA sequencer\n"
+msgstr "aseqnet - sieťový klient/server pre ALSA sekvencér\n"
+
+#: seq/aseqnet/aseqnet.c:165
+#, c-format
+msgid "  Copyright (C) 1999 Takashi Iwai\n"
+msgstr "  Autorské práva © 1999 Takashi Iwai\n"
+
+#: seq/aseqnet/aseqnet.c:166
+#, c-format
+msgid "usage:\n"
+msgstr "Syntax:\n"
+
+#: seq/aseqnet/aseqnet.c:167
+#, c-format
+msgid "  server mode: aseqnet [-options]\n"
+msgstr "  Server-Modus: aseqnet [Optionen]\n"
+
+#: seq/aseqnet/aseqnet.c:168
+#, c-format
+msgid "  client mode: aseqnet [-options] server_host\n"
+msgstr "  Client-Modus: aseqnet [Optionen] ServerHost\n"
+
+#: seq/aseqnet/aseqnet.c:169
+#, c-format
+msgid "options:\n"
+msgstr "Možnosti:\n"
+
+#: seq/aseqnet/aseqnet.c:170
+#, c-format
+msgid "  -p,--port # : specify TCP port (digit or service name)\n"
+msgstr "  -p,--port # : port TCP (číslo alebo meno služby)\n"
+
+#: seq/aseqnet/aseqnet.c:171
+#, c-format
+msgid "  -s,--source addr : read from given addr (client:port)\n"
+msgstr "  -s,--source # : čítať z adresy (klient:port)\n"
+
+#: seq/aseqnet/aseqnet.c:172
+#, c-format
+msgid "  -d,--dest addr : write to given addr (client:port)\n"
+msgstr "  -d,--dest # : zapísať na adresu (klient:port)\n"
+
+#: seq/aseqnet/aseqnet.c:173
+#, c-format
+msgid "  -v, --verbose : print verbose messages\n"
+msgstr "  -v,--verbose : zobraziť podrobnejšie hlásenia\n"
+
+#: seq/aseqnet/aseqnet.c:174
+#, c-format
+msgid "  -i, --info : print certain received events\n"
+msgstr "  -i,--info : zobraziť určité udalosti príjmu\n"
+
+#: seq/aseqnet/aseqnet.c:188
+#, c-format
+msgid "can't malloc\n"
+msgstr "chyba pri malloc\n"
+
+#: seq/aseqnet/aseqnet.c:213
+#, c-format
+msgid "closing files..\n"
+msgstr "zatváram súbory ...\n"
+
+#: seq/aseqnet/aseqnet.c:272
+#, c-format
+msgid "sequencer opened: %d:%d\n"
+msgstr "sekvencér otvorený: %d:%d\n"
+
+#: seq/aseqnet/aseqnet.c:279
+#, c-format
+msgid "invalid source address %s\n"
+msgstr "neplatná zdrojová adresa %s\n"
+
+#: seq/aseqnet/aseqnet.c:309
+#, c-format
+msgid "service '%s' is not found in /etc/services\n"
+msgstr "Služba '%s' nebola nájdená v /etc/services\n"
+
+#: seq/aseqnet/aseqnet.c:377
+#, c-format
+msgid "too many connections!\n"
+msgstr "Príliš veľa spojení!\n"
+
+#: seq/aseqnet/aseqnet.c:388
+#, c-format
+msgid "accepted[%d]\n"
+msgstr "prijaté[%d]\n"
+
+#: seq/aseqnet/aseqnet.c:411
+#, c-format
+msgid "can't get address %s\n"
+msgstr "nepodarilo sa získať adresu %s\n"
+
+#: seq/aseqnet/aseqnet.c:422
+#, c-format
+msgid "ok.. connected\n"
+msgstr "OK ... pripojené\n"
+
+#: seq/aseqnet/aseqnet.c:518
+#, c-format
+msgid "Channel %2d: Control event : %5d\n"
+msgstr "Kanál %2d: udalosť ovládania: %5d\n"
+
+#: seq/aseqnet/aseqnet.c:522
+#, c-format
+msgid "Channel %2d: Pitchbender   : %5d\n"
+msgstr "Kanál %2d: Pitchbender   : %5d\n"
+
+#: seq/aseqnet/aseqnet.c:526
+#, c-format
+msgid "Channel %2d: Note On event : %5d\n"
+msgstr "Kanál %2d: Udalosť aktivovanej noty : %5d\n"
+
+#: seq/aseqnet/aseqnet.c:530
+#, c-format
+msgid "Channel %2d: Note Off event: %5d\n"
+msgstr "Kanál %2d: Udalosť deaktivovanej noty: %5d\n"
+
+#: seq/aseqnet/aseqnet.c:585
+#, c-format
+msgid "disconnected\n"
+msgstr "Spojenie zrušené\n"
+
+#: speaker-test/speaker-test.c:120
+msgid "Front Left"
+msgstr "Predný ľavý"
+
+#: speaker-test/speaker-test.c:121
+msgid "Front Right"
+msgstr "Predný pravý"
+
+#: speaker-test/speaker-test.c:122
+msgid "Rear Left"
+msgstr "Zadný ľavý"
+
+#: speaker-test/speaker-test.c:123
+msgid "Rear Right"
+msgstr "Zadný pravý"
+
+#: speaker-test/speaker-test.c:125
+msgid "LFE"
+msgstr "Subwoofer"
+
+#: speaker-test/speaker-test.c:126
+msgid "Side Left"
+msgstr "Stredový ľavý"
+
+#: speaker-test/speaker-test.c:127
+msgid "Side Right"
+msgstr "Stredový pravý"
+
+#: speaker-test/speaker-test.c:128
+msgid "Channel 9"
+msgstr "Kanál 9"
+
+#: speaker-test/speaker-test.c:129
+msgid "Channel 10"
+msgstr "Kanál 10"
+
+#: speaker-test/speaker-test.c:130
+msgid "Channel 11"
+msgstr "Kanál 11"
+
+#: speaker-test/speaker-test.c:131
+msgid "Channel 12"
+msgstr "Kanál 12"
+
+#: speaker-test/speaker-test.c:132
+msgid "Channel 13"
+msgstr "Kanál 13"
+
+#: speaker-test/speaker-test.c:133
+msgid "Channel 14"
+msgstr "Kanál 14"
+
+#: speaker-test/speaker-test.c:134
+msgid "Channel 15"
+msgstr "Kanál 15"
+
+#: speaker-test/speaker-test.c:135
+msgid "Channel 16"
+msgstr "Kanál 16"
+
+#: speaker-test/speaker-test.c:424
+#, c-format
+msgid "Broken configuration for playback: no configurations available: %s\n"
+msgstr "Neplatná konfigurácia prehrávania: žiadne dostupné konfigurácie: %s\n"
+
+#: speaker-test/speaker-test.c:431
+#, c-format
+msgid "Access type not available for playback: %s\n"
+msgstr "Typ prístupu nie je dostupný pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:438
+#, c-format
+msgid "Sample format not available for playback: %s\n"
+msgstr "Formát vzorkovania nie je dostupný pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:445
+#, c-format
+msgid "Channels count (%i) not available for playbacks: %s\n"
+msgstr "Počet kanálov (%i) nie je dostupný pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:453
+#, c-format
+msgid "Rate %iHz not available for playback: %s\n"
+msgstr "Frekvencia %i Hz nie je dostupná pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:458
+#, c-format
+msgid "Rate doesn't match (requested %iHz, get %iHz, err %d)\n"
+msgstr "Frekvencia nesedí (vyžiadané: %i Hz, obdržané: %i Hz, kód chyby %d)\n"
+
+#: speaker-test/speaker-test.c:462
+#, c-format
+msgid "Rate set to %iHz (requested %iHz)\n"
+msgstr "Frekvencia nastavená na %i Hz (vyžiadané: %i Hz)\n"
+
+#: speaker-test/speaker-test.c:468
+#, c-format
+msgid "Buffer size range from %lu to %lu\n"
+msgstr "Veľkosť vyrovnávacej pamäte v rozmedzí od %lu do %lu\n"
+
+#: speaker-test/speaker-test.c:469
+#, c-format
+msgid "Period size range from %lu to %lu\n"
+msgstr "Veľkosť periódy v rozmedzí od %lu do %lu\n"
+
+#: speaker-test/speaker-test.c:471
+#, c-format
+msgid "Requested period time %u us\n"
+msgstr "Vyžiadaný čas periódy %u µs\n"
+
+#: speaker-test/speaker-test.c:474
+#, c-format
+msgid "Unable to set period time %u us for playback: %s\n"
+msgstr "Chyba pri nastavovaní času periódy %u µs pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:480
+#, c-format
+msgid "Requested buffer time %u us\n"
+msgstr "Vyžiadaný čas vyrovnávacej pamäte %u µs\n"
+
+#: speaker-test/speaker-test.c:483
+#, c-format
+msgid "Unable to set buffer time %u us for playback: %s\n"
+msgstr ""
+"Chyba pri nastavovaní času vyrovnávacej pamäte %u µs pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:492
+#, c-format
+msgid "Using max buffer size %lu\n"
+msgstr "Používam max. veľkosť vyrovnávacej pamäte %lu\n"
+
+#: speaker-test/speaker-test.c:495
+#, c-format
+msgid "Unable to set buffer size %lu for playback: %s\n"
+msgstr ""
+"Chyba pri nastavovaní veľkosti vyrovnávacej pamäte %lu pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:501
+#, c-format
+msgid "Periods = %u\n"
+msgstr "Periódy = %u\n"
+
+#: speaker-test/speaker-test.c:504
+#, c-format
+msgid "Unable to set nperiods %u for playback: %s\n"
+msgstr "Chyba pri nastavovaní počtu periód %u pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:513
+#, c-format
+msgid "Unable to set hw params for playback: %s\n"
+msgstr "Chyba pri nastavovaní hw parametrov pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:519
+#, c-format
+msgid "was set period_size = %lu\n"
+msgstr "nastavené: period_size = %lu\n"
+
+#: speaker-test/speaker-test.c:520
+#, c-format
+msgid "was set buffer_size = %lu\n"
+msgstr "nastavené: buffer_size = %lu\n"
+
+#: speaker-test/speaker-test.c:522
+#, c-format
+msgid "buffer to small, could not use\n"
+msgstr "vyrovnávacia pamäť príliš malá, nedá sa použiť\n"
+
+#: speaker-test/speaker-test.c:535
+#, c-format
+msgid "Unable to determine current swparams for playback: %s\n"
+msgstr "Chyba pri zisťovaní softvérových parametrov pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:542
+#, c-format
+msgid "Unable to set start threshold mode for playback: %s\n"
+msgstr "Chyba pri nastavovaní začiatku prahového režimu pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:549
+#, c-format
+msgid "Unable to set avail min for playback: %s\n"
+msgstr "Chyba pri nastavovaní dostupného minima pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:556
+#, c-format
+msgid "Unable to set sw params for playback: %s\n"
+msgstr "Chyba pri nastavovaní softvérových parametrov pre prehrávanie: %s\n"
+
+#: speaker-test/speaker-test.c:576
+#, c-format
+msgid "Unable to set channel map: %s\n"
+msgstr "Chyba pri zostavovaní mapy kanálov: %s\n"
+
+#: speaker-test/speaker-test.c:601
+#, c-format
+msgid "Can't recovery from underrun, prepare failed: %s\n"
+msgstr ""
+"Nepodarilo sa zotaviť z podtečenia (underrun), chyba pri inicializácii: %s\n"
+
+#: speaker-test/speaker-test.c:612
+#, c-format
+msgid "Can't recovery from suspend, prepare failed: %s\n"
+msgstr "Nepodarilo sa zotaviť z pozastavenia, chyba pri inicializácii: %s\n"
+
+#: speaker-test/speaker-test.c:676 speaker-test/speaker-test.c:1191
+#, c-format
+msgid "No enough memory\n"
+msgstr "Nedostatok pamäte\n"
+
+#: speaker-test/speaker-test.c:681
+#, c-format
+msgid "Cannot open WAV file %s\n"
+msgstr "Nepodarilo sa otvoriť súbor WAV %s\n"
+
+#: speaker-test/speaker-test.c:685 speaker-test/speaker-test.c:714
+#, c-format
+msgid "Invalid WAV file %s\n"
+msgstr "Neplatný súbor WAV %s\n"
+
+#: speaker-test/speaker-test.c:690
+#, c-format
+msgid "Not a WAV file: %s\n"
+msgstr "Toto nie je súbor WAV: %s\n"
+
+#: speaker-test/speaker-test.c:694
+#, c-format
+msgid "Unsupported WAV format %d for %s\n"
+msgstr "Neplatný formát WAV súboru %d v %s\n"
+
+#: speaker-test/speaker-test.c:699
+#, c-format
+msgid "%s is not a mono stream (%d channels)\n"
+msgstr "%s nie je monofónny prúd (%d kanálov)\n"
+
+#: speaker-test/speaker-test.c:704
+#, c-format
+msgid "Sample rate doesn't match (%d) for %s\n"
+msgstr "Frekvencia vzorkovania (%d) nesedí s %s\n"
+
+#: speaker-test/speaker-test.c:709
+#, c-format
+msgid "Unsupported sample format bits %d for %s\n"
+msgstr "Nepodporovaný formát vzorkovania s %d bitmi v %s\n"
+
+#: speaker-test/speaker-test.c:770
+#, c-format
+msgid "Undefined channel %d\n"
+msgstr "Kanál %d nie je definovaný\n"
+
+#: speaker-test/speaker-test.c:821
+#, c-format
+msgid "Write error: %d,%s\n"
+msgstr "Chyba pri zápise: %d, %s\n"
+
+#: speaker-test/speaker-test.c:823
+#, c-format
+msgid "xrun_recovery failed: %d,%s\n"
+msgstr "xrun_recovery zlyhalo: %d, %s\n"
+
+#: speaker-test/speaker-test.c:926
+#, c-format
+msgid ""
+"Usage: speaker-test [OPTION]... \n"
+"-h,--help\thelp\n"
+"-D,--device\tplayback device\n"
+"-r,--rate\tstream rate in Hz\n"
+"-c,--channels\tcount of channels in stream\n"
+"-f,--frequency\tsine wave frequency in Hz\n"
+"-F,--format\tsample format\n"
+"-b,--buffer\tring buffer size in us\n"
+"-p,--period\tperiod size in us\n"
+"-P,--nperiods\tnumber of periods\n"
+"-t,--test\tpink=use pink noise, sine=use sine wave, wav=WAV file\n"
+"-l,--nloops\tspecify number of loops to test, 0 = infinite\n"
+"-s,--speaker\tsingle speaker test. Values 1=Left, 2=right, etc\n"
+"-w,--wavfile\tUse the given WAV file as a test sound\n"
+"-W,--wavdir\tSpecify the directory containing WAV files\n"
+"-m,--chmap\tSpecify the channel map to override\n"
+"-X,--force-frequency\tforce frequencies outside the 30-8000hz range\n"
+"-S,--scale\tScale of generated test tones in percent (default=80)\n"
+"\n"
+msgstr ""
+"Syntax: speaker-test [VOĽBA]... \n"
+"-h,--help\tpomocník\n"
+"-D,--device\tzariadenie prehrávania\n"
+"-r,--rate\tfrekvencia vzorkovania v Hz\n"
+"-c,--channels\tpočet kanálov v prúde\n"
+"-f,--frequency\tfrekvencia sínusovej vlny v Hz\n"
+"-F,--format\tformát vzorkovania\n"
+"-b,--buffer\tveľkosť ring buffera v µs\n"
+"-p,--period\tveľkosť periódy v µs\n"
+"-P,--nperiods\tpočet periód\n"
+"-t,--test\tpink=použiť ružový šum, sine=použiť sínusovú vlnu, wav=súbor "
+"WAV\n"
+"-l,--nloops\tpočet slučiek pre test, 0 = nekonečno\n"
+"-s,--speaker\totestovať samostatný reproduktor. Hodnoty: 1=ľavý, 2=pravý, "
+"atď.\n"
+"-w,--wavfile\tpoužiť zadaný WAV súbor pre testovanie\n"
+"-W,--wavdir\tpoužiť adresár obsahujúci súbory WAV\n"
+"-m,--chmap\tmapa kanálov, ktorá bude použitá\n"
+"-X,--force-frequency\tvynútiť frekvencie mimo rozsahu 30-8000 Hz\n"
+"-S,--scale\tškálovanie vygenerovaných testovacích tónov v percentách "
+"(predvolené=80)\n"
+"\n"
+
+#: speaker-test/speaker-test.c:1058
+#, c-format
+msgid "Invalid number of periods %d\n"
+msgstr "Neplatný počet periód %d\n"
+
+#: speaker-test/speaker-test.c:1074 speaker-test/speaker-test.c:1078
+#, c-format
+msgid "Invalid test type %s\n"
+msgstr "Neplatný typ testu %s\n"
+
+#: speaker-test/speaker-test.c:1111
+#, c-format
+msgid "Unknown option '%c'\n"
+msgstr "Neznáma voľba '%c'\n"
+
+#: speaker-test/speaker-test.c:1125
+#, c-format
+msgid "Invalid parameter for -s option.\n"
+msgstr "Neplatný parameter pre voľbu -s.\n"
+
+#: speaker-test/speaker-test.c:1140
+#, c-format
+msgid "Playback device is %s\n"
+msgstr "Zariadenie prehrávania je %s\n"
+
+#: speaker-test/speaker-test.c:1141
+#, c-format
+msgid "Stream parameters are %iHz, %s, %i channels\n"
+msgstr "Parametre prúdu sú %i Hz, %s, %i kanály\n"
+
+#: speaker-test/speaker-test.c:1144
+#, c-format
+msgid "Using 16 octaves of pink noise\n"
+msgstr "Používam 16 oktáv ružového šumu\n"
+
+#: speaker-test/speaker-test.c:1147
+#, c-format
+msgid "Sine wave rate is %.4fHz\n"
+msgstr "Frekvencia sínusovej vlny je %.4f Hz\n"
+
+#: speaker-test/speaker-test.c:1150
+#, c-format
+msgid "WAV file(s)\n"
+msgstr "Súbor(y) WAV\n"
+
+#: speaker-test/speaker-test.c:1160
+#, c-format
+msgid "Playback open error: %d,%s\n"
+msgstr "Chyba pri otváraní zariadenia prehrávania: %d, %s\n"
+
+#: speaker-test/speaker-test.c:1166
+#, c-format
+msgid "Setting of hwparams failed: %s\n"
+msgstr "Chyba pri nastavovaní hardvérových parametrov (hwparams): %s\n"
+
+#: speaker-test/speaker-test.c:1170
+#, c-format
+msgid "Setting of swparams failed: %s\n"
+msgstr "Chyba pri nastavovaní softvérových parametrov (swparams): %s\n"
+
+#: speaker-test/speaker-test.c:1216 speaker-test/speaker-test.c:1238
+#, c-format
+msgid "Transfer failed: %s\n"
+msgstr "Chyba pri prenose: %s\n"
+
+#: speaker-test/speaker-test.c:1224
+#, c-format
+msgid "Time per period = %lf\n"
+msgstr "Čas na periódu = %lf\n"
