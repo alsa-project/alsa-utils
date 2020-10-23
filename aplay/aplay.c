@@ -32,6 +32,7 @@
 #include <malloc.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <getopt.h>
 #include <fcntl.h>
@@ -94,6 +95,7 @@ enum {
 	VUMETER_STEREO
 };
 
+static snd_pcm_format_t default_format = DEFAULT_FORMAT;
 static char *command;
 static snd_pcm_t *handle;
 static struct {
@@ -468,6 +470,24 @@ static long parse_long(const char *str, int *err)
 	return val;
 }
 
+static void try_to_adjust_default_format_16bit(void)
+{
+	snd_pcm_hw_params_t *params;
+	int err;
+
+	snd_pcm_hw_params_alloca(&params);
+	err = snd_pcm_hw_params_any(handle, params);
+	if (err < 0) {
+		error(_("Broken configuration for this PCM: no configurations available"));
+		prg_exit(EXIT_FAILURE);
+	}
+
+	if (file_type != FORMAT_AU && snd_pcm_hw_params_test_format(handle, params, SND_PCM_FORMAT_S16_LE) == 0)
+		rhwparams.format = default_format = SND_PCM_FORMAT_S16_LE;
+	else if (file_type == FORMAT_AU && snd_pcm_hw_params_test_format(handle, params, SND_PCM_FORMAT_S16_BE) == 0)
+		rhwparams.format = default_format = SND_PCM_FORMAT_S16_BE;
+}
+
 int main(int argc, char *argv[])
 {
 	int duration_or_sample = 0;
@@ -528,6 +548,7 @@ int main(int argc, char *argv[])
 	int do_device_list = 0, do_pcm_list = 0;
 	snd_pcm_info_t *info;
 	FILE *direction;
+	bool user_set_fmt = false;
 
 #ifdef ENABLE_NLS
 	setlocale(LC_ALL, "");
@@ -562,7 +583,7 @@ int main(int argc, char *argv[])
 	}
 
 	chunk_size = -1;
-	rhwparams.format = DEFAULT_FORMAT;
+	rhwparams.format = default_format;
 	rhwparams.rate = DEFAULT_SPEED;
 	rhwparams.channels = 1;
 
@@ -612,6 +633,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'f':
+			user_set_fmt = true;
 			if (strcasecmp(optarg, "cd") == 0 || strcasecmp(optarg, "cdr") == 0) {
 				if (strcasecmp(optarg, "cdr") == 0)
 					rhwparams.format = SND_PCM_FORMAT_S16_BE;
@@ -844,6 +866,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (!user_set_fmt)
+		try_to_adjust_default_format_16bit();
+
 	chunk_size = 1024;
 	hwparams = rhwparams;
 
@@ -1064,7 +1089,7 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 	hwparams.channels = channels;
 	switch (TO_CPU_SHORT(f->bit_p_spl, big_endian)) {
 	case 8:
-		if (hwparams.format != DEFAULT_FORMAT &&
+		if (hwparams.format != default_format &&
 		    hwparams.format != SND_PCM_FORMAT_U8)
 			fprintf(stderr, _("Warning: format is changed to U8\n"));
 		hwparams.format = SND_PCM_FORMAT_U8;
@@ -1074,7 +1099,7 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 			native_format = SND_PCM_FORMAT_S16_BE;
 		else
 			native_format = SND_PCM_FORMAT_S16_LE;
-		if (hwparams.format != DEFAULT_FORMAT &&
+		if (hwparams.format != default_format &&
 		    hwparams.format != native_format)
 			fprintf(stderr, _("Warning: format is changed to %s\n"),
 				snd_pcm_format_name(native_format));
@@ -1087,7 +1112,7 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 				native_format = SND_PCM_FORMAT_S24_3BE;
 			else
 				native_format = SND_PCM_FORMAT_S24_3LE;
-			if (hwparams.format != DEFAULT_FORMAT &&
+			if (hwparams.format != default_format &&
 			    hwparams.format != native_format)
 				fprintf(stderr, _("Warning: format is changed to %s\n"),
 					snd_pcm_format_name(native_format));
@@ -1098,7 +1123,7 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 				native_format = SND_PCM_FORMAT_S24_BE;
 			else
 				native_format = SND_PCM_FORMAT_S24_LE;
-			if (hwparams.format != DEFAULT_FORMAT &&
+			if (hwparams.format != default_format &&
 			    hwparams.format != native_format)
 				fprintf(stderr, _("Warning: format is changed to %s\n"),
 					snd_pcm_format_name(native_format));
@@ -1184,19 +1209,19 @@ static int test_au(int fd, void *buffer)
 	pbrec_count = BE_INT(ap->data_size);
 	switch (BE_INT(ap->encoding)) {
 	case AU_FMT_ULAW:
-		if (hwparams.format != DEFAULT_FORMAT &&
+		if (hwparams.format != default_format &&
 		    hwparams.format != SND_PCM_FORMAT_MU_LAW)
 			fprintf(stderr, _("Warning: format is changed to MU_LAW\n"));
 		hwparams.format = SND_PCM_FORMAT_MU_LAW;
 		break;
 	case AU_FMT_LIN8:
-		if (hwparams.format != DEFAULT_FORMAT &&
+		if (hwparams.format != default_format &&
 		    hwparams.format != SND_PCM_FORMAT_U8)
 			fprintf(stderr, _("Warning: format is changed to U8\n"));
 		hwparams.format = SND_PCM_FORMAT_U8;
 		break;
 	case AU_FMT_LIN16:
-		if (hwparams.format != DEFAULT_FORMAT &&
+		if (hwparams.format != default_format &&
 		    hwparams.format != SND_PCM_FORMAT_S16_BE)
 			fprintf(stderr, _("Warning: format is changed to S16_BE\n"));
 		hwparams.format = SND_PCM_FORMAT_S16_BE;
@@ -2315,7 +2340,7 @@ static void voc_play(int fd, int ofs, char *name)
 			prg_exit(EXIT_FAILURE);
 		}
 	}
-	hwparams.format = DEFAULT_FORMAT;
+	hwparams.format = default_format;
 	hwparams.channels = 1;
 	hwparams.rate = DEFAULT_SPEED;
 	set_params();
