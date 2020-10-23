@@ -1676,7 +1676,8 @@ static void xrun(void)
 			prg_exit(EXIT_FAILURE);
 		}
 		return;		/* ok, data should be accepted again */
-	} if (snd_pcm_status_get_state(status) == SND_PCM_STATE_DRAINING) {
+	}
+	if (snd_pcm_status_get_state(status) == SND_PCM_STATE_DRAINING) {
 		if (verbose) {
 			fprintf(stderr, _("Status(DRAINING):\n"));
 			snd_pcm_status_dump(status, log);
