@@ -1553,6 +1553,19 @@ static void done_stdin(void)
 	tcsetattr(fileno(stdin), TCSANOW, &term);
 }
 
+static char wait_for_input(void)
+{
+	struct pollfd pfd;
+	unsigned char b;
+
+	do {
+		pfd.fd = fileno(stdin);
+		pfd.events = POLLIN;
+		poll(&pfd, 1, -1);
+	} while (read(fileno(stdin), &b, 1) != 1);
+	return b;
+}
+
 static void do_pause(void)
 {
 	int err;
@@ -1571,7 +1584,7 @@ static void do_pause(void)
 		return;
 	}
 	while (1) {
-		while (read(fileno(stdin), &b, 1) != 1);
+		b = wait_for_input();
 		if (b == ' ' || b == '\r') {
 			while (read(fileno(stdin), &b, 1) == 1);
 			if (snd_pcm_state(handle) == SND_PCM_STATE_SUSPENDED)
@@ -1596,7 +1609,7 @@ static void check_stdin(void)
 				while (read(fileno(stdin), &b, 1) == 1);
 				fprintf(stderr, _("\r=== PAUSE ===                                                            "));
 				fflush(stderr);
-			do_pause();
+				do_pause();
 				fprintf(stderr, "                                                                          \r");
 				fflush(stderr);
 			}
