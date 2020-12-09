@@ -476,6 +476,18 @@ cat /proc/asound/card*/codec\#* > $TEMPDIR/alsa-hda-intel.tmp 2> /dev/null
 cat /proc/asound/card*/codec97\#0/ac97\#0-0 > $TEMPDIR/alsa-ac97.tmp 2> /dev/null
 cat /proc/asound/card*/codec97\#0/ac97\#0-0+regs > $TEMPDIR/alsa-ac97-regs.tmp 2> /dev/null
 
+#Check for USB descriptors
+if [ -x /usr/bin/lsusb ]; then
+    for f in /proc/asound/card[0-9]*/usbbus; do
+	test -f "$f" || continue
+	id=$(sed 's@/@:@' $f)
+	lsusb -v -s $id >> $TEMPDIR/lsusb.tmp 2> /dev/null
+    done
+fi
+
+#Check for USB stream setup
+cat /proc/asound/card*/stream[0-9]* > $TEMPDIR/alsa-usbstream.tmp 2> /dev/null
+
 #Check for USB mixer setup
 cat /proc/asound/card*/usbmixer > $TEMPDIR/alsa-usbmixer.tmp 2> /dev/null
 
@@ -644,6 +656,27 @@ if [ -s "$TEMPDIR/alsa-ac97.tmp" ]; then
         cat $TEMPDIR/alsa-ac97.tmp >> $FILE
         echo "" >> $FILE
         cat $TEMPDIR/alsa-ac97-regs.tmp >> $FILE
+        echo "--endcollapse--" >> $FILE
+	echo "" >> $FILE
+	echo "" >> $FILE
+fi
+
+if [ -s "$TEMPDIR/lsusb.tmp" ]; then
+        echo "!!USB Descriptors" >> $FILE
+        echo "!!---------------" >> $FILE
+        echo "--startcollapse--" >> $FILE
+        cat $TEMPDIR/lsusb.tmp >> $FILE
+        echo "--endcollapse--" >> $FILE
+	echo "" >> $FILE
+	echo "" >> $FILE
+fi
+
+if [ -s "$TEMPDIR/lsusb.tmp" ]; then
+        echo "!!USB Stream information" >> $FILE
+        echo "!!----------------------" >> $FILE
+        echo "--startcollapse--" >> $FILE
+        echo "" >> $FILE
+        cat $TEMPDIR/alsa-usbstream.tmp >> $FILE
         echo "--endcollapse--" >> $FILE
 	echo "" >> $FILE
 	echo "" >> $FILE
