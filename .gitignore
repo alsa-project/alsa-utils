@@ -18,6 +18,7 @@ depcomp
 missing
 install-sh
 mkinstalldirs
+test-driver
 ABOUT-NLS
 *.ok
 *.gmo
@@ -37,6 +38,7 @@ amixer/amixer
 aplay/aplay
 aplay/arecord
 aplay/arecord.1
+axfer/axfer
 bat/alsabat
 iecset/iecset
 seq/aconnect/aconnect
@@ -45,6 +47,7 @@ seq/aplaymidi/arecordmidi
 seq/aseqdump/aseqdump
 seq/aseqnet/aseqnet
 speaker-test/speaker-test
+topology/alsatplg.1
 alsaloop/alsaloop
 alsaucm/alsaucm
 alsaucm/alsaucm.1
