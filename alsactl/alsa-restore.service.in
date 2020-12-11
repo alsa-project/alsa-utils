@@ -7,7 +7,6 @@
 Description=Save/Restore Sound Card State
 ConditionPathExists=!@daemonswitch@
 ConditionPathExistsGlob=/dev/snd/control*
-ConditionPathExists=@asoundrcfile@
 
 [Service]
 Type=oneshot
