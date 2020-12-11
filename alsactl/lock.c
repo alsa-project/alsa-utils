@@ -63,7 +63,6 @@ static int state_lock_(const char *file, int lock, int timeout, int _fd)
 			if (fd < 0) {
 				if (errno == EBUSY || errno == EAGAIN) {
 					sleep(1);
-					timeout--;
 				} else {
 					err = -errno;
 					goto out;
