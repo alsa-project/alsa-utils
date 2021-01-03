@@ -1953,22 +1953,38 @@ static void do_test_position(void)
 	static snd_pcm_sframes_t minavail, mindelay;
 	static snd_pcm_sframes_t badavail = 0, baddelay = 0;
 	snd_pcm_sframes_t outofrange;
-	snd_pcm_sframes_t avail, delay;
+	snd_pcm_sframes_t avail, delay, savail, sdelay;
+	snd_pcm_status_t *status;
 	int err;
 
+	snd_pcm_status_alloca(&status);
 	err = snd_pcm_avail_delay(handle, &avail, &delay);
 	if (err < 0)
 		return;
+	err = snd_pcm_status(handle, status);
+	if (err < 0)
+		return;
+	savail = snd_pcm_status_get_avail(status);
+	sdelay = snd_pcm_status_get_delay(status);
 	outofrange = (test_coef * (snd_pcm_sframes_t)buffer_frames) / 2;
 	if (avail > outofrange || avail < -outofrange ||
 	    delay > outofrange || delay < -outofrange) {
-	  badavail = avail; baddelay = delay;
-	  availsum = delaysum = samples = 0;
-	  maxavail = maxdelay = 0;
-	  minavail = mindelay = buffer_frames * 16;
-	  fprintf(stderr, _("Suspicious buffer position (%li total): "
-	  	"avail = %li, delay = %li, buffer = %li\n"),
-	  	++counter, (long)avail, (long)delay, (long)buffer_frames);
+		badavail = avail; baddelay = delay;
+		availsum = delaysum = samples = 0;
+		maxavail = maxdelay = 0;
+		minavail = mindelay = buffer_frames * 16;
+		fprintf(stderr, _("Suspicious buffer position (%li total): "
+			"avail = %li, delay = %li, buffer = %li\n"),
+			++counter, (long)avail, (long)delay, (long)buffer_frames);
+	} else if (savail > outofrange || savail < -outofrange ||
+		   sdelay > outofrange || sdelay < -outofrange) {
+		badavail = savail; baddelay = sdelay;
+		availsum = delaysum = samples = 0;
+		maxavail = maxdelay = 0;
+		minavail = mindelay = buffer_frames * 16;
+		fprintf(stderr, _("Suspicious status buffer position (%li total): "
+			"avail = %li, delay = %li, buffer = %li\n"),
+			++counter, (long)savail, (long)sdelay, (long)buffer_frames);
 	} else if (verbose) {
 		time(&now);
 		if (tmr == (time_t) -1) {
@@ -1979,19 +1995,27 @@ static void do_test_position(void)
 		}
 		if (avail > maxavail)
 			maxavail = avail;
+		if (savail > maxavail)
+			maxavail = savail;
 		if (delay > maxdelay)
 			maxdelay = delay;
+		if (sdelay > maxdelay)
+			maxdelay = sdelay;
 		if (avail < minavail)
 			minavail = avail;
+		if (savail < minavail)
+			minavail = savail;
 		if (delay < mindelay)
 			mindelay = delay;
+		if (sdelay < mindelay)
+			mindelay = sdelay;
 		availsum += avail;
 		delaysum += delay;
 		samples++;
-		if (avail != 0 && now != tmr) {
+		if ((maxavail != 0 || maxdelay != 0) && now != tmr) {
 			fprintf(stderr, "BUFPOS: avg%li/%li "
 				"min%li/%li max%li/%li (%li) (%li:%li/%li)\n",
-				(long)(availsum / samples),
+                         (long)(availsum / samples),
 				(long)(delaysum / samples),
 				(long)minavail, (long)mindelay,
 				(long)maxavail, (long)maxdelay,
@@ -1999,6 +2023,10 @@ static void do_test_position(void)
 				counter, badavail, baddelay);
 			tmr = now;
 		}
+	}
+	if (verbose == 1) {
+		fprintf(stderr, _("Status(R/W) (standalone avail=%li delay=%li):\n"), (long)avail, (long)delay);
+		snd_pcm_status_dump(status, log);
 	}
 }
 
