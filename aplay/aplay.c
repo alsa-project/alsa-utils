@@ -1985,6 +1985,14 @@ static void do_test_position(void)
 		fprintf(stderr, _("Suspicious status buffer position (%li total): "
 			"avail = %li, delay = %li, buffer = %li\n"),
 			++counter, (long)savail, (long)sdelay, (long)buffer_frames);
+	} else if (avail > delay) {
+		fprintf(stderr, _("Suspicious buffer position avail > delay (%li total): "
+			"avail = %li, delay = %li\n"),
+			++counter, (long)avail, (long)delay);
+	} else if (savail > sdelay) {
+		fprintf(stderr, _("Suspicious status buffer position avail > delay (%li total): "
+			"avail = %li, delay = %li\n"),
+			++counter, (long)savail, (long)sdelay);
 	} else if (verbose) {
 		time(&now);
 		if (tmr == (time_t) -1) {
