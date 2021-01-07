@@ -122,7 +122,7 @@ Available commands:
     the value of the `IDENTIFIER` argument can can be:
 
     - ``_devstatus/{device}``
-    - ``_modtstaus/{device}``
+    - ``_modstatus/{device}``
 
   ``set`` `IDENTIFIER` `VALUE`
     set string value
