@@ -284,7 +284,7 @@ static long read_pid_file(const char *pidfile)
 			err = err < 0 ? -errno : -EIO;
 		close(fd);
 		pid_txt[11] = '\0';
-		return atol(pid_txt);
+		return err < 0 ? err : atol(pid_txt);
 	} else {
 		return -errno;
 	}
