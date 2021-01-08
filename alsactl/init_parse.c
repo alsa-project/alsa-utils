@@ -1701,6 +1701,7 @@ static int parse(struct space *space, const char *filename)
 		
 		if (count > linesize - 1) {
 			free(line);
+			line = NULL;
 			linesize = (count + 127 + 1) & ~127;
 			if (linesize > 2048) {
 				error("file %s, line %i too long", filename, linenum);
