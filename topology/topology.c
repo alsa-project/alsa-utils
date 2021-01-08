@@ -100,10 +100,8 @@ static int load(const char *source_file, void **dst, size_t *dst_size)
 		pos += r;
 		size += 8*1024;
 		buf2 = realloc(buf, size);
-		if (buf2 == NULL) {
-			free(buf);
+		if (buf2 == NULL)
 			goto _nomem;
-		}
 		buf = buf2;
 	}
 	if (r < 0) {
