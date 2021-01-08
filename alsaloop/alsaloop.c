@@ -85,12 +85,17 @@ static int create_loopback_handle(struct loopback_handle **_handle,
 	if (device == NULL)
 		device = "hw:0,0";
 	handle->device = strdup(device);
-	if (handle->device == NULL)
+	if (handle->device == NULL) {
+		free(handle);
 		return -ENOMEM;
+	}
 	if (ctldev) {
 		handle->ctldev = strdup(ctldev);
-		if (handle->ctldev == NULL)
+		if (handle->ctldev == NULL) {
+			free(handle->device);
+			free(handle);
 			return -ENOMEM;
+		}
 	} else {
 		handle->ctldev = NULL;
 	}
