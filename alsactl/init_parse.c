@@ -465,12 +465,13 @@ static int set_ctl_value(struct space *space, const char *value, int all)
 			return -EINVAL;
 		}
 		for (idx = 0; idx < count; idx += 2) {
-			val = hextodigit(*(value++)) << 4;
-			val |= hextodigit(*(value++));
-			if (val > 255) {
+			int nibble1 = hextodigit(*(value++));
+			int nibble2 = hextodigit(*(value++));
+			if (nibble1 < 0 || nibble2 < 0) {
 				Perror(space, "bad ctl hexa value");
 				return -EINVAL;
 			}
+			val = (nibble1 << 4) | nibble2;
 			snd_ctl_elem_value_set_byte(space->ctl_value, idx, val);
 		}
 		break;
