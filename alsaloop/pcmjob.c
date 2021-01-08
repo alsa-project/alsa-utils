@@ -1698,9 +1698,8 @@ int pcmjob_pollfds_init(struct loopback *loop, struct pollfd *fds)
 static snd_pcm_sframes_t get_queued_playback_samples(struct loopback *loop)
 {
 	snd_pcm_sframes_t delay;
-	int err;
 
-	if ((err = snd_pcm_delay(loop->play->handle, &delay)) < 0)
+	if (snd_pcm_delay(loop->play->handle, &delay) < 0)
 		return 0;
 	loop->play->last_delay = delay;
 	delay += loop->play->buf_count;
