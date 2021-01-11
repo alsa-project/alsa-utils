@@ -155,7 +155,7 @@ const char *mixer_words =
 static unsigned int parse_words(const char *name, const char* wordlist, unsigned int itemlen, unsigned int *number) {
 	unsigned int words = 0;
 	unsigned int word;
-	unsigned int i;
+	int i;
 	char buf[16];
 	char *endptr;
 
@@ -181,7 +181,7 @@ static unsigned int parse_words(const char *name, const char* wordlist, unsigned
 			word = W_NUMBER;
 		}
 		else if ((i = strlist_index(wordlist, itemlen, buf)) >= 0)
-			word = 2U << i;
+			word = i <= 30 ? (2U << i) : 0;
 		else
 			return 0;
 
