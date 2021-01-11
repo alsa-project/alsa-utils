@@ -634,7 +634,7 @@ static void display_control(unsigned int control_index)
 
 static void display_scroll_indicators(void)
 {
-	int y0, y1, y;
+	int y0, y1;
 	chtype left, right;
 
 	if (screen_too_small)
