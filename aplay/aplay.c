@@ -1985,11 +1985,11 @@ static void do_test_position(void)
 		fprintf(stderr, _("Suspicious status buffer position (%li total): "
 			"avail = %li, delay = %li, buffer = %li\n"),
 			++counter, (long)savail, (long)sdelay, (long)buffer_frames);
-	} else if (avail > delay) {
+	} else if (stream == SND_PCM_STREAM_CAPTURE && avail > delay) {
 		fprintf(stderr, _("Suspicious buffer position avail > delay (%li total): "
 			"avail = %li, delay = %li\n"),
 			++counter, (long)avail, (long)delay);
-	} else if (savail > sdelay) {
+	} else if (stream == SND_PCM_STREAM_CAPTURE && savail > sdelay) {
 		fprintf(stderr, _("Suspicious status buffer position avail > delay (%li total): "
 			"avail = %li, delay = %li\n"),
 			++counter, (long)savail, (long)sdelay);
