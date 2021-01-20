@@ -429,6 +429,7 @@ PWINST=$(command -v pipewire)
 PAINST=$(command -v pulseaudio)
 ARTSINST=$(command -v artsd)
 JACKINST=$(command -v jackd)
+JACK2INST=$(command -v jackdbus)
 ROARINST=$(command -v roard)
 DMIDECODE=$(command -v dmidecode)
 
@@ -589,6 +590,13 @@ if [[ -n $JACKINST ]];then
 echo "Jack:" >> $FILE
 echo "      Installed - Yes ($JACKINST)" >> $FILE
 echo "      Running - $JACKRUNNING" >> $FILE
+echo "" >> $FILE
+fi
+if [[ -n $JACK2INST ]];then
+[[ $(pgrep '^(.*/)?jackdbus$') ]] && JACK2RUNNING="Yes" || JACK2RUNNING="No"
+echo "Jack2:" >> $FILE
+echo "      Installed - Yes ($JACK2INST)" >> $FILE
+echo "      Running - $JACK2RUNNING" >> $FILE
 echo "" >> $FILE
 fi
 if [[ -n $ROARINST ]];then
