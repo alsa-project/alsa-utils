@@ -611,8 +611,7 @@ echo "" >> $FILE
 echo "" >> $FILE
 fi
 
-if [ "$SNDOPTIONS" ]
-then
+if [ "$SNDOPTIONS" ]; then
 echo "!!Modprobe options (Sound related)" >> $FILE
 echo "!!--------------------------------" >> $FILE
 echo "" >> $FILE
@@ -632,6 +631,18 @@ if [ -d "$SYSFS" ]; then
 			value=$(cat $params)
 			echo "$params : $value" | sed 's:.*/::'
 		done >> $FILE
+		echo "" >> $FILE
+	done
+	echo "" >> $FILE
+	echo "!!Sysfs card info" >> $FILE
+	echo "!!---------------" >> $FILE
+	echo "" >> $FILE
+	for cdir in $(echo $SYSFS/class/sound/card*); do
+		echo "!!Card: $cdir" >> $FILE
+		driver=$(readlink -f "$cdir/device/driver")
+		echo "Driver: $driver" >> $FILE
+		echo "Tree:" >> $FILE
+		tree --noreport $cdir -L 2 | sed -e 's/^/\t/g' >> $FILE
 		echo "" >> $FILE
 	done
 	echo "" >> $FILE
