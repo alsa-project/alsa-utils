@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION=0.4.65
+SCRIPT_VERSION=0.4.66
 CHANGELOG="http://www.alsa-project.org/alsa-info.sh.changelog"
 
 #################################################################################
@@ -461,7 +461,7 @@ if [ -d /sys/bus/acpi/devices ]; then
     done
 fi
 
-cat /proc/asound/modules 2>/dev/null | awk '{ print $2 }' > $TEMPDIR/alsamodules.tmp
+awk '{ print $2 " (card " $1 ")" }' < /proc/asound/modules > $TEMPDIR/alsamodules.tmp 2> /dev/null
 cat /proc/asound/cards > $TEMPDIR/alsacards.tmp
 if [[ ! -z "$LSPCI" ]]; then
 	for class in 0401 0402 0403; do
