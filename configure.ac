@@ -19,7 +19,7 @@ AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_SED
 PKG_PROG_PKG_CONFIG
-AM_PATH_ALSA(1.0.27)
+AM_PATH_ALSA(1.2.5)
 if test "x$enable_alsatest" = "xyes"; then
 AC_CHECK_FUNC([snd_ctl_elem_add_enumerated],
 	      , [AC_ERROR([No user enum control support in alsa-lib])])

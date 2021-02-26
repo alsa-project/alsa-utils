@@ -40,6 +40,7 @@ int monitor(const char *name);
 int state_daemon(const char *file, const char *cardname, int period,
 		 const char *pidfile);
 int state_daemon_kill(const char *pidfile, const char *cmd);
+int clean(const char *cardname, char *const *extra_args);
 
 /* utils */
 

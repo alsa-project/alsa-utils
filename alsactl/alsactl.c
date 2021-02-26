@@ -187,6 +187,7 @@ int main(int argc, char *argv[])
 	char *pidfile = SYS_PIDFILE;
 	char *cardname, ncardname[16];
 	char *cmd;
+	char *const *extra_args;
 	const char *const *tmp;
 	int removestate = 0;
 	int init_fallback = 1; /* new default behavior */
@@ -346,6 +347,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	extra_args = argc - optind > 2 ? argv + optind + 2 : NULL;
+
 	/* the global system file should be always locked */
 	if (strcmp(cfgfile, SYS_ASOUNDRC) == 0 && do_lock >= 0)
 		do_lock = 1;
@@ -391,6 +394,8 @@ int main(int argc, char *argv[])
 		res = state_daemon_kill(pidfile, cardname);
 	} else if (!strcmp(cmd, "monitor")) {
 		res = monitor(cardname);
+	} else if (!strcmp(cmd, "clean")) {
+		res = clean(cardname, extra_args);
 	} else {
 		fprintf(stderr, "alsactl: Unknown command '%s'...\n", cmd);
 		res = -ENODEV;
