@@ -491,8 +491,11 @@ static void flush_writebuf(void)
 	if (cur_wrlen) {
 		int i;
 		for (i = 0; i < max_connection; i++) {
-			if (netfd[i] >= 0)
-				write(netfd[i], writebuf, cur_wrlen);
+			if (netfd[i] >= 0) {
+				ssize_t wrlen = write(netfd[i], writebuf, cur_wrlen);
+				if (wrlen != (ssize_t)cur_wrlen)
+					fprintf(stderr, "write error: %s", wrlen < 0 ? strerror(errno) : "short");
+			}
 		}
 		cur_wrlen = 0;
 	}

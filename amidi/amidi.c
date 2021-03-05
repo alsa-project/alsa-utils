@@ -688,8 +688,11 @@ int main(int argc, char *argv[])
 				continue;
 			read += length;
 
-			if (receive_file != -1)
-				write(receive_file, buf, length);
+			if (receive_file != -1) {
+				ssize_t wlength = write(receive_file, buf, length);
+				if (wlength != length)
+					error("write error: %s", wlength < 0 ? strerror(errno) : "short");
+			}
 			if (dump) {
 				for (i = 0; i < length; ++i)
 					print_byte(buf[i]);
