@@ -356,7 +356,10 @@ int main(int argc, char *argv[])
 	/* when running in background, use syslog for reports */
 	if (background) {
 		use_syslog = 1;
-		daemon(0, 0);
+		if (daemon(0, 0)) {
+			syslog(LOG_INFO, "alsactl " SND_UTIL_VERSION_STR " daemon cannot be started: %s", strerror(errno));
+			goto out;
+		}
 	}
 
 	cmd = argv[optind];

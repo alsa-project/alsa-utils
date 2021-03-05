@@ -92,12 +92,12 @@ void initfailed(int cardnumber, const char *reason, int exitcode)
 		return;
 	sprintf(sexitcode, "%i", exitcode);
 	fp = open(statefile, O_WRONLY|O_CREAT|O_APPEND, 0644);
-	write(fp, str, strlen(str));
-	write(fp, ":", 1);
-	write(fp, reason, strlen(reason));
-	write(fp, ":", 1);
-	write(fp, sexitcode, strlen(sexitcode));
-	write(fp, "\n", 1);
+	(void)write(fp, str, strlen(str));
+	(void)write(fp, ":", 1);
+	(void)write(fp, reason, strlen(reason));
+	(void)write(fp, ":", 1);
+	(void)write(fp, sexitcode, strlen(sexitcode));
+	(void)write(fp, "\n", 1);
 	close(fp);
 	free(str);
 }
