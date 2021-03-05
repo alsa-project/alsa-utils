@@ -425,6 +425,7 @@ get_alsa_library_version
 ALSA_UTILS_VERSION=$(amixer -v | awk '{ print $3 }')
 
 ESDINST=$(command -v esd)
+PWINST=$(command -v pipewire)
 PAINST=$(command -v pulseaudio)
 ARTSINST=$(command -v artsd)
 JACKINST=$(command -v jackd)
@@ -555,6 +556,13 @@ echo "" >> $FILE
 echo "!!Sound Servers on this system" >> $FILE
 echo "!!----------------------------" >> $FILE
 echo "" >> $FILE
+if [[ -n $PWINST ]];then
+[[ $(pgrep '^(.*/)?pipewire$') ]] && PWRUNNING="Yes" || PWRUNNING="No"
+echo "PipeWire:" >> $FILE
+echo "      Installed - Yes ($PWINST)" >> $FILE
+echo "      Running - $PWRUNNING" >> $FILE
+echo "" >> $FILE
+fi
 if [[ -n $PAINST ]];then
 [[ $(pgrep '^(.*/)?pulseaudio$') ]] && PARUNNING="Yes" || PARUNNING="No"
 echo "Pulseaudio:" >> $FILE
