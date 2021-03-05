@@ -3343,7 +3343,7 @@ static void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t
 		do {
 			r = safe_read(fds[0], bufs[0], expected);
 			if (r < 0) {
-				perror(names[channel]);
+				perror(names[0]);
 				prg_exit(EXIT_FAILURE);
 			}
 			for (channel = 1; channel < channels; ++channel) {
