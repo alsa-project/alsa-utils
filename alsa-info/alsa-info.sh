@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT_VERSION=0.5.0
-CHANGELOG="http://www.alsa-project.org/alsa-info.sh.changelog"
+CHANGELOG="https://www.alsa-project.org/alsa-info.sh.changelog"
 
 #################################################################################
 #Copyright (C) 2007 Free Software Foundation.
@@ -45,7 +45,7 @@ update() {
 	test -z "$WGET" -o ! -x "$WGET" && return
 
 	SHFILE=$(mktemp -t alsa-info.XXXXXXXXXX) || exit 1
-	wget -O $SHFILE "http://www.alsa-project.org/alsa-info.sh" >/dev/null 2>&1
+	wget -O $SHFILE "https://www.alsa-project.org/alsa-info.sh" >/dev/null 2>&1
 	REMOTE_VERSION=$(grep SCRIPT_VERSION $SHFILE | head -n1 | sed 's/.*=//')
 	if [ -s "$SHFILE" -a "$REMOTE_VERSION" != "$SCRIPT_VERSION" ]; then
 		if [[ -n $DIALOG ]]
@@ -815,7 +815,7 @@ if [ -n "$1" ]; then
 			echo "	--update (check server for script updates)"
 			echo "	--upload (upload contents to remote server)"
 			echo "	--no-upload (do not upload contents to remote server)"
-			echo "	--pastebin (use http://pastebin.ca) as remote server"
+			echo "	--pastebin (use https://pastebin.ca) as remote server"
 			echo "	    instead www.alsa-project.org"
 			echo "	--stdout (print alsa information to standard output"
 			echo "	    instead of a file)"
@@ -844,28 +844,28 @@ if ! wget --help 2>/dev/null | grep -q post-file; then
 		:
 	elif [ -n "$DIALOG" ]; then
 		if [ -z "$PASTEBIN" ]; then
-			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to http://www.alsa-project.org.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to http://www.alsa-project.org/cardinfo-db/ and submit your post." 25 100
+			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to https://www.alsa-project.org.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to https://www.alsa-project.org/cardinfo-db/ and submit your post." 25 100
 		else
-			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to http://www.pastebin.ca.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to http://www.pastebin.ca/upload.php and submit your post." 25 100
+			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to https://www.pastebin.ca.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to https://www.pastebin.ca/upload.php and submit your post." 25 100
 		fi
 	else
 		if [ -z "$PASTEBIN" ]; then
 			echo ""
-			echo "Could not automatically upload output to http://www.alsa-project.org"
+			echo "Could not automatically upload output to https://www.alsa-project.org"
 			echo "Possible reasons are:"
 			echo "    1. Couldn't find 'wget' in your PATH"
 			echo "    2. Your version of wget is less than 1.8.2"
 			echo ""
-			echo "Please manually upload $NFILE to http://www.alsa-project.org/cardinfo-db/ and submit your post."
+			echo "Please manually upload $NFILE to https://www.alsa-project.org/cardinfo-db/ and submit your post."
 			echo ""
 		else
 			echo ""
-			echo "Could not automatically upload output to http://www.pastebin.ca"
+			echo "Could not automatically upload output to https://www.pastebin.ca"
 			echo "Possible reasons are:"
 			echo "    1. Couldn't find 'wget' in your PATH"
 			echo "    2. Your version of wget is less than 1.8.2"
 			echo ""
-			echo "Please manually upload $NFILE to http://www.pastebin.ca/upload.php and submit your post."
+			echo "Please manually upload $NFILE to https://www.pastebin.ca/upload.php and submit your post."
 			echo ""
 		fi
 	fi
@@ -919,9 +919,9 @@ else
 fi
 
 if [[ -z $PASTEBIN ]]; then
-	wget -O - --tries=5 --timeout=60 --post-file=$FILE "http://www.alsa-project.org/cardinfo-db/" &>$TEMPDIR/wget.tmp
+	wget -O - --tries=5 --timeout=60 --post-file=$FILE "https://www.alsa-project.org/cardinfo-db/" &>$TEMPDIR/wget.tmp
 else
-	wget -O - --tries=5 --timeout=60 --post-file=$FILE "http://pastebin.ca/quiet-paste.php?api=$PASTEBINKEY&encrypt=t&encryptpw=blahblah" &>$TEMPDIR/wget.tmp
+	wget -O - --tries=5 --timeout=60 --post-file=$FILE "https://pastebin.ca/quiet-paste.php?api=$PASTEBINKEY&encrypt=t&encryptpw=blahblah" &>$TEMPDIR/wget.tmp
 fi
 
 if [ $? -ne 0 ]; then
@@ -964,7 +964,7 @@ fi # dialog
 if [ -z "$PASTEBIN" ]; then
 	FINAL_URL=$(grep "SUCCESS:" $TEMPDIR/wget.tmp | cut -d ' ' -f 2)
 else
-	FINAL_URL=$(grep "SUCCESS:" $TEMPDIR/wget.tmp | sed -n 's/.*\:\([0-9]\+\).*/http:\/\/pastebin.ca\/\1/p')
+	FINAL_URL=$(grep "SUCCESS:" $TEMPDIR/wget.tmp | sed -n 's/.*\:\([0-9]\+\).*/https:\/\/pastebin.ca\/\1/p')
 fi
 
 # See if tput is available, and use it if it is.
