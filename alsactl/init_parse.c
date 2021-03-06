@@ -1758,6 +1758,8 @@ int init(const char *filename, int flags, const char *cardname)
 				break;
 			if (card < 0) {
 				if (first) {
+					if (ignore_nocards)
+						return 0;
 					error("No soundcards found...");
 					return -ENODEV;
 				}
