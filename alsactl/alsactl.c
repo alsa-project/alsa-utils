@@ -110,6 +110,7 @@ static struct arg args[] = {
 { CARDCMD, "rdaemon", "like daemon but do the state restore at first" },
 { KILLCMD, "kill", "notify daemon to quit, rescan or save_and_quit" },
 { CARDCMD, "monitor", "monitor control events" },
+{ CARDCMD, "clean", "clean application controls" },
 { EMPCMD, "dump-state", "dump the state (for all cards)" },
 { EMPCMD, "dump-cfg", "dump the configuration (expanded, for all cards)" },
 { 0, NULL, NULL }

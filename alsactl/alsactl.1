@@ -8,6 +8,8 @@ alsactl \- advanced controls for ALSA soundcard driver
 
 \fBalsactl\fP \fImonitor\fP <card # or id>
 
+\fBalsactl\fP [\fIclean\fP] <card # or id or device> [[control identifiers]]
+
 .SH DESCRIPTION
 \fBalsactl\fP is used to control advanced settings for the ALSA
 soundcard drivers. It supports multiple soundcards. If your card has
@@ -16,37 +18,67 @@ you have come to the right place.
 
 .SH COMMANDS
 
-\fIstore\fP saves the current driver state for the selected soundcard
+.SS Introduction
+
+The \fI<card>\fP argument is optional. If no soundcards are specified,
+setup for all cards will be saved, loaded or monitored.
+
+.SS store <card>
+
+This command saves the current driver state for the selected soundcard
 to the configuration file.
 
-\fIrestore\fP loads driver state for the selected soundcard from the
+.SS restore <card>
+
+This command loads driver state for the selected soundcard from the
 configuration file. If restoring fails (eventually partly), the init
 action is called.
 
-\fInrestore\fP is like \fIrestore\fP, but it notifies also the daemon
+.SS nrestore <card>
+
+This command is like \fIrestore\fP, but it notifies also the daemon
 to do new rescan for available soundcards.
 
-\fIinit\fP tries to initialize all devices to a default state. If device
+.SS init <card>
+
+This command tries to initialize all devices to a default state. If device
 is not known, error code 99 is returned.
 
-\fIdaemon\fP manages to save periodically the sound state.
+.SS daemon
 
-\fIrdaemon\fP like \fIdaemon\fP but restore the sound state at first.
+This command manages to save periodically the sound state.
 
-\fIkill\fP notifies the daemon to do the specified operation (quit,
+.SS rdaemon
+
+This command is like \fIdaemon\fP but restore the sound state at first.
+
+.SS kill <cmd>
+
+This command notifies the daemon to do the specified operation (quit,
 rescan, save_and_quit).
 
-\fImonitor\fP is for monitoring the events received from the given
+.SS monitor <card>
+
+This command is for monitoring the events received from the given
 control device.
 
-\fIclean\fP clean the controls created by applications.
+.SS clean <card> [filter]
 
-\fIdump-state\fP dump the current state (all cards).
+This command cleans the controls created by applications.
 
-\fIdump-cfg\fP dump the current configuration (all cards, hooks are evaluated).
+The optional element identifiers are accepted as a filter. One extra
+argument is parsed as an element identifiers.
 
-If no soundcards are specified, setup for all cards will be saved,
-loaded or monitored.
+\fIExample:\fP alsactl clean 0 "name='PCM'" "name='Mic Phantom'"
+
+.SS dump-state
+
+This command dumps the current state (all cards) to stdout.
+
+.SS dump-cfg
+
+This command dumps the current configuration (all cards) to stdout.
+Note that the configuration hooks are evaluated.
 
 .SH OPTIONS
 
