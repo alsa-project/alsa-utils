@@ -29,7 +29,6 @@
 #include <errno.h>
 #include <syslog.h>
 #include <sched.h>
-#include <alsa/asoundlib.h>
 #include "alsactl.h"
 
 #ifndef SYS_ASOUNDRC
@@ -111,6 +110,8 @@ static struct arg args[] = {
 { CARDCMD, "rdaemon", "like daemon but do the state restore at first" },
 { KILLCMD, "kill", "notify daemon to quit, rescan or save_and_quit" },
 { CARDCMD, "monitor", "monitor control events" },
+{ EMPCMD, "dump-state", "dump the state (for all cards)" },
+{ EMPCMD, "dump-cfg", "dump the configuration (expanded, for all cards)" },
 { 0, NULL, NULL }
 };
 
@@ -139,7 +140,7 @@ static void help(void)
 				strcat(buf, "<card>");
 			else if (sarg & KILLCMD)
 				strcat(buf, "<cmd>");
-			printf("  %-8s  %-6s  %s\n", larg ? larg : "",
+			printf("  %-10s  %-6s  %s\n", larg ? larg : "",
 							buf, a->comment);
 			continue;
 		}
@@ -152,6 +153,48 @@ static void help(void)
 			strcat(buf, " #");
 		printf("  %-15s  %s\n", buf, a->comment);
 	}
+}
+
+static int dump_config_tree(snd_config_t *top)
+{
+	snd_output_t *out;
+	int err;
+
+	err = snd_output_stdio_attach(&out, stdout, 0);
+	if (err < 0)
+		return err;
+	err = snd_config_save(top, out);
+	snd_output_close(out);
+	return 0;
+}
+
+static int dump_state(const char *file)
+{
+	snd_config_t *top;
+	int err;
+
+	err = load_configuration(file, &top, NULL);
+	if (err < 0)
+		return err;
+	err = dump_config_tree(top);
+	snd_config_delete(top);
+	snd_config_update_free_global();
+	return err;
+}
+
+static int dump_configuration(void)
+{
+	snd_config_t *top, *cfg2;
+	int err;
+
+	err = snd_config_update_ref(&top);
+	if (err < 0)
+		return err;
+	/* expand cards.* tree */
+	snd_config_search_definition(top, "cards", "dummy", &cfg2);
+	err = dump_config_tree(top);
+	snd_config_unref(top);
+	return err;
 }
 
 #define NO_NICE (-100000)
@@ -399,6 +442,10 @@ int main(int argc, char *argv[])
 		res = monitor(cardname);
 	} else if (!strcmp(cmd, "clean")) {
 		res = clean(cardname, extra_args);
+	} else if (!strcmp(cmd, "dump-state")) {
+		res = dump_state(cfgfile);
+	} else if (!strcmp(cmd, "dump-cfg")) {
+		res = dump_configuration();
 	} else {
 		fprintf(stderr, "alsactl: Unknown command '%s'...\n", cmd);
 		res = -ENODEV;

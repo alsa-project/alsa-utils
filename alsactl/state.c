@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
-#include <alsa/asoundlib.h>
 #include "alsactl.h"
 
 
@@ -1648,38 +1647,17 @@ out:
 int load_state(const char *file, const char *initfile, int initflags,
 	       const char *cardname, int do_init)
 {
-	int err, finalerr = 0;
+	int err, finalerr = 0, open_failed;
 	snd_config_t *config;
-	snd_input_t *in;
-	int stdio, lock_fd = -EINVAL;
 
-	err = snd_config_top(&config);
-	if (err < 0) {
-		error("snd_config_top error: %s", snd_strerror(err));
+	err = load_configuration(file, &config, &open_failed);
+	if (err < 0 && !open_failed)
 		return err;
-	}
-	stdio = !strcmp(file, "-");
-	if (stdio) {
-		err = snd_input_stdio_attach(&in, stdin, 0);
-	} else {
-		lock_fd = state_lock(file, 10);
-		err = lock_fd >= 0 ? snd_input_stdio_open(&in, file, "r") : lock_fd;
-	}
-	if (err >= 0) {
-		err = snd_config_load(config, in);
-		snd_input_close(in);
-		if (lock_fd >= 0)
-			state_unlock(lock_fd, file);
-		if (err < 0) {
-			error("snd_config_load error: %s", snd_strerror(err));
-			goto out;
-		}
-	} else {
+
+	if (open_failed) {
 		int card, first = 1;
 		char cardname1[16];
 
-		if (lock_fd >= 0)
-		        state_unlock(lock_fd, file);
 		error("Cannot open %s for reading: %s", file, snd_strerror(err));
 		finalerr = err;
 		if (cardname) {

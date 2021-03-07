@@ -30,8 +30,6 @@
 #include <syslog.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-
-#include <alsa/asoundlib.h>
 #include "alsactl.h"
 
 int file_map(const char *filename, char **buf, size_t *bufsize)
@@ -192,4 +190,46 @@ void error_handler(const char *file, int line, const char *function, int err, co
 	else
 		fprintf(stderr, "alsa-lib %s:%i:(%s) %s%s%s\n", file, line, function,
 				buf, err ? ": " : "", err ? snd_strerror(err) : "");
+}
+
+int load_configuration(const char *file, snd_config_t **top, int *open_failed)
+{
+	snd_config_t *config;
+	snd_input_t *in;
+	int err, stdio_flag, lock_fd = -EINVAL;
+
+	*top = NULL;
+	if (open_failed)
+		*open_failed = 0;
+	err = snd_config_top(&config);
+	if (err < 0) {
+		error("snd_config_top error: %s", snd_strerror(err));
+		return err;
+	}
+	stdio_flag = !strcmp(file, "-");
+	if (stdio_flag) {
+		err = snd_input_stdio_attach(&in, stdin, 0);
+	} else {
+		lock_fd = state_lock(file, 10);
+		err = lock_fd >= 0 ? snd_input_stdio_open(&in, file, "r") : lock_fd;
+	}
+	if (err < 0) {
+		if (open_failed)
+			*open_failed = 1;
+		goto out;
+	}
+	err = snd_config_load(config, in);
+	snd_input_close(in);
+	if (lock_fd >= 0)
+		state_unlock(lock_fd, file);
+	if (err < 0) {
+		error("snd_config_load error: %s", snd_strerror(err));
+out:
+		snd_config_delete(config);
+		snd_config_update_free_global();
+		return err;
+	} else {
+		*top = config;
+		return 0;
+	}
 }

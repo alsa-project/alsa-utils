@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
-#include <alsa/asoundlib.h>
 #include "alsactl.h"
 
 static int clean_one_control(snd_ctl_t *handle, snd_ctl_elem_id_t *elem_id,

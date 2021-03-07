@@ -37,7 +37,6 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <math.h>
-#include <alsa/asoundlib.h>
 #include "aconfig.h"
 #include "alsactl.h"
 #include "list.h"

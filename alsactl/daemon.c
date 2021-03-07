@@ -29,7 +29,6 @@
 #include <signal.h>
 #include <time.h>
 #include <poll.h>
-#include <alsa/asoundlib.h>
 #include "alsactl.h"
 
 struct id_list {

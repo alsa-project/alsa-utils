@@ -1,3 +1,5 @@
+#include <alsa/asoundlib.h>
+
 extern int debugflag;
 extern int force_restore;
 extern int ignore_nocards;
@@ -28,6 +30,7 @@ void error_handler(const char *file, int line, const char *function, int err, co
 #define FLAG_UCM_DISABLED	(1<<0)
 #define FLAG_UCM_DEFAULTS	(1<<1)
 
+int load_configuration(const char *file, snd_config_t **top, int *open_failed);
 int init(const char *file, int flags, const char *cardname);
 int init_ucm(int flags, int cardno);
 int state_lock(const char *file, int timeout);
