@@ -401,6 +401,7 @@ int main(int argc, char *argv[])
 		use_syslog = 1;
 		if (daemon(0, 0)) {
 			syslog(LOG_INFO, "alsactl " SND_UTIL_VERSION_STR " daemon cannot be started: %s", strerror(errno));
+			res = EXIT_FAILURE;
 			goto out;
 		}
 	}
