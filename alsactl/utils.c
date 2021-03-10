@@ -233,3 +233,54 @@ out:
 		return 0;
 	}
 }
+
+void snd_card_iterator_init(struct snd_card_iterator *iter, int cardno)
+{
+	iter->card = cardno;
+	iter->single = cardno >= 0;
+	iter->first = true;
+	iter->name[0] = '\0';
+}
+
+int snd_card_iterator_sinit(struct snd_card_iterator *iter, const char *cardname)
+{
+	int cardno = -1;
+
+	if (cardname) {
+		cardno = snd_card_get_index(cardname);
+		if (cardno < 0) {
+			error("Cannot find soundcard '%s'...", cardname);
+			return cardno;
+		}
+	}
+	snd_card_iterator_init(iter, cardno);
+	return 0;
+}
+
+const char *snd_card_iterator_next(struct snd_card_iterator *iter)
+{
+	if (iter->single) {
+		if (iter->first) {
+			iter->first = false;
+			goto retval;
+		}
+		return NULL;
+	}
+	if (snd_card_next(&iter->card) < 0) {
+		if (!ignore_nocards && iter->first)
+			error("No soundcards found...");
+		return NULL;
+	}
+	iter->first = false;
+	if (iter->card < 0)
+		return NULL;
+retval:
+	snprintf(iter->name, sizeof(iter->name), "hw:%d", iter->card);
+
+	return (const char *)iter->name;
+}
+
+int snd_card_iterator_error(struct snd_card_iterator *iter)
+{
+	return iter->first ? (ignore_nocards ? 0 : -ENODEV) : 0;
+}

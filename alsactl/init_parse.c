@@ -1746,63 +1746,33 @@ static int parse(struct space *space, const char *filename)
 int init(const char *filename, int flags, const char *cardname)
 {
 	struct space *space;
-	int err = 0, lasterr = 0, card, first;
+	struct snd_card_iterator iter;
+	int err = 0, lasterr = 0;
 	
 	sysfs_init();
-	if (!cardname) {
-		first = 1;
-		card = -1;
-		while (1) {
-			if (snd_card_next(&card) < 0)
-				break;
-			if (card < 0) {
-				if (first) {
-					if (ignore_nocards)
-						return 0;
-					error("No soundcards found...");
-					return -ENODEV;
-				}
-				break;
-			}
-			first = 0;
-			err = init_ucm(flags, card);
-			if (err == 0)
-				continue;
-			err = init_space(&space, card);
-			if (err == 0) {
-				space->rootdir = new_root_dir(filename);
-				if (space->rootdir != NULL)
-					err = parse(space, filename);
-				if (err <= -99) { /* non-fatal errors */
-					if (lasterr == 0)
-						lasterr = err;
-					err = 0;
-				}
-				free_space(space);
-			}
-			if (err < 0)
-				break;
-		}
-		err = lasterr;
-	} else {
-		card = snd_card_get_index(cardname);
-		if (card < 0) {
-			error("Cannot find soundcard '%s'...", cardname);
-			goto error;
-		}
-		err = init_ucm(flags, card);
+	err = snd_card_iterator_sinit(&iter, cardname);
+	while (snd_card_iterator_next(&iter)) {
+		err = init_ucm(flags, iter.card);
 		if (err == 0)
-			return 0;
-		memset(&space, 0, sizeof(space));
-		err = init_space(&space, card);
-		if (err == 0) {
-			space->rootdir = new_root_dir(filename);
-			if (space->rootdir  != NULL)
-				err = parse(space, filename);
-			free_space(space);
+			continue;
+		err = init_space(&space, iter.card);
+		if (err != 0)
+			continue;
+		space->rootdir = new_root_dir(filename);
+		if (space->rootdir != NULL) {
+			err = parse(space, filename);
+			if (!cardname && err <= -99) { /* non-fatal errors */
+				if (lasterr == 0)
+					lasterr = err;
+				err = 0;
+			}
 		}
+		free_space(space);
+		if (err < 0)
+			goto out;
 	}
-  error:
+	err = lasterr ? lasterr : snd_card_iterator_error(&iter);
+out:
 	sysfs_cleanup();
 	return err;
 }

@@ -1544,6 +1544,7 @@ int save_state(const char *file, const char *cardname)
 	int stdio;
 	char *nfile = NULL;
 	int lock_fd = -EINVAL;
+	struct snd_card_iterator iter;
 
 	err = snd_config_top(&config);
 	if (err < 0) {
@@ -1577,45 +1578,18 @@ int save_state(const char *file, const char *cardname)
 #endif
 	}
 
-	if (!cardname) {
-		int card, first = 1;
-
-		card = -1;
-		/* find each installed soundcards */
-		while (1) {
-			if (snd_card_next(&card) < 0)
-				break;
-			if (card < 0) {
-				if (first) {
-					if (ignore_nocards) {
-						err = 0;
-						goto out;
-					} else {
-						error("No soundcards found...");
-						err = -ENODEV;
-						goto out;
-					}
-				}
-				break;
-			}
-			first = 0;
-			if ((err = get_controls(card, config)))
-				goto out;
-		}
-	} else {
-		int cardno;
-
-		cardno = snd_card_get_index(cardname);
-		if (cardno < 0) {
-			error("Cannot find soundcard '%s'...", cardname);
-			err = cardno;
+	err = snd_card_iterator_sinit(&iter, cardname);
+	if (err < 0)
+		goto out;
+	while (snd_card_iterator_next(&iter)) {
+		if ((err = get_controls(iter.card, config)))
 			goto out;
-		}
-		if ((err = get_controls(cardno, config))) {
-			goto out;
-		}
 	}
-	
+	if (iter.first) {
+		err = snd_card_iterator_error(&iter);
+		goto out;
+	}
+
 	if (stdio) {
 		err = snd_output_stdio_attach(&out, stdout, 0);
 	} else {
@@ -1648,119 +1622,58 @@ int load_state(const char *file, const char *initfile, int initflags,
 	       const char *cardname, int do_init)
 {
 	int err, finalerr = 0, open_failed;
+	struct snd_card_iterator iter;
 	snd_config_t *config;
+	const char *cardname1;
 
 	err = load_configuration(file, &config, &open_failed);
 	if (err < 0 && !open_failed)
 		return err;
 
 	if (open_failed) {
-		int card, first = 1;
-		char cardname1[16];
-
 		error("Cannot open %s for reading: %s", file, snd_strerror(err));
 		finalerr = err;
-		if (cardname) {
-			card = snd_card_get_index(cardname);
-			if (card < 0) {
-				error("Cannot find soundcard '%s'...", cardname);
-				err = -ENODEV;
-				goto out;
-			}
-			goto single;
-		} else {
-			card = -1;
-		}
-		/* find each installed soundcards */
-		while (!cardname) {
-			if (snd_card_next(&card) < 0)
-				break;
-			if (card < 0)
-				break;
-single:
-			first = 0;
+
+		err = snd_card_iterator_sinit(&iter, cardname);
+		if (err < 0)
+			return err;
+		while ((cardname1 = snd_card_iterator_next(&iter)) != NULL) {
 			if (!do_init)
 				break;
-			sprintf(cardname1, "%i", card);
 			err = init(initfile, initflags | FLAG_UCM_FBOOT | FLAG_UCM_BOOT, cardname1);
 			if (err < 0) {
 				finalerr = err;
-				initfailed(card, "init", err);
+				initfailed(iter.card, "init", err);
 			}
-			initfailed(card, "restore", -ENOENT);
+			initfailed(iter.card, "restore", -ENOENT);
 		}
-		if (first)
-			finalerr = 0;	/* no cards, no error code */
 		err = finalerr;
+		if (iter.first)
+			err = 0;	/* no cards, no error code */
 		goto out;
 	}
 
-	if (!cardname) {
-		int card, first = 1;
-		char cardname1[16];
-
-		card = -1;
-		/* find each installed soundcards */
-		while (1) {
-			if (snd_card_next(&card) < 0)
-				break;
-			if (card < 0) {
-				if (first) {
-					if (ignore_nocards) {
-						err = 0;
-						goto out;
-					} else {
-						error("No soundcards found...");
-						err = -ENODEV;
-						goto out;
-					}
-				}
-				break;
-			}
-			first = 0;
-			/* error is ignored */
-			init_ucm(initflags | FLAG_UCM_FBOOT, card);
-			/* do a check if controls matches state file */
- 			if (do_init && set_controls(card, config, 0)) {
-				sprintf(cardname1, "%i", card);
-				err = init(initfile, initflags | FLAG_UCM_BOOT, cardname1);
-				if (err < 0) {
-					initfailed(card, "init", err);
-					finalerr = err;
-				}
-			}
-			if ((err = set_controls(card, config, 1))) {
-				if (!force_restore)
-					finalerr = err;
-				initfailed(card, "restore", err);
-			}
-		}
-	} else {
-		int cardno;
-
-		cardno = snd_card_get_index(cardname);
-		if (cardno < 0) {
-			error("Cannot find soundcard '%s'...", cardname);
-			err = -ENODEV;
-			goto out;
-		}
+	err = snd_card_iterator_sinit(&iter, cardname);
+	if (err < 0)
+		goto out;
+	while ((cardname1 = snd_card_iterator_next(&iter)) != NULL) {
 		/* error is ignored */
-		init_ucm(initflags | FLAG_UCM_FBOOT, cardno);
+		init_ucm(initflags | FLAG_UCM_FBOOT, iter.card);
 		/* do a check if controls matches state file */
-		if (do_init && set_controls(cardno, config, 0)) {
-			err = init(initfile, initflags | FLAG_UCM_BOOT, cardname);
+		if (do_init && set_controls(iter.card, config, 0)) {
+			err = init(initfile, initflags | FLAG_UCM_BOOT, cardname1);
 			if (err < 0) {
-				initfailed(cardno, "init", err);
+				initfailed(iter.card, "init", err);
 				finalerr = err;
 			}
 		}
-		if ((err = set_controls(cardno, config, 1))) {
-			initfailed(cardno, "restore", err);
+		if ((err = set_controls(iter.card, config, 1))) {
 			if (!force_restore)
-				goto out;
+				finalerr = err;
+			initfailed(iter.card, "restore", err);
 		}
 	}
-	err = finalerr;
+	err = finalerr ? finalerr : snd_card_iterator_error(&iter);
 out:
 	snd_config_delete(config);
 	snd_config_update_free_global();

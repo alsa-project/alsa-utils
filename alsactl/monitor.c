@@ -28,10 +28,11 @@
 #include <time.h>
 #include <signal.h>
 #include <sys/signalfd.h>
-#include <alsa/asoundlib.h>
 
 #include <stddef.h>
 #include "list.h"
+
+#include "alsactl.h"
 
 struct src_entry {
 	snd_ctl_t *handle;
@@ -39,29 +40,6 @@ struct src_entry {
 	unsigned int pfd_count;
 	struct list_head list;
 };
-
-struct snd_card_iterator {
-        int card;
-        char name[16];
-};
-
-void snd_card_iterator_init(struct snd_card_iterator *iter)
-{
-        iter->card = -1;
-        memset(iter->name, 0, sizeof(iter->name));
-}
-
-static const char *snd_card_iterator_next(struct snd_card_iterator *iter)
-{
-        if (snd_card_next(&iter->card) < 0)
-                return NULL;
-        if (iter->card < 0)
-                return NULL;
-
-        snprintf(iter->name, sizeof(iter->name), "hw:%d", iter->card);
-
-        return (const char *)iter->name;
-}
 
 static void remove_source_entry(struct src_entry *entry)
 {
@@ -159,7 +137,7 @@ static int prepare_source_entry(struct list_head *srcs, const char *name)
 		struct snd_card_iterator iter;
 		const char *cardname;
 
-		snd_card_iterator_init(&iter);
+		snd_card_iterator_init(&iter, -1);
 		while ((cardname = snd_card_iterator_next(&iter))) {
 			if (seek_entry_by_name(srcs, cardname))
 				continue;

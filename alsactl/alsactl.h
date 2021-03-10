@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <alsa/asoundlib.h>
 
 extern int debugflag;
@@ -8,6 +9,13 @@ extern int use_syslog;
 extern char *command;
 extern char *statefile;
 extern char *lockfile;
+
+struct snd_card_iterator {
+	int card;
+	char name[16];
+	bool single;
+	bool first;
+};
 
 void info_(const char *fcn, long line, const char *fmt, ...);
 void error_(const char *fcn, long line, const char *fmt, ...);
@@ -31,6 +39,11 @@ void error_handler(const char *file, int line, const char *function, int err, co
 #define FLAG_UCM_FBOOT		(1<<1)
 #define FLAG_UCM_BOOT		(1<<2)
 #define FLAG_UCM_DEFAULTS	(1<<3)
+
+void snd_card_iterator_init(struct snd_card_iterator *iter, int cardno);
+int snd_card_iterator_sinit(struct snd_card_iterator *iter, const char *cardname);
+const char *snd_card_iterator_next(struct snd_card_iterator *iter);
+int snd_card_iterator_error(struct snd_card_iterator *iter);
 
 int load_configuration(const char *file, snd_config_t **top, int *open_failed);
 int init(const char *file, int flags, const char *cardname);

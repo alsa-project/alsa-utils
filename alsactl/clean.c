@@ -182,46 +182,15 @@ fin_err:
 
 int clean(const char *cardname, char *const *extra_args)
 {
+	struct snd_card_iterator iter;
 	int err;
 
-	if (!cardname) {
-		int card, first = 1;
-
-		card = -1;
-		/* find each installed soundcards */
-		while (1) {
-			if (snd_card_next(&card) < 0)
-				break;
-			if (card < 0) {
-				if (first) {
-					if (ignore_nocards) {
-						err = 0;
-						goto out;
-					} else {
-						error("No soundcards found...");
-						err = -ENODEV;
-						goto out;
-					}
-				}
-				break;
-			}
-			first = 0;
-			if ((err = clean_controls(card, extra_args)))
-				goto out;
-		}
-	} else {
-		int cardno;
-
-		cardno = snd_card_get_index(cardname);
-		if (cardno < 0) {
-			error("Cannot find soundcard '%s'...", cardname);
-			err = cardno;
-			goto out;
-		}
-		if ((err = clean_controls(cardno, extra_args))) {
-			goto out;
-		}
+	err = snd_card_iterator_sinit(&iter, cardname);
+	if (err < 0)
+		return err;
+	while (snd_card_iterator_next(&iter)) {
+		if ((err = clean_controls(iter.card, extra_args)))
+			return err;
 	}
-out:
-	return err;
+	return snd_card_iterator_error(&iter);
 }
