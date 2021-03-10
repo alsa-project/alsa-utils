@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
 	snd_lib_error_set_handler(error_handler);
 
 	if (!strcmp(cmd, "init")) {
-		res = init(initfile, initflags, cardname);
+		res = init(initfile, initflags | FLAG_UCM_FBOOT | FLAG_UCM_BOOT, cardname);
 		snd_config_update_free_global();
 	} else if (!strcmp(cmd, "store")) {
 		res = save_state(cfgfile, cardname);

@@ -28,7 +28,8 @@
 #include <alsa/use-case.h>
 
 /*
- * Keep it as simple as possible. Execute commands from the SectionOnce only.
+ * Keep it as simple as possible. Execute commands from the
+ * FixedBootSequence and BootSequence only.
  */
 int init_ucm(int flags, int cardno)
 {
@@ -36,17 +37,24 @@ int init_ucm(int flags, int cardno)
 	char id[32];
 	int err;
 
+	if (flags & FLAG_UCM_DISABLED)
+		return -ENXIO;
+
 	snprintf(id, sizeof(id), "hw:%d", cardno);
 	err = snd_use_case_mgr_open(&uc_mgr, id);
 	if (err < 0)
 		return err;
-	err = snd_use_case_set(uc_mgr, "_boot", NULL);
-	if (err < 0)
-		goto _error;
-	if ((flags & FLAG_UCM_DEFAULTS) != 0) {
-		err = snd_use_case_set(uc_mgr, "_defaults", NULL);
+	if (flags & FLAG_UCM_FBOOT) {
+		err = snd_use_case_set(uc_mgr, "_fboot", NULL);
 		if (err < 0)
 			goto _error;
+	}
+	if (flags & FLAG_UCM_BOOT) {
+		err = snd_use_case_set(uc_mgr, "_boot", NULL);
+		if (err < 0)
+			goto _error;
+		if ((flags & FLAG_UCM_DEFAULTS) != 0)
+			err = snd_use_case_set(uc_mgr, "_defaults", NULL);
 	}
 _error:
 	snd_use_case_mgr_close(uc_mgr);
@@ -57,7 +65,7 @@ _error:
 
 int init_ucm(int flags, int cardno)
 {
-	return 0;
+	return -ENXIO;
 }
 
 #endif

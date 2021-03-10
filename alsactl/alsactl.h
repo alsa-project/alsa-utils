@@ -28,7 +28,9 @@ void error_handler(const char *file, int line, const char *function, int err, co
 #endif	
 
 #define FLAG_UCM_DISABLED	(1<<0)
-#define FLAG_UCM_DEFAULTS	(1<<1)
+#define FLAG_UCM_FBOOT		(1<<1)
+#define FLAG_UCM_BOOT		(1<<2)
+#define FLAG_UCM_DEFAULTS	(1<<3)
 
 int load_configuration(const char *file, snd_config_t **top, int *open_failed);
 int init(const char *file, int flags, const char *cardname);

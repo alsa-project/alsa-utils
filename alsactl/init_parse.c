@@ -1765,11 +1765,9 @@ int init(const char *filename, int flags, const char *cardname)
 				break;
 			}
 			first = 0;
-			if (!(flags & FLAG_UCM_DISABLED)) {
-				err = init_ucm(flags, card);
-				if (err == 0)
-					continue;
-			}
+			err = init_ucm(flags, card);
+			if (err == 0)
+				continue;
 			err = init_space(&space, card);
 			if (err == 0) {
 				space->rootdir = new_root_dir(filename);
@@ -1792,11 +1790,9 @@ int init(const char *filename, int flags, const char *cardname)
 			error("Cannot find soundcard '%s'...", cardname);
 			goto error;
 		}
-		if (!(flags & FLAG_UCM_DISABLED)) {
-			err = init_ucm(flags, card);
-			if (err == 0)
-				return 0;
-		}
+		err = init_ucm(flags, card);
+		if (err == 0)
+			return 0;
 		memset(&space, 0, sizeof(space));
 		err = init_space(&space, card);
 		if (err == 0) {

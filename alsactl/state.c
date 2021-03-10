@@ -1682,7 +1682,7 @@ single:
 			if (!do_init)
 				break;
 			sprintf(cardname1, "%i", card);
-			err = init(initfile, initflags, cardname1);
+			err = init(initfile, initflags | FLAG_UCM_FBOOT | FLAG_UCM_BOOT, cardname1);
 			if (err < 0) {
 				finalerr = err;
 				initfailed(card, "init", err);
@@ -1718,10 +1718,12 @@ single:
 				break;
 			}
 			first = 0;
+			/* error is ignored */
+			init_ucm(initflags | FLAG_UCM_FBOOT, card);
 			/* do a check if controls matches state file */
  			if (do_init && set_controls(card, config, 0)) {
 				sprintf(cardname1, "%i", card);
-				err = init(initfile, initflags, cardname1);
+				err = init(initfile, initflags | FLAG_UCM_BOOT, cardname1);
 				if (err < 0) {
 					initfailed(card, "init", err);
 					finalerr = err;
@@ -1742,9 +1744,11 @@ single:
 			err = -ENODEV;
 			goto out;
 		}
+		/* error is ignored */
+		init_ucm(initflags | FLAG_UCM_FBOOT, cardno);
 		/* do a check if controls matches state file */
 		if (do_init && set_controls(cardno, config, 0)) {
-			err = init(initfile, initflags, cardname);
+			err = init(initfile, initflags | FLAG_UCM_BOOT, cardname);
 			if (err < 0) {
 				initfailed(cardno, "init", err);
 				finalerr = err;
