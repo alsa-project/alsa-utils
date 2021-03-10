@@ -179,7 +179,6 @@ static int dump_state(const char *file)
 		return err;
 	err = dump_config_tree(top);
 	snd_config_delete(top);
-	snd_config_update_free_global();
 	return err;
 }
 
@@ -192,7 +191,9 @@ static int dump_configuration(void)
 	if (err < 0)
 		return err;
 	/* expand cards.* tree */
-	snd_config_search_definition(top, "cards", "dummy", &cfg2);
+	err = snd_config_search_definition(top, "cards", "_dummy_", &cfg2);
+	if (err >= 0)
+		snd_config_delete(cfg2);
 	err = dump_config_tree(top);
 	snd_config_unref(top);
 	return err;
