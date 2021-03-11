@@ -63,31 +63,19 @@ static int test_demux(struct mapper_trial *trial, snd_pcm_access_t access,
 		      unsigned int frames_per_second,
 		      unsigned int frames_per_buffer,
 		      void *frame_buffer, unsigned int frame_count,
-		      unsigned int cntr_count)
+		      int *cntr_fds, unsigned int cntr_count)
 {
 	struct container_context *cntrs = trial->cntrs;
 	enum container_format cntr_format = trial->cntr_format;
-	int *cntr_fds;
 	unsigned int bytes_per_sample;
 	uint64_t total_frame_count;
 	int i;
 	int err = 0;
 
-	cntr_fds = calloc(cntr_count, sizeof(*cntr_fds));
-	if (cntr_fds == NULL)
-		return -ENOMEM;
-
 	for (i = 0; i < cntr_count; ++i) {
-		const char *path = trial->paths[i];
 		snd_pcm_format_t format;
 		unsigned int channels;
 		unsigned int rate;
-
-		cntr_fds[i] = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
-		if (cntr_fds[i] < 0) {
-			err = -errno;
-			goto end;
-		}
 
 		err = container_builder_init(cntrs + i, cntr_fds[i], cntr_format, 0);
 		if (err < 0)
@@ -124,12 +112,8 @@ static int test_demux(struct mapper_trial *trial, snd_pcm_access_t access,
 		assert(total_frame_count == frame_count);
 	}
 end:
-	for (i = 0; i < cntr_count; ++i) {
+	for (i = 0; i < cntr_count; ++i)
 		container_context_destroy(cntrs + i);
-		close(cntr_fds[i]);
-	}
-
-	free(cntr_fds);
 
 	return err;
 }
@@ -170,30 +154,18 @@ static int test_mux(struct mapper_trial *trial, snd_pcm_access_t access,
 		    unsigned int frames_per_second,
 		    unsigned int frames_per_buffer,
 		    void *frame_buffer, unsigned int frame_count,
-		    unsigned int cntr_count)
+		    int *cntr_fds, unsigned int cntr_count)
 {
 	struct container_context *cntrs = trial->cntrs;
-	int *cntr_fds;
 	unsigned int bytes_per_sample;
 	uint64_t total_frame_count;
 	int i;
 	int err = 0;
 
-	cntr_fds = calloc(cntr_count, sizeof(*cntr_fds));
-	if (cntr_fds == NULL)
-		return -ENOMEM;
-
 	for (i = 0; i < cntr_count; ++i) {
-		const char *path = trial->paths[i];
 		snd_pcm_format_t format;
 		unsigned int channels;
 		unsigned int rate;
-
-		cntr_fds[i] = open(path, O_RDONLY);
-		if (cntr_fds[i] < 0) {
-			err = -errno;
-			goto end;
-		}
 
 		err = container_parser_init(cntrs + i, cntr_fds[i], 0);
 		if (err < 0)
@@ -230,12 +202,8 @@ static int test_mux(struct mapper_trial *trial, snd_pcm_access_t access,
 		assert(total_frame_count == frame_count);
 	}
 end:
-	for (i = 0; i < cntr_count; ++i) {
+	for (i = 0; i < cntr_count; ++i)
 		container_context_destroy(cntrs + i);
-		close(cntr_fds[i]);
-	}
-
-	free(cntr_fds);
 
 	return err;
 }
@@ -247,6 +215,7 @@ static int test_mapper(struct mapper_trial *trial, snd_pcm_access_t access,
 		    void *check_buffer, unsigned int frame_count,
 		    unsigned int cntr_count)
 {
+	int *cntr_fds;
 	unsigned int frames_per_buffer;
 	int i;
 	int err;
@@ -254,18 +223,44 @@ static int test_mapper(struct mapper_trial *trial, snd_pcm_access_t access,
 	// Use a buffer aligned by typical size of page frame.
 	frames_per_buffer = ((frame_count + 4096) / 4096) * 4096;
 
+	cntr_fds = calloc(cntr_count, sizeof(*cntr_fds));
+	if (cntr_fds == NULL)
+		return -ENOMEM;
+
+	for (i = 0; i < cntr_count; ++i) {
+		const char *path = trial->paths[i];
+
+		cntr_fds[i] = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+		if (cntr_fds[i] < 0) {
+			err = -errno;
+			goto end;
+		}
+	}
+
 	err = test_demux(trial, access, sample_format, samples_per_frame,
 			 frames_per_second, frames_per_buffer, frame_buffer,
-			 frame_count, cntr_count);
+			 frame_count, cntr_fds, cntr_count);
 	if (err < 0)
 		goto end;
 
+	for (i = 0; i < cntr_count; ++i) {
+		off64_t pos = lseek64(cntr_fds[i], 0, SEEK_SET);
+		if (pos != 0) {
+			err = -EIO;
+			goto end;
+		}
+	}
+
 	err = test_mux(trial, access, sample_format, samples_per_frame,
 		       frames_per_second, frames_per_buffer, check_buffer,
-		       frame_count, cntr_count);
+		       frame_count, cntr_fds, cntr_count);
 end:
-	for (i = 0; i < cntr_count; ++i)
+	for (i = 0; i < cntr_count; ++i) {
 		unlink(trial->paths[i]);
+		close(cntr_fds[i]);
+	}
+
+	free(cntr_fds);
 
 	return err;
 }
