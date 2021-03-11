@@ -62,6 +62,11 @@ AC_CHECK_LIB([ffado], [ffado_streaming_init], [have_ffado="yes"], [have_ffado="n
 AS_IF([test x"$have_ffado" = xyes],
       [AC_DEFINE([WITH_FFADO], [1], [Define if FFADO library is available])])
 
+# Test programs for axfer use shm by memfd_create(2). If not supported, open(2) is used alternatively.
+AC_CHECK_FUNC([memfd_create], [have_memfd_create="yes"], [have_memfd_create="no"])
+AS_IF([test x$have_memfd_create = xyes],
+      [AC_DEFINE([HAVE_MEMFD_CREATE], [1], [Define if Linux kernel supports memfd_create system call])])
+
 AM_CONDITIONAL(HAVE_PCM, test "$have_pcm" = "yes")
 AM_CONDITIONAL(HAVE_MIXER, test "$have_mixer" = "yes")
 AM_CONDITIONAL(HAVE_RAWMIDI, test "$have_rawmidi" = "yes")
