@@ -300,7 +300,7 @@ int main(int argc, const char *argv[])
 	for (i = begin; i < end; ++i) {
 		err = generator_context_init(&gen, access_mask,
 					     sample_format_masks[i],
-					     1, 128, 23, 4500, 1024,
+					     1, 128, 23, 3000, 512,
 					     sizeof(struct container_trial));
 		if (err >= 0) {
 			trial = gen.private_data;
