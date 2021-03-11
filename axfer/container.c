@@ -143,23 +143,21 @@ static int set_nonblock_flag(int fd)
 	return 0;
 }
 
-int container_parser_init(struct container_context *cntr,
-			  const char *const path, unsigned int verbose)
+int container_parser_init(struct container_context *cntr, int fd,
+			  unsigned int verbose)
 {
 	const struct container_parser *parsers[] = {
 		[CONTAINER_FORMAT_RIFF_WAVE] = &container_parser_riff_wave,
 		[CONTAINER_FORMAT_AU] = &container_parser_au,
 		[CONTAINER_FORMAT_VOC] = &container_parser_voc,
 	};
-	int fd;
 	const struct container_parser *parser;
 	unsigned int size;
 	int i;
 	int err;
 
 	assert(cntr);
-	assert(path);
-	assert(path[0] != '\0');
+	assert(fd >= 0);
 
 	// Detect forgotten to destruct.
 	assert(cntr->fd == 0);
@@ -167,14 +165,6 @@ int container_parser_init(struct container_context *cntr,
 
 	memset(cntr, 0, sizeof(*cntr));
 
-	// Open a target descriptor.
-	if (!strcmp(path, "-")) {
-		fd = fileno(stdin);
-	} else {
-		fd = open(path, O_RDONLY);
-		if (fd < 0)
-			return -errno;
-	}
 	cntr->fd = fd;
 
 	cntr->stdio = (cntr->fd == fileno(stdin));
@@ -231,9 +221,8 @@ int container_parser_init(struct container_context *cntr,
 	return 0;
 }
 
-int container_builder_init(struct container_context *cntr,
-			   const char *const path, enum container_format format,
-			   unsigned int verbose)
+int container_builder_init(struct container_context *cntr, int fd,
+			   enum container_format format, unsigned int verbose)
 {
 	const struct container_builder *builders[] = {
 		[CONTAINER_FORMAT_RIFF_WAVE] = &container_builder_riff_wave,
@@ -241,13 +230,11 @@ int container_builder_init(struct container_context *cntr,
 		[CONTAINER_FORMAT_VOC] = &container_builder_voc,
 		[CONTAINER_FORMAT_RAW] = &container_builder_raw,
 	};
-	int fd;
 	const struct container_builder *builder;
 	int err;
 
 	assert(cntr);
-	assert(path);
-	assert(path[0] != '\0');
+	assert(fd >= 0);
 
 	// Detect forgotten to destruct.
 	assert(cntr->fd == 0);
@@ -255,16 +242,6 @@ int container_builder_init(struct container_context *cntr,
 
 	memset(cntr, 0, sizeof(*cntr));
 
-	// Open a target descriptor.
-	if (path == NULL || *path == '\0')
-		return -EINVAL;
-	if (!strcmp(path, "-")) {
-		fd = fileno(stdout);
-	} else {
-		fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
-		if (fd < 0)
-			return -errno;
-	}
 	cntr->fd = fd;
 
 	cntr->stdio = (cntr->fd == fileno(stdout));

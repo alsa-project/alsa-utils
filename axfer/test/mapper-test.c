@@ -66,7 +66,6 @@ static int test_demux(struct mapper_trial *trial, snd_pcm_access_t access,
 		      unsigned int cntr_count)
 {
 	struct container_context *cntrs = trial->cntrs;
-	char **paths = trial->paths;
 	enum container_format cntr_format = trial->cntr_format;
 	unsigned int bytes_per_sample;
 	uint64_t total_frame_count;
@@ -74,12 +73,17 @@ static int test_demux(struct mapper_trial *trial, snd_pcm_access_t access,
 	int err = 0;
 
 	for (i = 0; i < cntr_count; ++i) {
+		const char *path = trial->paths[i];
+		int fd;
 		snd_pcm_format_t format;
 		unsigned int channels;
 		unsigned int rate;
 
-		err = container_builder_init(cntrs + i, paths[i], cntr_format,
-					     0);
+		fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+		if (fd < 0)
+			return -errno;
+
+		err = container_builder_init(cntrs + i, fd, cntr_format, 0);
 		if (err < 0)
 			goto end;
 
@@ -159,18 +163,23 @@ static int test_mux(struct mapper_trial *trial, snd_pcm_access_t access,
 		    unsigned int cntr_count)
 {
 	struct container_context *cntrs = trial->cntrs;
-	char **paths = trial->paths;
 	unsigned int bytes_per_sample;
 	uint64_t total_frame_count;
 	int i;
 	int err = 0;
 
 	for (i = 0; i < cntr_count; ++i) {
+		const char *path = trial->paths[i];
+		int fd;
 		snd_pcm_format_t format;
 		unsigned int channels;
 		unsigned int rate;
 
-		err = container_parser_init(cntrs + i, paths[i], 0);
+		fd = open(path, O_RDONLY);
+		if (fd < 0)
+			return -errno;
+
+		err = container_parser_init(cntrs + i, fd, 0);
 		if (err < 0)
 			goto end;
 

@@ -33,6 +33,7 @@ static void test_builder(struct container_context *cntr,
 			 void *frame_buffer, unsigned int frame_count,
 			 bool verbose)
 {
+	int fd;
 	snd_pcm_format_t sample;
 	unsigned int channels;
 	unsigned int rate;
@@ -41,7 +42,10 @@ static void test_builder(struct container_context *cntr,
 	uint64_t total_frame_count;
 	int err;
 
-	err = container_builder_init(cntr, name, format, verbose);
+	fd = open(name, O_RDWR | O_CREAT | O_TRUNC, 0644);
+	assert(fd >= 0);
+
+	err = container_builder_init(cntr, fd, format, verbose);
 	assert(err == 0);
 
 	sample = sample_format;
@@ -79,6 +83,7 @@ static void test_parser(struct container_context *cntr,
 		        void *frame_buffer, unsigned int frame_count,
 			bool verbose)
 {
+	int fd;
 	snd_pcm_format_t sample;
 	unsigned int channels;
 	unsigned int rate;
@@ -86,7 +91,10 @@ static void test_parser(struct container_context *cntr,
 	unsigned int handled_frame_count;
 	int err;
 
-	err = container_parser_init(cntr, name, verbose);
+	fd = open(name, O_RDONLY);
+	assert(fd >= 0);
+
+	err = container_parser_init(cntr, fd, verbose);
 	assert(err == 0);
 
 	sample = sample_format;

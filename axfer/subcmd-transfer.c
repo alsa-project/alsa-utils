@@ -185,10 +185,19 @@ static int capture_pre_process(struct context *ctx, snd_pcm_access_t *access,
 
 	*total_frame_count = 0;
 	for (i = 0; i < ctx->cntr_count; ++i) {
+		const char *path = ctx->xfer.paths[i];
+		int fd;
 		uint64_t frame_count;
 
-		err = container_builder_init(ctx->cntrs + i,
-					     ctx->xfer.paths[i],
+		if (!strcmp(path, "-")) {
+			fd = fileno(stdout);
+		} else {
+			fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+			if (fd < 0)
+				return -errno;
+		}
+
+		err = container_builder_init(ctx->cntrs + i, fd,
 					     ctx->xfer.cntr_format,
 					     ctx->xfer.verbose > 1);
 		if (err < 0)
@@ -226,13 +235,22 @@ static int playback_pre_process(struct context *ctx, snd_pcm_access_t *access,
 		return err;
 
 	for (i = 0; i < ctx->cntr_count; ++i) {
+		const char *path = ctx->xfer.paths[i];
+		int fd;
 		snd_pcm_format_t format;
 		unsigned int channels;
 		unsigned int rate;
 		uint64_t frame_count;
 
-		err = container_parser_init(ctx->cntrs + i,
-					    ctx->xfer.paths[i],
+		if (!strcmp(path, "-")) {
+			fd = fileno(stdin);
+		} else {
+			fd = open(path, O_RDONLY);
+			if (fd < 0)
+				return -errno;
+		}
+
+		err = container_parser_init(ctx->cntrs + i, fd,
 					    ctx->xfer.verbose > 1);
 		if (err < 0)
 			return err;

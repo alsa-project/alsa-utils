@@ -61,11 +61,10 @@ struct container_context {
 
 const char *const container_suffix_from_format(enum container_format format);
 enum container_format container_format_from_path(const char *path);
-int container_parser_init(struct container_context *cntr,
-			  const char *const path, unsigned int verbose);
-int container_builder_init(struct container_context *cntr,
-			   const char *const path, enum container_format format,
-			   unsigned int verbose);
+int container_parser_init(struct container_context *cntr, int fd,
+			  unsigned int verbose);
+int container_builder_init(struct container_context *cntr, int fd,
+			   enum container_format format, unsigned int verbose);
 void container_context_destroy(struct container_context *cntr);
 int container_context_pre_process(struct container_context *cntr,
 				  snd_pcm_format_t *format,
