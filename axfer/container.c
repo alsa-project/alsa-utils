@@ -151,6 +151,7 @@ int container_parser_init(struct container_context *cntr,
 		[CONTAINER_FORMAT_AU] = &container_parser_au,
 		[CONTAINER_FORMAT_VOC] = &container_parser_voc,
 	};
+	int fd;
 	const struct container_parser *parser;
 	unsigned int size;
 	int i;
@@ -168,12 +169,13 @@ int container_parser_init(struct container_context *cntr,
 
 	// Open a target descriptor.
 	if (!strcmp(path, "-")) {
-		cntr->fd = fileno(stdin);
+		fd = fileno(stdin);
 	} else {
-		cntr->fd = open(path, O_RDONLY);
-		if (cntr->fd < 0)
+		fd = open(path, O_RDONLY);
+		if (fd < 0)
 			return -errno;
 	}
+	cntr->fd = fd;
 
 	cntr->stdio = (cntr->fd == fileno(stdin));
 	if (cntr->stdio) {
@@ -239,6 +241,7 @@ int container_builder_init(struct container_context *cntr,
 		[CONTAINER_FORMAT_VOC] = &container_builder_voc,
 		[CONTAINER_FORMAT_RAW] = &container_builder_raw,
 	};
+	int fd;
 	const struct container_builder *builder;
 	int err;
 
@@ -256,12 +259,13 @@ int container_builder_init(struct container_context *cntr,
 	if (path == NULL || *path == '\0')
 		return -EINVAL;
 	if (!strcmp(path, "-")) {
-		cntr->fd = fileno(stdout);
+		fd = fileno(stdout);
 	} else {
-		cntr->fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
-		if (cntr->fd < 0)
+		fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+		if (fd < 0)
 			return -errno;
 	}
+	cntr->fd = fd;
 
 	cntr->stdio = (cntr->fd == fileno(stdout));
 	if (cntr->stdio) {
