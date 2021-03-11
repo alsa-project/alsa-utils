@@ -6,10 +6,19 @@
 //
 // Licensed under the terms of the GNU General Public License, version 2.
 
+#include <aconfig.h>
+#ifdef HAVE_MEMFD_CREATE
+#define _GNU_SOURCE
+#endif
+
 #include "../container.h"
 #include "../misc.h"
 
 #include "generator.h"
+
+#ifdef HAVE_MEMFD_CREATE
+#include <sys/mman.h>
+#endif
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -142,16 +151,17 @@ static int callback(struct test_generator *gen, snd_pcm_access_t access,
 	if (buf == NULL)
 		return -ENOMEM;
 
-	// Remove a result of a previous trial.
-	unlink(name);
-
 	for (i = 0; i < ARRAY_SIZE(entries); ++i) {
 		int fd;
 		off64_t pos;
 
 		frames_per_second = entries[i];
 
+#ifdef HAVE_MEMFD_CREATE
+		fd = memfd_create(name, 0);
+#else
 		fd = open(name, O_RDWR | O_CREAT | O_TRUNC, 0644);
+#endif
 		if (fd < 0) {
 			err = -errno;
 			break;
@@ -176,7 +186,6 @@ static int callback(struct test_generator *gen, snd_pcm_access_t access,
 		assert(err == 0);
 
 		close(fd);
-		unlink(name);
 	}
 
 	free(buf);
