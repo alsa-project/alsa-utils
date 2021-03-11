@@ -146,6 +146,16 @@ static int context_init(struct context *ctx, snd_pcm_stream_t direction,
 	return xfer_context_init(&ctx->xfer, xfer_type, direction, argc, argv);
 }
 
+static int allocate_containers(struct context *ctx, unsigned int count)
+{
+	ctx->cntrs = calloc(count, sizeof(*ctx->cntrs));
+	if (ctx->cntrs == NULL)
+		return -ENOMEM;
+	ctx->cntr_count = count;
+
+	return 0;
+}
+
 static int capture_pre_process(struct context *ctx, snd_pcm_access_t *access,
 			       snd_pcm_uframes_t *frames_per_buffer,
 			       uint64_t *total_frame_count)
@@ -164,10 +174,9 @@ static int capture_pre_process(struct context *ctx, snd_pcm_access_t *access,
 		return err;
 
 	// Prepare for containers.
-	ctx->cntrs = calloc(ctx->xfer.path_count, sizeof(*ctx->cntrs));
-	if (ctx->cntrs == NULL)
-		return -ENOMEM;
-	ctx->cntr_count = ctx->xfer.path_count;
+	err = allocate_containers(ctx, ctx->xfer.path_count);
+	if (err < 0)
+		return err;
 
 	if (ctx->cntr_count > 1)
 		channels = 1;
@@ -212,10 +221,9 @@ static int playback_pre_process(struct context *ctx, snd_pcm_access_t *access,
 	int err;
 
 	// Prepare for containers.
-	ctx->cntrs = calloc(ctx->xfer.path_count, sizeof(*ctx->cntrs));
-	if (ctx->cntrs == NULL)
-		return -ENOMEM;
-	ctx->cntr_count = ctx->xfer.path_count;
+	err = allocate_containers(ctx, ctx->xfer.path_count);
+	if (err < 0)
+		return err;
 
 	for (i = 0; i < ctx->cntr_count; ++i) {
 		snd_pcm_format_t format;
