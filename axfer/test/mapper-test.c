@@ -6,10 +6,19 @@
 //
 // Licensed under the terms of the GNU General Public License, version 2.
 
+#include <aconfig.h>
+#ifdef HAVE_MEMFD_CREATE
+#define _GNU_SOURCE
+#endif
+
 #include "../mapper.h"
 #include "../misc.h"
 
 #include "generator.h"
+
+#ifdef HAVE_MEMFD_CREATE
+#include <sys/mman.h>
+#endif
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -230,7 +239,11 @@ static int test_mapper(struct mapper_trial *trial, snd_pcm_access_t access,
 	for (i = 0; i < cntr_count; ++i) {
 		const char *path = trial->paths[i];
 
+#ifdef HAVE_MEMFD_CREATE
+		cntr_fds[i] = memfd_create(path, 0);
+#else
 		cntr_fds[i] = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+#endif
 		if (cntr_fds[i] < 0) {
 			err = -errno;
 			goto end;
@@ -255,10 +268,8 @@ static int test_mapper(struct mapper_trial *trial, snd_pcm_access_t access,
 		       frames_per_second, frames_per_buffer, check_buffer,
 		       frame_count, cntr_fds, cntr_count);
 end:
-	for (i = 0; i < cntr_count; ++i) {
-		unlink(trial->paths[i]);
+	for (i = 0; i < cntr_count; ++i)
 		close(cntr_fds[i]);
-	}
 
 	free(cntr_fds);
 
