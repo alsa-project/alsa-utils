@@ -176,15 +176,16 @@ int container_parser_init(struct container_context *cntr,
 				"should be referred instead.\n");
 			return -EIO;
 		}
-		err = set_nonblock_flag(cntr->fd);
-		if (err < 0)
-			return err;
 		cntr->stdio = true;
 	} else {
-		cntr->fd = open(path, O_RDONLY | O_NONBLOCK);
+		cntr->fd = open(path, O_RDONLY);
 		if (cntr->fd < 0)
 			return -errno;
 	}
+
+	err = set_nonblock_flag(cntr->fd);
+	if (err < 0)
+		return err;
 
 	// 4 bytes are enough to detect supported containers.
 	err = container_recursive_read(cntr, cntr->magic, sizeof(cntr->magic));
@@ -260,16 +261,16 @@ int container_builder_init(struct container_context *cntr,
 				"should be referred instead.\n");
 			return -EIO;
 		}
-		err = set_nonblock_flag(cntr->fd);
-		if (err < 0)
-			return err;
 		cntr->stdio = true;
 	} else {
-		cntr->fd = open(path, O_RDWR | O_NONBLOCK | O_CREAT | O_TRUNC,
-				0644);
+		cntr->fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
 		if (cntr->fd < 0)
 			return -errno;
 	}
+
+	err = set_nonblock_flag(cntr->fd);
+	if (err < 0)
+		return err;
 
 	builder = builders[format];
 
