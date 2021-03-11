@@ -24,8 +24,8 @@ struct container_trial {
 	bool verbose;
 };
 
-static void test_builder(struct container_context *cntr,
-			 enum container_format format, const char *const name,
+static void test_builder(struct container_context *cntr, int fd,
+			 enum container_format format,
 			 snd_pcm_access_t access,
 			 snd_pcm_format_t sample_format,
 			 unsigned int samples_per_frame,
@@ -33,7 +33,6 @@ static void test_builder(struct container_context *cntr,
 			 void *frame_buffer, unsigned int frame_count,
 			 bool verbose)
 {
-	int fd;
 	snd_pcm_format_t sample;
 	unsigned int channels;
 	unsigned int rate;
@@ -41,9 +40,6 @@ static void test_builder(struct container_context *cntr,
 	unsigned int handled_frame_count;
 	uint64_t total_frame_count;
 	int err;
-
-	fd = open(name, O_RDWR | O_CREAT | O_TRUNC, 0644);
-	assert(fd >= 0);
 
 	err = container_builder_init(cntr, fd, format, verbose);
 	assert(err == 0);
@@ -73,27 +69,22 @@ static void test_builder(struct container_context *cntr,
 	assert(total_frame_count == frame_count);
 
 	container_context_destroy(cntr);
-	close(fd);
 }
 
-static void test_parser(struct container_context *cntr,
-		        enum container_format format, const char *const name,
+static void test_parser(struct container_context *cntr, int fd,
+			enum container_format format,
 		        snd_pcm_access_t access, snd_pcm_format_t sample_format,
 		        unsigned int samples_per_frame,
 		        unsigned int frames_per_second,
 		        void *frame_buffer, unsigned int frame_count,
 			bool verbose)
 {
-	int fd;
 	snd_pcm_format_t sample;
 	unsigned int channels;
 	unsigned int rate;
 	uint64_t total_frame_count;
 	unsigned int handled_frame_count;
 	int err;
-
-	fd = open(name, O_RDONLY);
-	assert(fd >= 0);
 
 	err = container_parser_init(cntr, fd, verbose);
 	assert(err == 0);
@@ -122,7 +113,6 @@ static void test_parser(struct container_context *cntr,
 	assert(total_frame_count == handled_frame_count);
 
 	container_context_destroy(cntr);
-	close(fd);
 }
 
 static int callback(struct test_generator *gen, snd_pcm_access_t access,
@@ -156,26 +146,42 @@ static int callback(struct test_generator *gen, snd_pcm_access_t access,
 	unlink(name);
 
 	for (i = 0; i < ARRAY_SIZE(entries); ++i) {
+		int fd;
+		off64_t pos;
+
 		frames_per_second = entries[i];
 
-		test_builder(&trial->cntr, trial->format, name, access,
+		fd = open(name, O_RDWR | O_CREAT | O_TRUNC, 0644);
+		if (fd < 0) {
+			err = -errno;
+			break;
+		}
+
+		test_builder(&trial->cntr, fd, trial->format, access,
 			     sample_format, samples_per_frame,
 			     frames_per_second, frame_buffer, frame_count,
 			     trial->verbose);
 
-		test_parser(&trial->cntr, trial->format, name, access,
+		pos = lseek64(fd, 0, SEEK_SET);
+		if (pos < 0) {
+			err = -errno;
+			break;
+		}
+
+		test_parser(&trial->cntr, fd, trial->format, access,
 			    sample_format, samples_per_frame, frames_per_second,
 			    buf, frame_count, trial->verbose);
 
 		err = memcmp(buf, frame_buffer, size);
 		assert(err == 0);
 
+		close(fd);
 		unlink(name);
 	}
 
 	free(buf);
 
-	return 0;
+	return err;
 }
 
 int main(int argc, const char *argv[])
