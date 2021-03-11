@@ -169,6 +169,14 @@ int container_parser_init(struct container_context *cntr,
 	// Open a target descriptor.
 	if (!strcmp(path, "-")) {
 		cntr->fd = fileno(stdin);
+	} else {
+		cntr->fd = open(path, O_RDONLY);
+		if (cntr->fd < 0)
+			return -errno;
+	}
+
+	cntr->stdio = (cntr->fd == fileno(stdin));
+	if (cntr->stdio) {
 		if (isatty(cntr->fd)) {
 			fprintf(stderr,
 				"A terminal is referred for standard input. "
@@ -176,11 +184,6 @@ int container_parser_init(struct container_context *cntr,
 				"should be referred instead.\n");
 			return -EIO;
 		}
-		cntr->stdio = true;
-	} else {
-		cntr->fd = open(path, O_RDONLY);
-		if (cntr->fd < 0)
-			return -errno;
 	}
 
 	err = set_nonblock_flag(cntr->fd);
@@ -254,6 +257,14 @@ int container_builder_init(struct container_context *cntr,
 		return -EINVAL;
 	if (!strcmp(path, "-")) {
 		cntr->fd = fileno(stdout);
+	} else {
+		cntr->fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+		if (cntr->fd < 0)
+			return -errno;
+	}
+
+	cntr->stdio = (cntr->fd == fileno(stdout));
+	if (cntr->stdio) {
 		if (isatty(cntr->fd)) {
 			fprintf(stderr,
 				"A terminal is referred for standard output. "
@@ -261,11 +272,6 @@ int container_builder_init(struct container_context *cntr,
 				"should be referred instead.\n");
 			return -EIO;
 		}
-		cntr->stdio = true;
-	} else {
-		cntr->fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
-		if (cntr->fd < 0)
-			return -errno;
 	}
 
 	err = set_nonblock_flag(cntr->fd);
