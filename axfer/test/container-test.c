@@ -73,6 +73,7 @@ static void test_builder(struct container_context *cntr,
 	assert(total_frame_count == frame_count);
 
 	container_context_destroy(cntr);
+	close(fd);
 }
 
 static void test_parser(struct container_context *cntr,
@@ -121,6 +122,7 @@ static void test_parser(struct container_context *cntr,
 	assert(total_frame_count == handled_frame_count);
 
 	container_context_destroy(cntr);
+	close(fd);
 }
 
 static int callback(struct test_generator *gen, snd_pcm_access_t access,

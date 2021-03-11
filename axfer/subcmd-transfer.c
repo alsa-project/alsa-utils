@@ -19,6 +19,8 @@ struct context {
 	struct container_context *cntrs;
 	unsigned int cntr_count;
 
+	int *cntr_fds;
+
 	// NOTE: To handling Unix signal.
 	bool interrupted;
 	int signal;
@@ -153,6 +155,10 @@ static int allocate_containers(struct context *ctx, unsigned int count)
 		return -ENOMEM;
 	ctx->cntr_count = count;
 
+	ctx->cntr_fds = calloc(count, sizeof(*ctx->cntrs));
+	if (ctx->cntr_fds == NULL)
+		return -ENOMEM;
+
 	return 0;
 }
 
@@ -196,8 +202,9 @@ static int capture_pre_process(struct context *ctx, snd_pcm_access_t *access,
 			if (fd < 0)
 				return -errno;
 		}
+		ctx->cntr_fds[i] = fd;
 
-		err = container_builder_init(ctx->cntrs + i, fd,
+		err = container_builder_init(ctx->cntrs + i, ctx->cntr_fds[i],
 					     ctx->xfer.cntr_format,
 					     ctx->xfer.verbose > 1);
 		if (err < 0)
@@ -249,8 +256,9 @@ static int playback_pre_process(struct context *ctx, snd_pcm_access_t *access,
 			if (fd < 0)
 				return -errno;
 		}
+		ctx->cntr_fds[i] = fd;
 
-		err = container_parser_init(ctx->cntrs + i, fd,
+		err = container_parser_init(ctx->cntrs + i, ctx->cntr_fds[i],
 					    ctx->xfer.verbose > 1);
 		if (err < 0)
 			return err;
@@ -445,6 +453,12 @@ static void context_post_process(struct context *ctx,
 			container_context_destroy(ctx->cntrs + i);
 		}
 		free(ctx->cntrs);
+	}
+
+	if (ctx->cntr_fds) {
+		for (i = 0; i < ctx->cntr_count; ++i)
+			close(ctx->cntr_fds[i]);
+		free(ctx->cntr_fds);
 	}
 
 	mapper_context_post_process(&ctx->mapper);

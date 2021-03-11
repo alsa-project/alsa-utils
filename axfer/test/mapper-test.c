@@ -67,23 +67,29 @@ static int test_demux(struct mapper_trial *trial, snd_pcm_access_t access,
 {
 	struct container_context *cntrs = trial->cntrs;
 	enum container_format cntr_format = trial->cntr_format;
+	int *cntr_fds;
 	unsigned int bytes_per_sample;
 	uint64_t total_frame_count;
 	int i;
 	int err = 0;
 
+	cntr_fds = calloc(cntr_count, sizeof(*cntr_fds));
+	if (cntr_fds == NULL)
+		return -ENOMEM;
+
 	for (i = 0; i < cntr_count; ++i) {
 		const char *path = trial->paths[i];
-		int fd;
 		snd_pcm_format_t format;
 		unsigned int channels;
 		unsigned int rate;
 
-		fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
-		if (fd < 0)
-			return -errno;
+		cntr_fds[i] = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+		if (cntr_fds[i] < 0) {
+			err = -errno;
+			goto end;
+		}
 
-		err = container_builder_init(cntrs + i, fd, cntr_format, 0);
+		err = container_builder_init(cntrs + i, cntr_fds[i], cntr_format, 0);
 		if (err < 0)
 			goto end;
 
@@ -118,8 +124,12 @@ static int test_demux(struct mapper_trial *trial, snd_pcm_access_t access,
 		assert(total_frame_count == frame_count);
 	}
 end:
-	for (i = 0; i < cntr_count; ++i)
+	for (i = 0; i < cntr_count; ++i) {
 		container_context_destroy(cntrs + i);
+		close(cntr_fds[i]);
+	}
+
+	free(cntr_fds);
 
 	return err;
 }
@@ -163,23 +173,29 @@ static int test_mux(struct mapper_trial *trial, snd_pcm_access_t access,
 		    unsigned int cntr_count)
 {
 	struct container_context *cntrs = trial->cntrs;
+	int *cntr_fds;
 	unsigned int bytes_per_sample;
 	uint64_t total_frame_count;
 	int i;
 	int err = 0;
 
+	cntr_fds = calloc(cntr_count, sizeof(*cntr_fds));
+	if (cntr_fds == NULL)
+		return -ENOMEM;
+
 	for (i = 0; i < cntr_count; ++i) {
 		const char *path = trial->paths[i];
-		int fd;
 		snd_pcm_format_t format;
 		unsigned int channels;
 		unsigned int rate;
 
-		fd = open(path, O_RDONLY);
-		if (fd < 0)
-			return -errno;
+		cntr_fds[i] = open(path, O_RDONLY);
+		if (cntr_fds[i] < 0) {
+			err = -errno;
+			goto end;
+		}
 
-		err = container_parser_init(cntrs + i, fd, 0);
+		err = container_parser_init(cntrs + i, cntr_fds[i], 0);
 		if (err < 0)
 			goto end;
 
@@ -214,8 +230,12 @@ static int test_mux(struct mapper_trial *trial, snd_pcm_access_t access,
 		assert(total_frame_count == frame_count);
 	}
 end:
-	for (i = 0; i < cntr_count; ++i)
+	for (i = 0; i < cntr_count; ++i) {
 		container_context_destroy(cntrs + i);
+		close(cntr_fds[i]);
+	}
+
+	free(cntr_fds);
 
 	return err;
 }

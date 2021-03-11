@@ -451,7 +451,6 @@ void container_context_destroy(struct container_context *cntr)
 {
 	assert(cntr);
 
-	close(cntr->fd);
 	if (cntr->private_data)
 		free(cntr->private_data);
 
