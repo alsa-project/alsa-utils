@@ -285,6 +285,8 @@ static const int	supported_formats[] = {
   SND_PCM_FORMAT_FLOAT_LE,
   SND_PCM_FORMAT_S24_3LE,
   SND_PCM_FORMAT_S24_3BE,
+  SND_PCM_FORMAT_S24_LE,
+  SND_PCM_FORMAT_S24_BE,
   SND_PCM_FORMAT_S32_LE,
   SND_PCM_FORMAT_S32_BE,
   -1
@@ -334,6 +336,20 @@ static void do_generate(uint8_t *frames, int channel, int count,
         break;
       case SND_PCM_FORMAT_S24_3BE:
         res.i >>= 8;
+        *samp8++ = BE_INT(res.i);
+        *samp8++ = BE_INT(res.i) >> 8;
+        *samp8++ = BE_INT(res.i) >> 16;
+        break;
+      case SND_PCM_FORMAT_S24_LE:
+        res.i >>= 8;
+        *samp8++ = LE_INT(res.i);
+        *samp8++ = LE_INT(res.i) >> 8;
+        *samp8++ = LE_INT(res.i) >> 16;
+        *samp8++ = 0;
+        break;
+      case SND_PCM_FORMAT_S24_BE:
+        res.i >>= 8;
+        *samp8++ = 0;
         *samp8++ = BE_INT(res.i);
         *samp8++ = BE_INT(res.i) >> 8;
         *samp8++ = BE_INT(res.i) >> 16;
