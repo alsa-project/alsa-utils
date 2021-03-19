@@ -2570,7 +2570,9 @@ static void voc_play(int fd, int ofs, char *name)
 		}
 	}			/* while(1) */
       __end:
-        voc_pcm_flush();
+	if (!in_aborting) {
+		voc_pcm_flush();
+	}
         free(buf);
 }
 /* that was a big one, perhaps somebody split it :-) */
@@ -2885,9 +2887,11 @@ static void playback_go(int fd, size_t loaded, off64_t count, int rtype, char *n
 		written += r;
 		l = 0;
 	}
-	snd_pcm_nonblock(handle, 0);
-	snd_pcm_drain(handle);
-	snd_pcm_nonblock(handle, nonblock);
+	if (!in_aborting) {
+		snd_pcm_nonblock(handle, 0);
+		snd_pcm_drain(handle);
+		snd_pcm_nonblock(handle, nonblock);
+	}
 }
 
 static int read_header(int *loaded, int header_size)
@@ -3363,9 +3367,11 @@ static void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t
 		r = r * bits_per_frame / 8;
 		count -= r;
 	}
-	snd_pcm_nonblock(handle, 0);
-	snd_pcm_drain(handle);
-	snd_pcm_nonblock(handle, nonblock);
+	if (!in_aborting) {
+		snd_pcm_nonblock(handle, 0);
+		snd_pcm_drain(handle);
+		snd_pcm_nonblock(handle, nonblock);
+	}
 }
 
 static void capturev_go(int* fds, unsigned int channels, off64_t count, int rtype, char **names)
