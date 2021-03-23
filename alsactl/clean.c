@@ -52,7 +52,7 @@ static int clean_one_control(snd_ctl_t *handle, snd_ctl_elem_id_t *elem_id,
 	dbg("Application control \"%s\" found.", s);
 	if (filter) {
 		for (; *filter; filter++) {
-			if (snd_ctl_elem_id_compare(elem_id, *filter) == 0)
+			if (snd_ctl_elem_id_compare_set(elem_id, *filter) == 0)
 				break;
 		}
 		if (*filter == NULL) {
