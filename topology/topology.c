@@ -20,6 +20,7 @@
   in the file called LICENSE.GPL.
 */
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -35,6 +36,9 @@
 #include <alsa/topology.h>
 #include "gettext.h"
 #include "version.h"
+#include "topology.h"
+
+bool pre_process_config = false;
 
 static snd_output_t *log;
 
@@ -45,6 +49,8 @@ _("Usage: %s [OPTIONS]...\n"
 "\n"
 "-h, --help              help\n"
 "-c, --compile=FILE      compile configuration file\n"
+"-p, --pre-process       pre-process Topology2.0 configuration file before compilation\n"
+"-P, --pre-process=FILE  pre-process Topology2.0 configuration file\n"
 "-d, --decode=FILE       decode binary topology file\n"
 "-n, --normalize=FILE    normalize configuration file\n"
 "-u, --dump=FILE         dump (reparse) configuration file\n"
@@ -227,8 +233,38 @@ static int dump(const char *source_file, const char *output_file, int cflags, in
 	return err;
 }
 
+/* Convert Topology2.0 conf to the existing conf syntax */
+static int pre_process_conf(const char *source_file, const char *output_file)
+{
+	struct tplg_pre_processor *tplg_pp;
+	size_t config_size;
+	char *config;
+	int err;
+
+	err = load(source_file, (void **)&config, &config_size);
+	if (err)
+		return err;
+
+	/* init pre-processor */
+	err = init_pre_precessor(&tplg_pp, SND_OUTPUT_STDIO, output_file);
+	if (err < 0) {
+		fprintf(stderr, _("failed to init pre-processor for Topology2.0\n"));
+		free(config);
+		return err;
+	}
+
+	/* pre-process conf file */
+	err = pre_process(tplg_pp, config, config_size);
+
+	/* free pre-processor */
+	free_pre_preprocessor(tplg_pp);
+	free(config);
+	return err;
+}
+
 static int compile(const char *source_file, const char *output_file, int cflags)
 {
+	struct tplg_pre_processor *tplg_pp = NULL;
 	snd_tplg_t *tplg;
 	char *config;
 	void *bin;
@@ -238,7 +274,32 @@ static int compile(const char *source_file, const char *output_file, int cflags)
 	err = load(source_file, (void **)&config, &config_size);
 	if (err)
 		return err;
-	err = load_topology(&tplg, config, config_size, cflags);
+
+	/* pre-process before compiling */
+	if (pre_process_config) {
+		char *pconfig;
+		size_t size;
+
+		/* init pre-processor */
+		init_pre_precessor(&tplg_pp, SND_OUTPUT_BUFFER, NULL);
+
+		/* pre-process conf file */
+		err = pre_process(tplg_pp, config, config_size);
+		if (err) {
+			free_pre_preprocessor(tplg_pp);
+			free(config);
+			return err;
+		}
+
+		/* load topology */
+		size = snd_output_buffer_string(tplg_pp->output, &pconfig);
+		err = load_topology(&tplg, pconfig, size, cflags);
+
+		/* free pre-processor */
+		free_pre_preprocessor(tplg_pp);
+	} else {
+		err = load_topology(&tplg, config, config_size, cflags);
+	}
 	free(config);
 	if (err)
 		return err;
@@ -292,11 +353,12 @@ static int decode(const char *source_file, const char *output_file,
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hc:d:n:u:v:o:sgxzV";
+	static const char short_options[] = "hc:d:n:u:v:o:pP:sgxzV";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"verbose", 1, NULL, 'v'},
 		{"compile", 1, NULL, 'c'},
+		{"pre-process", 1, NULL, 'p'},
 		{"decode", 1, NULL, 'd'},
 		{"normalize", 1, NULL, 'n'},
 		{"dump", 1, NULL, 'u'},
@@ -336,7 +398,7 @@ int main(int argc, char *argv[])
 		case 'n':
 		case 'u':
 			if (source_file) {
-				fprintf(stderr, _("Cannot combine operations (compile, normalize, dump)\n"));
+				fprintf(stderr, _("Cannot combine operations (compile, normalize, pre-process, dump)\n"));
 				return 1;
 			}
 			source_file = optarg;
@@ -347,6 +409,13 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			sflags |= SND_TPLG_SAVE_SORT;
+			break;
+		case 'P':
+			op = 'P';
+			source_file = optarg;
+			break;
+		case 'p':
+			pre_process_config = true;
 			break;
 		case 'g':
 			sflags |= SND_TPLG_SAVE_GROUPS;
@@ -383,6 +452,9 @@ int main(int argc, char *argv[])
 		break;
 	case 'd':
 		err = decode(source_file, output_file, cflags, dflags, sflags);
+		break;
+	case 'P':
+		err = pre_process_conf(source_file, output_file);
 		break;
 	default:
 		err = dump(source_file, output_file, cflags, sflags);
