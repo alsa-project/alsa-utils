@@ -8,7 +8,9 @@ endif
 %.1: %.rst
 	rst2man $< > $@
 
-alsatplg_SOURCES = topology.c
+alsatplg_SOURCES = topology.c pre-processor.c
+
+noinst_HEADERS = topology.h
 
 AM_CPPFLAGS = \
          -Wall -I$(top_srcdir)/include
