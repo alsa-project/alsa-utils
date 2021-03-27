@@ -10,7 +10,7 @@ endif
 
 alsatplg_SOURCES = topology.c pre-processor.c
 
-noinst_HEADERS = topology.h
+noinst_HEADERS = topology.h pre-processor.h
 
 AM_CPPFLAGS = \
          -Wall -I$(top_srcdir)/include
