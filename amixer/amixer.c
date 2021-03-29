@@ -1602,7 +1602,8 @@ static int events(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 		if (res >= 0) {
 			printf("Poll ok: %i\n", res);
 			res = snd_hctl_handle_events(handle);
-			assert(res > 0);
+			if (res < 0)
+				printf("ERR: %s (%d)\n", snd_strerror(res), res);
 		}
 	}
 	snd_hctl_close(handle);
