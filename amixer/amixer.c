@@ -1772,7 +1772,7 @@ static int exec_stdin(void)
 
 int main(int argc, char *argv[])
 {
-	int morehelp, level = 0;
+	int morehelp, retval, level = 0;
 	int read_stdin = 0;
 	static const struct option long_option[] =
 	{
@@ -1865,39 +1865,46 @@ int main(int argc, char *argv[])
 	}
 	smixer_options.device = card;
 
-	if (read_stdin)
-		return exec_stdin();
+	if (read_stdin) {
+		retval = exec_stdin();
+		goto finish;
+	}
 
 	if (argc - optind <= 0) {
-		return selems(LEVEL_BASIC | level) ? 1 : 0;
+		retval = selems(LEVEL_BASIC | level) ? 1 : 0;
+		goto finish;
 	}
 	if (!strcmp(argv[optind], "help")) {
-		return help() ? 1 : 0;
+		retval = help() ? 1 : 0;
 	} else if (!strcmp(argv[optind], "info")) {
-		return info() ? 1 : 0;
+		retval = info() ? 1 : 0;
 	} else if (!strcmp(argv[optind], "controls")) {
-		return controls(level) ? 1 : 0;
+		retval = controls(level) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "contents")) {
-		return controls(LEVEL_BASIC | level) ? 1 : 0;
+		retval = controls(LEVEL_BASIC | level) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "scontrols") || !strcmp(argv[optind], "simple")) {
-		return selems(level) ? 1 : 0;
+		retval = selems(level) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "scontents")) {
-		return selems(LEVEL_BASIC | level) ? 1 : 0;
+		retval = selems(LEVEL_BASIC | level) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "sset") || !strcmp(argv[optind], "set")) {
-		return sset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 0, 0) ? 1 : 0;
+		retval = sset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 0, 0) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "sget") || !strcmp(argv[optind], "get")) {
-		return sset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 1, 0) ? 1 : 0;
+		retval = sset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 1, 0) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "cset")) {
-		return cset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 0, 0) ? 1 : 0;
+		retval = cset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 0, 0) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "cget")) {
-		return cset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 1, 0) ? 1 : 0;
+		retval = cset(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL, 1, 0) ? 1 : 0;
 	} else if (!strcmp(argv[optind], "events")) {
-		return events(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL);
+		retval = events(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL);
 	} else if (!strcmp(argv[optind], "sevents")) {
-		return sevents(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL);
+		retval = sevents(argc - optind - 1, argc - optind > 1 ? argv + optind + 1 : NULL);
 	} else {
 		fprintf(stderr, "amixer: Unknown command '%s'...\n", argv[optind]);
+		retval = 0;
 	}
 
-	return 0;
+finish:
+	snd_config_update_free_global();
+
+	return retval;
 }
