@@ -1806,7 +1806,11 @@ int main(int argc, char *argv[])
 				int i;
 				i = snd_card_get_index(optarg);
 				if (i >= 0 && i < 32)
+#if defined(SND_LIB_VER) && SND_LIB_VER(1, 2, 5) <= SND_LIB_VERSION
+					sprintf(card, "sysdefault:%i", i);
+#else
 					sprintf(card, "hw:%i", i);
+#endif
 				else {
 					fprintf(stderr, "Invalid card number.\n");
 					morehelp++;

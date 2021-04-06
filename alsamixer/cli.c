@@ -73,7 +73,7 @@ static void parse_options(int argc, char *argv[])
 	};
 	int option;
 	int card_index;
-	static char name_buf[16];
+	static char name_buf[24];
 
 	while ((option = getopt_long(argc, argv, short_options,
 				     long_options, NULL)) != -1) {
@@ -88,7 +88,11 @@ static void parse_options(int argc, char *argv[])
 				fprintf(stderr, _("invalid card index: %s\n"), optarg);
 				goto fail;
 			}
+#if defined(SND_LIB_VER) && SND_LIB_VER(1, 2, 5) <= SND_LIB_VERSION
+			sprintf(name_buf, "sysdefault:%d", card_index);
+#else
 			sprintf(name_buf, "hw:%d", card_index);
+#endif
 			selem_regopt.device = name_buf;
 			break;
 		case 'D':

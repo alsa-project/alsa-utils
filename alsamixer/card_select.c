@@ -125,7 +125,11 @@ static int get_cards(void)
 			fatal_alsa_error(_("cannot enumerate sound cards"), err);
 		if (number < 0)
 			break;
+#if defined(SND_LIB_VER) && SND_LIB_VER(1, 2, 5) <= SND_LIB_VERSION
+		sprintf(buf, "sysdefault:%d", number);
+#else
 		sprintf(buf, "hw:%d", number);
+#endif
 		err = snd_ctl_open(&ctl, buf, 0);
 		if (err < 0)
 			continue;
