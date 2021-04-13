@@ -46,8 +46,11 @@ int init_ucm(int flags, int cardno)
 		return err;
 	if (flags & FLAG_UCM_FBOOT) {
 		err = snd_use_case_set(uc_mgr, "_fboot", NULL);
-		if (err < 0)
+		if (err == -ENOENT && (flags & FLAG_UCM_BOOT) != 0) {
+			/* nothing */
+		} else if (err < 0) {
 			goto _error;
+		}
 	}
 	if (flags & FLAG_UCM_BOOT) {
 		err = snd_use_case_set(uc_mgr, "_boot", NULL);
