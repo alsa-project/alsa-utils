@@ -284,3 +284,46 @@ int snd_card_iterator_error(struct snd_card_iterator *iter)
 {
 	return iter->first ? (ignore_nocards ? 0 : -ENODEV) : 0;
 }
+
+static int cleanup_filename_filter(const struct dirent *dirent)
+{
+	size_t flen;
+
+	if (dirent == NULL)
+		return 0;
+	if (dirent->d_type == DT_DIR)
+		return 0;
+
+	flen = strlen(dirent->d_name);
+	if (flen <= 5)
+		return 0;
+
+	if (strncmp(&dirent->d_name[flen-5], ".conf", 5) == 0)
+		return 1;
+
+	return 0;
+}
+
+int snd_card_clean_cfgdir(const char *cfgdir, int cardno)
+{
+	char path[PATH_MAX];
+	struct dirent **list;
+	int lasterr = 0, n, j;
+
+	snprintf(path, sizeof(path), "%s/card%d.conf.d", cfgdir, cardno);
+	n = scandir(path, &list, cleanup_filename_filter, NULL);
+	if (n < 0) {
+		if (errno == ENOENT)
+			return 0;
+		return -errno;
+	}
+	for (j = 0; j < n; j++) {
+		snprintf(path, sizeof(path), "%s/card%d.conf.d/%s", cfgdir, cardno, list[j]->d_name);
+		if (remove(path)) {
+			error("Unable to remove file '%s'", path);
+			lasterr = -errno;
+		}
+	}
+
+	return lasterr;
+}

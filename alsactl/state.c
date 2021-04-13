@@ -1618,7 +1618,8 @@ out:
 	return err;
 }
 
-int load_state(const char *file, const char *initfile, int initflags,
+int load_state(const char *cfgdir, const char *file,
+	       const char *initfile, int initflags,
 	       const char *cardname, int do_init)
 {
 	int err, finalerr = 0, open_failed;
@@ -1640,7 +1641,7 @@ int load_state(const char *file, const char *initfile, int initflags,
 		while ((cardname1 = snd_card_iterator_next(&iter)) != NULL) {
 			if (!do_init)
 				break;
-			err = init(initfile, initflags | FLAG_UCM_FBOOT | FLAG_UCM_BOOT, cardname1);
+			err = init(cfgdir, initfile, initflags | FLAG_UCM_FBOOT | FLAG_UCM_BOOT, cardname1);
 			if (err < 0) {
 				finalerr = err;
 				initfailed(iter.card, "init", err);
@@ -1661,7 +1662,7 @@ int load_state(const char *file, const char *initfile, int initflags,
 		init_ucm(initflags | FLAG_UCM_FBOOT, iter.card);
 		/* do a check if controls matches state file */
 		if (do_init && set_controls(iter.card, config, 0)) {
-			err = init(initfile, initflags | FLAG_UCM_BOOT, cardname1);
+			err = init(cfgdir, initfile, initflags | FLAG_UCM_BOOT, cardname1);
 			if (err < 0) {
 				initfailed(iter.card, "init", err);
 				finalerr = err;

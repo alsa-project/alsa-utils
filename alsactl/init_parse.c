@@ -1743,7 +1743,7 @@ static int parse(struct space *space, const char *filename)
 	return err ? err : -abs(space->exit_code);
 }
 
-int init(const char *filename, int flags, const char *cardname)
+int init(const char *cfgdir, const char *filename, int flags, const char *cardname)
 {
 	struct space *space;
 	struct snd_card_iterator iter;
@@ -1752,6 +1752,12 @@ int init(const char *filename, int flags, const char *cardname)
 	sysfs_init();
 	err = snd_card_iterator_sinit(&iter, cardname);
 	while (snd_card_iterator_next(&iter)) {
+		err = snd_card_clean_cfgdir(cfgdir, iter.card);
+		if (err < 0) {
+			if (lasterr == 0)
+				lasterr = err;
+			continue;
+		}
 		err = init_ucm(flags, iter.card);
 		if (err == 0)
 			continue;

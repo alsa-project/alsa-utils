@@ -46,12 +46,13 @@ const char *snd_card_iterator_next(struct snd_card_iterator *iter);
 int snd_card_iterator_error(struct snd_card_iterator *iter);
 
 int load_configuration(const char *file, snd_config_t **top, int *open_failed);
-int init(const char *file, int flags, const char *cardname);
+int init(const char *cfgdir, const char *file, int flags, const char *cardname);
 int init_ucm(int flags, int cardno);
 int state_lock(const char *file, int timeout);
 int state_unlock(int fd, const char *file);
 int save_state(const char *file, const char *cardname);
-int load_state(const char *file, const char *initfile, int initflags,
+int load_state(const char *cfgdir, const char *file,
+	       const char *initfile, int initflags,
 	       const char *cardname, int do_init);
 int power(const char *argv[], int argc);
 int monitor(const char *name);
@@ -59,6 +60,7 @@ int state_daemon(const char *file, const char *cardname, int period,
 		 const char *pidfile);
 int state_daemon_kill(const char *pidfile, const char *cmd);
 int clean(const char *cardname, char *const *extra_args);
+int snd_card_clean_cfgdir(const char *cfgdir, int cardno);
 
 /* utils */
 

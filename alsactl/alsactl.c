@@ -31,8 +31,11 @@
 #include <sched.h>
 #include "alsactl.h"
 
+#ifndef SYS_ASOUND_DIR
+#define SYS_ASOUND_DIR "/var/lib/alsa"
+#endif
 #ifndef SYS_ASOUNDRC
-#define SYS_ASOUNDRC "/var/lib/alsa/asound.state"
+#define SYS_ASOUNDRC SYS_ASOUND_DIR "/asound.state"
 #endif
 #ifndef SYS_PIDFILE
 #define SYS_PIDFILE "/var/run/alsactl.pid"
@@ -73,6 +76,7 @@ static struct arg args[] = {
 { 'v', "version", "print version of this program" },
 { HEADER, NULL, "Available state options:" },
 { FILEARG | 'f', "file", "configuration file (default " SYS_ASOUNDRC ")" },
+{ FILEARG | 'a', "config-dir", "boot / hotplug configuration directory (default " SYS_ASOUND_DIR ")" },
 { 'l', "lock", "use file locking to serialize concurrent access" },
 { 'L', "no-lock", "do not use file locking to serialize concurrent access" },
 { FILEARG | 'O', "lock-state-file", "state lock file path (default " SYS_LOCKFILE ")" },
@@ -227,6 +231,7 @@ int main(int argc, char *argv[])
 		"/dev/snd/hwC",
 		NULL
 	};
+	char *cfgdir = SYS_ASOUND_DIR;
 	char *cfgfile = SYS_ASOUNDRC;
 	char *initfile = DATADIR "/init/00main";
 	char *pidfile = SYS_PIDFILE;
@@ -285,6 +290,9 @@ int main(int argc, char *argv[])
 			goto out;
 		case 'f':
 			cfgfile = optarg;
+			break;
+		case 'a':
+			cfgdir = optarg;
 			break;
 		case 'l':
 			do_lock = 1;
@@ -420,7 +428,7 @@ int main(int argc, char *argv[])
 	snd_lib_error_set_handler(error_handler);
 
 	if (!strcmp(cmd, "init")) {
-		res = init(initfile, initflags | FLAG_UCM_FBOOT | FLAG_UCM_BOOT, cardname);
+		res = init(cfgdir, initfile, initflags | FLAG_UCM_FBOOT | FLAG_UCM_BOOT, cardname);
 		snd_config_update_free_global();
 	} else if (!strcmp(cmd, "store")) {
 		res = save_state(cfgfile, cardname);
@@ -429,7 +437,7 @@ int main(int argc, char *argv[])
 		   !strcmp(cmd, "nrestore")) {
 		if (removestate)
 			remove(statefile);
-		res = load_state(cfgfile, initfile, initflags, cardname, init_fallback);
+		res = load_state(cfgdir, cfgfile, initfile, initflags, cardname, init_fallback);
 		if (!strcmp(cmd, "rdaemon")) {
 			do_nice(use_nice, sched_idle);
 			res = state_daemon(cfgfile, cardname, period, pidfile);
