@@ -108,7 +108,7 @@ static int get_cards(void)
 	int count, number, err;
 	snd_ctl_t *ctl;
 	snd_ctl_card_info_t *info;
-	char buf[16];
+	char buf[32];
 	struct card *card, *prev_card;
 
 	first_card.indexstr = "-";
