@@ -1168,6 +1168,33 @@ validate:
 	return 0;
 }
 
+static int tplg_object_pre_process_children(struct tplg_pre_processor *tplg_pp,
+					    snd_config_t *parent, snd_config_t *cfg)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *children, *n;
+	int ret;
+
+	ret = snd_config_search(cfg, "Object", &children);
+	if (ret < 0)
+		return 0;
+
+	/* create all embedded objects */
+	snd_config_for_each(i, next, children) {
+		const char *id;
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		ret = tplg_pre_process_objects(tplg_pp, n, parent);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
 static int tplg_construct_object_name(struct tplg_pre_processor *tplg_pp, snd_config_t *obj,
 				      snd_config_t *class_cfg)
 {
@@ -1306,6 +1333,7 @@ static int tplg_set_attribute_value(snd_config_t *attr, const char *value)
 	return 0;
 }
 
+
 /*
  * Find the unique attribute in the class definition and set its value and type.
  * Only string or integer types are allowed for unique values.
@@ -1372,7 +1400,7 @@ snd_config_t *tplg_object_get_instance_config(struct tplg_pre_processor *tplg_pp
 	return snd_config_iterator_entry(first);
 }
 
-/* build object config */
+/* build object config and its child objects recursively */
 static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *new_obj,
 			      snd_config_t *parent)
 {
@@ -1417,14 +1445,31 @@ static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *n
 		return ret;
 	}
 
-	/* nothing to do if object is not supported */
+	/* skip object if not supported and pre-process its child objects */
 	map = tplg_object_get_map(tplg_pp, new_obj);
 	if (!map)
-		return 0;
+		goto child;
 
 	/* build the object and save the sections to the output config */
 	builder = map->builder;
-	return builder(tplg_pp, new_obj, parent);
+	ret = builder(tplg_pp, new_obj, parent);
+	if (ret < 0)
+		return ret;
+
+child:
+	/* create child objects in the object instance */
+	ret = tplg_object_pre_process_children(tplg_pp, new_obj, obj_local);
+	if (ret < 0) {
+		SNDERR("error processing child objects in object %s\n", id);
+		return ret;
+	}
+
+	/* create child objects in the object's class definition */
+	ret = tplg_object_pre_process_children(tplg_pp, new_obj, class_cfg);
+	if (ret < 0)
+		SNDERR("error processing child objects in class %s\n", class_id);
+
+	return ret;
 }
 
 /* create top-level topology objects */
