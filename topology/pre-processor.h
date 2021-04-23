@@ -30,4 +30,6 @@ void tplg_pp_config_debug(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg)
 snd_config_t *tplg_find_config(snd_config_t *config, const char *name);
 int tplg_config_make_add(snd_config_t **config, const char *id, snd_config_type_t type,
 			 snd_config_t *parent);
+
+char *tplg_snprintf(char *fmt, ...);
 #endif
