@@ -35,6 +35,8 @@ snd_config_t *tplg_class_find_attribute_by_name(struct tplg_pre_processor *tplg_
 bool tplg_class_is_attribute_mandatory(const char *attr, snd_config_t *class_cfg);
 bool tplg_class_is_attribute_immutable(const char *attr, snd_config_t *class_cfg);
 bool tplg_class_is_attribute_unique(const char *attr, snd_config_t *class_cfg);
+const char *tplg_class_get_unique_attribute_name(struct tplg_pre_processor *tplg_pp,
+						 snd_config_t *class);
 
 /* config helpers */
 snd_config_t *tplg_find_config(snd_config_t *config, const char *name);
