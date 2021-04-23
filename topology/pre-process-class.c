@@ -150,3 +150,28 @@ snd_config_t *tplg_class_find_attribute_by_name(struct tplg_pre_processor *tplg_
 	free(attr_str);
 	return attr;
 }
+
+/* get the name of the attribute that must have a unique value in the object instance */
+const char *tplg_class_get_unique_attribute_name(struct tplg_pre_processor *tplg_pp,
+						 snd_config_t *class)
+{
+	snd_config_t *unique;
+	const char *unique_name, *class_id;
+	int ret;
+
+	if (snd_config_get_id(class, &class_id) < 0)
+		return NULL;
+
+	ret = snd_config_search(class, "attributes.unique", &unique);
+	if (ret < 0) {
+		SNDERR("No unique attribute in class '%s'\n", class_id);
+		return NULL;
+	}
+
+	if (snd_config_get_string(unique, &unique_name) < 0) {
+		SNDERR("Invalid name for unique attribute in class '%s'\n", class_id);
+		return NULL;
+	}
+
+	return unique_name;
+}
