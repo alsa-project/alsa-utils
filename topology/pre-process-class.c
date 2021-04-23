@@ -17,6 +17,7 @@
   The full GNU General Public License is included in this distribution
   in the file called LICENSE.GPL.
 */
+#include <assert.h>
 #include <limits.h>
 #include <stdio.h>
 #include <alsa/input.h>
@@ -174,4 +175,35 @@ const char *tplg_class_get_unique_attribute_name(struct tplg_pre_processor *tplg
 	}
 
 	return unique_name;
+}
+
+/* get attribute type from the definition */
+snd_config_type_t tplg_class_get_attribute_type(struct tplg_pre_processor *tplg_pp,
+						snd_config_t *attr)
+{
+	snd_config_t *type;
+	const char *s;
+	int ret;
+
+	/* default to integer if no type is given */
+	ret = snd_config_search(attr, "type", &type);
+	if (ret < 0)
+		return SND_CONFIG_TYPE_INTEGER;
+
+	ret = snd_config_get_string(type, &s);
+	assert(ret >= 0);
+
+	if (!strcmp(s, "string"))
+		return SND_CONFIG_TYPE_STRING;
+
+	if (!strcmp(s, "compound"))
+		return SND_CONFIG_TYPE_COMPOUND;
+
+	if (!strcmp(s, "real"))
+		return SND_CONFIG_TYPE_REAL;
+
+	if (!strcmp(s, "integer64"))
+		return SND_CONFIG_TYPE_INTEGER64;
+
+	return SND_CONFIG_TYPE_INTEGER;
 }

@@ -37,11 +37,12 @@ bool tplg_class_is_attribute_immutable(const char *attr, snd_config_t *class_cfg
 bool tplg_class_is_attribute_unique(const char *attr, snd_config_t *class_cfg);
 const char *tplg_class_get_unique_attribute_name(struct tplg_pre_processor *tplg_pp,
 						 snd_config_t *class);
+snd_config_type_t tplg_class_get_attribute_type(struct tplg_pre_processor *tplg_pp,
+						snd_config_t *attr);
 
 /* config helpers */
 snd_config_t *tplg_find_config(snd_config_t *config, const char *name);
 int tplg_config_make_add(snd_config_t **config, const char *id, snd_config_type_t type,
 			 snd_config_t *parent);
-
 char *tplg_snprintf(char *fmt, ...);
 #endif
