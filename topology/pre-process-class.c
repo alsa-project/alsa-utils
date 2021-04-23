@@ -207,3 +207,30 @@ snd_config_type_t tplg_class_get_attribute_type(struct tplg_pre_processor *tplg_
 
 	return SND_CONFIG_TYPE_INTEGER;
 }
+
+/* get token_ref for attribute with name attr_name in the class */
+const char *tplg_class_get_attribute_token_ref(struct tplg_pre_processor *tplg_pp,
+					        snd_config_t *class, const char *attr_name)
+{
+	snd_config_t *attributes, *attr, *token_ref;
+	const char *token;
+	int ret;
+
+	ret = snd_config_search(class, "DefineAttribute", &attributes);
+	if (ret < 0)
+		return NULL;
+
+	ret = snd_config_search(attributes, attr_name, &attr);
+	if (ret < 0)
+		return NULL;
+
+	ret = snd_config_search(attr, "token_ref", &token_ref);
+	if (ret < 0)
+		return NULL;
+
+	ret = snd_config_get_string(token_ref, &token);
+	if (ret < 0)
+		return NULL;
+
+	return token;
+}
