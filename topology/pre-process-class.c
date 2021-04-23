@@ -26,6 +26,65 @@
 #include "topology.h"
 #include "pre-processor.h"
 
+bool tplg_class_is_attribute_check(const char *attr, snd_config_t *class_cfg, char *category)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *cfg, *n;
+	int ret;
+
+	ret = snd_config_search(class_cfg, category, &cfg);
+	if (ret < 0)
+		return false;
+
+	snd_config_for_each(i, next, cfg) {
+		const char *id, *s;
+		
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		if (snd_config_get_string(n, &s) < 0)
+			continue;
+
+		if (!strcmp(attr, s))
+			return true;
+	}
+
+	return false;
+}
+
+/* check if attribute is mandatory */
+bool tplg_class_is_attribute_mandatory(const char *attr, snd_config_t *class_cfg)
+{
+	return tplg_class_is_attribute_check(attr, class_cfg, "attributes.mandatory");
+}
+
+/* check if attribute is immutable */
+bool tplg_class_is_attribute_immutable(const char *attr, snd_config_t *class_cfg)
+{
+	return tplg_class_is_attribute_check(attr, class_cfg, "attributes.immutable");
+}
+
+/* check if attribute is unique */
+bool tplg_class_is_attribute_unique(const char *attr, snd_config_t *class_cfg)
+{
+	snd_config_t *unique;
+	const char *s;
+	int ret;
+
+	ret = snd_config_search(class_cfg, "attributes.unique", &unique);
+	if (ret < 0)
+		return false;
+
+	if (snd_config_get_string(unique, &s) < 0)
+		return false;
+
+	if (!strcmp(attr, s))
+		return true;
+
+	return false;
+}
+
 /*
  * Helper function to look up class definition from the Object config.
  * ex: For an object declaration, Object.Widget.pga.0{}, return the config correspdonding to
