@@ -71,6 +71,33 @@ int tplg_config_make_add(snd_config_t **config, const char *id, snd_config_type_
 	return ret;
 }
 
+/*
+ * The pre-processor will need to concat multiple strings separate by '.' to construct the object
+ * name and search for configs with ID's separated by '.'.
+ * This function helps concat input strings in the specified input format
+ */
+char *tplg_snprintf(char *fmt, ...)
+{
+	char *string;
+	int len = 1;
+
+	va_list va;
+
+	va_start(va, fmt);
+	len += vsnprintf(NULL, 0, fmt, va);
+	va_end(va);
+
+	string = calloc(1, len);
+	if (!string)
+		return NULL;
+
+	va_start(va, fmt);
+	vsnprintf(string, len, fmt, va);
+	va_end(va);
+
+	return string;
+}
+
 #ifdef TPLG_DEBUG
 void tplg_pp_debug(char *fmt, ...)
 {
