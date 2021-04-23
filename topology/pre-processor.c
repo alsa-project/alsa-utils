@@ -31,6 +31,46 @@
 #include "topology.h"
 #include "pre-processor.h"
 
+/*
+ * Helper function to find config by id.
+ * Topology2.0 object names are constructed with attribute values separated by '.'.
+ * So snd_config_search() cannot be used as it interprets the '.' as the node separator.
+ */
+snd_config_t *tplg_find_config(snd_config_t *config, const char *name)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *n;
+	const char *id;
+
+	snd_config_for_each(i, next, config) {
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		if (!strcmp(id, name))
+			return n;
+	}
+
+	return NULL;
+}
+
+/* make a new config and add it to parent */
+int tplg_config_make_add(snd_config_t **config, const char *id, snd_config_type_t type,
+			 snd_config_t *parent)
+{
+	int ret;
+
+	ret = snd_config_make(config, id, type);
+	if (ret < 0)
+		return ret;
+
+	ret = snd_config_add(parent, *config);
+	if (ret < 0)
+		snd_config_delete(*config);
+
+	return ret;
+}
+
 #ifdef TPLG_DEBUG
 void tplg_pp_debug(char *fmt, ...)
 {

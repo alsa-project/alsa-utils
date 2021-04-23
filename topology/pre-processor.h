@@ -25,4 +25,9 @@
 /* debug helpers */
 void tplg_pp_debug(char *fmt, ...);
 void tplg_pp_config_debug(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg);
+
+/* config helpers */
+snd_config_t *tplg_find_config(snd_config_t *config, const char *name);
+int tplg_config_make_add(snd_config_t **config, const char *id, snd_config_type_t type,
+			 snd_config_t *parent);
 #endif
