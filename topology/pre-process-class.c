@@ -66,3 +66,28 @@ snd_config_t *tplg_class_lookup(struct tplg_pre_processor *tplg_pp, snd_config_t
 	free(class_config_id);
 	return class_cfg;
 }
+
+/* find the attribute config by name in the class definition */
+snd_config_t *tplg_class_find_attribute_by_name(struct tplg_pre_processor *tplg_pp,
+						snd_config_t *class, const char *name)
+{
+	snd_config_t *attr = NULL;
+	const char *class_id;
+	char *attr_str;
+	int ret;
+
+	if (snd_config_get_id(class, &class_id) < 0)
+		return NULL;
+
+	attr_str = tplg_snprintf("DefineAttribute.%s", name);
+	if (!attr_str)
+		return NULL;
+
+	ret = snd_config_search(class, attr_str, &attr);
+	if (ret < 0)
+		SNDERR("No definition for attribute '%s' in class '%s'\n",
+			name, class_id);
+
+	free(attr_str);
+	return attr;
+}
