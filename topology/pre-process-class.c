@@ -18,6 +18,7 @@
   in the file called LICENSE.GPL.
 */
 #include <assert.h>
+#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <alsa/input.h>
@@ -233,4 +234,70 @@ const char *tplg_class_get_attribute_token_ref(struct tplg_pre_processor *tplg_p
 		return NULL;
 
 	return token;
+}
+
+/* convert a valid attribute string value to the corresponding tuple value */
+long tplg_class_attribute_valid_tuple_value(struct tplg_pre_processor *tplg_pp,
+					        snd_config_t *class, snd_config_t *attr)
+{
+
+	snd_config_t *attributes, *cfg, *valid, *tuples, *n;
+	snd_config_iterator_t i, next;
+	const char *attr_name, *attr_value;
+	int ret;
+
+	ret = snd_config_get_id(attr, &attr_name);
+	if (ret < 0)
+		return -EINVAL;
+
+	ret = snd_config_get_string(attr, &attr_value);
+	if (ret < 0)
+		return -EINVAL;
+
+	/* find attribute definition in class */
+	ret = snd_config_search(class, "DefineAttribute", &attributes);
+	if (ret < 0)
+		return -EINVAL;
+
+
+	ret = snd_config_search(attributes, attr_name, &cfg);
+	if (ret < 0)
+		return -EINVAL;
+
+	/* check if it has valid values */
+	ret = snd_config_search(cfg, "constraints.valid_values", &valid);
+	if (ret < 0)
+		return -EINVAL;
+
+	ret = snd_config_search(cfg, "constraints.tuple_values", &tuples);
+	if (ret < 0)
+		return -EINVAL;
+
+	/* find and return the tuple value matching the attribute value id */
+	snd_config_for_each(i, next, valid) {
+		const char *s, *id;
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_string(n, &s) < 0)
+			continue;
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		if (!strcmp(attr_value, s)) {
+			snd_config_t *tuple;
+			long tuple_value;
+
+			ret = snd_config_search(tuples, id, &tuple);
+			if (ret < 0)
+				return -EINVAL;
+
+			ret = snd_config_get_integer(tuple, &tuple_value);
+			if (ret < 0)
+				return ret;
+
+			return tuple_value;
+		}
+	}
+
+	return -EINVAL;
 }
