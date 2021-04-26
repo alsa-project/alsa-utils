@@ -113,6 +113,18 @@ int tplg_parent_update(struct tplg_pre_processor *tplg_pp, snd_config_t *parent,
 		return ret;
 
 	/* get section config */
+	if (!strcmp(section_name, "tlv")) {
+		ret = tplg_config_make_add(&item_config, section_name,
+					  SND_CONFIG_TYPE_STRING, cfg);
+		if (ret < 0) {
+			SNDERR("Error creating section config widget %s for %s\n",
+			       section_name, parent_name);
+			return ret;
+		}
+
+		return snd_config_set_string(item_config, item_name);
+	}
+
 	ret = snd_config_search(cfg, section_name, &item_config);
 	if (ret < 0) {
 		ret = tplg_config_make_add(&item_config, section_name,
@@ -859,6 +871,7 @@ const struct config_template_items data_config = {
 const struct build_function_map object_build_map[] = {
 	{"Base", "manifest", "SectionManifest", &tplg_build_generic_object, NULL},
 	{"Base", "data", "SectionData", &tplg_build_data_object, &data_config},
+	{"Base", "tlv", "SectionTLV", &tplg_build_tlv_object, NULL},
 	{"Base", "VendorToken", "SectionVendorTokens", &tplg_build_vendor_token_object, NULL},
 	{"Widget", "", "SectionWidget", &tplg_build_generic_object, &widget_config},
 };
