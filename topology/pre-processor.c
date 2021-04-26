@@ -125,6 +125,7 @@ static int pre_process_config(struct tplg_pre_processor *tplg_pp, snd_config_t *
 	snd_config_iterator_t i, next, i2, next2;
 	snd_config_t *n, *n2;
 	const char *id;
+	int err;
 
 	if (snd_config_get_type(cfg) != SND_CONFIG_TYPE_COMPOUND) {
 		fprintf(stderr, "compound type expected at top level");
@@ -156,7 +157,10 @@ static int pre_process_config(struct tplg_pre_processor *tplg_pp, snd_config_t *
 				return -EINVAL;
 			}
 
-			/* TODO: Add support for parsing objects */
+			/* pre-process Object instance. Top-level object have no parent */
+			err = tplg_pre_process_objects(tplg_pp, n2, NULL);
+			if (err < 0)
+				return err;
 		}
 	}
 
