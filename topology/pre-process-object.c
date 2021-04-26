@@ -858,6 +858,17 @@ static int tplg_build_generic_object(struct tplg_pre_processor *tplg_pp, snd_con
 	return ret;
 }
 
+const struct config_template_items be_dai_config = {
+	.int_config_ids = {"id", "default_hw_conf_id", "symmertic_rates", "symmetric_channels",
+			   "symmetric_sample_bits"},
+	.string_config_ids = {"stream_name"},
+};
+
+const struct config_template_items pcm_config = {
+	.int_config_ids = {"id", "compress", "symmertic_rates", "symmetric_channels",
+			   "symmetric_sample_bits"},
+};
+
 const struct config_template_items mixer_control_config = {
 	.int_config_ids = {"index", "max", "invert"},
 	.compound_config_ids = {"access"}
@@ -905,6 +916,8 @@ const struct build_function_map object_build_map[] = {
 	 &mixer_control_config},
 	{"Control", "bytes", "SectionControlBytes", &tplg_build_bytes_control,
 	 &bytes_control_config},
+	{"Dai", "", "SectionBE", &tplg_build_generic_object, &be_dai_config},
+	{"PCM", "pcm", "SectionPCM", &tplg_build_generic_object, &pcm_config},
 };
 
 static const struct build_function_map *tplg_object_get_map(struct tplg_pre_processor *tplg_pp,
