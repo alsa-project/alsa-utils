@@ -8,7 +8,8 @@ endif
 %.1: %.rst
 	rst2man $< > $@
 
-alsatplg_SOURCES = topology.c pre-processor.c pre-process-class.c pre-process-object.c
+alsatplg_SOURCES = topology.c pre-processor.c pre-process-class.c pre-process-object.c \
+		    pre-process-dapm.c
 
 noinst_HEADERS = topology.h pre-processor.h
 
