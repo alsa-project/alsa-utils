@@ -858,6 +858,15 @@ static int tplg_build_generic_object(struct tplg_pre_processor *tplg_pp, snd_con
 	return ret;
 }
 
+const struct config_template_items mixer_control_config = {
+	.int_config_ids = {"index", "max", "invert"},
+	.compound_config_ids = {"access"}
+};
+
+const struct config_template_items bytes_control_config = {
+	.int_config_ids = {"index", "base", "num_regs", "max", "mask"},
+};
+
 const struct config_template_items scale_config = {
 	.int_config_ids = {"min", "step", "mute"},
 };
@@ -891,6 +900,10 @@ const struct build_function_map object_build_map[] = {
 	{"Base", "channel", "channel", &tplg_build_channel_object, &channel_config},
 	{"Base", "VendorToken", "SectionVendorTokens", &tplg_build_vendor_token_object, NULL},
 	{"Widget", "", "SectionWidget", &tplg_build_generic_object, &widget_config},
+	{"Control", "mixer", "SectionControlMixer", &tplg_build_mixer_control,
+	 &mixer_control_config},
+	{"Control", "bytes", "SectionControlBytes", &tplg_build_bytes_control,
+	 &bytes_control_config},
 };
 
 static const struct build_function_map *tplg_object_get_map(struct tplg_pre_processor *tplg_pp,
