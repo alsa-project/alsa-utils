@@ -410,6 +410,106 @@ validate:
 	return 0;
 }
 
+static int tplg_construct_object_name(struct tplg_pre_processor *tplg_pp, snd_config_t *obj,
+				      snd_config_t *class_cfg)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *args, *n;
+	const char *id, *class_id, *obj_id, *s;
+	char *new_name;
+	int ret;
+
+	/* find config for class constructor attributes. Nothing to do if not defined */
+	ret = snd_config_search(class_cfg, "attributes.constructor", &args);
+	if (ret < 0)
+		return 0;
+
+	/* set class name as the name prefix for the object */
+	snd_config_get_id(obj, &obj_id);
+	snd_config_get_id(class_cfg, &class_id);
+	new_name = strdup(class_id);
+	if (!new_name)
+		return -ENOMEM;
+
+	/* iterate through all class arguments and set object name */
+	snd_config_for_each(i, next, args) {
+		snd_config_t *arg;
+		char *arg_value, *temp;
+
+		n = snd_config_iterator_entry(i);
+
+		if (snd_config_get_id(n, &id) < 0) {
+			SNDERR("Invalid ID for constructor argument\n");
+			ret = -EINVAL;
+			goto err;
+		}
+
+		if (snd_config_get_string(n, &s) < 0) {
+			SNDERR("Invalid value for constructor argument\n");
+			ret = -EINVAL;
+			goto err;
+		}
+
+		/* find and replace with value set in object */
+		ret = snd_config_search(obj, s, &arg);
+		if (ret < 0) {
+			SNDERR("Argument %s not set for object '%s.%s'\n", s, class_id, obj_id);
+			ret = -ENOENT;
+			goto err;
+		}
+
+		/* concat arg value to object name. arg types must be either integer or string */
+		switch (snd_config_get_type(arg)) {
+		case SND_CONFIG_TYPE_INTEGER:
+		{
+			long v;
+			ret = snd_config_get_integer(arg, &v);
+			assert(ret >= 0);
+
+			arg_value = tplg_snprintf("%ld", v);
+			if (!arg_value) {
+				ret = -ENOMEM;
+				goto err;
+			}
+			break;
+		}
+		case SND_CONFIG_TYPE_STRING:
+		{
+			const char *s;
+
+			ret = snd_config_get_string(arg, &s);
+			assert(ret >= 0);
+
+			arg_value = strdup(s);
+			if (!arg_value) {
+				ret = -ENOMEM;
+				goto err;
+			}
+			break;
+		}
+		default:
+			SNDERR("Argument '%s' in object '%s.%s' is not an integer or a string\n",
+			       s, class_id, obj_id);
+			return -EINVAL;
+		}
+
+		/* alloc and concat arg value to the name */
+		temp = tplg_snprintf("%s.%s", new_name, arg_value);
+		if (!temp) {
+			ret = -ENOMEM;
+			goto err;
+		}
+		free(new_name);
+		new_name = temp;
+		free(arg_value);
+	}
+
+	ret = snd_config_set_id(obj, new_name);
+err:
+	free(new_name);
+	return ret;
+}
+
 /* set the attribute value by type */
 static int tplg_set_attribute_value(snd_config_t *attr, const char *value)
 {
@@ -545,8 +645,15 @@ static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *n
 
 	/* update object attributes and validate them */
 	ret = tplg_object_update(tplg_pp, new_obj, parent);
-	if (ret < 0)
+	if (ret < 0) {
 		SNDERR("Failed to update attributes for object '%s.%s'\n", class_id, id);
+		return ret;
+	}
+
+	/* construct object name using class constructor */
+	ret = tplg_construct_object_name(tplg_pp, obj_local, class_cfg);
+	if (ret < 0)
+		SNDERR("Failed to construct object name for %s\n", id);
 
 	return ret;
 }
