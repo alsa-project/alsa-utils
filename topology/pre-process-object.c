@@ -846,6 +846,12 @@ static int tplg_build_generic_object(struct tplg_pre_processor *tplg_pp, snd_con
 	return ret;
 }
 
+const struct config_template_items widget_config = {
+	.int_config_ids = {"index", "no_pm", "shift", "invert", "subseq", "event_type",
+			    "event_flags"},
+	.string_config_ids = {"type", "stream_name"},
+};
+
 const struct config_template_items data_config = {
 	.string_config_ids = {"bytes"}
 };
@@ -854,6 +860,7 @@ const struct build_function_map object_build_map[] = {
 	{"Base", "manifest", "SectionManifest", &tplg_build_generic_object, NULL},
 	{"Base", "data", "SectionData", &tplg_build_data_object, &data_config},
 	{"Base", "VendorToken", "SectionVendorTokens", &tplg_build_vendor_token_object, NULL},
+	{"Widget", "", "SectionWidget", &tplg_build_generic_object, &widget_config},
 };
 
 static const struct build_function_map *tplg_object_get_map(struct tplg_pre_processor *tplg_pp,
