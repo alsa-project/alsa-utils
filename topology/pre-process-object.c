@@ -30,6 +30,54 @@
 #include "topology.h"
 #include "pre-processor.h"
 
+/* Parse VendorToken object, create the "SectionVendorToken" and save it */
+int tplg_build_vendor_token_object(struct tplg_pre_processor *tplg_pp,
+			       snd_config_t *obj_cfg, snd_config_t *parent)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *vtop, *n, *obj;
+	const char *name;
+	int ret;
+
+	ret = tplg_build_object_from_template(tplg_pp, obj_cfg, &vtop, NULL, false);
+	if (ret < 0)
+		return ret;
+
+	ret = snd_config_get_id(vtop, &name);
+	if (ret < 0)
+		return ret;
+
+	/* add the tuples */
+	obj = tplg_object_get_instance_config(tplg_pp, obj_cfg);
+	snd_config_for_each(i, next, obj) {
+		snd_config_t *dst;
+		const char *id;
+
+		n = snd_config_iterator_entry(i);
+
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		if (!strcmp(id, "name"))
+			continue;
+
+		ret = snd_config_copy(&dst, n);
+		if (ret < 0) {
+			SNDERR("Error copying config node %s for '%s'\n", id, name);
+			return ret;
+		}
+
+		ret = snd_config_add(vtop, dst);
+		if (ret < 0) {
+			snd_config_delete(dst);
+			SNDERR("Error adding vendortoken %s for %s\n", id, name);
+			return ret;
+		}
+	}
+
+	return ret;
+}
+
 int tplg_parent_update(struct tplg_pre_processor *tplg_pp, snd_config_t *parent,
 			  const char *section_name, const char *item_name)
 {
@@ -805,6 +853,7 @@ const struct config_template_items data_config = {
 const struct build_function_map object_build_map[] = {
 	{"Base", "manifest", "SectionManifest", &tplg_build_generic_object, NULL},
 	{"Base", "data", "SectionData", &tplg_build_data_object, &data_config},
+	{"Base", "VendorToken", "SectionVendorTokens", &tplg_build_vendor_token_object, NULL},
 };
 
 static const struct build_function_map *tplg_object_get_map(struct tplg_pre_processor *tplg_pp,
