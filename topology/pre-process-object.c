@@ -30,6 +30,197 @@
 #include "topology.h"
 #include "pre-processor.h"
 
+static void tplg_attribute_print_valid_values(snd_config_t *valid_values, const char *name)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *n;
+
+	SNDERR("valid values for attribute %s are:\n", name);
+
+	snd_config_for_each(i, next, valid_values) {
+		const char *s, *id;
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		if (snd_config_get_string(n, &s) < 0)
+			continue;
+
+		SNDERR("%s", s);
+	}
+}
+
+/* check is attribute value belongs in the set of valid values */
+static bool tplg_is_attribute_valid_value(snd_config_t *valid_values, const char *value)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *n;
+
+	snd_config_for_each(i, next, valid_values) {
+		const char *s, *id;
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		if (snd_config_get_string(n, &s) < 0)
+			continue;
+
+		if (!strcmp(value, s))
+			return true;
+	}
+
+	return false;
+}
+
+/* check if attribute value passes the min/max value constraints */
+static bool tplg_object_is_attribute_min_max_valid(snd_config_t *attr, snd_config_t *obj_attr,
+						   bool min_check)
+{
+	snd_config_type_t type = snd_config_get_type(obj_attr);
+	snd_config_t *valid;
+	const char *attr_name;
+	int ret;
+
+	if (snd_config_get_id(attr, &attr_name) < 0)
+		return false;
+
+	if (min_check) {
+		ret = snd_config_search(attr, "constraints.min", &valid);
+		if (ret < 0)
+			return true;
+	} else {
+		ret = snd_config_search(attr, "constraints.max", &valid);
+		if (ret < 0)
+			return true;
+	}
+
+	switch(type) {
+	case SND_CONFIG_TYPE_INTEGER:
+	{
+		long v, m;
+
+		if (snd_config_get_integer(valid, &m) < 0)
+			return true;
+
+		if (snd_config_get_integer(obj_attr, &v) < 0)
+			return false;
+
+		if (min_check) {
+			if (v < m) {
+				SNDERR("attribute '%s' value: %ld is less than min value: %d\n",
+				       attr_name, v, m);
+				return false;
+			}
+		} else {
+			if (v > m) {
+				SNDERR("attribute '%s' value: %ld is greater than max value: %d\n",
+				       attr_name, v, m);
+				return false;
+			}
+		}
+
+		return true;
+	}
+	case SND_CONFIG_TYPE_INTEGER64:
+	{
+		long long v;
+		long m;
+
+		if (snd_config_get_integer(valid, &m) < 0)
+			return true;
+
+		if (snd_config_get_integer64(obj_attr, &v) < 0)
+			return false;
+
+		if (min_check) {
+			if (v < m) {
+				SNDERR("attribute '%s' value: %ld is less than min value: %d\n",
+				       attr_name, v, m);
+				return false;
+			}
+		} else {
+			if (v > m) {
+				SNDERR("attribute '%s' value: %ld is greater than max value: %d\n",
+				       attr_name, v, m);
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	default:
+		break;
+	}
+
+	return false;
+}
+
+/* check for min/max and valid value constraints */
+static bool tplg_object_is_attribute_valid(struct tplg_pre_processor *tplg_pp,
+					   snd_config_t *attr, snd_config_t *object)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *valid, *obj_attr, *n;
+	snd_config_type_t type;
+	const char *attr_name, *obj_value;
+	int ret;
+
+	if (snd_config_get_id(attr, &attr_name) < 0)
+		return false;
+
+	ret = snd_config_search(object, attr_name, &obj_attr);
+	if (ret < 0) {
+		SNDERR("attr %s not found \n", attr_name);
+		return false;
+	}
+	type = snd_config_get_type(obj_attr);
+
+	/* check if attribute has valid values */
+	ret = snd_config_search(attr, "constraints.valid_values", &valid);
+	if (ret < 0)
+		goto min_max_check;
+
+	switch(type) {
+	case SND_CONFIG_TYPE_STRING:
+		if (snd_config_get_string(obj_attr, &obj_value) < 0)
+			return false;
+		if (!tplg_is_attribute_valid_value(valid, obj_value)) {
+			tplg_attribute_print_valid_values(valid, attr_name);
+			return false;
+		}
+		return true;
+	case SND_CONFIG_TYPE_COMPOUND:
+		snd_config_for_each(i, next, obj_attr) {
+			const char *s, *id;
+
+			n = snd_config_iterator_entry(i);
+			if (snd_config_get_id(n, &id) < 0)
+				continue;
+
+			if (snd_config_get_string(n, &s) < 0)
+				continue;
+
+			if (!tplg_is_attribute_valid_value(valid, s)) {
+				tplg_attribute_print_valid_values(valid, attr_name);
+				return false;
+			}
+		}
+		return true;
+	default:
+		break;
+	}
+
+	return false;
+
+min_max_check:
+	if (!tplg_object_is_attribute_min_max_valid(attr, obj_attr, true))
+		return false;
+
+	return tplg_object_is_attribute_min_max_valid(attr, obj_attr, false);
+}
+
 /* look up the instance of object in a config */
 static snd_config_t *tplg_object_lookup_in_config(struct tplg_pre_processor *tplg_pp,
 						  snd_config_t *class, const char *type,
@@ -140,7 +331,7 @@ static int tplg_object_update(struct tplg_pre_processor *tplg_pp, snd_config_t *
 		ret = snd_config_search(obj_cfg, id, &attr);
 		if (ret < 0)
 			goto class;
-		continue;
+		goto validate;
 class:
 		/* search for attributes value in class */
 		ret = tplg_object_copy_and_add_param(tplg_pp, obj_cfg, n, class_cfg);
@@ -154,7 +345,7 @@ class:
 		}
 		else if (ret < 0)
 			return ret;
-		continue;
+		goto validate;
 parent:
 		/* search for attribute value in parent */
 		if (!parent)
@@ -170,7 +361,7 @@ parent:
 			goto parent_object;
 		else if (ret < 0)
 			return ret;
-		continue;
+		goto validate;
 parent_object:
 		if (!parent)
 			goto parent_class;
@@ -185,7 +376,7 @@ parent_object:
 			goto parent_class;
 		else if (ret < 0)
 			return ret;
-		continue;
+		goto validate;
 parent_class:
 		if (!parent)
 			goto check;
@@ -204,12 +395,16 @@ parent_class:
 			goto check;
 		else if (ret < 0)
 			return ret;
-		continue;
+		goto validate;
 check:
 		if (tplg_class_is_attribute_mandatory(id, class_cfg)) {
 			SNDERR("Mandatory attribute %s not set for class %s\n", id, class_name);
 			return -EINVAL;
 		}
+		continue;
+validate:
+		if (!tplg_object_is_attribute_valid(tplg_pp, n, obj_cfg))
+			return -EINVAL;
 	}
 
 	return 0;
