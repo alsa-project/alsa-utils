@@ -53,6 +53,8 @@ void tplg_pp_config_debug(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg)
 int tplg_build_object_from_template(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
 				    snd_config_t **wtop, snd_config_t *top_config,
 				    bool skip_name);
+int tplg_parent_update(struct tplg_pre_processor *tplg_pp, snd_config_t *parent,
+			  const char *section_name, const char *item_name);
 
 /* object helpers */
 int tplg_pre_process_objects(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg,
@@ -83,5 +85,6 @@ long tplg_class_attribute_valid_tuple_value(struct tplg_pre_processor *tplg_pp,
 snd_config_t *tplg_find_config(snd_config_t *config, const char *name);
 int tplg_config_make_add(snd_config_t **config, const char *id, snd_config_type_t type,
 			 snd_config_t *parent);
+
 char *tplg_snprintf(char *fmt, ...);
 #endif
