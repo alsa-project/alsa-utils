@@ -309,6 +309,247 @@ static snd_config_t *tplg_object_lookup_in_config(struct tplg_pre_processor *tpl
 	return obj_cfg;
 }
 
+static int tplg_pp_add_object_tuple_section(struct tplg_pre_processor *tplg_pp,
+					    snd_config_t *class_cfg,
+					    snd_config_t *attr, char *data_name,
+					    const char *token_ref)
+{
+	snd_config_t *top, *tuple_cfg, *child, *cfg, *new;
+	const char *id;
+	char *token, *type;
+	long tuple_value;
+	int ret;
+
+	tplg_pp_debug("Building vendor tuples section: '%s' ...", data_name);
+
+	ret = snd_config_search(tplg_pp->output_cfg, "SectionVendorTuples", &top);
+	if (ret < 0) {
+		ret = tplg_config_make_add(&top, "SectionVendorTuples",
+					  SND_CONFIG_TYPE_COMPOUND, tplg_pp->output_cfg);
+		if (ret < 0) {
+			SNDERR("Error creating SectionVendorTuples config\n");
+			return ret;
+		}
+	}
+
+	type = strchr(token_ref, '.');
+	token = calloc(1, strlen(token_ref) - strlen(type) + 1);
+	if (!token)
+		return -ENOMEM;
+	snprintf(token, strlen(token_ref) - strlen(type) + 1, "%s", token_ref);
+
+	tuple_cfg = tplg_find_config(top, data_name);
+	if (!tuple_cfg) {
+		/* add new SectionVendorTuples */
+		ret = tplg_config_make_add(&tuple_cfg, data_name, SND_CONFIG_TYPE_COMPOUND, top);
+		if (ret < 0) {
+			SNDERR("Error creating new vendor tuples config %s\n", data_name);
+			goto err;
+		}
+
+		ret = tplg_config_make_add(&child, "tokens", SND_CONFIG_TYPE_STRING,
+					  tuple_cfg);
+		if (ret < 0) {
+			SNDERR("Error creating tokens config for '%s'\n", data_name);
+			goto err;
+		}
+
+		ret = snd_config_set_string(child, token);
+		if (ret < 0) {
+			SNDERR("Error setting tokens config for '%s'\n", data_name);
+			goto err;
+		}
+
+		ret = tplg_config_make_add(&child, "tuples", SND_CONFIG_TYPE_COMPOUND,
+					  tuple_cfg);
+		if (ret < 0) {
+			SNDERR("Error creating tuples config for '%s'\n", data_name);
+			goto err;
+		}
+
+		ret = tplg_config_make_add(&cfg, type + 1, SND_CONFIG_TYPE_COMPOUND,
+					  child);
+		if (ret < 0) {
+			SNDERR("Error creating tuples type config for '%s'\n", data_name);
+			goto err;
+		}
+	} else {
+		char *id;
+
+		id = tplg_snprintf("tuples.%s", type + 1);
+		if (!id) {
+			ret = -ENOMEM;
+			goto err;
+		}
+
+		ret = snd_config_search(tuple_cfg, id , &cfg);
+		free(id);
+		if (ret < 0) {
+			SNDERR("can't find type config %s\n", type + 1);
+			goto err;
+		}
+	}
+
+	ret = snd_config_get_id(attr, &id);
+	if (ret < 0)
+		goto err;
+
+	/* tuple exists already? */
+	ret = snd_config_search(cfg, id, &child);
+	if (ret >=0)
+		goto err;
+
+	/* add attribute to tuples */
+	tuple_value = tplg_class_attribute_valid_tuple_value(tplg_pp, class_cfg, attr);
+	if (tuple_value < 0) {
+		/* just copy attribute cfg as is */
+		ret = snd_config_copy(&new, attr);
+		if (ret < 0) {
+			SNDERR("can't copy attribute for %s\n", data_name);
+			goto err;
+		}
+	} else {
+		ret = snd_config_make(&new, id, SND_CONFIG_TYPE_INTEGER);
+		if (ret < 0)
+			goto err;
+
+		ret = snd_config_set_integer(new, tuple_value);
+		if (ret < 0)
+			goto err;
+	}
+
+	ret = snd_config_add(cfg, new);
+	if (ret < 0)
+		goto err;
+
+err:
+	free(token);
+	return ret;
+}
+
+static int tplg_pp_add_object_data_section(struct tplg_pre_processor *tplg_pp,
+					   snd_config_t *obj_data, char *data_name)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *top, *data_cfg, *child;
+	char *data_id;
+	int ret, id = 0;
+
+	ret = snd_config_search(tplg_pp->output_cfg, "SectionData", &top);
+	if (ret < 0) {
+		ret = tplg_config_make_add(&top, "SectionData", SND_CONFIG_TYPE_COMPOUND,
+					  tplg_pp->output_cfg);
+		if (ret < 0) {
+			SNDERR("Failed to add SectionData\n");
+			return ret;
+		}
+	}
+
+	/* nothing to do if data section already exists */
+	data_cfg = tplg_find_config(top, data_name);
+	if (data_cfg)
+		return 0;
+
+	tplg_pp_debug("Building data section %s ...", data_name);
+
+	/* add new SectionData */
+	ret = tplg_config_make_add(&data_cfg, data_name, SND_CONFIG_TYPE_COMPOUND, top);
+	if (ret < 0)
+		return ret;
+
+	ret = tplg_config_make_add(&child, "tuples", SND_CONFIG_TYPE_STRING, data_cfg);
+	if (ret < 0) {
+		SNDERR("error adding data ref for %s\n", data_name);
+		return ret;
+	}
+
+	ret = snd_config_set_string(child, data_name);
+	if (ret < 0) {
+		SNDERR("error setting tuples ref for %s\n", data_name);
+		return ret;
+	}
+
+	/* add data item to object */
+	snd_config_for_each(i, next, obj_data)
+		id++;
+
+	data_id = tplg_snprintf("%d", id);
+	if (!data_id)
+		return -ENOMEM;
+
+	ret = tplg_config_make_add(&child, data_id, SND_CONFIG_TYPE_STRING, obj_data);
+	free(data_id);
+	if (ret < 0) {
+		SNDERR("error adding data ref %s\n", data_name);
+		return ret;
+	}
+
+	return snd_config_set_string(child, data_name);
+}
+
+static int tplg_add_object_data(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+				snd_config_t *top)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *data_cfg, *class_cfg, *n, *obj;
+	const char *object_id;
+	int ret;
+
+	if (snd_config_get_id(top, &object_id) < 0)
+		return 0;
+
+	obj = tplg_object_get_instance_config(tplg_pp, obj_cfg);
+
+	class_cfg = tplg_class_lookup(tplg_pp, obj_cfg);
+	if (!class_cfg)
+		return -EINVAL;
+
+	/* add data config to top */
+	ret = snd_config_search(top, "data", &data_cfg);
+	if (ret < 0) {
+		ret = tplg_config_make_add(&data_cfg, "data", SND_CONFIG_TYPE_COMPOUND, top);
+		if (ret < 0) {
+			SNDERR("error creating data config for %s\n", object_id);
+			return ret;
+		}
+	}
+
+	/* add data items to object's data section */
+	snd_config_for_each(i, next, obj) {
+		const char *id, *token;
+		char *data_cfg_name;
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		token = tplg_class_get_attribute_token_ref(tplg_pp, class_cfg, id);
+		if (!token)
+			continue;
+
+		data_cfg_name = tplg_snprintf("%s.%s", object_id, token);
+		if (!data_cfg_name)
+			return -ENOMEM;
+
+		ret = tplg_pp_add_object_data_section(tplg_pp, data_cfg, data_cfg_name);
+		if (ret < 0) {
+			SNDERR("Failed to add data section %s\n", data_cfg_name);
+			free(data_cfg_name);
+			return ret;
+		}
+
+		ret = tplg_pp_add_object_tuple_section(tplg_pp, class_cfg, n, data_cfg_name,
+						       token);
+		free(data_cfg_name);
+		if (ret < 0) {
+			SNDERR("Failed to add data section %s\n", data_cfg_name);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 /* search for all template configs in the source config and copy them to the destination */
 static int tplg_object_add_attributes(snd_config_t *dst, snd_config_t *template,
 				      snd_config_t *src)
@@ -440,8 +681,22 @@ static int tplg_build_generic_object(struct tplg_pre_processor *tplg_pp, snd_con
 				     snd_config_t *parent)
 {
 	snd_config_t *wtop;
+	const char *name;
+	int ret;
 
-	return tplg_build_object_from_template(tplg_pp, obj_cfg, &wtop, NULL, false);
+	ret = tplg_build_object_from_template(tplg_pp, obj_cfg, &wtop, NULL, false);
+	if (ret < 0)
+		return ret;
+
+	ret = snd_config_get_id(wtop, &name);
+	if (ret < 0)
+		return ret;
+
+	ret = tplg_add_object_data(tplg_pp, obj_cfg, wtop);
+	if (ret < 0)
+		SNDERR("Failed to add data section for %s\n", name);
+
+	return ret;
 }
 
 const struct build_function_map object_build_map[] = {
@@ -903,8 +1158,6 @@ static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *n
 		SNDERR("Failed to construct object name for %s\n", id);
 		return ret;
 	}
-
-	tplg_pp_config_debug(tplg_pp, obj_local);
 
 	/* nothing to do if object is not supported */
 	map = tplg_object_get_map(tplg_pp, new_obj);
