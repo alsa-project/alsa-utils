@@ -30,6 +30,191 @@
 #include "topology.h"
 #include "pre-processor.h"
 
+/* look up the instance of object in a config */
+static snd_config_t *tplg_object_lookup_in_config(struct tplg_pre_processor *tplg_pp,
+						  snd_config_t *class, const char *type,
+						  const char *class_name, const char *id)
+{
+	snd_config_t *obj_cfg = NULL;
+	char *config_id;
+
+	config_id = tplg_snprintf("Object.%s.%s.%s", type, class_name, id);
+	if (!config_id)
+		return NULL;
+
+	snd_config_search(class, config_id, &obj_cfg);
+	free(config_id);
+	return obj_cfg;
+}
+
+/* return 1 if attribute not found in search_config, 0 on success and negative value on error */
+static int tplg_object_copy_and_add_param(struct tplg_pre_processor *tplg_pp,
+					  snd_config_t *obj,
+					  snd_config_t *attr_cfg,
+					  snd_config_t *search_config)
+{
+	snd_config_t *attr, *new;
+	const char *id, *search_id;
+	int ret;
+
+	if (snd_config_get_id(attr_cfg, &id) < 0)
+		return 0;
+
+	if (snd_config_get_id(search_config, &search_id) < 0)
+		return 0;
+
+	/* copy object value */
+	ret = snd_config_search(search_config, id, &attr);
+	if (ret < 0)
+		return 1;
+
+	ret = snd_config_copy(&new, attr);
+	if (ret < 0) {
+		SNDERR("error copying attribute '%s' value from %s\n", id, search_id);
+		return ret;
+	}
+
+	ret = snd_config_add(obj, new);
+	if (ret < 0) {
+		snd_config_delete(new);
+		SNDERR("error adding attribute '%s' value to %s\n", id, search_id);
+	}
+
+	return ret;
+}
+
+/*
+ * Attribute values for an object can be set in one of the following in order of
+ * precedence:
+ * 1. Value set in object instance
+ * 2. Default value set in the object's class definition
+ * 3. Inherited value from the parent object
+ * 4. Value set in the object instance embedded in the parent object
+ * 5. Value set in the object instance embedded in the parent class definition
+ */
+static int tplg_object_update(struct tplg_pre_processor *tplg_pp, snd_config_t *obj,
+			      snd_config_t *parent)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *n, *cfg, *args;
+	snd_config_t *obj_cfg, *class_cfg, *parent_obj;
+	const char *obj_id, *class_name, *class_type;
+	int ret;
+
+	class_cfg = tplg_class_lookup(tplg_pp, obj);
+	if (!class_cfg)
+		return -EINVAL;
+
+	/* find config for class attributes */
+	ret = snd_config_search(class_cfg, "DefineAttribute", &args);
+	if (ret < 0)
+		return 0;
+
+	if (snd_config_get_id(obj, &class_type) < 0)
+		return 0;
+
+	if (snd_config_get_id(class_cfg, &class_name) < 0)
+		return 0;
+
+	/* get obj cfg */
+	obj_cfg = tplg_object_get_instance_config(tplg_pp, obj);
+	if (snd_config_get_id(obj_cfg, &obj_id) < 0)
+		return 0;
+
+	/* copy and add attributes */
+	snd_config_for_each(i, next, args) {
+		snd_config_t *attr;
+		const char *id;
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		if (tplg_class_is_attribute_unique(id, class_cfg))
+			continue;
+
+		if (tplg_class_is_attribute_immutable(id, class_cfg))
+			goto class;
+
+		/* check if attribute value is set in the object */
+		ret = snd_config_search(obj_cfg, id, &attr);
+		if (ret < 0)
+			goto class;
+		continue;
+class:
+		/* search for attributes value in class */
+		ret = tplg_object_copy_and_add_param(tplg_pp, obj_cfg, n, class_cfg);
+		if (ret == 1) {
+			if (tplg_class_is_attribute_immutable(id, class_cfg)) {
+				SNDERR("Immutable attribute %s not set in class %s\n",
+				       id, class_name);
+				return -EINVAL;
+			}
+			goto parent;
+		}
+		else if (ret < 0)
+			return ret;
+		continue;
+parent:
+		/* search for attribute value in parent */
+		if (!parent)
+			goto parent_object;
+
+		/* get parent obj cfg */
+		parent_obj = tplg_object_get_instance_config(tplg_pp, parent);
+		if (!parent_obj)
+			goto parent_object;
+
+		ret = tplg_object_copy_and_add_param(tplg_pp, obj_cfg, n, parent_obj);
+		if (ret == 1)
+			goto parent_object;
+		else if (ret < 0)
+			return ret;
+		continue;
+parent_object:
+		if (!parent)
+			goto parent_class;
+
+		cfg = tplg_object_lookup_in_config(tplg_pp, parent_obj, class_type,
+						   class_name, obj_id);
+		if (!cfg)
+			goto parent_class;
+
+		ret = tplg_object_copy_and_add_param(tplg_pp, obj_cfg, n, cfg);
+		if (ret == 1)
+			goto parent_class;
+		else if (ret < 0)
+			return ret;
+		continue;
+parent_class:
+		if (!parent)
+			goto check;
+
+		cfg = tplg_class_lookup(tplg_pp, parent);
+		if (!cfg)
+			return -EINVAL;
+
+		cfg = tplg_object_lookup_in_config(tplg_pp, cfg, class_type,
+						   class_name, obj_id);
+		if (!cfg)
+			goto check;
+
+		ret = tplg_object_copy_and_add_param(tplg_pp, obj_cfg, n, cfg);
+		if (ret == 1)
+			goto check;
+		else if (ret < 0)
+			return ret;
+		continue;
+check:
+		if (tplg_class_is_attribute_mandatory(id, class_cfg)) {
+			SNDERR("Mandatory attribute %s not set for class %s\n", id, class_name);
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
 /* set the attribute value by type */
 static int tplg_set_attribute_value(snd_config_t *attr, const char *value)
 {
@@ -158,8 +343,15 @@ static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *n
 
 	/* set unique attribute value */
 	ret = tplg_object_set_unique_attribute(tplg_pp, obj_local, class_cfg, id);
-	if (ret < 0)
+	if (ret < 0) {
 		SNDERR("error setting unique attribute value for '%s.%s'\n", class_id, id);
+		return ret;
+	}
+
+	/* update object attributes and validate them */
+	ret = tplg_object_update(tplg_pp, new_obj, parent);
+	if (ret < 0)
+		SNDERR("Failed to update attributes for object '%s.%s'\n", class_id, id);
 
 	return ret;
 }
