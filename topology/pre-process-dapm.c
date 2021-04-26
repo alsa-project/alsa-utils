@@ -26,6 +26,53 @@
 #include "topology.h"
 #include "pre-processor.h"
 
+int tplg_build_base_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+			   snd_config_t *parent, bool skip_name)
+{
+	snd_config_t *top, *parent_obj, *cfg, *dest;
+	const char *parent_name;
+
+	/* find parent section config */
+	top = tplg_object_get_section(tplg_pp, parent);
+	if (!top)
+		return -EINVAL;
+
+	parent_obj = tplg_object_get_instance_config(tplg_pp, parent);
+
+	/* get parent name */
+	parent_name = tplg_object_get_name(tplg_pp, parent_obj);
+	if (!parent_name)
+		return 0;
+
+	/* find parent config with name */
+	dest = tplg_find_config(top, parent_name);
+	if (!dest) {
+		SNDERR("Cannot find parent config %s\n", parent_name);
+		return -EINVAL;
+	}
+
+	/* build config from template and add to parent */
+	return tplg_build_object_from_template(tplg_pp, obj_cfg, &cfg, dest, skip_name);
+}
+
+int tplg_build_scale_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+			      snd_config_t *parent)
+{
+	return tplg_build_base_object(tplg_pp, obj_cfg, parent, true);
+}
+
+int tplg_build_ops_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+			      snd_config_t *parent)
+{
+	return tplg_build_base_object(tplg_pp, obj_cfg, parent, false);
+}
+
+int tplg_build_channel_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+			      snd_config_t *parent)
+{
+	return tplg_build_base_object(tplg_pp, obj_cfg, parent, false);
+}
+
 int tplg_build_tlv_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
 			      snd_config_t *parent)
 {
