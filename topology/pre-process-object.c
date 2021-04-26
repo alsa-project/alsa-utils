@@ -738,6 +738,24 @@ static const struct build_function_map *tplg_object_get_map(struct tplg_pre_proc
 	return NULL;
 }
 
+/* search for section name based on class type and name and return the config in output_cfg */
+snd_config_t *tplg_object_get_section(struct tplg_pre_processor *tplg_pp, snd_config_t *class)
+{
+	const struct build_function_map *map;
+	snd_config_t *cfg = NULL;
+	int ret;
+
+	map = tplg_object_get_map(tplg_pp, class);
+	if (!map)
+		return NULL;
+
+	ret = snd_config_search(tplg_pp->output_cfg, map->section_name, &cfg);
+	if (ret < 0)
+		SNDERR("Section config for %s not found\n", map->section_name);
+
+	return cfg;
+}
+
 /* return 1 if attribute not found in search_config, 0 on success and negative value on error */
 static int tplg_object_copy_and_add_param(struct tplg_pre_processor *tplg_pp,
 					  snd_config_t *obj,
