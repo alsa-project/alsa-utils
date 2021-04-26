@@ -899,6 +899,7 @@ const struct build_function_map object_build_map[] = {
 	{"Base", "extops", "extops" ,&tplg_build_ops_object, &ops_config},
 	{"Base", "channel", "channel", &tplg_build_channel_object, &channel_config},
 	{"Base", "VendorToken", "SectionVendorTokens", &tplg_build_vendor_token_object, NULL},
+	{"Base", "route", "SectionGraph", &tplg_build_dapm_route_object, NULL},
 	{"Widget", "", "SectionWidget", &tplg_build_generic_object, &widget_config},
 	{"Control", "mixer", "SectionControlMixer", &tplg_build_mixer_control,
 	 &mixer_control_config},
