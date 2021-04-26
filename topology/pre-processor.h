@@ -65,6 +65,8 @@ int tplg_build_mixer_control(struct tplg_pre_processor *tplg_pp, snd_config_t *o
 			      snd_config_t *parent);
 int tplg_build_bytes_control(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
 			      snd_config_t *parent);
+int tplg_build_dapm_route_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+			      snd_config_t *parent);
 int tplg_parent_update(struct tplg_pre_processor *tplg_pp, snd_config_t *parent,
 			  const char *section_name, const char *item_name);
 
