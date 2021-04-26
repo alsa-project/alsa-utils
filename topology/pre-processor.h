@@ -28,6 +28,12 @@
 void tplg_pp_debug(char *fmt, ...);
 void tplg_pp_config_debug(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg);
 
+/* object helpers */
+int tplg_pre_process_objects(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg,
+			     snd_config_t *parent);
+snd_config_t *tplg_object_get_instance_config(struct tplg_pre_processor *tplg_pp,
+					snd_config_t *class_type);
+
 /* class helpers */
 snd_config_t *tplg_class_lookup(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg);
 snd_config_t *tplg_class_find_attribute_by_name(struct tplg_pre_processor *tplg_pp,
