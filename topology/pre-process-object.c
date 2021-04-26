@@ -858,6 +858,13 @@ static int tplg_build_generic_object(struct tplg_pre_processor *tplg_pp, snd_con
 	return ret;
 }
 
+const struct config_template_items pcm_caps_config = {
+	.int_config_ids = {"rate_min", "rate_max", "channels_min", "channels_max", "periods_min",
+			   "periods_max", "period_size_min", "period_size_max", "buffer_size_min",
+			   "buffer_size_max", "sig_bits"},
+	.string_config_ids = {"formats", "rates"},
+};
+
 const struct config_template_items fe_dai_config = {
 	.int_config_ids = {"id"},
 };
@@ -932,6 +939,8 @@ const struct build_function_map object_build_map[] = {
 	 &bytes_control_config},
 	{"Dai", "", "SectionBE", &tplg_build_generic_object, &be_dai_config},
 	{"PCM", "pcm", "SectionPCM", &tplg_build_generic_object, &pcm_config},
+	{"PCM", "pcm_caps", "SectionPCMCapabilities", &tplg_build_pcm_caps_object,
+	 &pcm_caps_config},
 };
 
 static const struct build_function_map *tplg_object_get_map(struct tplg_pre_processor *tplg_pp,
