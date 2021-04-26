@@ -45,3 +45,9 @@ int tplg_build_hw_cfg_object(struct tplg_pre_processor *tplg_pp,
 
 	return tplg_parent_update(tplg_pp, parent, "hw_configs", name);
 }
+
+int tplg_build_fe_dai_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+			      snd_config_t *parent)
+{
+	return tplg_build_base_object(tplg_pp, obj_cfg, parent, false);
+}
