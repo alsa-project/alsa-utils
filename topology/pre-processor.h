@@ -23,16 +23,44 @@
 #include "topology.h"
 
 #define DEBUG_MAX_LENGTH	256
+#define ARRAY_SIZE(a) (sizeof (a) / sizeof (a)[0])
+
+#define MAX_CONFIGS_IN_TEMPLATE	32
+struct config_template_items {
+	char *int_config_ids[MAX_CONFIGS_IN_TEMPLATE];
+	char *string_config_ids[MAX_CONFIGS_IN_TEMPLATE];
+	char *compound_config_ids[MAX_CONFIGS_IN_TEMPLATE];
+};
+
+typedef int (*build_func)(struct tplg_pre_processor *tplg_pp, snd_config_t *obj,
+			  snd_config_t *parent);
+
+struct build_function_map {
+	char *class_type;
+	char *class_name;
+	char *section_name;
+	build_func builder;
+	const struct config_template_items *template_items;
+};
+
+extern const struct build_function_map object_build_map[];
 
 /* debug helpers */
 void tplg_pp_debug(char *fmt, ...);
 void tplg_pp_config_debug(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg);
+
+/* object build helpers */
+int tplg_build_object_from_template(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+				    snd_config_t **wtop, snd_config_t *top_config,
+				    bool skip_name);
 
 /* object helpers */
 int tplg_pre_process_objects(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg,
 			     snd_config_t *parent);
 snd_config_t *tplg_object_get_instance_config(struct tplg_pre_processor *tplg_pp,
 					snd_config_t *class_type);
+const char *tplg_object_get_name(struct tplg_pre_processor *tplg_pp,
+				 snd_config_t *object);
 
 /* class helpers */
 snd_config_t *tplg_class_lookup(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg);
