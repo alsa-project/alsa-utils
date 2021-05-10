@@ -1772,7 +1772,7 @@ static int exec_stdin(void)
 
 int main(int argc, char *argv[])
 {
-	int morehelp, retval, level = 0;
+	int badopt, retval, level = 0;
 	int read_stdin = 0;
 	static const struct option long_option[] =
 	{
@@ -1791,7 +1791,7 @@ int main(int argc, char *argv[])
 		{NULL, 0, NULL, 0},
 	};
 
-	morehelp = 0;
+	badopt = 0;
 	while (1) {
 		int c;
 
@@ -1812,8 +1812,8 @@ int main(int argc, char *argv[])
 					sprintf(card, "hw:%i", i);
 #endif
 				else {
-					fprintf(stderr, "Invalid card number.\n");
-					morehelp++;
+					fprintf(stderr, "Invalid card number '%s'.\n", optarg);
+					badopt++;
 				}
 			}
 			break;
@@ -1835,7 +1835,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'v':
 			printf("amixer version " SND_UTIL_VERSION_STR "\n");
-			return 1;
+			return 0;
 		case 'a':
 			smixer_level = 1;
 			memset(&smixer_options, 0, sizeof(smixer_options));
@@ -1846,7 +1846,7 @@ int main(int argc, char *argv[])
 				smixer_options.abstract = SND_MIXER_SABSTRACT_BASIC;
 			else {
 				fprintf(stderr, "Select correct abstraction level (none or basic)...\n");
-				morehelp++;
+				badopt++;
 			}
 			break;
 		case 's':
@@ -1859,14 +1859,13 @@ int main(int argc, char *argv[])
 			std_vol_type = VOL_MAP;
 			break;
 		default:
-			fprintf(stderr, "Invalid switch or option needs an argument.\n");
-			morehelp++;
+			fprintf(stderr, "Invalid switch or option -%c needs an argument.\n", c);
+			badopt++;
 		}
 	}
-	if (morehelp) {
-		help();
+	if (badopt)
 		return 1;
-	}
+
 	smixer_options.device = card;
 
 	if (read_stdin) {
