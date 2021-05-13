@@ -171,7 +171,8 @@ static int timer_mmap_process_frames(struct libasound_state *state,
 		// exactly the mechanism yet.
 		err = xfer_libasound_wait_event(state, timeout_msec,
 						&revents);
-		if (err < 0)
+		// MEMO: timeout is expected since the above call is just to measure time elapse.
+		if (err < 0 && err != -ETIMEDOUT)
 			return err;
 		if (revents & POLLERR) {
 			// TODO: error reporting.
