@@ -58,7 +58,9 @@ enum uc_cmd {
 	/* set/get */
 	OM_SET,
 	OM_GET,
+	OM_GET_VAL,
 	OM_GETI,
+	OM_GETI_VAL,
 
 	/* misc */
 	OM_HELP,
@@ -82,7 +84,9 @@ static struct cmd cmds[] = {
 	{ OM_LIST2, 1, 1, "list" },
 	{ OM_SET, 2, 1, "set" },
 	{ OM_GET, 1, 1, "get" },
+	{ OM_GET_VAL, 1, 1, "getval" },
 	{ OM_GETI, 1, 1, "geti" },
+	{ OM_GETI_VAL, 1, 1, "getival" },
 	{ OM_DUMP, 1, 1, "dump" },
 	{ OM_HELP, 0, 0, "help" },
 	{ OM_QUIT, 0, 0, "quit" },
@@ -328,6 +332,7 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 		}
 		break;
 	case OM_GET:
+	case OM_GET_VAL:
 		err = snd_use_case_get(context->uc_mgr, argv[0], &str);
 		if (err < 0) {
 			fprintf(stderr,
@@ -336,10 +341,14 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 				snd_strerror(err));
 			return err;
 		}
-		printf("  %s=%s\n", argv[0], str);
+		if (cmd->code == OM_GET)
+			printf("  %s=%s\n", argv[0], str);
+		else
+			printf("%s\n", str);
 		free((void *)str);
 		break;
 	case OM_GETI:
+	case OM_GETI_VAL:
 		err = snd_use_case_geti(context->uc_mgr, argv[0], &lval);
 		if (err < 0) {
 			fprintf(stderr,
@@ -348,7 +357,10 @@ static int do_one(struct context *context, struct cmd *cmd, char **argv)
 				snd_strerror(err));
 			return lval;
 		}
-		printf("  %s=%li\n", argv[0], lval);
+		if (cmd->code == OM_GETI)
+			printf("  %s=%li\n", argv[0], lval);
+		else
+			printf("%li\n", lval);
 		break;
 	case OM_QUIT:
 		context->do_exit = 1;
