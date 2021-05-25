@@ -64,7 +64,7 @@ static int tplg_update_pcm_object(struct tplg_pre_processor *tplg_pp,
 	item_name = tplg_object_get_name(tplg_pp, obj);
 	if (!item_name)
 		return -EINVAL;
-	
+
 	/* get direction */
 	ret = snd_config_search(obj, "direction", &cfg);
 	if (ret < 0) {

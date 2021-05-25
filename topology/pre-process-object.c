@@ -32,7 +32,7 @@
 
 /* Parse VendorToken object, create the "SectionVendorToken" and save it */
 int tplg_build_vendor_token_object(struct tplg_pre_processor *tplg_pp,
-			       snd_config_t *obj_cfg, snd_config_t *parent)
+				   snd_config_t *obj_cfg, snd_config_t *parent)
 {
 	snd_config_iterator_t i, next;
 	snd_config_t *vtop, *n, *obj;
@@ -358,7 +358,7 @@ static bool tplg_object_is_attribute_min_max_valid(snd_config_t *attr, snd_confi
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
 	default:
@@ -720,7 +720,7 @@ static int tplg_object_add_attributes(snd_config_t *dst, snd_config_t *template,
 	snd_config_for_each(i, next, template) {
 		snd_config_t *attr, *new;
 		const char *id;
-	
+
 		n = snd_config_iterator_entry(i);
 		if (snd_config_get_id(n, &id) < 0)
 			continue;

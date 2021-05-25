@@ -229,7 +229,7 @@ static int tplg_pp_get_widget_name(struct tplg_pre_processor *tplg_pp,
 				goto err;
 			}
 		}
-		
+
 		temp = tplg_snprintf("%s.%s", widget_name, arg);
 		if (!temp) {
 			ret = -ENOMEM;

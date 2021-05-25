@@ -99,9 +99,9 @@ const char *tplg_class_get_unique_attribute_name(struct tplg_pre_processor *tplg
 snd_config_type_t tplg_class_get_attribute_type(struct tplg_pre_processor *tplg_pp,
 						snd_config_t *attr);
 const char *tplg_class_get_attribute_token_ref(struct tplg_pre_processor *tplg_pp,
-					        snd_config_t *class, const char *attr_name);
+					       snd_config_t *class, const char *attr_name);
 long tplg_class_attribute_valid_tuple_value(struct tplg_pre_processor *tplg_pp,
-					        snd_config_t *class, snd_config_t *attr);
+					    snd_config_t *class, snd_config_t *attr);
 
 /* config helpers */
 snd_config_t *tplg_find_config(snd_config_t *config, const char *name);

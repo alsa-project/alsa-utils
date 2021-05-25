@@ -40,7 +40,7 @@ bool tplg_class_is_attribute_check(const char *attr, snd_config_t *class_cfg, ch
 
 	snd_config_for_each(i, next, cfg) {
 		const char *id, *s;
-		
+
 		n = snd_config_iterator_entry(i);
 		if (snd_config_get_id(n, &id) < 0)
 			continue;
@@ -211,7 +211,7 @@ snd_config_type_t tplg_class_get_attribute_type(struct tplg_pre_processor *tplg_
 
 /* get token_ref for attribute with name attr_name in the class */
 const char *tplg_class_get_attribute_token_ref(struct tplg_pre_processor *tplg_pp,
-					        snd_config_t *class, const char *attr_name)
+					       snd_config_t *class, const char *attr_name)
 {
 	snd_config_t *attributes, *attr, *token_ref;
 	const char *token;
@@ -238,7 +238,7 @@ const char *tplg_class_get_attribute_token_ref(struct tplg_pre_processor *tplg_p
 
 /* convert a valid attribute string value to the corresponding tuple value */
 long tplg_class_attribute_valid_tuple_value(struct tplg_pre_processor *tplg_pp,
-					        snd_config_t *class, snd_config_t *attr)
+					    snd_config_t *class, snd_config_t *attr)
 {
 
 	snd_config_t *attributes, *cfg, *valid, *tuples, *n;
