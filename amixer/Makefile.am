@@ -6,6 +6,6 @@ LDADD = -lm
 
 bin_PROGRAMS = amixer
 amixer_SOURCES = amixer.c volume_mapping.c
-noinst_HEADERS = amixer.h
+noinst_HEADERS = amixer.h volume_mapping.h
 man_MANS = amixer.1
 EXTRA_DIST = amixer.1
