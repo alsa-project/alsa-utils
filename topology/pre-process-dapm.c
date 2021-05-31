@@ -146,6 +146,11 @@ static int tplg_pp_get_widget_name(struct tplg_pre_processor *tplg_pp,
 
 	/* get class name */
 	args = strchr(string, '.');
+	if (!args) {
+		SNDERR("Error getting class name for %s\n", string);
+		return -EINVAL;
+	}
+
 	class_name = calloc(1, strlen(string) - strlen(args) + 1);
 	if (!class_name)
 		return -ENOMEM;
