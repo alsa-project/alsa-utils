@@ -492,6 +492,11 @@ static int tplg_pp_add_object_tuple_section(struct tplg_pre_processor *tplg_pp,
 	}
 
 	type = strchr(token_ref, '.');
+	if(!type) {
+		SNDERR("Error getting type for %s\n", token_ref);
+		return -EINVAL;
+	}
+
 	token = calloc(1, strlen(token_ref) - strlen(type) + 1);
 	if (!token)
 		return -ENOMEM;
