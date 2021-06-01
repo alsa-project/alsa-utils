@@ -247,6 +247,8 @@ int snd_card_iterator_sinit(struct snd_card_iterator *iter, const char *cardname
 	int cardno = -1;
 
 	if (cardname) {
+		if (strncmp(cardname, "hw:", 3) == 0)
+			cardname += 3;
 		cardno = snd_card_get_index(cardname);
 		if (cardno < 0) {
 			error("Cannot find soundcard '%s'...", cardname);
