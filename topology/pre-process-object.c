@@ -944,6 +944,8 @@ const struct build_function_map object_build_map[] = {
 	 &hwcfg_config},
 	{"Base", "fe_dai", "dai", &tplg_build_fe_dai_object, NULL, &fe_dai_config},
 	{"Base", "route", "SectionGraph", &tplg_build_dapm_route_object, NULL, NULL},
+	{"Widget", "buffer", "SectionWidget", &tplg_build_generic_object,
+	 tplg_update_buffer_auto_attr, &widget_config},
 	{"Widget", "", "SectionWidget", &tplg_build_generic_object, NULL, &widget_config},
 	{"Control", "mixer", "SectionControlMixer", &tplg_build_mixer_control, NULL,
 	 &mixer_control_config},
