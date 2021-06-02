@@ -35,11 +35,15 @@ struct config_template_items {
 typedef int (*build_func)(struct tplg_pre_processor *tplg_pp, snd_config_t *obj,
 			  snd_config_t *parent);
 
+typedef int (*update_auto_attr_func)(struct tplg_pre_processor *tplg_pp,
+			  snd_config_t *obj, snd_config_t *parent);
+
 struct build_function_map {
 	char *class_type;
 	char *class_name;
 	char *section_name;
 	build_func builder;
+	update_auto_attr_func auto_attr_updater;
 	const struct config_template_items *template_items;
 };
 

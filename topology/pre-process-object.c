@@ -926,28 +926,33 @@ const struct config_template_items data_config = {
 	.string_config_ids = {"bytes"}
 };
 
+/*
+ * Items without class name should be placed lower than those with one,
+ * because they are much more generic.
+ */
 const struct build_function_map object_build_map[] = {
-	{"Base", "manifest", "SectionManifest", &tplg_build_generic_object, NULL},
-	{"Base", "data", "SectionData", &tplg_build_data_object, &data_config},
-	{"Base", "tlv", "SectionTLV", &tplg_build_tlv_object, NULL},
-	{"Base", "scale", "scale", &tplg_build_scale_object, &scale_config},
-	{"Base", "ops", "ops" ,&tplg_build_ops_object, &ops_config},
-	{"Base", "extops", "extops" ,&tplg_build_ops_object, &ops_config},
-	{"Base", "channel", "channel", &tplg_build_channel_object, &channel_config},
-	{"Base", "VendorToken", "SectionVendorTokens", &tplg_build_vendor_token_object, NULL},
-	{"Base", "hw_config", "SectionHWConfig", &tplg_build_hw_cfg_object,
+	{"Base", "manifest", "SectionManifest", &tplg_build_generic_object, NULL, NULL},
+	{"Base", "data", "SectionData", &tplg_build_data_object, NULL, &data_config},
+	{"Base", "tlv", "SectionTLV", &tplg_build_tlv_object, NULL, NULL},
+	{"Base", "scale", "scale", &tplg_build_scale_object, NULL, &scale_config},
+	{"Base", "ops", "ops" ,&tplg_build_ops_object, NULL, &ops_config},
+	{"Base", "extops", "extops" ,&tplg_build_ops_object, NULL, &ops_config},
+	{"Base", "channel", "channel", &tplg_build_channel_object, NULL, &channel_config},
+	{"Base", "VendorToken", "SectionVendorTokens", &tplg_build_vendor_token_object,
+	 NULL, NULL},
+	{"Base", "hw_config", "SectionHWConfig", &tplg_build_hw_cfg_object, NULL,
 	 &hwcfg_config},
-	{"Base", "fe_dai", "dai", &tplg_build_fe_dai_object, &fe_dai_config},
-	{"Base", "route", "SectionGraph", &tplg_build_dapm_route_object, NULL},
-	{"Widget", "", "SectionWidget", &tplg_build_generic_object, &widget_config},
-	{"Control", "mixer", "SectionControlMixer", &tplg_build_mixer_control,
+	{"Base", "fe_dai", "dai", &tplg_build_fe_dai_object, NULL, &fe_dai_config},
+	{"Base", "route", "SectionGraph", &tplg_build_dapm_route_object, NULL, NULL},
+	{"Widget", "", "SectionWidget", &tplg_build_generic_object, NULL, &widget_config},
+	{"Control", "mixer", "SectionControlMixer", &tplg_build_mixer_control, NULL,
 	 &mixer_control_config},
-	{"Control", "bytes", "SectionControlBytes", &tplg_build_bytes_control,
+	{"Control", "bytes", "SectionControlBytes", &tplg_build_bytes_control, NULL,
 	 &bytes_control_config},
-	{"Dai", "", "SectionBE", &tplg_build_generic_object, &be_dai_config},
-	{"PCM", "pcm", "SectionPCM", &tplg_build_generic_object, &pcm_config},
+	{"Dai", "", "SectionBE", &tplg_build_generic_object, NULL, &be_dai_config},
+	{"PCM", "pcm", "SectionPCM", &tplg_build_generic_object, NULL, &pcm_config},
 	{"PCM", "pcm_caps", "SectionPCMCapabilities", &tplg_build_pcm_caps_object,
-	 &pcm_caps_config},
+	 NULL, &pcm_caps_config},
 };
 
 static const struct build_function_map *tplg_object_get_map(struct tplg_pre_processor *tplg_pp,
@@ -969,7 +974,8 @@ static const struct build_function_map *tplg_object_get_map(struct tplg_pre_proc
 
 	for (i = 0; i < ARRAY_SIZE(object_build_map); i++) {
 		if (!strcmp(class_type, "Widget") &&
-		    !strcmp(object_build_map[i].class_type, "Widget"))
+		    !strcmp(object_build_map[i].class_type, "Widget") &&
+			!strcmp(object_build_map[i].class_name, ""))
 			return &object_build_map[i];
 
 		if (!strcmp(class_type, "Dai") &&
@@ -1417,6 +1423,7 @@ static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *n
 	snd_config_t *obj_local, *class_cfg;
 	const struct build_function_map *map;
 	build_func builder;
+	update_auto_attr_func auto_attr_updater;
 	const char *id, *class_id;
 	int ret;
 
@@ -1459,6 +1466,16 @@ static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *n
 	map = tplg_object_get_map(tplg_pp, new_obj);
 	if (!map)
 		goto child;
+
+	/* update automatic attribute for current object */
+	auto_attr_updater = map->auto_attr_updater;
+	if(auto_attr_updater) {
+		ret = auto_attr_updater(tplg_pp, obj_local, parent);
+		if (ret < 0) {
+			SNDERR("Failed to update automatic attributes for %s\n", id);
+			return ret;
+		}
+	}
 
 	/* build the object and save the sections to the output config */
 	builder = map->builder;
