@@ -30,6 +30,7 @@
 #include <syslog.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <limits.h>
 #include "alsactl.h"
 
 int file_map(const char *filename, char **buf, size_t *bufsize)
