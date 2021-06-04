@@ -229,7 +229,7 @@ static int get_control(snd_ctl_t *handle, snd_ctl_elem_id_t *id, snd_config_t *t
 {
 	snd_ctl_elem_value_t *ctl;
 	snd_ctl_elem_info_t *info;
-	snd_config_t *control, *comment, *item, *value;
+	snd_config_t *control, *comment, *item = NULL, *value;
 	const char *s;
 	char buf[256];
 	unsigned int idx;
