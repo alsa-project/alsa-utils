@@ -1751,6 +1751,8 @@ int init(const char *cfgdir, const char *filename, int flags, const char *cardna
 	
 	sysfs_init();
 	err = snd_card_iterator_sinit(&iter, cardname);
+	if (err < 0)
+		goto out;
 	while (snd_card_iterator_next(&iter)) {
 		err = snd_card_clean_cfgdir(cfgdir, iter.card);
 		if (err < 0) {
