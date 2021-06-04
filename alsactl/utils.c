@@ -220,15 +220,17 @@ int load_configuration(const char *file, snd_config_t **top, int *open_failed)
 	}
 	err = snd_config_load(config, in);
 	snd_input_close(in);
-	if (lock_fd >= 0)
-		state_unlock(lock_fd, file);
 	if (err < 0) {
 		error("snd_config_load error: %s", snd_strerror(err));
 out:
+		if (lock_fd >= 0)
+			state_unlock(lock_fd, file);
 		snd_config_delete(config);
 		snd_config_update_free_global();
 		return err;
 	} else {
+		if (lock_fd >= 0)
+			state_unlock(lock_fd, file);
 		*top = config;
 		return 0;
 	}
