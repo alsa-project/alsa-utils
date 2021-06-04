@@ -155,7 +155,7 @@ static int allocate_containers(struct context *ctx, unsigned int count)
 		return -ENOMEM;
 	ctx->cntr_count = count;
 
-	ctx->cntr_fds = calloc(count, sizeof(*ctx->cntrs));
+	ctx->cntr_fds = calloc(count, sizeof(*ctx->cntr_fds));
 	if (ctx->cntr_fds == NULL)
 		return -ENOMEM;
 
