@@ -655,13 +655,16 @@ static long config_iface(snd_config_t *n)
 	const char *str;
 	switch (snd_config_get_type(n)) {
 	case SND_CONFIG_TYPE_INTEGER:
-		snd_config_get_integer(n, &i);
+		if (snd_config_get_integer(n, &i) < 0)
+			return -1;
 		return i;
 	case SND_CONFIG_TYPE_INTEGER64:
-		snd_config_get_integer64(n, &li);
+		if (snd_config_get_integer64(n, &li) < 0)
+			return -1;
 		return li;
 	case SND_CONFIG_TYPE_STRING:
-		snd_config_get_string(n, &str);
+		if (snd_config_get_string(n, &str) < 0)
+			return -1;
 		break;
 	default:
 		return -1;
@@ -681,17 +684,20 @@ static int config_bool(snd_config_t *n, int doit)
 
 	switch (snd_config_get_type(n)) {
 	case SND_CONFIG_TYPE_INTEGER:
-		snd_config_get_integer(n, &val);
+		if (snd_config_get_integer(n, &val) < 0)
+			return -1;
 		if (val < 0 || val > 1)
 			return -1;
 		return val;
 	case SND_CONFIG_TYPE_INTEGER64:
-		snd_config_get_integer64(n, &lval);
+		if (snd_config_get_integer64(n, &lval) < 0)
+			return -1;
 		if (lval < 0 || lval > 1)
 			return -1;
 		return (int) lval;
 	case SND_CONFIG_TYPE_STRING:
-		snd_config_get_string(n, &str);
+		if (snd_config_get_string(n, &str) < 0)
+			return -1;
 		break;
 	case SND_CONFIG_TYPE_COMPOUND:
 		if (!force_restore || !doit)
@@ -718,13 +724,16 @@ static int config_enumerated(snd_config_t *n, snd_ctl_t *handle,
 
 	switch (snd_config_get_type(n)) {
 	case SND_CONFIG_TYPE_INTEGER:
-		snd_config_get_integer(n, &val);
+		if (snd_config_get_integer(n, &val) < 0)
+			return -1;
 		return val;
 	case SND_CONFIG_TYPE_INTEGER64:
-		snd_config_get_integer64(n, &lval);
+		if (snd_config_get_integer64(n, &lval) < 0)
+			return -1;
 		return (int) lval;
 	case SND_CONFIG_TYPE_STRING:
-		snd_config_get_string(n, &str);
+		if (snd_config_get_string(n, &str) < 0)
+			return -1;
 		break;
 	case SND_CONFIG_TYPE_COMPOUND:
 		if (!force_restore || !doit)
@@ -1247,6 +1256,8 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control,
 		}
 		if (strcmp(fld, "iface") == 0) {
 			iface = (snd_ctl_elem_iface_t)config_iface(n);
+			if (iface < 0)
+				return -EINVAL;
 			continue;
 		}
 		if (strcmp(fld, "device") == 0) {
@@ -1254,7 +1265,8 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control,
 				cerror(doit, "control.%d.%s is invalid", numid, fld);
 				return -EINVAL;
 			}
-			snd_config_get_integer(n, &device);
+			if (snd_config_get_integer(n, &device) < 0)
+				return -EINVAL;
 			continue;
 		}
 		if (strcmp(fld, "subdevice") == 0) {
@@ -1262,7 +1274,8 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control,
 				cerror(doit, "control.%d.%s is invalid", numid, fld);
 				return -EINVAL;
 			}
-			snd_config_get_integer(n, &subdevice);
+			if (snd_config_get_integer(n, &subdevice) < 0)
+				return -EINVAL;
 			continue;
 		}
 		if (strcmp(fld, "name") == 0) {
@@ -1270,7 +1283,8 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control,
 				cerror(doit, "control.%d.%s is invalid", numid, fld);
 				return -EINVAL;
 			}
-			snd_config_get_string(n, &name);
+			if (snd_config_get_string(n, &name) < 0)
+				return -EINVAL;
 			continue;
 		}
 		if (strcmp(fld, "index") == 0) {
@@ -1278,7 +1292,8 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control,
 				cerror(doit, "control.%d.%s is invalid", numid, fld);
 				return -EINVAL;
 			}
-			snd_config_get_integer(n, &index);
+			if (snd_config_get_integer(n, &index) < 0)
+				return -EINVAL;
 			continue;
 		}
 		if (strcmp(fld, "value") == 0) {
