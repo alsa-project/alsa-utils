@@ -203,7 +203,8 @@ static int tplg_pp_get_widget_name(struct tplg_pre_processor *tplg_pp,
 
 		if (!args) {
 			SNDERR("insufficient arugments for widget %s\n", string);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto err;
 		}
 
 		remaining = strchr(args + 1, '.');

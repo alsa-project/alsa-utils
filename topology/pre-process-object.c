@@ -463,7 +463,8 @@ static snd_config_t *tplg_object_lookup_in_config(struct tplg_pre_processor *tpl
 	if (!config_id)
 		return NULL;
 
-	snd_config_search(class, config_id, &obj_cfg);
+	if (snd_config_search(class, config_id, &obj_cfg) < 0)
+		return NULL;
 	free(config_id);
 	return obj_cfg;
 }
@@ -704,11 +705,12 @@ static int tplg_add_object_data(struct tplg_pre_processor *tplg_pp, snd_config_t
 
 		ret = tplg_pp_add_object_tuple_section(tplg_pp, class_cfg, n, data_cfg_name,
 						       token);
-		free(data_cfg_name);
 		if (ret < 0) {
 			SNDERR("Failed to add data section %s\n", data_cfg_name);
+			free(data_cfg_name);
 			return ret;
 		}
+		free(data_cfg_name);
 	}
 
 	return 0;
@@ -1215,8 +1217,10 @@ static int tplg_construct_object_name(struct tplg_pre_processor *tplg_pp, snd_co
 		return 0;
 
 	/* set class name as the name prefix for the object */
-	snd_config_get_id(obj, &obj_id);
-	snd_config_get_id(class_cfg, &class_id);
+	if (snd_config_get_id(obj, &obj_id) < 0)
+		return -EINVAL;
+	if (snd_config_get_id(class_cfg, &class_id) < 0)
+		return -EINVAL;
 	new_name = strdup(class_id);
 	if (!new_name)
 		return -ENOMEM;
@@ -1280,7 +1284,8 @@ static int tplg_construct_object_name(struct tplg_pre_processor *tplg_pp, snd_co
 		default:
 			SNDERR("Argument '%s' in object '%s.%s' is not an integer or a string\n",
 			       s, class_id, obj_id);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto err;
 		}
 
 		/* alloc and concat arg value to the name */

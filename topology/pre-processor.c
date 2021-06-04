@@ -183,7 +183,7 @@ int init_pre_precessor(struct tplg_pre_processor **tplg_pp, snd_output_type_t ty
 
 	_tplg_pp = calloc(1, sizeof(struct tplg_pre_processor));
 	if (!_tplg_pp)
-		ret = -ENOMEM;
+		return -ENOMEM;
 
 	*tplg_pp = _tplg_pp;
 
