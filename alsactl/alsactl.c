@@ -170,7 +170,7 @@ static int dump_config_tree(snd_config_t *top)
 		return err;
 	err = snd_config_save(top, out);
 	snd_output_close(out);
-	return 0;
+	return err;
 }
 
 static int dump_state(const char *file)
