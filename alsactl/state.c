@@ -1624,7 +1624,7 @@ int load_state(const char *cfgdir, const char *file,
 {
 	int err, finalerr = 0, open_failed;
 	struct snd_card_iterator iter;
-	snd_config_t *config;
+	snd_config_t *config = NULL;
 	const char *cardname1;
 
 	err = load_configuration(file, &config, &open_failed);
@@ -1676,7 +1676,8 @@ int load_state(const char *cfgdir, const char *file,
 	}
 	err = finalerr ? finalerr : snd_card_iterator_error(&iter);
 out:
-	snd_config_delete(config);
+	if (config)
+		snd_config_delete(config);
 	snd_config_update_free_global();
 	return err;
 }
