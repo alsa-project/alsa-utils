@@ -1692,7 +1692,8 @@ int load_state(const char *cfgdir, const char *file,
 	}
 	err = finalerr ? finalerr : snd_card_iterator_error(&iter);
 out:
-	snd_config_delete(config);
+	if (config)
+		snd_config_delete(config);
 	snd_config_update_free_global();
 	return err;
 }
