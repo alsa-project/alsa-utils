@@ -1642,6 +1642,7 @@ int load_state(const char *cfgdir, const char *file,
 	snd_config_t *config;
 	const char *cardname1;
 
+	config = NULL;
 	err = load_configuration(file, &config, &open_failed);
 	if (err < 0 && !open_failed)
 		return err;
