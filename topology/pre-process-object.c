@@ -469,11 +469,11 @@ static snd_config_t *tplg_object_lookup_in_config(struct tplg_pre_processor *tpl
 static int tplg_pp_add_object_tuple_section(struct tplg_pre_processor *tplg_pp,
 					    snd_config_t *class_cfg,
 					    snd_config_t *attr, char *data_name,
-					    const char *token_ref)
+					    const char *token_ref, const char *array_name)
 {
 	snd_config_t *top, *tuple_cfg, *child, *cfg, *new;
 	const char *id;
-	char *token, *type;
+	char *token, *type, *str;
 	long tuple_value;
 	int ret;
 
@@ -499,6 +499,15 @@ static int tplg_pp_add_object_tuple_section(struct tplg_pre_processor *tplg_pp,
 	if (!token)
 		return -ENOMEM;
 	snprintf(token, strlen(token_ref) - strlen(type) + 1, "%s", token_ref);
+
+	if (!array_name)
+		str = strdup(type + 1);
+	else
+		str = tplg_snprintf("%s.%s", type + 1, array_name);
+	if (!str) {
+		ret = -ENOMEM;
+		goto free;
+	}
 
 	tuple_cfg = tplg_find_config(top, data_name);
 	if (!tuple_cfg) {
@@ -529,26 +538,29 @@ static int tplg_pp_add_object_tuple_section(struct tplg_pre_processor *tplg_pp,
 			goto err;
 		}
 
-		ret = tplg_config_make_add(&cfg, type + 1, SND_CONFIG_TYPE_COMPOUND,
+		ret = tplg_config_make_add(&cfg, str, SND_CONFIG_TYPE_COMPOUND,
 					  child);
 		if (ret < 0) {
 			SNDERR("Error creating tuples type config for '%s'\n", data_name);
 			goto err;
 		}
 	} else {
-		char *id;
+		snd_config_t *tuples_cfg;
 
-		id = tplg_snprintf("tuples.%s", type + 1);
-		if (!id) {
-			ret = -ENOMEM;
+		ret = snd_config_search(tuple_cfg, "tuples" , &tuples_cfg);
+		if (ret < 0) {
+			SNDERR("can't find tuples config in %s\n", data_name);
 			goto err;
 		}
 
-		ret = snd_config_search(tuple_cfg, id , &cfg);
-		free(id);
-		if (ret < 0) {
-			SNDERR("can't find type config %s\n", type + 1);
-			goto err;
+		cfg = tplg_find_config(tuples_cfg, str);
+		if (!cfg) {
+			ret = tplg_config_make_add(&cfg, str, SND_CONFIG_TYPE_COMPOUND,
+						  tuples_cfg);
+			if (ret < 0) {
+				SNDERR("Error creating tuples config for '%s' and type name %s\n", data_name, str);
+				goto err;
+			}
 		}
 	}
 
@@ -581,10 +593,9 @@ static int tplg_pp_add_object_tuple_section(struct tplg_pre_processor *tplg_pp,
 	}
 
 	ret = snd_config_add(cfg, new);
-	if (ret < 0)
-		goto err;
-
 err:
+	free(str);
+free:
 	free(token);
 	return ret;
 }
@@ -650,7 +661,7 @@ static int tplg_pp_add_object_data_section(struct tplg_pre_processor *tplg_pp,
 }
 
 static int tplg_add_object_data(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
-				snd_config_t *top)
+				snd_config_t *top, const char *array_name)
 {
 	snd_config_iterator_t i, next;
 	snd_config_t *data_cfg, *class_cfg, *n, *obj;
@@ -701,7 +712,7 @@ static int tplg_add_object_data(struct tplg_pre_processor *tplg_pp, snd_config_t
 		}
 
 		ret = tplg_pp_add_object_tuple_section(tplg_pp, class_cfg, n, data_cfg_name,
-						       token);
+						       token, array_name);
 		if (ret < 0) {
 			SNDERR("Failed to add data section %s\n", data_cfg_name);
 			free(data_cfg_name);
@@ -757,6 +768,60 @@ static int tplg_object_add_attributes(snd_config_t *dst, snd_config_t *template,
 
 static const struct build_function_map *tplg_object_get_map(struct tplg_pre_processor *tplg_pp,
 							    snd_config_t *obj);
+
+/* Add object attributes to the private data of the parent object config */
+static int tplg_build_parent_data(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+				  snd_config_t *parent)
+{
+	snd_config_t *obj, *parent_obj, *section_cfg, *top;
+	const struct build_function_map *map;
+	const char *id, *parent_id;
+	int ret;
+
+	/* nothing to do if parent is NULL */
+	if (!parent)
+		return 0;
+
+	obj = tplg_object_get_instance_config(tplg_pp, obj_cfg);
+	parent_obj = tplg_object_get_instance_config(tplg_pp, parent);
+
+	/* get object ID */
+	if (snd_config_get_id(obj, &id) < 0) {
+		SNDERR("Invalid ID for object\n");
+		return -EINVAL;
+	}
+
+	/* get parent object name or ID */
+	parent_id = tplg_object_get_name(tplg_pp, parent_obj);
+	if (!parent_id) {
+		ret = snd_config_get_id(parent_obj, &parent_id);
+		if (ret < 0) {
+			SNDERR("Invalid ID for parent of object %s\n", id);
+			return ret;
+		}
+	}
+
+	map = tplg_object_get_map(tplg_pp, parent);
+	if (!map) {
+		SNDERR("Parent object %s not supported\n", parent_id);
+		return -EINVAL;
+	}
+
+	/* find parent config with ID */
+	ret = snd_config_search(tplg_pp->output_cfg, map->section_name, &section_cfg);
+	if (ret < 0) {
+		SNDERR("No SectionBE found\n");
+		return ret;
+	}
+
+	top = tplg_find_config(section_cfg, parent_id);
+	if (!top) {
+		SNDERR("SectionBE %s not found\n", parent_id);
+		return -EINVAL;
+	}
+
+	return tplg_add_object_data(tplg_pp, obj_cfg, top, id);
+}
 
 /*
  * Function to create a new "section" config based on the template. The new config will be
@@ -855,7 +920,7 @@ static int tplg_build_generic_object(struct tplg_pre_processor *tplg_pp, snd_con
 	if (ret < 0)
 		return ret;
 
-	ret = tplg_add_object_data(tplg_pp, obj_cfg, wtop);
+	ret = tplg_add_object_data(tplg_pp, obj_cfg, wtop, NULL);
 	if (ret < 0)
 		SNDERR("Failed to add data section for %s\n", name);
 
@@ -1461,28 +1526,31 @@ static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *n
 		return ret;
 	}
 
-	/* skip object if not supported and pre-process its child objects */
+	/*
+	 * Build objects if object type is supported.
+	 * If not, process object attributes and add to parent's data section
+	 */
 	map = tplg_object_get_map(tplg_pp, new_obj);
-	if (!map)
-		goto child;
+	if (map) {
+		builder = map->builder;
 
-	/* update automatic attribute for current object */
-	auto_attr_updater = map->auto_attr_updater;
-	if(auto_attr_updater) {
-		ret = auto_attr_updater(tplg_pp, obj_local, parent);
-		if (ret < 0) {
-			SNDERR("Failed to update automatic attributes for %s\n", id);
-			return ret;
+		/* update automatic attribute for current object */
+		auto_attr_updater = map->auto_attr_updater;
+		if(auto_attr_updater) {
+			ret = auto_attr_updater(tplg_pp, obj_local, parent);
+			if (ret < 0) {
+				SNDERR("Failed to update automatic attributes for %s\n", id);
+				return ret;
+			}
 		}
+	} else {
+		builder = &tplg_build_parent_data;
 	}
 
-	/* build the object and save the sections to the output config */
-	builder = map->builder;
 	ret = builder(tplg_pp, new_obj, parent);
 	if (ret < 0)
 		return ret;
 
-child:
 	/* create child objects in the object instance */
 	ret = tplg_object_pre_process_children(tplg_pp, new_obj, obj_local);
 	if (ret < 0) {
