@@ -883,16 +883,18 @@ int tplg_build_object_from_template(struct tplg_pre_processor *tplg_pp, snd_conf
 		*wtop = top;
 	} else {
 		*wtop = tplg_find_config(top, object_name);
-		if (!(*wtop)) {
-			ret = tplg_config_make_add(wtop, object_name, SND_CONFIG_TYPE_COMPOUND,
-						   top);
-			if (ret < 0) {
-				SNDERR("Error creating config for %s\n", object_name);
-				return ret;
-			}
+		if (*wtop)
+			goto template;
+
+		ret = tplg_config_make_add(wtop, object_name, SND_CONFIG_TYPE_COMPOUND,
+					   top);
+		if (ret < 0) {
+			SNDERR("Error creating config for %s\n", object_name);
+			return ret;
 		}
 	}
 
+template:
 	/* create template config */
 	if (!map->template_items)
 		return 0;
