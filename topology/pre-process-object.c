@@ -87,6 +87,10 @@ int tplg_parent_update(struct tplg_pre_processor *tplg_pp, snd_config_t *parent,
 	char *item_id;
 	int ret, id = 0;
 
+	/* Nothing to do if parent is NULL */
+	if (!parent)
+		return 0;
+
 	child = tplg_object_get_instance_config(tplg_pp, parent);
 	ret = snd_config_search(child, "name", &cfg);
 	if (ret < 0) {
@@ -963,6 +967,7 @@ const struct config_template_items mixer_control_config = {
 
 const struct config_template_items bytes_control_config = {
 	.int_config_ids = {"index", "base", "num_regs", "max", "mask"},
+	.compound_config_ids = {"access"}
 };
 
 const struct config_template_items scale_config = {
