@@ -149,7 +149,7 @@ static int pre_process_config(struct tplg_pre_processor *tplg_pp, snd_config_t *
 		snd_config_for_each(i2, next2, n) {
 			n2 = snd_config_iterator_entry(i2);
 
-			if (snd_config_get_id(n, &id) < 0)
+			if (snd_config_get_id(n2, &id) < 0)
 				continue;
 
 			if (snd_config_get_type(n2) != SND_CONFIG_TYPE_COMPOUND) {
