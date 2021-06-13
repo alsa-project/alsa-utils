@@ -406,7 +406,7 @@ int tplg_build_dapm_route_object(struct tplg_pre_processor *tplg_pp, snd_config_
 		goto err;
 	}
 
-	line_str = tplg_snprintf("%s, %s, %s", src_widget_name, control, sink_widget_name);
+	line_str = tplg_snprintf("%s, %s, %s", sink_widget_name, control, src_widget_name);
 	if (!line_str) {
 		ret = -ENOMEM;
 		goto err;
