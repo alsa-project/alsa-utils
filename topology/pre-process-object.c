@@ -907,6 +907,7 @@ const struct config_template_items mixer_control_config = {
 
 const struct config_template_items bytes_control_config = {
 	.int_config_ids = {"index", "base", "num_regs", "max", "mask"},
+	.compound_config_ids = {"access"}
 };
 
 const struct config_template_items scale_config = {
