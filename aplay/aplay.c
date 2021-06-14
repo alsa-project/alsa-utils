@@ -525,7 +525,7 @@ int main(int argc, char *argv[])
 	};
 	char *pcm_name = "default";
 	int tmp, err, c;
-	int do_device_list = 0, do_pcm_list = 0;
+	int do_device_list = 0, do_pcm_list = 0, force_sample_format = 0;
 	snd_pcm_info_t *info;
 	FILE *direction;
 
@@ -612,6 +612,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'f':
+			force_sample_format = 1;
 			if (strcasecmp(optarg, "cd") == 0 || strcasecmp(optarg, "cdr") == 0) {
 				if (strcasecmp(optarg, "cdr") == 0)
 					rhwparams.format = SND_PCM_FORMAT_S16_BE;
@@ -843,6 +844,14 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 	}
+
+	if (!force_sample_format &&
+	    isatty(fileno(stdin)) &&
+	    stream == SND_PCM_STREAM_CAPTURE &&
+	    snd_pcm_format_width(rhwparams.format) <= 8)
+		fprintf(stderr, "Warning: Some sources (like microphones) may produce inaudiable results\n"
+				"         with 8-bit sampling. Use '-f' argument to increase resolution\n"
+				"         e.g. '-f S16_LE'.\n");
 
 	chunk_size = 1024;
 	hwparams = rhwparams;
