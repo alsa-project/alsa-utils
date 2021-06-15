@@ -1595,16 +1595,90 @@ int tplg_pre_process_objects(struct tplg_pre_processor *tplg_pp, snd_config_t *c
 		if (snd_config_get_id(n, &class_name) < 0)
 			continue;
 		snd_config_for_each(i2, next2, n) {
+			snd_config_t *temp_n2;
+
 			n2 = snd_config_iterator_entry(i2);
 			if (snd_config_get_id(n2, &id) < 0) {
 				SNDERR("Invalid id for object\n");
 				return -EINVAL;
 			}
 
-			/* create a temp config for object with class type as the root node */
-			ret = snd_config_make(&_obj_type, class_type, SND_CONFIG_TYPE_COMPOUND);
+			ret = snd_config_copy(&temp_n2, n2);
 			if (ret < 0)
 				return ret;
+
+			/*
+			 * An object declared within a class definition as follows:
+			 * Class.Pipeline.volume-playback {
+			 * 	Object.Widget.pga.0 {
+			 * 		ramp_step_ms 250
+            		 * 	}
+			 * }
+			 * 
+			 * While instantiating the volume-pipeline class, the pga object
+			 * could be modified as follows:
+			 * Object.Pipeline.volume-playback.0 {
+			 * 	Object.Widget.pga.0 {
+			 * 		format "s24le"
+			 * 	}
+			 * }
+			 * When building the pga.0 object in the class definition, merge
+			 * the attributes declared in the volume-playback.0 object to create
+			 * a new config as follows to make sure that all attributes are
+			 * set for the pga object.
+			 * Object.Widget.pga.0 {
+			 * 	ramp_step_ms 250
+			 * 	format "s24le"
+			 * }
+			 */ 
+
+			if (parent) {
+				snd_config_t *parent_instance, *parent_obj, *temp;
+				char *obj_cfg_name;
+
+				obj_cfg_name = tplg_snprintf("%s%s.%s.%s", "Object.",
+							     class_type, class_name, id);
+
+				/* search for object instance in the parent */
+				parent_instance = tplg_object_get_instance_config(tplg_pp, parent);
+				if (!parent_instance)
+					goto temp_cfg;
+
+				ret = snd_config_search(parent_instance, obj_cfg_name, &parent_obj);
+				free(obj_cfg_name);
+				if (ret < 0)
+					goto temp_cfg;
+
+				/* don't merge if the object configs are the same */
+				if (parent_obj == n2)
+					goto temp_cfg;
+
+				/* create a temp config copying the parent object config */
+				ret = snd_config_copy(&temp, parent_obj);
+				if (ret < 0) {
+					snd_config_delete(temp_n2);
+					return ret;
+				}
+
+				/*
+				 * Merge parent object with the current object instance.
+				 * temp will be deleted by merge
+				 */
+				ret = snd_config_merge(temp_n2, temp, false);
+				if (ret < 0) {
+					SNDERR("error merging parent object config for %s.%s.%s\n",
+					       class_type, class_name, id);
+					snd_config_delete(temp_n2);
+					return ret;
+				}
+			}
+temp_cfg:
+			/* create a temp config for object with class type as the root node */
+			ret = snd_config_make(&_obj_type, class_type, SND_CONFIG_TYPE_COMPOUND);
+			if (ret < 0) {
+				snd_config_delete(temp_n2);
+				return ret;
+			}
 
 			ret = snd_config_make(&_obj_class, class_name, SND_CONFIG_TYPE_COMPOUND);
 			if (ret < 0)
@@ -1616,7 +1690,7 @@ int tplg_pre_process_objects(struct tplg_pre_processor *tplg_pp, snd_config_t *c
 				goto err;
 			}
 
-			ret = snd_config_copy(&_obj, n2);
+			ret = snd_config_copy(&_obj, temp_n2);
 			if (ret < 0)
 				goto err;
 
@@ -1632,6 +1706,7 @@ int tplg_pre_process_objects(struct tplg_pre_processor *tplg_pp, snd_config_t *c
 				SNDERR("Error building object %s.%s.%s\n",
 				       class_type, class_name, id);
 err:
+			snd_config_delete(temp_n2);
 			snd_config_delete(_obj_type);
 			if (ret < 0)
 				return ret;
