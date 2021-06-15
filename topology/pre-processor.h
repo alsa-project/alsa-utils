@@ -83,6 +83,8 @@ int tplg_parent_update(struct tplg_pre_processor *tplg_pp, snd_config_t *parent,
 			  const char *section_name, const char *item_name);
 int tplg_update_buffer_auto_attr(struct tplg_pre_processor *tplg_pp,
 				 snd_config_t *buffer_cfg, snd_config_t *parent);
+int tplg_add_object_data(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+			 snd_config_t *top, const char *array_name);
 
 /* object helpers */
 int tplg_pre_process_objects(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg,

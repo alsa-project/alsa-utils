@@ -667,8 +667,8 @@ static int tplg_pp_add_object_data_section(struct tplg_pre_processor *tplg_pp,
 	return snd_config_set_string(child, data_name);
 }
 
-static int tplg_add_object_data(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
-				snd_config_t *top, const char *array_name)
+int tplg_add_object_data(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+			 snd_config_t *top, const char *array_name)
 {
 	snd_config_iterator_t i, next;
 	snd_config_t *data_cfg, *class_cfg, *n, *obj;
