@@ -115,6 +115,10 @@ static int tplg_build_control(struct tplg_pre_processor *tplg_pp, snd_config_t *
 	if (ret < 0)
 		return ret;
 
+	ret = tplg_add_object_data(tplg_pp, obj_cfg, cfg, NULL);
+	if (ret < 0)
+		SNDERR("Failed to add data section for %s\n", name);
+
 	return tplg_parent_update(tplg_pp, parent, type, name);
 }
 
