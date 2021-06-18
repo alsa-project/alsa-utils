@@ -201,35 +201,32 @@ static int tplg_create_config_template(struct tplg_pre_processor *tplg_pp,
 		return ret;
 
 	/* add integer configs */
-	if (items->int_config_ids)
-		for (i = 0; i < MAX_CONFIGS_IN_TEMPLATE; i++)
-			if (items->int_config_ids[i]) {
-				ret = tplg_config_make_add(&child, items->int_config_ids[i],
-							   SND_CONFIG_TYPE_INTEGER, top);
-				if (ret < 0)
-					goto err;
-			}
+	for (i = 0; i < MAX_CONFIGS_IN_TEMPLATE; i++)
+		if (items->int_config_ids[i]) {
+			ret = tplg_config_make_add(&child, items->int_config_ids[i],
+						   SND_CONFIG_TYPE_INTEGER, top);
+			if (ret < 0)
+				goto err;
+		}
 
 	/* add string configs */
-	if (items->string_config_ids)
-		for (i = 0; i < MAX_CONFIGS_IN_TEMPLATE; i++)
-			if (items->string_config_ids[i]) {
-				ret = tplg_config_make_add(&child, items->string_config_ids[i],
-							   SND_CONFIG_TYPE_STRING, top);
-				if (ret < 0)
-					goto err;
-			}
+	for (i = 0; i < MAX_CONFIGS_IN_TEMPLATE; i++)
+		if (items->string_config_ids[i]) {
+			ret = tplg_config_make_add(&child, items->string_config_ids[i],
+						   SND_CONFIG_TYPE_STRING, top);
+			if (ret < 0)
+				goto err;
+		}
 
 	/* add compound configs */
-	if (items->compound_config_ids)
-		for (i = 0; i < MAX_CONFIGS_IN_TEMPLATE; i++) {
-			if (items->compound_config_ids[i]) {
-				ret = tplg_config_make_add(&child, items->compound_config_ids[i],
-							   SND_CONFIG_TYPE_COMPOUND, top);
-				if (ret < 0)
-					goto err;
-			}
+	for (i = 0; i < MAX_CONFIGS_IN_TEMPLATE; i++) {
+		if (items->compound_config_ids[i]) {
+			ret = tplg_config_make_add(&child, items->compound_config_ids[i],
+						   SND_CONFIG_TYPE_COMPOUND, top);
+			if (ret < 0)
+				goto err;
 		}
+	}
 
 err:
 	if (ret < 0) {
