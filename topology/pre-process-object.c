@@ -1290,13 +1290,13 @@ static int tplg_construct_object_name(struct tplg_pre_processor *tplg_pp, snd_co
 
 		/* alloc and concat arg value to the name */
 		temp = tplg_snprintf("%s.%s", new_name, arg_value);
+		free(arg_value);
 		if (!temp) {
 			ret = -ENOMEM;
 			goto err;
 		}
 		free(new_name);
 		new_name = temp;
-		free(arg_value);
 	}
 
 	ret = snd_config_set_id(obj, new_name);
