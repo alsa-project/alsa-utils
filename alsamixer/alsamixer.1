@@ -170,17 +170,218 @@ Only for controls without dB information, a linear mapping of the
 hardware volume register values is used (this is the same algorithm as
 used in the old \fBalsamixer\fP).
 
+.SH FILES
+
+Configuration is read from the following files:
+
+\fI$XDG_CONFIG_HOME\fP/alsamixer.rc
+
+\fI$HOME\fP/.config/alsamixer.rc
+
+.SH CONFIGURATION
+
+Comments start with '#'.
+
+.TP
+\fBcolor\fP \fIelement\fP \fIforeground\fP \fIbackground\fP [\fIattribute...\fP]
+
+Valid values for \fIforeground\fP and \fIbackground\fP are: red, green, yellow, blue, magenta, cyan, white, black, none / default.
+
+Valid values for \fIattribute\fP are: bold, normal, reverse, underline, dim, italic, blink.
+
+See section \fBTHEME ELEMENTS\fP for a list of \fIelements\fP.
+
+.TP
+\fBset\fP \fIoption\fP \fIvalue\fP
+
+\fBmouse_wheel_step\fP \fI<N>\fP
+
+Set the mouse wheel step to \fI<N>\fP
+
+\fBmouse_wheel_focuses_control\fP \fI0|1\fP
+
+If enabled (\fI1\fP), mixer controls can be changed by hovering over them and scrolling the mouse wheel.
+
+.TP
+\fBbind\fP \fIkey_definition\fP \fIcommand\fP
+
+A \fIkey_definition\fP may be:
+   - a single character
+   - a combination with control: C-a
+   - a combination with alt: M-a
+   - a special keyname: Enter, Escape, PageUp, PageDown, Left, Down, Right, Up, Home, End, Backspace, F1 .. F12
+
+See section \fBCOMMANDS\fP for a list of \fIcommands\fP.
+
+.SS COMMANDS
+
+.TP
+\fItextbox_close\fP
+Close textbox
+
+.TP
+\fItextbox_up\fP / \fItextbox_down\fP
+Scroll text up/down by one line
+
+.TP
+\fItextbox_left\fP / \fItextbox_right\fP
+Scroll text left/right by one column
+
+.TP
+\fItextbox_page_up\fP / \fItextbox_page_down\fP
+Scroll text up/down one page
+
+.TP
+\fItextbox_page_left\fP / \fItextbox_page_right\fP
+Scroll text left/right one page
+
+.TP
+\fItextbox_top\fP / \fItextbox_bottom\fP
+Go to top/bottom position of text
+
+.TP
+\fImixer_balance_volumes\fP
+Balance both channels
+
+.TP
+\fImixer_close\fP
+Close alsamixer application
+
+.TP
+\fImixer_help\fP
+Show help
+
+.TP
+\fImixer_mode_playback\fP
+Show playback controls
+
+.TP
+\fImixer_mode_capture\fP
+Show capture controls
+
+.TP
+\fImixer_mode_all\fP
+Show playback and capture controls
+
+.TP
+\fImixer_mode_toggle\fP
+Toggle between playback/capture/all controls
+
+.TP
+\fImixer_refresh\fP
+Refresh screen
+
+.TP
+\fImixer_previous\fP / \fImixer_next\fP
+Select previous/next mixer control
+
+.TP
+\fImixer_control_focus_<N>\fP
+Focus control number \fI<N>\fP.
+
+.TP
+\fImixer_control_set_<N>\fP[\fI_left\fP|\fI_right\fP]
+Change volume of current control to \fI<N>\fP percent.
+
+.TP
+\fImixer_control_up_<N>\fP[\fI_left\fP|\fI_right\fP]
+Increase volume of current control by \fI<N>\fP percent. 
+
+.TP
+\fImixer_control_down_<N>\fP[\fI_left\fP|\fI_right\fP]
+Decrease volume of current control by \fI<N>\fP percent.
+
+.TP
+\fImixer_toggle_mute\fP[\fI_left\fP|\fI_right\fP]
+Toggle mute state of both/left/right channels
+
+.TP
+\fImixer_toggle_capture\fP[\fI_left\fP|\fI_right\fP]
+Toggle capture state of both/left/right channels
+
+.TP
+\fImixer_select_card\fP
+Show window for selecting sound card
+
+.TP
+\fImixer_system_information\fP
+Show system information
+
+
+.SS THEME ELEMENTS
+
+.TP
+\fImixer_frame\fP Color of the box around the mixer
+
+.TP
+\fImixer_text\fP Color of text at the top of the mixer
+
+.TP
+\fImixer_active\fP Color of \fIAlsaMixer\fP heading
+
+.TP
+\fIctl_frame\fP Color of the frame around the mixer controls
+
+.TP
+\fIctl_mute\fP Color indicating the mute state (\fIMM\fP)
+
+.TP
+\fIctl_nomute\fP Color indicating the unmute state (\fI00\fP)
+
+.TP
+\fIctl_capture\fP Color of \fICAPTURE\fP text
+
+.TP
+\fIctl_nocapture\fP Colof of disabled capture label
+
+.TP
+\fIctl_label\fP Color of label underneath mixer controls
+
+.TP
+\fIctl_label_focus\fP Color of label underneath focused mixer control
+
+.TP
+\fIctl_mark_focus\fP Color of \fI<>\fP marks beside focused mixer label
+
+.TP
+\fIctl_bar_lo\fP Color of lower volume bar
+
+.TP
+\fIctl_bar_mi\fP Color of middle volume bar
+
+.TP
+\fIctl_bar_hi\fP Color of top volume bar
+
+.TP
+\fIctl_inactive\fP Color for inactive control
+
+.TP
+\fIctl_label_inactive\fP Color for inactive label
+
+.TP
+\fIerrormsg\fP Color used for error message
+
+.TP
+\fIinfomsg\fP Color used for information message
+
+.TP
+\fItextbox\fP Color used for textbox (user input)
+
+.TP
+\fItextfield\fP Color used for textbox
+
+.TP
+\fImenu\fP Color used for menu
+
+.TP
+\fImenu_selected\fP Color used for selected entry in menu
+
 .SH SEE ALSO
 \fB
 amixer(1),
 aplay(1),
 arecord(1)
 \fP
-
-.SH BUGS 
-Some terminal emulators (e.g. \fBnxterm\fP) may not
-work quite right with ncurses, but that's their own damn
-fault. Plain old \fBxterm\fP seems to be fine.
 
 .SH AUTHOR
 .B alsamixer
