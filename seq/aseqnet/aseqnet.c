@@ -75,6 +75,7 @@ static int cur_connected;
 static int seq_port;
 
 static int server_mode;
+static int ipv6 = 0;
 static int verbose = 0;
 static int info = 0;
 
@@ -84,6 +85,7 @@ static int info = 0;
  */
 
 static const struct option long_option[] = {
+	{"ipv6", 0, NULL, '6'},
 	{"port", 1, NULL, 'p'},
 	{"source", 1, NULL, 's'},
 	{"dest", 1, NULL, 'd'},
@@ -106,8 +108,11 @@ int main(int argc, char **argv)
 	textdomain(PACKAGE);
 #endif
 
-	while ((c = getopt_long(argc, argv, "p:s:d:n:,vi", long_option, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "p:s:d:n:6hvi", long_option, NULL)) != -1) {
 		switch (c) {
+		case '6':
+			ipv6 = 1;
+			break;
 		case 'p':
 			port = optarg;
 			break;
@@ -169,6 +174,7 @@ static void usage(void)
 	printf(_("  server mode: aseqnet [-options]\n"));
 	printf(_("  client mode: aseqnet [-options] server_host\n"));
 	printf(_("options:\n"));
+	printf(_("  -6,--ipv6 : use IPv6 TCP protocol\n"));
 	printf(_("  -p,--port # : specify TCP port (digit or service name)\n"));
 	printf(_("  -s,--source addr : read from given addr (client:port)\n"));
 	printf(_("  -d,--dest addr : write to given addr (client:port)\n"));
@@ -348,7 +354,7 @@ static void init_server(const char *port)
 	int save_errno = 0;
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
+	hints.ai_family = ipv6 ? AF_INET6 : AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
@@ -357,7 +363,7 @@ static void init_server(const char *port)
 		exit(1);
 	}
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
-		if ((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0){
+		if ((sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) < 0){
 			perror("create socket");
 			exit(1);
 		}
@@ -433,7 +439,7 @@ static void init_client(const char *server, const char *port)
 	int save_errno = 0;
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
+	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
@@ -442,7 +448,7 @@ static void init_client(const char *server, const char *port)
 		exit(1);
 	}
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
-		if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0){
+		if ((fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) < 0){
 			perror("create socket");
 			exit(1);
 		}
