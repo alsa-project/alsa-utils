@@ -1753,8 +1753,10 @@ static void print_vu_meter_stereo(int *perc, int *maxperc)
 	for (c = 0; c < 2; c++) {
 		int p = perc[c] * bar_length / 100;
 		char tmp[4];
-		if (p > bar_length)
-			p = bar_length;
+		if (p >= bar_length)
+			p = bar_length - 1;
+		if (p < 0)
+			p = 0;
 		if (c)
 			memset(line + bar_length + 6 + 1, '#', p);
 		else
