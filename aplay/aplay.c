@@ -1898,6 +1898,8 @@ static void compute_max_peak(u_char *data, size_t samples)
 		max = 0x7fffffff;
 
 	for (c = 0; c < ichans; c++) {
+		if (max_peak[c] > max)
+			max_peak[c] = max;
 		if (bits_per_sample > 16)
 			perc[c] = max_peak[c] / (max / 100);
 		else
