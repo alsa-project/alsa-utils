@@ -42,6 +42,7 @@
 
 #define NSEC_PER_SEC 1000000000L
 
+static int do_print_timestamp = 0;
 static int do_device_list, do_rawmidi_list;
 static char *port_name = "default";
 static char *send_file_name;
@@ -81,7 +82,10 @@ static void usage(void)
 		"-r, --receive=file              write received data into a file\n"
 		"-S, --send-hex=\"...\"            send hexadecimal bytes\n"
 		"-d, --dump                      print received data as hexadecimal bytes\n"
-		"-T, --timestamp                 adds a timestamp in front of each dumped message\n"
+		"-T, --timestamp=...             adds a timestamp in front of each dumped message\n"
+		"                realtime\n"
+		"                monotonic\n"
+		"                raw\n"
 		"-t, --timeout=seconds           exits when no data has been received\n"
 		"                                for the specified duration\n"
 		"-a, --active-sensing            include active sensing bytes\n"
@@ -435,7 +439,7 @@ static void print_byte(unsigned char byte, struct timespec *ts)
 		/* Nanoseconds does not make a lot of sense for serial MIDI (the
 		 * 31250 bps one) but I'm not sure about MIDI over USB.
 		 */
-		if (ts)
+		if (do_print_timestamp)
 			printf("%lld.%.9ld) ", (long long)ts->tv_sec, ts->tv_nsec);
 	}
 
@@ -467,7 +471,7 @@ static void add_send_hex_data(const char *str)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hVlLp:s:r:S::dt:aci:T";
+	static const char short_options[] = "hVlLp:s:r:S::dt:aci:T:";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
@@ -478,7 +482,7 @@ int main(int argc, char *argv[])
 		{"receive", 1, NULL, 'r'},
 		{"send-hex", 2, NULL, 'S'},
 		{"dump", 0, NULL, 'd'},
-		{"timestamp", 0, NULL, 'T'},
+		{"timestamp", 1, NULL, 'T'},
 		{"timeout", 1, NULL, 't'},
 		{"active-sensing", 0, NULL, 'a'},
 		{"clock", 0, NULL, 'c'},
@@ -489,7 +493,7 @@ int main(int argc, char *argv[])
 	int ignore_active_sensing = 1;
 	int ignore_clock = 1;
 	int do_send_hex = 0;
-	int do_print_timestamp = 0;
+	clockid_t cid = CLOCK_REALTIME;
 	struct itimerspec itimerspec = { .it_interval = { 0, 0 } };
 
 	while ((c = getopt_long(argc, argv, short_options,
@@ -526,6 +530,16 @@ int main(int argc, char *argv[])
 			break;
 		case 'T':
 			do_print_timestamp = 1;
+			if (optarg == NULL)
+				error("Clock type missing");
+			else if (strcasecmp(optarg, "realtime") == 0)
+				cid = CLOCK_REALTIME;
+			else if (strcasecmp(optarg, "monotonic") == 0)
+				cid = CLOCK_MONOTONIC;
+			else if (strcasecmp(optarg, "raw") == 0)
+				cid = CLOCK_MONOTONIC_RAW;
+			else
+				error("Clock type not known");
 			break;
 		case 't':
 			if (optarg)
@@ -663,6 +677,7 @@ int main(int argc, char *argv[])
 				goto _exit;
 			}
 		}
+
 		for (;;) {
 			unsigned char buf[256];
 			int i, length;
@@ -677,8 +692,8 @@ int main(int argc, char *argv[])
 				break;
 			}
 
-			if (clock_gettime(CLOCK_REALTIME, &ts) < 0) {
-				error("clock_getres failed: %s", strerror(errno));
+			if (clock_gettime(cid, &ts) < 0) {
+				error("clock_getres (%d) failed: %s", cid, strerror(errno));
 				break;
 			}
 
@@ -717,7 +732,7 @@ int main(int argc, char *argv[])
 				write(receive_file, buf, length);
 			if (dump) {
 				for (i = 0; i < length; ++i)
-					print_byte(buf[i], do_print_timestamp ? &ts : NULL);
+					print_byte(buf[i], &ts);
 
 				fflush(stdout);
 			}
