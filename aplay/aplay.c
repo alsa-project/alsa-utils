@@ -1829,9 +1829,9 @@ static void compute_max_peak(u_char *data, size_t samples)
 			else
 				sval = be16toh(*valp);
 			sval ^= mask;
-			sval = abs(sval);
-			if (max_peak[c] < sval)
-				max_peak[c] = sval;
+			val = abs(sval);
+			if (max_peak[c] < val)
+				max_peak[c] = val;
 			valp++;
 			if (vumeter == VUMETER_STEREO)
 				c = !c;
