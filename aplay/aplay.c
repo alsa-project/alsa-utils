@@ -1828,7 +1828,8 @@ static void compute_max_peak(u_char *data, size_t samples)
 				sval = le16toh(*valp);
 			else
 				sval = be16toh(*valp);
-			sval = abs(sval) ^ mask;
+			sval ^= mask;
+			sval = abs(sval);
 			if (max_peak[c] < sval)
 				max_peak[c] = sval;
 			valp++;
@@ -1848,11 +1849,12 @@ static void compute_max_peak(u_char *data, size_t samples)
 			} else {
 				val = (valp[0]<<16) | (valp[1]<<8) | valp[2];
 			}
+			val ^= mask;
 			/* Correct signed bit in 32-bit value */
 			if (val & (1<<(bits_per_sample-1))) {
 				val |= 0xff<<24;	/* Negate upper bits too */
 			}
-			val = abs(val) ^ mask;
+			val = abs(val);
 			if (max_peak[c] < val)
 				max_peak[c] = val;
 			valp += 3;
@@ -1871,7 +1873,8 @@ static void compute_max_peak(u_char *data, size_t samples)
 				val = le32toh(*valp);
 			else
 				val = be32toh(*valp);
-			val = abs(val) ^ mask;
+			val ^= mask;
+			val = abs(val);
 			if (max_peak[c] < val)
 				max_peak[c] = val;
 			valp++;
