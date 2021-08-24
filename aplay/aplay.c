@@ -1874,7 +1874,10 @@ static void compute_max_peak(u_char *data, size_t samples)
 			else
 				val = be32toh(*valp);
 			val ^= mask;
-			val = abs(val);
+			if (val == 0x80000000U)
+				val = 0x7fffffff;
+			else
+				val = abs(val);
 			if (max_peak[c] < val)
 				max_peak[c] = val;
 			valp++;
