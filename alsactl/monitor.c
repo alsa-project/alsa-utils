@@ -235,6 +235,7 @@ static int print_event(snd_ctl_t *ctl, const char *name)
 	if (mask & SND_CTL_EVENT_MASK_TLV)
 		printf(" TLV");
 	printf("\n");
+	fflush(stdout);
 	return 0;
 }
 
