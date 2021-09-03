@@ -19,10 +19,7 @@
 */
 #include <errno.h>
 #include <stdio.h>
-#include <alsa/input.h>
-#include <alsa/output.h>
-#include <alsa/conf.h>
-#include <alsa/error.h>
+#include <alsa/asoundlib.h>
 #include "topology.h"
 #include "pre-processor.h"
 

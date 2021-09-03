@@ -24,9 +24,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <alsa/input.h>
-#include <alsa/output.h>
-#include <alsa/conf.h>
+#include <alsa/asoundlib.h>
 #include "gettext.h"
 #include "topology.h"
 #include "pre-processor.h"
