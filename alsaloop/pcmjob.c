@@ -1191,6 +1191,11 @@ static void openctl_elem(struct loopback_handle *lhandle,
 		if (err < 0) {
 			snd_ctl_elem_value_free(*elem);
 			*elem = NULL;
+		} else {
+			if (verbose)
+				snd_output_printf(lhandle->loopback->output,
+						"Opened PCM element %s of %s, device %d, subdevice %d\n",
+						name, snd_ctl_name(lhandle->ctl), device, subdevice);
 		}
 	}
 }
