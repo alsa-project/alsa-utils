@@ -81,6 +81,9 @@ static int help(void)
 	printf("  contents        show contents of all controls for given card\n");
 	printf("  cset cID P      set control contents for one control\n");
 	printf("  cget cID        get control contents for one control\n");
+	printf("\nAvailable advanced commands:\n");
+	printf("  sevents	  show the mixer events for simple controls\n");
+	printf("  events	  show the mixer events for simple controls\n");
 	return 0;
 }
 
