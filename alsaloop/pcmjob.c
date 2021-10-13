@@ -1101,7 +1101,8 @@ void update_pitch(struct loopback *loop)
 #endif
 	}
 	else if (loop->sync == SYNC_TYPE_PLAYRATESHIFT) {
-		set_rate_shift(loop->play, pitch);
+		// pitch is capture-based, playback side requires reciprocal
+		set_rate_shift(loop->play, 1 / pitch);
 #ifdef USE_SAMPLERATE
 		if (loop->use_samplerate) {
 			loop->src_data.src_ratio = 
@@ -1172,32 +1173,57 @@ static int get_channels(struct loopback_handle *lhandle)
 	return snd_ctl_elem_value_get_integer(lhandle->ctl_channels, 0);
 }
 
-static void openctl_elem(struct loopback_handle *lhandle,
-			 int device, int subdevice,
-			 const char *name,
-			 snd_ctl_elem_value_t **elem)
+static int openctl_elem_id(struct loopback_handle *lhandle, snd_ctl_elem_id_t *id,
+		snd_ctl_elem_value_t **elem)
 {
 	int err;
 
 	if (snd_ctl_elem_value_malloc(elem) < 0) {
 		*elem = NULL;
-	} else {
-		snd_ctl_elem_value_set_interface(*elem,
-						 SND_CTL_ELEM_IFACE_PCM);
-		snd_ctl_elem_value_set_device(*elem, device);
-		snd_ctl_elem_value_set_subdevice(*elem, subdevice);
-		snd_ctl_elem_value_set_name(*elem, name);
-		err = snd_ctl_elem_read(lhandle->ctl, *elem);
-		if (err < 0) {
-			snd_ctl_elem_value_free(*elem);
-			*elem = NULL;
-		} else {
-			if (verbose)
-				snd_output_printf(lhandle->loopback->output,
-						"Opened PCM element %s of %s, device %d, subdevice %d\n",
-						name, snd_ctl_name(lhandle->ctl), device, subdevice);
-		}
+		return -ENOMEM;
 	}
+	snd_ctl_elem_value_set_id(*elem, id);
+	snd_ctl_elem_value_set_interface(*elem, SND_CTL_ELEM_IFACE_PCM);
+	err = snd_ctl_elem_read(lhandle->ctl, *elem);
+	if (err < 0) {
+		snd_ctl_elem_value_free(*elem);
+		*elem = NULL;
+		return err;
+	} else {
+		snd_output_printf(lhandle->loopback->output,
+				"Opened PCM element %s of %s, device %d, subdevice %d\n",
+				snd_ctl_elem_id_get_name(id), snd_ctl_name(lhandle->ctl),
+				snd_ctl_elem_id_get_device(id),
+				snd_ctl_elem_id_get_subdevice(id));
+		return 0;
+	}
+}
+
+static int openctl_elem(struct loopback_handle *lhandle,
+			 int device, int subdevice,
+			 const char *name,
+			 snd_ctl_elem_value_t **elem)
+{
+	snd_ctl_elem_id_t *id;
+
+	snd_ctl_elem_id_alloca(&id);
+	snd_ctl_elem_id_set_device(id, device);
+	snd_ctl_elem_id_set_subdevice(id, subdevice);
+	snd_ctl_elem_id_set_name(id, name);
+	return openctl_elem_id(lhandle, id, elem);
+}
+
+static int openctl_elem_ascii(struct loopback_handle *lhandle, char *ascii_name,
+		snd_ctl_elem_value_t **elem)
+{
+	snd_ctl_elem_id_t *id;
+
+	snd_ctl_elem_id_alloca(&id);
+	if (snd_ctl_ascii_elem_id_parse(id, ascii_name)) {
+		fprintf(stderr, "Wrong control identifier: %s\n", ascii_name);
+		return -EINVAL;
+	}
+	return openctl_elem_id(lhandle, id, elem);
 }
 
 static int openctl(struct loopback_handle *lhandle, int device, int subdevice)
@@ -1206,10 +1232,21 @@ static int openctl(struct loopback_handle *lhandle, int device, int subdevice)
 
 	lhandle->ctl_rate_shift = NULL;
 	if (lhandle->loopback->play == lhandle) {
+		// play only
+		if (lhandle->prateshift_name) {
+			err = openctl_elem_ascii(lhandle, lhandle->prateshift_name,
+					&lhandle->ctl_rate_shift);
+			if (err < 0) {
+				logit(LOG_CRIT, "Unable to open playback PCM Rate Shift elem '%s'.\n",
+						lhandle->prateshift_name);
+				exit(EXIT_FAILURE);
+			}
+		}
 		if (lhandle->loopback->controls)
 			goto __events;
 		return 0;
 	}
+	// capture only
 	openctl_elem(lhandle, device, subdevice, "PCM Notify",
 			&lhandle->ctl_notify);
 	openctl_elem(lhandle, device, subdevice, "PCM Rate Shift 100000",

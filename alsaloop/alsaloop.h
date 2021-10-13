@@ -127,6 +127,7 @@ struct loopback_handle {
 	snd_ctl_elem_value_t *ctl_format;
 	snd_ctl_elem_value_t *ctl_rate;
 	snd_ctl_elem_value_t *ctl_channels;
+	char *prateshift_name; /* ascii name for the playback rate shift ctl elem */
 };
 
 struct loopback {

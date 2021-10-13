@@ -58,6 +58,11 @@ Use given CTL device for playback.
 Use given CTL device for capture.
 
 .TP
+\fI\-x <ctl_ascii_name>\fP | \fI\-\-prateshift=<ctl_ascii_name>\fP
+
+Specify ctl ascii name for playshift sync mode (see the Examples section).
+
+.TP
 \fI\-l <latency>\fP | \fI\-\-latency=<frames>\fP
 
 Requested latency in frames.
@@ -195,10 +200,12 @@ Verbose xrun profiling.
 Set process wake timeout.
 
 .SH EXAMPLES
-
-.TP
+.nf
 \fBalsaloop \-C hw:0,0 \-P hw:1,0 \-t 50000\fR
 
+\fBalsaloop \-C hw:soundcard,0 \-P hw:Loopback,0 \-t 50000 \-S playshift \\
+\-x iface=PCM,name='PCM Rate Shift 100000',device=1\fR
+.ne
 .SH BUGS
 None known.
 .SH AUTHOR

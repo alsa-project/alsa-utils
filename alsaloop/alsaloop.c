@@ -175,6 +175,7 @@ void help(void)
 "-C,--cdevice   capture device\n"
 "-X,--pctl      playback ctl device\n"
 "-Y,--cctl      capture ctl device\n"
+"-x,--prateshift playback 'PCM Rate Shift 100000' ascii ctl name\n"
 "-l,--latency   requested latency in frames\n"
 "-t,--tlatency  requested latency in usec (1/1000000sec)\n"
 "-f,--format    sample format\n"
@@ -362,6 +363,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output,
 		{"cdevice", 1, NULL, 'C'},
 		{"pctl", 1, NULL, 'X'},
 		{"cctl", 1, NULL, 'Y'},
+		{"prateshift", 1, NULL, 'x'},
 		{"latency", 1, NULL, 'l'},
 		{"tlatency", 1, NULL, 't'},
 		{"format", 1, NULL, 'f'},
@@ -391,6 +393,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output,
 	char *arg_cdevice = NULL;
 	char *arg_pctl = NULL;
 	char *arg_cctl = NULL;
+	char *arg_prateshift = NULL;
 	unsigned int arg_latency_req = 0;
 	unsigned int arg_latency_reqtime = 10000;
 	snd_pcm_format_t arg_format = SND_PCM_FORMAT_S16_LE;
@@ -420,7 +423,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output,
 	while (1) {
 		int c;
 		if ((c = getopt_long(argc, argv,
-				"hdg:P:C:X:Y:l:t:F:f:c:r:s:benvA:S:a:m:T:O:w:UW:z",
+				"hdg:P:C:X:Y:x:l:t:F:f:c:r:s:benvA:S:a:m:T:O:w:UW:z",
 				long_option, NULL)) < 0)
 			break;
 		switch (c) {
@@ -445,6 +448,9 @@ static int parse_config(int argc, char *argv[], snd_output_t *output,
 			break;
 		case 'Y':
 			arg_cctl = strdup(optarg);
+			break;
+		case 'x':
+			arg_prateshift = strdup(optarg);
 			break;
 		case 'l':
 			err = atoi(optarg);
@@ -627,6 +633,9 @@ static int parse_config(int argc, char *argv[], snd_output_t *output,
 			logit(LOG_CRIT, "Unable to add ossmixer controls.\n");
 			exit(EXIT_FAILURE);
 		}
+		if (arg_prateshift)
+			play->prateshift_name = arg_prateshift;
+
 #ifdef USE_SAMPLERATE
 		loop->src_enable = arg_samplerate > 0;
 		if (loop->src_enable)
