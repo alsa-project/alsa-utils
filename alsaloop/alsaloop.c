@@ -528,6 +528,8 @@ static int parse_config(int argc, char *argv[], snd_output_t *output,
 				arg_sync = SYNC_TYPE_PLAYRATESHIFT;
 			else if (optarg[0] == 'r')
 				arg_sync = SYNC_TYPE_SAMPLERATE;
+			else if (optarg[0] == 'a')
+				arg_sync = SYNC_TYPE_AUTO;
 			else
 				arg_sync = atoi(optarg);
 			if (arg_sync < 0 || arg_sync > SYNC_TYPE_LAST)
