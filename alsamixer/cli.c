@@ -152,14 +152,14 @@ int main(int argc, char *argv[])
 
 	parse_options(argc, argv);
 
-	create_mixer_object(&selem_regopt);
-
-	initialize_curses(use_color, use_mouse);
-
 	if (config_file == CONFIG_DEFAULT)
 		parse_default_config_file();
 	else if (config_file)
 		parse_config_file(config_file);
+
+	create_mixer_object(&selem_regopt);
+
+	initialize_curses(use_color, use_mouse);
 
 	create_mixer_widget();
 

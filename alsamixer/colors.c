@@ -23,6 +23,7 @@
 #include "colors.h"
 
 struct attributes attrs;
+short background_color = -1;
 
 int get_color_pair(short fg, short bg)
 {
@@ -50,11 +51,11 @@ void init_colors(int use_color)
 		start_color();
 		use_default_colors();
 
-		get_color_pair(COLOR_CYAN, -1); // COLOR_PAIR(1)
-		get_color_pair(COLOR_YELLOW, -1);
+		get_color_pair(COLOR_CYAN, background_color); // COLOR_PAIR(1)
+		get_color_pair(COLOR_YELLOW, background_color);
 		get_color_pair(COLOR_WHITE, COLOR_GREEN);
-		get_color_pair(COLOR_RED, -1);
-		get_color_pair(COLOR_WHITE, -1);
+		get_color_pair(COLOR_RED, background_color);
+		get_color_pair(COLOR_WHITE, background_color);
 		get_color_pair(COLOR_WHITE, COLOR_BLUE);
 		get_color_pair(COLOR_RED, COLOR_BLUE);
 		get_color_pair(COLOR_GREEN, COLOR_GREEN);

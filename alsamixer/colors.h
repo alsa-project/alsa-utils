@@ -34,6 +34,7 @@ struct attributes {
 };
 
 extern struct attributes attrs;
+extern short background_color;
 
 void init_colors(int use_color);
 int get_color_pair(short fg, short bg);

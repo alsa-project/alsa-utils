@@ -444,6 +444,15 @@ static int cfg_set(char **argv, unsigned int argc)
 				return ERROR_CONFIG;
 			}
 		}
+		else if (!strcmp(argv[0], "background")) {
+			int bg_color = color_by_name(argv[1]);
+			if (bg_color == -2) {
+				error_message = _("unknown color");
+				error_cause = argv[1];
+				return ERROR_CONFIG;
+			}
+			background_color = bg_color;
+		}
 		else {
 			error_message = _("unknown option");
 			error_cause = argv[0];
