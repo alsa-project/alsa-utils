@@ -1063,9 +1063,9 @@ static int set_rate_shift(struct loopback_handle *lhandle, double pitch)
 	if (lhandle->ctl_rate_shift) {
 		snd_ctl_elem_value_set_integer(lhandle->ctl_rate_shift, 0, pitch * 100000);
 		err = snd_ctl_elem_write(lhandle->ctl, lhandle->ctl_rate_shift);
-	} else if (lhandle->capt_pitch) {
-		snd_ctl_elem_value_set_integer(lhandle->capt_pitch, 0, (1 / pitch) * 1000000);
-		err = snd_ctl_elem_write(lhandle->ctl, lhandle->capt_pitch);
+	} else if (lhandle->ctl_pitch) {
+		snd_ctl_elem_value_set_integer(lhandle->ctl_pitch, 0, (1 / pitch) * 1000000);
+		err = snd_ctl_elem_write(lhandle->ctl, lhandle->ctl_pitch);
 	} else {
 		return 0;
 	}
@@ -1252,7 +1252,7 @@ static int openctl(struct loopback_handle *lhandle, int device, int subdevice)
 	openctl_elem(lhandle, device, subdevice, "PCM Rate Shift 100000",
 			&lhandle->ctl_rate_shift);
 	openctl_elem(lhandle, device, subdevice, "Capture Pitch 1000000",
-			&lhandle->capt_pitch);
+			&lhandle->ctl_pitch);
 	set_rate_shift(lhandle, 1);
 	openctl_elem(lhandle, device, subdevice, "PCM Slave Active",
 			&lhandle->ctl_active);
@@ -1338,9 +1338,9 @@ static int closeit(struct loopback_handle *lhandle)
 	if (lhandle->ctl_rate_shift)
 		snd_ctl_elem_value_free(lhandle->ctl_rate_shift);
 	lhandle->ctl_rate_shift = NULL;
-	if (lhandle->capt_pitch)
-		snd_ctl_elem_value_free(lhandle->capt_pitch);
-	lhandle->capt_pitch = NULL;
+	if (lhandle->ctl_pitch)
+		snd_ctl_elem_value_free(lhandle->ctl_pitch);
+	lhandle->ctl_pitch = NULL;
 	if (lhandle->ctl)
 		err = snd_ctl_close(lhandle->ctl);
 	lhandle->ctl = NULL;
@@ -1386,7 +1386,7 @@ int pcmjob_init(struct loopback *loop)
 	snprintf(id, sizeof(id), "%s/%s", loop->play->id, loop->capt->id);
 	id[sizeof(id)-1] = '\0';
 	loop->id = strdup(id);
-	if (loop->sync == SYNC_TYPE_AUTO && (loop->capt->ctl_rate_shift || loop->capt->capt_pitch))
+	if (loop->sync == SYNC_TYPE_AUTO && (loop->capt->ctl_rate_shift || loop->capt->ctl_pitch))
 		loop->sync = SYNC_TYPE_CAPTRATESHIFT;
 	if (loop->sync == SYNC_TYPE_AUTO && loop->play->ctl_rate_shift)
 		loop->sync = SYNC_TYPE_PLAYRATESHIFT;
