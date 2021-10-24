@@ -1064,6 +1064,7 @@ static int set_rate_shift(struct loopback_handle *lhandle, double pitch)
 		snd_ctl_elem_value_set_integer(lhandle->ctl_rate_shift, 0, pitch * 100000);
 		err = snd_ctl_elem_write(lhandle->ctl, lhandle->ctl_rate_shift);
 	} else if (lhandle->ctl_pitch) {
+		// 'Playback/Capture Pitch 1000000' requires reciprocal to pitch
 		snd_ctl_elem_value_set_integer(lhandle->ctl_pitch, 0, (1 / pitch) * 1000000);
 		err = snd_ctl_elem_write(lhandle->ctl, lhandle->ctl_pitch);
 	} else {
@@ -1241,7 +1242,10 @@ static int openctl(struct loopback_handle *lhandle, int device, int subdevice)
 						lhandle->prateshift_name);
 				exit(EXIT_FAILURE);
 			}
-		}
+		} else
+			openctl_elem(lhandle, device, subdevice, "Playback Pitch 1000000",
+					&lhandle->ctl_pitch);
+		set_rate_shift(lhandle, 1);
 		if (lhandle->loopback->controls)
 			goto __events;
 		return 0;
@@ -1388,7 +1392,7 @@ int pcmjob_init(struct loopback *loop)
 	loop->id = strdup(id);
 	if (loop->sync == SYNC_TYPE_AUTO && (loop->capt->ctl_rate_shift || loop->capt->ctl_pitch))
 		loop->sync = SYNC_TYPE_CAPTRATESHIFT;
-	if (loop->sync == SYNC_TYPE_AUTO && loop->play->ctl_rate_shift)
+	if (loop->sync == SYNC_TYPE_AUTO && (loop->play->ctl_rate_shift || loop->play->ctl_pitch))
 		loop->sync = SYNC_TYPE_PLAYRATESHIFT;
 #ifdef USE_SAMPLERATE
 	if (loop->sync == SYNC_TYPE_AUTO && loop->src_enable)
