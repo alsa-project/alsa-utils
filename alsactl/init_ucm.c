@@ -34,13 +34,14 @@
 int init_ucm(int flags, int cardno)
 {
 	snd_use_case_mgr_t *uc_mgr;
-	char id[32];
+	char id[32], *nodev;
 	int err;
 
 	if (flags & FLAG_UCM_DISABLED)
 		return -ENXIO;
 
-	snprintf(id, sizeof(id), "hw:%d", cardno);
+	nodev = (flags & FLAG_UCM_NODEV) ? "" : "-";
+	snprintf(id, sizeof(id), "%shw:%d", nodev, cardno);
 	err = snd_use_case_mgr_open(&uc_mgr, id);
 	if (err < 0)
 		return err;

@@ -39,6 +39,7 @@ void error_handler(const char *file, int line, const char *function, int err, co
 #define FLAG_UCM_FBOOT		(1<<1)
 #define FLAG_UCM_BOOT		(1<<2)
 #define FLAG_UCM_DEFAULTS	(1<<3)
+#define FLAG_UCM_NODEV		(1<<4)
 
 void snd_card_iterator_init(struct snd_card_iterator *iter, int cardno);
 int snd_card_iterator_sinit(struct snd_card_iterator *iter, const char *cardname);

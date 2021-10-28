@@ -102,6 +102,9 @@ static struct arg args[] = {
 #ifdef HAVE_ALSA_USE_CASE_H
 { 'D', "ucm-defaults", "execute also the UCM 'defaults' section" },
 { 'U', "no-ucm", "don't init with UCM" },
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
+{ 'X', "ucm-nodev", "show UCM no device errors" },
+#endif
 #endif
 { HEADER, NULL, "Available commands:" },
 { CARDCMD, "store", "save current driver setup for one or each soundcards" },
@@ -253,6 +256,9 @@ int main(int argc, char *argv[])
 	struct option *long_option;
 	char *short_option;
 
+#if SND_LIB_VER(1, 2, 5) >= SND_LIB_VERSION
+	initflags |= FLAG_UCM_NODEV;
+#endif
 	long_option = calloc(ARRAY_SIZE(args), sizeof(struct option));
 	if (long_option == NULL)
 		exit(EXIT_FAILURE);
@@ -327,6 +333,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'U':
 			initflags |= FLAG_UCM_DISABLED;
+			break;
+		case 'X':
+			initflags |= FLAG_UCM_NODEV;
 			break;
 		case 'r':
 			statefile = optarg;
