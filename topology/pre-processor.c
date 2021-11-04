@@ -222,7 +222,93 @@ err:
 	return ret;
 }
 
-int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_size)
+static int pre_process_defines(struct tplg_pre_processor *tplg_pp, const char *pre_processor_defs,
+			       snd_config_t *top)
+{
+	snd_config_t *conf_defines, *defines;
+	int ret;
+
+	ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
+	if (ret < 0)
+		return 0;
+
+	if (snd_config_get_type(conf_defines) != SND_CONFIG_TYPE_COMPOUND)
+		return 0;
+
+	/*
+	 * load and merge the command line defines with the variables in the conf file to override
+	 * default values
+	 */
+	if (pre_processor_defs != NULL) {
+		ret = snd_config_load_string(&defines, pre_processor_defs, strlen(pre_processor_defs));
+		if (ret < 0) {
+			fprintf(stderr, "Failed to load pre-processor command line definitions\n");
+			return ret;
+		}
+
+		ret = snd_config_merge(conf_defines, defines, true);
+		if (ret < 0) {
+			fprintf(stderr, "Failed to override variable definitions\n");
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static int pre_process_variables_expand_fcn(snd_config_t **dst, const char *str,
+					    void *private_data)
+{
+	struct tplg_pre_processor *tplg_pp = private_data;
+	snd_config_iterator_t i, next;
+	snd_config_t *conf_defines;
+	int ret;
+
+	ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
+	if (ret < 0)
+		return 0;
+
+	/* find variable definition */
+	snd_config_for_each(i, next, conf_defines) {
+		snd_config_t *n;
+		const char *id;
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		if (strcmp(id, str))
+			continue;
+
+		/* found definition. Match type and return appropriate config */
+		if (snd_config_get_type(n) == SND_CONFIG_TYPE_STRING) {
+			const char *s;
+
+			if (snd_config_get_string(n, &s) < 0)
+				continue;
+
+			return snd_config_imake_string(dst, NULL, s);
+		}
+
+		if (snd_config_get_type(n) == SND_CONFIG_TYPE_INTEGER) {
+			long v;
+
+			if (snd_config_get_integer(n, &v) < 0)
+				continue;
+
+			ret = snd_config_imake_integer(dst, NULL, v);
+			return ret;
+		}
+
+	}
+
+	fprintf(stderr, "No definition for variable %s\n", str);
+
+	return -EINVAL;
+}
+
+int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_size,
+		const char *pre_processor_defs)
 {
 	snd_input_t *in;
 	snd_config_t *top;
@@ -249,7 +335,22 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 
 	tplg_pp->input_cfg = top;
 
-	err = pre_process_config(tplg_pp, top);
+	/* parse command line definitions */
+	err = pre_process_defines(tplg_pp, pre_processor_defs, tplg_pp->input_cfg);
+	if (err < 0) {
+		fprintf(stderr, "Failed to parse arguments in input config\n");
+		goto err;
+	}
+
+	/* expand pre-processor variables */
+	err = snd_config_expand_custom(tplg_pp->input_cfg, tplg_pp->input_cfg, pre_process_variables_expand_fcn,
+				       tplg_pp, &tplg_pp->input_cfg);
+	if (err < 0) {
+		fprintf(stderr, "Failed to expand pre-processor definitions in input config\n");
+		goto err;
+	}
+
+	err = pre_process_config(tplg_pp, tplg_pp->input_cfg);
 	if (err < 0) {
 		fprintf(stderr, "Unable to pre-process configuration\n");
 		goto err;
