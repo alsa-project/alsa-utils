@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION=0.5.0
+SCRIPT_VERSION=0.5.1
 CHANGELOG="https://www.alsa-project.org/alsa-info.sh.changelog"
 
 #################################################################################
@@ -698,7 +698,7 @@ if [ -s "$TEMPDIR/lsusb.tmp" ]; then
 	echo "" >> $FILE
 fi
 
-if [ -s "$TEMPDIR/lsusb.tmp" ]; then
+if [ -s "$TEMPDIR/alsa-usbstream.tmp" ]; then
         echo "!!USB Stream information" >> $FILE
         echo "!!----------------------" >> $FILE
         echo "--startcollapse--" >> $FILE
