@@ -1482,13 +1482,19 @@ static int set_controls(int card, snd_config_t *top, int doit)
 {
 	snd_ctl_t *handle;
 	snd_ctl_card_info_t *info;
+	snd_ctl_elem_list_t *list;
+	snd_ctl_elem_info_t *elem_info;
+	snd_ctl_elem_id_t *elem_id;
 	snd_config_t *control;
 	snd_config_iterator_t i, next;
-	int err, maxnumid = -1;
+	int err, maxnumid = -1, maxnumid2 = -1;
+	unsigned int idx, count = 0;
 	char name[32], tmpid[16];
 	const char *id;
 	snd_ctl_card_info_alloca(&info);
-
+	snd_ctl_elem_list_alloca(&list);
+	snd_ctl_elem_info_alloca(&elem_info);
+	snd_ctl_elem_id_alloca(&elem_id);
 	sprintf(name, "hw:%d", card);
 	dbg("device='%s', doit=%i", name, doit);
 	err = snd_ctl_open(&handle, name, 0);
@@ -1528,22 +1534,54 @@ static int set_controls(int card, snd_config_t *top, int doit)
 			goto _close;
 	}
 
-	dbg("maxnumid=%i", maxnumid);
-	/* check if we have additional controls in driver */
-	/* in this case we should go through init procedure */
-	if (!doit && maxnumid >= 0) {
-		snd_ctl_elem_info_t *info;
-		snd_ctl_elem_info_alloca(&info);
-		snd_ctl_elem_info_set_numid(info, maxnumid+1);
-		if (snd_ctl_elem_info(handle, info) == 0) {
-			/* not very informative */
-			/* but value is used for check only */
-			err = -EAGAIN;
-			dbg("more controls than maxnumid?");
-			goto _close;
+	if (doit)
+		goto _close;
+
+	err = snd_ctl_elem_list(handle, list);
+	if (err < 0) {
+		error("Cannot determine controls: %s", snd_strerror(err));
+		goto _close;
+	}
+	count = snd_ctl_elem_list_get_count(list);
+	dbg("list count: %u", count);
+	if (count == 0)
+		goto _check;
+	snd_ctl_elem_list_set_offset(list, 0);
+	if (snd_ctl_elem_list_alloc_space(list, count) < 0) {
+		error("No enough memory...");
+		goto _close;
+	}
+	if ((err = snd_ctl_elem_list(handle, list)) < 0) {
+		error("Cannot determine controls (2): %s", snd_strerror(err));
+		goto _free;
+	}
+	maxnumid2 = 0;
+	/* skip non-readable elements */
+	for (idx = 0; idx < count; ++idx) {
+		snd_ctl_elem_info_clear(elem_info);
+		snd_ctl_elem_list_get_id(list, idx, elem_id);
+		snd_ctl_elem_info_set_id(elem_info, elem_id);
+		if (snd_ctl_elem_info(handle, elem_info) == 0) {
+			if (!snd_ctl_elem_info_is_readable(elem_info))
+				continue;
+			maxnumid2++;
 		}
 	}
 
+	/* check if we have additional controls in driver */
+	/* in this case we should go through init procedure */
+ _check:
+	dbg("maxnumid=%i maxnumid2=%i", maxnumid, maxnumid2);
+	if (maxnumid >= 0 && maxnumid != maxnumid2) {
+		/* not very informative */
+		/* but value is used for check only */
+		err = -EAGAIN;
+		dbg("more controls than maxnumid?");
+	}
+
+ _free:
+	if (count >= 0)
+		snd_ctl_elem_list_free_space(list);
  _close:
 	snd_ctl_close(handle);
 	dbg("result code: %i", err);
