@@ -310,11 +310,11 @@ static int pre_process_variables_expand_fcn(snd_config_t **dst, const char *str,
 }
 
 static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t *top,
-				const char *pre_processor_defs);
+				const char *pre_processor_defs, const char *inc_path);
 
 static int pre_process_include_conf(struct tplg_pre_processor *tplg_pp, snd_config_t *config,
 				    const char *pre_processor_defs, snd_config_t **new,
-				    snd_config_t *variable)
+				    snd_config_t *variable, const char *inc_path)
 {
 	snd_config_iterator_t i, next;
 	const char *variable_name;
@@ -371,7 +371,7 @@ static int pre_process_include_conf(struct tplg_pre_processor *tplg_pp, snd_conf
 		regex_t regex;
 		const char *filename;
 		const char *id;
-		char *full_path, *alsa_dir = getenv("ALSA_CONFIG_DIR");
+		char *full_path;
 
 		n = snd_config_iterator_entry(i);
 		if (snd_config_get_id(n, &id) < 0)
@@ -389,22 +389,26 @@ static int pre_process_include_conf(struct tplg_pre_processor *tplg_pp, snd_conf
 			continue;
 
 		/* regex matched. now include the conf file */
-		snd_config_get_string(n, &filename);
+		ret = snd_config_get_string(n, &filename);
+		if (ret < 0)
+			goto err;
 
-		if (alsa_dir)
-			full_path = tplg_snprintf("%s/%s", alsa_dir, filename);
+		if (filename && filename[0] != '/')
+			full_path = tplg_snprintf("%s/%s", inc_path, filename);
 		else
-			full_path = tplg_snprintf("%s", alsa_dir);
+			full_path = tplg_snprintf("%s", filename);
 
 		ret = snd_input_stdio_open(&in, full_path, "r");
-		free(full_path);
 		if (ret < 0) {
-			fprintf(stderr, "Unable to open included conf file %s\n", filename);
+			fprintf(stderr, "Unable to open included conf file %s\n", full_path);
+			free(full_path);
 			goto err;
 		}
+		free(full_path);
 
 		/* load config */
 		ret = snd_config_load(*new, in);
+		snd_input_close(in);
 		if (ret < 0) {
 			fprintf(stderr, "Unable to load included configuration\n");
 			goto err;
@@ -418,7 +422,7 @@ static int pre_process_include_conf(struct tplg_pre_processor *tplg_pp, snd_conf
 		}
 
 		/* recursively process any nested includes */
-		return pre_process_includes(tplg_pp, *new, pre_processor_defs);
+		return pre_process_includes(tplg_pp, *new, pre_processor_defs, inc_path);
 	}
 
 err:
@@ -427,7 +431,7 @@ err:
 }
 
 static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t *top,
-				const char *pre_processor_defs)
+				const char *pre_processor_defs, const char *inc_path)
 {
 	snd_config_iterator_t i, next;
 	snd_config_t *includes, *conf_defines;
@@ -460,7 +464,7 @@ static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t
 		}
 
 		/* create conf node from included file */
-		ret = pre_process_include_conf(tplg_pp, n, pre_processor_defs, &new, define);
+		ret = pre_process_include_conf(tplg_pp, n, pre_processor_defs, &new, define, inc_path);
 		if (ret < 0) {
 			fprintf(stderr, "Unable to process include file \n");
 			return ret;
@@ -481,7 +485,7 @@ static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t
 }
 
 static int pre_process_includes_all(struct tplg_pre_processor *tplg_pp, snd_config_t *top,
-				const char *pre_processor_defs)
+				const char *pre_processor_defs, const char *inc_path)
 {
 	snd_config_iterator_t i, next;
 	int ret;
@@ -490,7 +494,7 @@ static int pre_process_includes_all(struct tplg_pre_processor *tplg_pp, snd_conf
 		return 0;
 
 	/* process includes at this node */
-	ret = pre_process_includes(tplg_pp, top, pre_processor_defs);
+	ret = pre_process_includes(tplg_pp, top, pre_processor_defs, inc_path);
 	if (ret < 0) {
 		fprintf(stderr, "Failed to process includes\n");
 		return ret;
@@ -502,7 +506,7 @@ static int pre_process_includes_all(struct tplg_pre_processor *tplg_pp, snd_conf
 
 		n = snd_config_iterator_entry(i);
 
-		ret = pre_process_includes_all(tplg_pp, n, pre_processor_defs);
+		ret = pre_process_includes_all(tplg_pp, n, pre_processor_defs, inc_path);
 		if (ret < 0)
 			return ret;
 	}
@@ -511,7 +515,7 @@ static int pre_process_includes_all(struct tplg_pre_processor *tplg_pp, snd_conf
 }
 
 int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_size,
-		const char *pre_processor_defs)
+		const char *pre_processor_defs, const char *inc_path)
 {
 	snd_input_t *in;
 	snd_config_t *top;
@@ -546,7 +550,7 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 	}
 
 	/* include conditional conf files */
-	err = pre_process_includes_all(tplg_pp, tplg_pp->input_cfg, pre_processor_defs);
+	err = pre_process_includes_all(tplg_pp, tplg_pp->input_cfg, pre_processor_defs, inc_path);
 	if (err < 0) {
 		fprintf(stderr, "Failed to process conditional includes in input config\n");
 		goto err;

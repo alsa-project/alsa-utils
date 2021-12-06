@@ -28,8 +28,8 @@ struct tplg_pre_processor {
 };
 
 int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_size,
-		const char *pre_processor_defs);
-int init_pre_precessor(struct tplg_pre_processor **tplg_pp, snd_output_type_t type,
+		const char *pre_processor_defs, const char *inc_path);
+int init_pre_processor(struct tplg_pre_processor **tplg_pp, snd_output_type_t type,
 		       const char *output_file);
 void free_pre_preprocessor(struct tplg_pre_processor *tplg_pp);
 #endif

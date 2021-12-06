@@ -233,13 +233,22 @@ static int dump(const char *source_file, const char *output_file, int cflags, in
 	return err;
 }
 
+static char *get_inc_path(const char *filename)
+{
+	const char *s = strrchr(filename, '/');
+	char *r = strdup(filename);
+	if (r && s)
+		r[s - filename] = '\0';
+	return r;
+}
+
 /* Convert Topology2.0 conf to the existing conf syntax */
 static int pre_process_conf(const char *source_file, const char *output_file,
 			    const char *pre_processor_defs)
 {
 	struct tplg_pre_processor *tplg_pp;
 	size_t config_size;
-	char *config;
+	char *config, *inc_path;
 	int err;
 
 	err = load(source_file, (void **)&config, &config_size);
@@ -247,7 +256,7 @@ static int pre_process_conf(const char *source_file, const char *output_file,
 		return err;
 
 	/* init pre-processor */
-	err = init_pre_precessor(&tplg_pp, SND_OUTPUT_STDIO, output_file);
+	err = init_pre_processor(&tplg_pp, SND_OUTPUT_STDIO, output_file);
 	if (err < 0) {
 		fprintf(stderr, _("failed to init pre-processor for Topology2.0\n"));
 		free(config);
@@ -255,7 +264,9 @@ static int pre_process_conf(const char *source_file, const char *output_file,
 	}
 
 	/* pre-process conf file */
-	err = pre_process(tplg_pp, config, config_size, pre_processor_defs);
+	inc_path = get_inc_path(source_file);
+	err = pre_process(tplg_pp, config, config_size, pre_processor_defs, inc_path);
+	free(inc_path);
 
 	/* free pre-processor */
 	free_pre_preprocessor(tplg_pp);
@@ -268,7 +279,7 @@ static int compile(const char *source_file, const char *output_file, int cflags,
 {
 	struct tplg_pre_processor *tplg_pp = NULL;
 	snd_tplg_t *tplg;
-	char *config;
+	char *config, *inc_path;
 	void *bin;
 	size_t config_size, size;
 	int err;
@@ -283,10 +294,12 @@ static int compile(const char *source_file, const char *output_file, int cflags,
 		size_t size;
 
 		/* init pre-processor */
-		init_pre_precessor(&tplg_pp, SND_OUTPUT_BUFFER, NULL);
+		init_pre_processor(&tplg_pp, SND_OUTPUT_BUFFER, NULL);
 
 		/* pre-process conf file */
-		err = pre_process(tplg_pp, config, config_size, pre_processor_defs);
+		inc_path = get_inc_path(source_file);
+		err = pre_process(tplg_pp, config, config_size, pre_processor_defs, inc_path);
+		free(inc_path);
 		if (err) {
 			free_pre_preprocessor(tplg_pp);
 			free(config);
