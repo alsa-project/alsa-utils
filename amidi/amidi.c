@@ -643,7 +643,6 @@ int main(int argc, char *argv[])
 	}
 
 	if (inputp) {
-		int need_timestamp = 0;
 		int read = 0;
 		int npfds;
 		struct pollfd *pfds;
