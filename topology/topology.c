@@ -56,6 +56,9 @@ _("Usage: %s [OPTIONS]...\n"
 "-u, --dump=FILE         dump (reparse) configuration file\n"
 "-v, --verbose=LEVEL     set verbosity level (0...1)\n"
 "-o, --output=FILE       set output file\n"
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
+"-D, --define=ARGS       define variables (VAR1=VAL1[,VAR2=VAL2] ...)\n"
+#endif
 "-s, --sort              sort the identifiers in the normalized output\n"
 "-g, --group             save configuration by group indexes\n"
 "-x, --nocheck           save configuration without additional integrity checks\n"
@@ -368,7 +371,11 @@ static int decode(const char *source_file, const char *output_file,
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hc:d:n:u:v:o:pP:sgxzVD:";
+	static const char short_options[] = "hc:d:n:u:v:o:pP:sgxzV"
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
+		"D:"
+#endif
+		;
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"verbose", 1, NULL, 'v'},
@@ -378,6 +385,9 @@ int main(int argc, char *argv[])
 		{"normalize", 1, NULL, 'n'},
 		{"dump", 1, NULL, 'u'},
 		{"output", 1, NULL, 'o'},
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
+		{"define", 1, NULL, 'D'},
+#endif
 		{"sort", 0, NULL, 's'},
 		{"group", 0, NULL, 'g'},
 		{"nocheck", 0, NULL, 'x'},
@@ -439,9 +449,11 @@ int main(int argc, char *argv[])
 		case 'x':
 			sflags |= SND_TPLG_SAVE_NOCHECK;
 			break;
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
 		case 'D':
 			pre_processor_defs = optarg;
 			break;
+#endif
 		case 'V':
 			version(argv[0]);
 			return 0;

@@ -175,7 +175,7 @@ void free_pre_preprocessor(struct tplg_pre_processor *tplg_pp)
 	free(tplg_pp);
 }
 
-int init_pre_precessor(struct tplg_pre_processor **tplg_pp, snd_output_type_t type,
+int init_pre_processor(struct tplg_pre_processor **tplg_pp, snd_output_type_t type,
 		       const char *output_file)
 {
 	struct tplg_pre_processor *_tplg_pp;
@@ -224,6 +224,7 @@ err:
 	return ret;
 }
 
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
 static int pre_process_defines(struct tplg_pre_processor *tplg_pp, const char *pre_processor_defs,
 			       snd_config_t *top)
 {
@@ -513,6 +514,7 @@ static int pre_process_includes_all(struct tplg_pre_processor *tplg_pp, snd_conf
 
 	return 0;
 }
+#endif /* version < 1.2.6 */
 
 int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_size,
 		const char *pre_processor_defs, const char *inc_path)
@@ -542,6 +544,7 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 
 	tplg_pp->input_cfg = top;
 
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
 	/* parse command line definitions */
 	err = pre_process_defines(tplg_pp, pre_processor_defs, tplg_pp->input_cfg);
 	if (err < 0) {
@@ -563,6 +566,7 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 		fprintf(stderr, "Failed to expand pre-processor definitions in input config\n");
 		goto err;
 	}
+#endif
 
 	err = pre_process_config(tplg_pp, tplg_pp->input_cfg);
 	if (err < 0) {
