@@ -21,8 +21,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <regex.h>
 
 #include <alsa/asoundlib.h>
 #include "gettext.h"
@@ -307,6 +309,207 @@ static int pre_process_variables_expand_fcn(snd_config_t **dst, const char *str,
 	return -EINVAL;
 }
 
+static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t *top,
+				const char *pre_processor_defs);
+
+static int pre_process_include_conf(struct tplg_pre_processor *tplg_pp, snd_config_t *config,
+				    const char *pre_processor_defs, snd_config_t **new,
+				    snd_config_t *variable)
+{
+	snd_config_iterator_t i, next;
+	const char *variable_name;
+	char *value;
+	int ret;
+
+	if (snd_config_get_id(variable, &variable_name) < 0)
+		return 0;
+
+	switch(snd_config_get_type(variable)) {
+	case SND_CONFIG_TYPE_STRING:
+	{
+		const char *s;
+
+		if (snd_config_get_string(variable, &s) < 0) {
+			SNDERR("Invalid value for variable %s\n", variable_name);
+			return -EINVAL;
+		}
+		value = strdup(s);
+		if (!value)
+			return -ENOMEM;
+		break;
+	}
+	case SND_CONFIG_TYPE_INTEGER:
+	{
+		long v;
+
+		ret = snd_config_get_integer(variable, &v);
+		if (ret < 0) {
+			SNDERR("Invalid value for variable %s\n", variable_name);
+			return ret;
+		}
+
+		value = tplg_snprintf("%ld", v);
+		if (!value)
+			return -ENOMEM;
+		break;
+	}
+	default:
+		SNDERR("Invalid type for variable definition %s\n", variable_name);
+		return -EINVAL;
+	}
+
+	/* create top-level config node */
+	ret = snd_config_top(new);
+	if (ret < 0) {
+		SNDERR("failed to create top-level node for include conf %s\n", variable_name);
+		goto err;
+	}
+
+	snd_config_for_each(i, next, config) {
+		snd_input_t *in;
+		snd_config_t *n;
+		regex_t regex;
+		const char *filename;
+		const char *id;
+		char *full_path, *alsa_dir = getenv("ALSA_CONFIG_DIR");
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		ret = regcomp(&regex, id, 0);
+		if (ret) {
+			fprintf(stderr, "Could not compile regex\n");
+			goto err;
+		}
+
+		/* Execute regular expression */
+		ret = regexec(&regex, value, 0, NULL, REG_ICASE);
+		if (ret)
+			continue;
+
+		/* regex matched. now include the conf file */
+		snd_config_get_string(n, &filename);
+
+		if (alsa_dir)
+			full_path = tplg_snprintf("%s/%s", alsa_dir, filename);
+		else
+			full_path = tplg_snprintf("%s", alsa_dir);
+
+		ret = snd_input_stdio_open(&in, full_path, "r");
+		free(full_path);
+		if (ret < 0) {
+			fprintf(stderr, "Unable to open included conf file %s\n", filename);
+			goto err;
+		}
+
+		/* load config */
+		ret = snd_config_load(*new, in);
+		if (ret < 0) {
+			fprintf(stderr, "Unable to load included configuration\n");
+			goto err;
+		}
+
+		/* process any args in the included file */
+		ret = pre_process_defines(tplg_pp, pre_processor_defs, *new);
+		if (ret < 0) {
+			fprintf(stderr, "Failed to parse arguments in input config\n");
+			goto err;
+		}
+
+		/* recursively process any nested includes */
+		return pre_process_includes(tplg_pp, *new, pre_processor_defs);
+	}
+
+err:
+	free(value);
+	return ret;
+}
+
+static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t *top,
+				const char *pre_processor_defs)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *includes, *conf_defines;
+	const char *top_id;
+	int ret;
+
+	ret = snd_config_search(top, "IncludeByKey", &includes);
+	if (ret < 0)
+		return 0;
+
+	snd_config_get_id(top, &top_id);
+
+	ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
+	if (ret < 0)
+		return 0;
+
+	snd_config_for_each(i, next, includes) {
+		snd_config_t *n, *new, *define;
+		const char *id;
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		/* find id from variable definitions */
+		ret = snd_config_search(conf_defines, id, &define);
+		if (ret < 0) {
+			fprintf(stderr, "No variable defined for %s\n", id);
+			return ret;
+		}
+
+		/* create conf node from included file */
+		ret = pre_process_include_conf(tplg_pp, n, pre_processor_defs, &new, define);
+		if (ret < 0) {
+			fprintf(stderr, "Unable to process include file \n");
+			return ret;
+		}
+
+		/* merge the included conf file with the top-level conf */
+		ret = snd_config_merge(top, new, 0);
+		if (ret < 0) {
+			fprintf(stderr, "Failed to add included conf\n");
+			return ret;
+		}
+	}
+
+	/* remove all includes from current top */
+	snd_config_remove(includes);
+
+	return 0;
+}
+
+static int pre_process_includes_all(struct tplg_pre_processor *tplg_pp, snd_config_t *top,
+				const char *pre_processor_defs)
+{
+	snd_config_iterator_t i, next;
+	int ret;
+
+	if (snd_config_get_type(top) != SND_CONFIG_TYPE_COMPOUND)
+		return 0;
+
+	/* process includes at this node */
+	ret = pre_process_includes(tplg_pp, top, pre_processor_defs);
+	if (ret < 0) {
+		fprintf(stderr, "Failed to process includes\n");
+		return ret;
+	}
+
+	/* process includes at all child nodes */
+	snd_config_for_each(i, next, top) {
+		snd_config_t *n;
+
+		n = snd_config_iterator_entry(i);
+
+		ret = pre_process_includes_all(tplg_pp, n, pre_processor_defs);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
 int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_size,
 		const char *pre_processor_defs)
 {
@@ -339,6 +542,13 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 	err = pre_process_defines(tplg_pp, pre_processor_defs, tplg_pp->input_cfg);
 	if (err < 0) {
 		fprintf(stderr, "Failed to parse arguments in input config\n");
+		goto err;
+	}
+
+	/* include conditional conf files */
+	err = pre_process_includes_all(tplg_pp, tplg_pp->input_cfg, pre_processor_defs);
+	if (err < 0) {
+		fprintf(stderr, "Failed to process conditional includes in input config\n");
 		goto err;
 	}
 
