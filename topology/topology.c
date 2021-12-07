@@ -240,8 +240,12 @@ static char *get_inc_path(const char *filename)
 {
 	const char *s = strrchr(filename, '/');
 	char *r = strdup(filename);
-	if (r && s)
-		r[s - filename] = '\0';
+	if (r) {
+		if (s)
+			r[s - filename] = '\0';
+		else if (r[0])
+			strcpy(r, ".");
+	}
 	return r;
 }
 
