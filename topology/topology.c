@@ -58,6 +58,7 @@ _("Usage: %s [OPTIONS]...\n"
 "-o, --output=FILE       set output file\n"
 #if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
 "-D, --define=ARGS       define variables (VAR1=VAL1[,VAR2=VAL2] ...)\n"
+"-I, --inc-dir=DIR       set include path\n"
 #endif
 "-s, --sort              sort the identifiers in the normalized output\n"
 "-g, --group             save configuration by group indexes\n"
@@ -381,9 +382,9 @@ static int decode(const char *source_file, const char *output_file,
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hc:d:n:u:v:o:pP:sgxzVI:"
+	static const char short_options[] = "hc:d:n:u:v:o:pP:sgxzV"
 #if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
-		"D:"
+		"D:I:"
 #endif
 		;
 	static const struct option long_options[] = {
@@ -397,6 +398,7 @@ int main(int argc, char *argv[])
 		{"output", 1, NULL, 'o'},
 #if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
 		{"define", 1, NULL, 'D'},
+		{"inc-dir", 1, NULL, 'I'},
 #endif
 		{"sort", 0, NULL, 's'},
 		{"group", 0, NULL, 'g'},
@@ -451,9 +453,11 @@ int main(int argc, char *argv[])
 			op = 'P';
 			source_file = optarg;
 			break;
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
 		case 'I':
 			inc_path = optarg;
 			break;
+#endif
 		case 'p':
 			pre_process_config = true;
 			break;
