@@ -251,7 +251,7 @@ static char *get_inc_path(const char *filename)
 
 /* Convert Topology2.0 conf to the existing conf syntax */
 static int pre_process_conf(const char *source_file, const char *output_file,
-			    const char *pre_processor_defs)
+			    const char *pre_processor_defs, const char *include_path)
 {
 	struct tplg_pre_processor *tplg_pp;
 	size_t config_size;
@@ -271,7 +271,10 @@ static int pre_process_conf(const char *source_file, const char *output_file,
 	}
 
 	/* pre-process conf file */
-	inc_path = get_inc_path(source_file);
+	if (!include_path)
+		inc_path = get_inc_path(source_file);
+	else
+		inc_path = strdup(include_path);
 	err = pre_process(tplg_pp, config, config_size, pre_processor_defs, inc_path);
 	free(inc_path);
 
@@ -282,7 +285,7 @@ static int pre_process_conf(const char *source_file, const char *output_file,
 }
 
 static int compile(const char *source_file, const char *output_file, int cflags,
-		   const char *pre_processor_defs)
+		   const char *pre_processor_defs, const char *include_path)
 {
 	struct tplg_pre_processor *tplg_pp = NULL;
 	snd_tplg_t *tplg;
@@ -304,7 +307,10 @@ static int compile(const char *source_file, const char *output_file, int cflags,
 		init_pre_processor(&tplg_pp, SND_OUTPUT_BUFFER, NULL);
 
 		/* pre-process conf file */
-		inc_path = get_inc_path(source_file);
+		if (!include_path)
+			inc_path = get_inc_path(source_file);
+		else
+			inc_path = strdup(include_path);
 		err = pre_process(tplg_pp, config, config_size, pre_processor_defs, inc_path);
 		free(inc_path);
 		if (err) {
@@ -375,7 +381,7 @@ static int decode(const char *source_file, const char *output_file,
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hc:d:n:u:v:o:pP:sgxzV"
+	static const char short_options[] = "hc:d:n:u:v:o:pP:sgxzVI:"
 #if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
 		"D:"
 #endif
@@ -401,6 +407,7 @@ int main(int argc, char *argv[])
 	};
 	char *source_file = NULL;
 	char *output_file = NULL;
+	const char *inc_path = NULL;
 	const char *pre_processor_defs = NULL;
 	int c, err, op = 'c', cflags = 0, dflags = 0, sflags = 0, option_index;
 
@@ -444,6 +451,9 @@ int main(int argc, char *argv[])
 			op = 'P';
 			source_file = optarg;
 			break;
+		case 'I':
+			inc_path = optarg;
+			break;
 		case 'p':
 			pre_process_config = true;
 			break;
@@ -483,13 +493,13 @@ int main(int argc, char *argv[])
 
 	switch (op) {
 	case 'c':
-		err = compile(source_file, output_file, cflags, pre_processor_defs);
+		err = compile(source_file, output_file, cflags, pre_processor_defs, inc_path);
 		break;
 	case 'd':
 		err = decode(source_file, output_file, cflags, dflags, sflags);
 		break;
 	case 'P':
-		err = pre_process_conf(source_file, output_file, pre_processor_defs);
+		err = pre_process_conf(source_file, output_file, pre_processor_defs, inc_path);
 		break;
 	default:
 		err = dump(source_file, output_file, cflags, sflags);
