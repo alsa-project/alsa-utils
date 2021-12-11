@@ -1014,8 +1014,7 @@ const struct build_function_map object_build_map[] = {
 	 &hwcfg_config},
 	{"Base", "fe_dai", "dai", &tplg_build_fe_dai_object, NULL, &fe_dai_config},
 	{"Base", "route", "SectionGraph", &tplg_build_dapm_route_object, NULL, NULL},
-	{"Widget", "buffer", "SectionWidget", &tplg_build_generic_object,
-	 tplg_update_buffer_auto_attr, &widget_config},
+	{"Widget", "buffer", "SectionWidget", &tplg_build_generic_object, NULL, &widget_config},
 	{"Widget", "", "SectionWidget", &tplg_build_generic_object, NULL, &widget_config},
 	{"Control", "mixer", "SectionControlMixer", &tplg_build_mixer_control, NULL,
 	 &mixer_control_config},
@@ -1087,9 +1086,12 @@ static int tplg_object_copy_and_add_param(struct tplg_pre_processor *tplg_pp,
 					  snd_config_t *attr_cfg,
 					  snd_config_t *search_config)
 {
-	snd_config_t *attr, *new;
+	snd_config_iterator_t first = snd_config_iterator_first(obj);
+	snd_config_t *attr, *new, *first_cfg;
 	const char *id, *search_id;
 	int ret;
+
+	first_cfg = snd_config_iterator_entry(first);
 
 	if (snd_config_get_id(attr_cfg, &id) < 0)
 		return 0;
@@ -1108,10 +1110,19 @@ static int tplg_object_copy_and_add_param(struct tplg_pre_processor *tplg_pp,
 		return ret;
 	}
 
-	ret = snd_config_add(obj, new);
-	if (ret < 0) {
-		snd_config_delete(new);
-		SNDERR("error adding attribute '%s' value to %s\n", id, search_id);
+	if (first_cfg) {
+		/* prepend the new config */
+		ret = snd_config_add_before(first_cfg, new);
+		if (ret < 0) {
+			snd_config_delete(new);
+			SNDERR("error prepending attribute '%s' value to %s\n", id, search_id);
+		}
+	} else {
+		ret = snd_config_add(obj, new);
+		if (ret < 0) {
+			snd_config_delete(new);
+			SNDERR("error adding attribute '%s' value to %s\n", id, search_id);
+		}
 	}
 
 	return ret;
@@ -1488,12 +1499,67 @@ snd_config_t *tplg_object_get_instance_config(struct tplg_pre_processor *tplg_pp
 	return snd_config_iterator_entry(first);
 }
 
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
+static int pre_process_find_variable(snd_config_t **dst, const char *str, snd_config_t *config)
+{
+	snd_config_iterator_t i, next;
+
+	snd_config_for_each(i, next, config) {
+		snd_config_t *n;
+		const char *id;
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		if (strcmp(id, str))
+			continue;
+
+		/* found definition, copy config */
+		return snd_config_copy(dst, n);
+	}
+
+	return -EINVAL;
+}
+static int
+pre_process_object_variables_expand_fcn(snd_config_t **dst, const char *str, void *private_data)
+{
+
+	struct tplg_pre_processor *tplg_pp = private_data;
+	snd_config_t *object_cfg = tplg_pp->current_obj_cfg;
+	snd_config_t *conf_defines;
+	const char *object_id;
+	int ret;
+
+	ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
+	if (ret < 0)
+		return 0;
+
+	/* find variable from global definitions first */
+	ret = pre_process_find_variable(dst, str, conf_defines);
+	if (ret >= 0)
+		return ret;
+
+	if (snd_config_get_id(object_cfg, &object_id) < 0)
+		return -EINVAL;
+
+	/* find variable from object attribute values if not found in global definitions */
+	ret = pre_process_find_variable(dst, str, object_cfg);
+	if (ret < 0)
+		SNDERR("Failed to find definition for attribute %s in '%s' object\n",
+		       str, object_id);
+
+	return ret;
+}
+#endif
+
 /* build object config and its child objects recursively */
 static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *new_obj,
 			      snd_config_t *parent)
 {
 	snd_config_t *obj_local, *class_cfg;
 	const struct build_function_map *map;
+	snd_config_iterator_t i, next;
 	build_func builder;
 	update_auto_attr_func auto_attr_updater;
 	const char *id, *class_id;
@@ -1533,6 +1599,46 @@ static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *n
 		SNDERR("Failed to construct object name for %s\n", id);
 		return ret;
 	}
+
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
+	tplg_pp_config_debug(tplg_pp, obj_local);
+
+	/* expand all non-compound type child configs in object */
+	snd_config_for_each(i, next, obj_local) {
+		snd_config_t *n, *new;
+		const char *id, *s;
+
+		n = snd_config_iterator_entry(i);
+
+		if (snd_config_get_type(n) == SND_CONFIG_TYPE_COMPOUND)
+			continue;
+
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		if (snd_config_get_string(n, &s) < 0)
+			continue;
+
+		if (*s != '$')
+			continue;
+
+		tplg_pp->current_obj_cfg = obj_local;
+
+		/* expand config */
+		ret = snd_config_evaluate_string(&new, s, pre_process_object_variables_expand_fcn,
+						 tplg_pp);
+		if (ret < 0) {
+			SNDERR("Failed to evaluate attributes %s in %s\n", id, class_id);
+			return ret;
+		}
+
+		snd_config_set_id(new, id);
+
+		ret = snd_config_merge(n, new, true);
+		if (ret < 0)
+			return ret;
+	}
+#endif
 
 	/*
 	 * Build objects if object type is supported.

@@ -259,57 +259,6 @@ static int pre_process_defines(struct tplg_pre_processor *tplg_pp, const char *p
 	return 0;
 }
 
-static int pre_process_variables_expand_fcn(snd_config_t **dst, const char *str,
-					    void *private_data)
-{
-	struct tplg_pre_processor *tplg_pp = private_data;
-	snd_config_iterator_t i, next;
-	snd_config_t *conf_defines;
-	int ret;
-
-	ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
-	if (ret < 0)
-		return 0;
-
-	/* find variable definition */
-	snd_config_for_each(i, next, conf_defines) {
-		snd_config_t *n;
-		const char *id;
-
-		n = snd_config_iterator_entry(i);
-		if (snd_config_get_id(n, &id) < 0)
-			continue;
-
-		if (strcmp(id, str))
-			continue;
-
-		/* found definition. Match type and return appropriate config */
-		if (snd_config_get_type(n) == SND_CONFIG_TYPE_STRING) {
-			const char *s;
-
-			if (snd_config_get_string(n, &s) < 0)
-				continue;
-
-			return snd_config_imake_string(dst, NULL, s);
-		}
-
-		if (snd_config_get_type(n) == SND_CONFIG_TYPE_INTEGER) {
-			long v;
-
-			if (snd_config_get_integer(n, &v) < 0)
-				continue;
-
-			ret = snd_config_imake_integer(dst, NULL, v);
-			return ret;
-		}
-
-	}
-
-	fprintf(stderr, "No definition for variable %s\n", str);
-
-	return -EINVAL;
-}
-
 static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t *top,
 				const char *pre_processor_defs, const char *inc_path);
 
@@ -556,14 +505,6 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 	err = pre_process_includes_all(tplg_pp, tplg_pp->input_cfg, pre_processor_defs, inc_path);
 	if (err < 0) {
 		fprintf(stderr, "Failed to process conditional includes in input config\n");
-		goto err;
-	}
-
-	/* expand pre-processor variables */
-	err = snd_config_expand_custom(tplg_pp->input_cfg, tplg_pp->input_cfg, pre_process_variables_expand_fcn,
-				       tplg_pp, &tplg_pp->input_cfg);
-	if (err < 0) {
-		fprintf(stderr, "Failed to expand pre-processor definitions in input config\n");
 		goto err;
 	}
 #endif
