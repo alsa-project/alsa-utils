@@ -169,7 +169,7 @@ static int save(const char *output_file, void *buf, size_t size)
 		fname = alloca(strlen(output_file) + 5);
 		strcpy(fname, output_file);
 		strcat(fname, ".new");
-		fd = open(fname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+		fd = open(fname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 		if (fd < 0) {
 			fprintf(stderr, _("Unable to open output file '%s': %s\n"),
 				fname, strerror(-errno));
