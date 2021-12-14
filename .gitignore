@@ -11,6 +11,9 @@ confdefs.h
 aclocal.m4
 Makefile
 Makefile.in
+libtool
+ltmain.sh
+ltconfig
 version
 autom4te.cache
 compile
@@ -22,6 +25,8 @@ test-driver
 ABOUT-NLS
 *.ok
 *.gmo
+*.la
+*.lo
 *.o
 *~
 .deps
