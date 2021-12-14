@@ -11,6 +11,9 @@ gettextize -c -f --no-changelog
 echo "EXTRA_DIST = gettext.m4" > m4/Makefile.am
 cp Makefile.am.ok Makefile.am
 cp configure.ac.ok configure.ac
+touch ltconfig
+libtoolize --force --copy --automake
+aclocal $ACLOCAL_FLAGS
 autoheader
 automake --foreign --copy --add-missing
 touch depcomp		# for older automake

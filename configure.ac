@@ -18,6 +18,7 @@ AC_PROG_INSTALL
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_SED
+AM_PROG_LIBTOOL
 PKG_PROG_PKG_CONFIG
 AM_PATH_ALSA(1.2.5)
 if test "x$enable_alsatest" = "xyes"; then
@@ -363,6 +364,7 @@ AC_SUBST(CURSESLIB)
 AC_SUBST(CURSES_CFLAGS)
 
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix=$prefix
 
 eval dir="$datadir"
 case "$dir" in
@@ -437,12 +439,32 @@ AC_ARG_WITH([alsactl-daemonswitch],
         [ALSACTL_DAEMONSWITCH="/etc/alsa/state-daemon.conf"])
 AC_SUBST(ALSACTL_DAEMONSWITCH)
 
+dnl pre-process plugin directory
+AC_ARG_WITH(plugindir,
+    AS_HELP_STRING([--with-plugindir=dir],
+	[path where pre-process plugin files are stored]),
+    plugindir="$withval", plugindir="")
+if test -z "$plugindir"; then
+    eval dir="$libdir"
+    echo ${exec_prefix}
+    echo $libdir
+    echo $dir
+    case "$dir" in
+    /*) ;;
+    *) dir="$dir"
+    esac
+    plugindir="$dir/alsa-topology"
+fi
+AC_DEFINE_UNQUOTED(ALSA_TOPOLOGY_PLUGIN_DIR, "$plugindir", [directory containing ALSA topology pre-process plugins])
+ALSA_TOPOLOGY_PLUGIN_DIR="$plugindir"
+AC_SUBST(ALSA_TOPOLOGY_PLUGIN_DIR)
+
 AC_OUTPUT(Makefile alsactl/Makefile alsactl/init/Makefile \
 	  alsamixer/Makefile amidi/Makefile amixer/Makefile \
 	  m4/Makefile po/Makefile.in \
 	  alsaconf/alsaconf alsaconf/Makefile \
 	  alsaconf/po/Makefile \
-	  alsaucm/Makefile topology/Makefile \
+	  alsaucm/Makefile topology/Makefile topology/nhlt/Makefile \
 	  bat/Makefile bat/tests/Makefile bat/tests/asound_state/Makefile \
 	  aplay/Makefile include/Makefile iecset/Makefile utils/Makefile \
 	  utils/alsa-utils.spec seq/Makefile seq/aconnect/Makefile \
