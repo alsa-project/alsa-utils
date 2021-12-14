@@ -25,11 +25,126 @@
 #include <string.h>
 #include <errno.h>
 #include <regex.h>
+#include <dlfcn.h>
 
 #include <alsa/asoundlib.h>
 #include "gettext.h"
 #include "topology.h"
 #include "pre-processor.h"
+#include "pre-process-external.h"
+
+#define SND_TOPOLOGY_MAX_PLUGINS 32
+
+static int get_plugin_string(struct tplg_pre_processor *tplg_pp, const char *pre_processor_defs,
+			     char **plugin_string)
+{
+	const char *lib_names_t = NULL;
+	snd_config_t *defines;
+	int ret;
+
+	ret = snd_config_search(tplg_pp->input_cfg, "Define.PREPROCESS_PLUGINS", &defines);
+	if (ret < 0)
+		return ret;
+
+	ret = snd_config_get_string(defines, &lib_names_t);
+	if (ret < 0)
+		return ret;
+
+	*plugin_string = strdup(lib_names_t);
+
+	if (!*plugin_string)
+		return -ENOMEM;
+
+	return 0;
+}
+
+static int run_plugin(struct tplg_pre_processor *tplg_pp, char *plugin)
+{
+	plugin_pre_process process;
+	char *xlib, *xfunc, *path;
+	void *h = NULL;
+	int ret = 0;
+
+	/* compose the plugin path, if not from environment, then from default plugins dir */
+	path = getenv("ALSA_TOPOLOGY_PLUGIN_DIR");
+	if (!path)
+		path = ALSA_TOPOLOGY_PLUGIN_DIR;
+
+	xlib = tplg_snprintf("%s/%s%s%s", path, PROCESS_LIB_PREFIX, plugin,
+			     PROCESS_LIB_POSTFIX);
+	xfunc = tplg_snprintf("%s%s%s", PROCESS_FUNC_PREFIX, plugin,
+			      PROCESS_FUNC_POSTFIX);
+
+	if (!xlib || !xfunc) {
+		fprintf(stderr, "can't reserve memory for plugin paths and func names\n");
+		ret = -ENOMEM;
+		goto err;
+	}
+
+	/* open plugin */
+	h = dlopen(xlib, RTLD_NOW);
+	if (!h) {
+		fprintf(stderr, "unable to open library '%s'\n", xlib);
+		ret = -EINVAL;
+		goto err;
+	}
+
+	/* find function */
+	process = dlsym(h, xfunc);
+
+	if (!process) {
+		fprintf(stderr, "symbol 'topology_process' was not found in %s\n", xlib);
+		ret = -EINVAL;
+		goto err;
+	}
+
+	/* process plugin */
+	process(tplg_pp->input_cfg, tplg_pp->output_cfg);
+
+err:
+	if (h)
+		dlclose(h);
+	if (xlib)
+		free(xlib);
+	if (xfunc)
+		free(xfunc);
+
+	return ret;
+}
+
+static int pre_process_plugins(struct tplg_pre_processor *tplg_pp, const char *pre_processor_defs)
+{
+	char *plugins[SND_TOPOLOGY_MAX_PLUGINS];
+	char *plugin_string;
+	int count;
+	int ret;
+	int i;
+
+	/* parse plugin names */
+	ret = get_plugin_string(tplg_pp, pre_processor_defs, &plugin_string);
+
+	/* no plugins defined, so just return */
+	if (ret < 0)
+		return 0;
+
+	count = 0;
+	plugins[count] = strtok(plugin_string, ":");
+	while ((count < SND_TOPOLOGY_MAX_PLUGINS - 1) && plugins[count]) {
+		count++;
+		plugins[count] = strtok(NULL, ":");
+	}
+
+	/* run all plugins */
+	for (i = 0; i < count; i++) {
+		ret = run_plugin(tplg_pp, plugins[i]);
+		if (ret < 0)
+			return ret;
+	}
+
+	free(plugin_string);
+
+	return 0;
+}
 
 /*
  * Helper function to find config by id.
@@ -569,6 +684,13 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 	err = pre_process_config(tplg_pp, tplg_pp->input_cfg);
 	if (err < 0) {
 		fprintf(stderr, "Unable to pre-process configuration\n");
+		goto err;
+	}
+
+	/* process topology plugins */
+	err = pre_process_plugins(tplg_pp, pre_processor_defs);
+	if (err < 0) {
+		fprintf(stderr, "Unable to run pre-process plugins\n");
 		goto err;
 	}
 

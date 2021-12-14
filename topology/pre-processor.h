@@ -26,6 +26,7 @@
 #define ARRAY_SIZE(a) (sizeof (a) / sizeof (a)[0])
 
 #define MAX_CONFIGS_IN_TEMPLATE	32
+
 struct config_template_items {
 	char *int_config_ids[MAX_CONFIGS_IN_TEMPLATE];
 	char *string_config_ids[MAX_CONFIGS_IN_TEMPLATE];
