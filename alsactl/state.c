@@ -1580,7 +1580,7 @@ static int set_controls(int card, snd_config_t *top, int doit)
 	}
 
  _free:
-	if (count >= 0)
+	if (count > 0)
 		snd_ctl_elem_list_free_space(list);
  _close:
 	snd_ctl_close(handle);
