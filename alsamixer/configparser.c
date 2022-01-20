@@ -451,7 +451,7 @@ static int cfg_set(char **argv, unsigned int argc)
 				error_cause = argv[1];
 				return ERROR_CONFIG;
 			}
-			background_color = bg_color;
+			reinit_colors(bg_color);
 		}
 		else {
 			error_message = _("unknown option");

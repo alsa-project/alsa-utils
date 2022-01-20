@@ -23,7 +23,7 @@
 #include "colors.h"
 
 struct attributes attrs;
-short background_color = -1;
+static short background_color = -1;
 
 int get_color_pair(short fg, short bg)
 {
@@ -43,6 +43,17 @@ int get_color_pair(short fg, short bg)
 	}
 
 	return 0;
+}
+
+void reinit_colors(short bg)
+{
+	if (bg == background_color)
+		return;
+	init_pair(1, COLOR_CYAN, bg);
+	init_pair(2, COLOR_YELLOW, bg);
+	init_pair(4, COLOR_RED, bg);
+	init_pair(5, COLOR_WHITE, bg);
+	background_color = bg;
 }
 
 void init_colors(int use_color)
