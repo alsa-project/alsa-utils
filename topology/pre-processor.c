@@ -231,7 +231,7 @@ static int pre_process_defines(struct tplg_pre_processor *tplg_pp, const char *p
 	snd_config_t *conf_defines, *defines;
 	int ret;
 
-	ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
+	ret = snd_config_search(top, "Define", &conf_defines);
 	if (ret < 0)
 		return 0;
 
