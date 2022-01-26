@@ -287,6 +287,58 @@ static bool tplg_is_attribute_valid_value(snd_config_t *valid_values, const char
 	return false;
 }
 
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
+static int pre_process_find_variable(snd_config_t **dst, const char *str, snd_config_t *config);
+
+/* check is attribute value belongs in the set of valid values after expanding the valid values */
+static bool tplg_is_attribute_valid_expanded_value(struct tplg_pre_processor *tplg_pp,
+						   snd_config_t *valid_values, int value)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *n, *var, *conf_defines;
+	int ret;
+
+	ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
+	if (ret < 0)
+		return false;
+
+	snd_config_for_each(i, next, valid_values) {
+		const char *s, *id;
+		long v;
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		if (snd_config_get_string(n, &s) < 0)
+			continue;
+
+		if (s[0] != '$')
+			continue;
+
+		/* find the variable definition */
+		ret = pre_process_find_variable(&var, s + 1, conf_defines);
+		if (ret < 0) {
+			SNDERR("No definition for variable %s\n", s + 1);
+			return false;
+		}
+
+		if (snd_config_get_integer(var, &v) < 0) {
+			SNDERR("Invalid definition for %s\n", s);
+			snd_config_delete(var);
+			return false;
+		}
+
+		snd_config_delete(var);
+
+		if (value == v)
+			return true;
+	}
+
+	return false;
+}
+#endif
+
 /* check if attribute value passes the min/max value constraints */
 static bool tplg_object_is_attribute_min_max_valid(snd_config_t *attr, snd_config_t *obj_attr,
 						   bool min_check)
@@ -372,10 +424,10 @@ static bool tplg_object_is_attribute_min_max_valid(snd_config_t *attr, snd_confi
 
 /* check for min/max and valid value constraints */
 static bool tplg_object_is_attribute_valid(struct tplg_pre_processor *tplg_pp,
-					   snd_config_t *attr, snd_config_t *object)
+					   snd_config_t *attr, snd_config_t *obj_attr)
 {
 	snd_config_iterator_t i, next;
-	snd_config_t *valid, *obj_attr, *n;
+	snd_config_t *valid, *n;
 	snd_config_type_t type;
 	const char *attr_name, *obj_value;
 	int ret;
@@ -383,11 +435,6 @@ static bool tplg_object_is_attribute_valid(struct tplg_pre_processor *tplg_pp,
 	if (snd_config_get_id(attr, &attr_name) < 0)
 		return false;
 
-	ret = snd_config_search(object, attr_name, &obj_attr);
-	if (ret < 0) {
-		SNDERR("attr %s not found \n", attr_name);
-		return false;
-	}
 	type = snd_config_get_type(obj_attr);
 
 	/* check if attribute has valid values */
@@ -421,6 +468,21 @@ static bool tplg_object_is_attribute_valid(struct tplg_pre_processor *tplg_pp,
 			}
 		}
 		return true;
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
+	case SND_CONFIG_TYPE_INTEGER:
+	{
+		long v;
+
+		if (snd_config_get_integer(obj_attr, &v) < 0)
+			return false;
+
+		if (!tplg_is_attribute_valid_expanded_value(tplg_pp, valid, v)) {
+			tplg_attribute_print_valid_values(valid, attr_name);
+			return false;
+		}
+		return true;
+	}
+#endif
 	default:
 		break;
 	}
@@ -1185,7 +1247,7 @@ static int tplg_object_update(struct tplg_pre_processor *tplg_pp, snd_config_t *
 		ret = snd_config_search(obj_cfg, id, &attr);
 		if (ret < 0)
 			goto class;
-		goto validate;
+		continue;
 class:
 		/* search for attributes value in class */
 		ret = tplg_object_copy_and_add_param(tplg_pp, obj_cfg, n, class_cfg);
@@ -1199,7 +1261,7 @@ class:
 		}
 		else if (ret < 0)
 			return ret;
-		goto validate;
+		continue;
 parent:
 		/* search for attribute value in parent */
 		if (!parent)
@@ -1215,7 +1277,7 @@ parent:
 			goto parent_object;
 		else if (ret < 0)
 			return ret;
-		goto validate;
+		continue;
 parent_object:
 		if (!parent)
 			goto parent_class;
@@ -1230,7 +1292,7 @@ parent_object:
 			goto parent_class;
 		else if (ret < 0)
 			return ret;
-		goto validate;
+		continue;
 parent_class:
 		if (!parent)
 			goto check;
@@ -1249,16 +1311,12 @@ parent_class:
 			goto check;
 		else if (ret < 0)
 			return ret;
-		goto validate;
+		continue;
 check:
 		if (tplg_class_is_attribute_mandatory(id, class_cfg)) {
 			SNDERR("Mandatory attribute %s not set for class %s\n", id, class_name);
 			return -EINVAL;
 		}
-		continue;
-validate:
-		if (!tplg_object_is_attribute_valid(tplg_pp, n, obj_cfg))
-			return -EINVAL;
 	}
 
 	return 0;
@@ -1593,20 +1651,14 @@ static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *n
 		return ret;
 	}
 
-	/* construct object name using class constructor */
-	ret = tplg_construct_object_name(tplg_pp, obj_local, class_cfg);
-	if (ret < 0) {
-		SNDERR("Failed to construct object name for %s\n", id);
-		return ret;
-	}
-
 #if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
 	tplg_pp_config_debug(tplg_pp, obj_local);
 
 	/* expand all non-compound type child configs in object */
 	snd_config_for_each(i, next, obj_local) {
-		snd_config_t *n, *new;
+		snd_config_t *n, *new, *class_attr;
 		const char *id, *s;
+		char *attr_config_name;
 
 		n = snd_config_iterator_entry(i);
 
@@ -1620,7 +1672,7 @@ static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *n
 			continue;
 
 		if (*s != '$')
-			continue;
+			goto validate;
 
 		tplg_pp->current_obj_cfg = obj_local;
 
@@ -1637,8 +1689,31 @@ static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *n
 		ret = snd_config_merge(n, new, true);
 		if (ret < 0)
 			return ret;
+validate:
+		/* validate attribute value */
+		snd_config_get_id(n, &id);
+		attr_config_name = tplg_snprintf("DefineAttribute.%s", id);
+		if (!attr_config_name)
+			return -ENOMEM;
+
+		ret = snd_config_search(class_cfg, attr_config_name, &class_attr);
+		free(attr_config_name);
+		if (ret < 0)
+			continue;
+
+		if (!tplg_object_is_attribute_valid(tplg_pp, class_attr, n)) {
+			SNDERR("Failed to validate attribute %s in %s\n", id, class_id);
+			return -EINVAL;
+		}
 	}
 #endif
+
+	/* construct object name using class constructor */
+	ret = tplg_construct_object_name(tplg_pp, obj_local, class_cfg);
+	if (ret < 0) {
+		SNDERR("Failed to construct object name for %s\n", id);
+		return ret;
+	}
 
 	/*
 	 * Build objects if object type is supported.
