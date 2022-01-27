@@ -10,11 +10,6 @@ wav_files = Front_Left.wav \
 	Side_Left.wav  
 sound_DATA = $(wav_files)
 
-alsadir = $(datadir)/alsa/speaker-test
-cfg_files = sample_map.csv
-
-alsa_DATA = $(cfg_files)
-
 EXTRA_DIST = \
 	$(wav_files) \
 	$(cfg_files)
