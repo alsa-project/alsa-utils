@@ -26,6 +26,9 @@ struct tplg_pre_processor {
 	snd_output_t *output;
 	snd_output_t *dbg_output;
 	snd_config_t *current_obj_cfg;
+	snd_config_t *define_cfg;
+	snd_config_t *define_cfg_merged;
+	char *inc_path;
 };
 
 int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_size,
