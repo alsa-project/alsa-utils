@@ -486,6 +486,12 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	if ((cflags & SND_TPLG_CREATE_VERBOSE) != 0 &&
+	    output_file && strcmp(output_file, "-") == 0) {
+		fprintf(stderr, _("Invalid mix of verbose level and output to stdout.\n"));
+		return 1;
+	}
+
 	if (op == 'n') {
 		if (sflags != 0 && sflags != SND_TPLG_SAVE_SORT) {
 			fprintf(stderr, _("Wrong parameters for the normalize operation!\n"));
