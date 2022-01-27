@@ -1521,6 +1521,7 @@ static int pre_process_find_variable(snd_config_t **dst, const char *str, snd_co
 
 	return -EINVAL;
 }
+
 static int
 pre_process_object_variables_expand_fcn(snd_config_t **dst, const char *str, void *private_data)
 {

@@ -225,18 +225,25 @@ err:
 }
 
 #if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
-static int pre_process_defines(struct tplg_pre_processor *tplg_pp, const char *pre_processor_defs,
-			       snd_config_t *top)
+static int pre_process_defines(struct tplg_pre_processor *tplg_pp, const char *pre_processor_defs)
 {
 	snd_config_t *conf_defines, *defines;
 	int ret;
 
 	ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
+	if (ret == -ENOENT) {
+		ret = snd_config_make_compound(&conf_defines, "Define", 0);
+		if (ret < 0)
+			return ret;
+		ret = snd_config_add(tplg_pp->input_cfg, conf_defines);
+	}
 	if (ret < 0)
-		return 0;
+		return ret;
 
-	if (snd_config_get_type(conf_defines) != SND_CONFIG_TYPE_COMPOUND)
-		return 0;
+	if (snd_config_get_type(conf_defines) != SND_CONFIG_TYPE_COMPOUND) {
+		fprintf(stderr, "Define must be a compound!\n");
+		return -EINVAL;
+	}
 
 	/*
 	 * load and merge the command line defines with the variables in the conf file to override
@@ -364,13 +371,6 @@ static int pre_process_include_conf(struct tplg_pre_processor *tplg_pp, snd_conf
 			goto err;
 		}
 
-		/* process any args in the included file */
-		ret = pre_process_defines(tplg_pp, pre_processor_defs, *new);
-		if (ret < 0) {
-			fprintf(stderr, "Failed to parse arguments in input config\n");
-			goto err;
-		}
-
 		/* recursively process any nested includes */
 		return pre_process_includes(tplg_pp, *new, pre_processor_defs, inc_path);
 	}
@@ -424,6 +424,13 @@ static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t
 		ret = snd_config_merge(top, new, 0);
 		if (ret < 0) {
 			fprintf(stderr, "Failed to add included conf\n");
+			return ret;
+		}
+
+		/* forcefully overwrite with defines from the command line */
+		ret = pre_process_defines(tplg_pp, pre_processor_defs);
+		if (ret < 0) {
+			fprintf(stderr, "Failed to parse arguments in input config\n");
 			return ret;
 		}
 	}
@@ -495,7 +502,7 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 
 #if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
 	/* parse command line definitions */
-	err = pre_process_defines(tplg_pp, pre_processor_defs, tplg_pp->input_cfg);
+	err = pre_process_defines(tplg_pp, pre_processor_defs);
 	if (err < 0) {
 		fprintf(stderr, "Failed to parse arguments in input config\n");
 		goto err;
