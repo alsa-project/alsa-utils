@@ -250,13 +250,13 @@ static char *get_inc_path(const char *filename)
 	return r;
 }
 
-/* Convert Topology2.0 conf to the existing conf syntax */
-static int pre_process_conf(const char *source_file, const char *output_file,
-			    const char *pre_processor_defs, const char *include_path)
+static int pre_process_run(struct tplg_pre_processor **tplg_pp,
+			   const char *source_file, const char *output_file,
+			   const char *pre_processor_defs, const char *include_path)
 {
-	struct tplg_pre_processor *tplg_pp;
 	size_t config_size;
 	char *config, *inc_path;
+	snd_output_type_t output_type;
 	int err;
 
 	err = load(source_file, (void **)&config, &config_size);
@@ -264,7 +264,8 @@ static int pre_process_conf(const char *source_file, const char *output_file,
 		return err;
 
 	/* init pre-processor */
-	err = init_pre_processor(&tplg_pp, SND_OUTPUT_STDIO, output_file);
+	output_type = output_file == NULL ? SND_OUTPUT_BUFFER : SND_OUTPUT_STDIO;
+	err = init_pre_processor(tplg_pp, output_type, output_file);
 	if (err < 0) {
 		fprintf(stderr, _("failed to init pre-processor for Topology2.0\n"));
 		free(config);
@@ -276,12 +277,29 @@ static int pre_process_conf(const char *source_file, const char *output_file,
 		inc_path = get_inc_path(source_file);
 	else
 		inc_path = strdup(include_path);
-	err = pre_process(tplg_pp, config, config_size, pre_processor_defs, inc_path);
+	err = pre_process(*tplg_pp, config, config_size, pre_processor_defs, inc_path);
 	free(inc_path);
+
+	if (err < 0)
+		free_pre_preprocessor(*tplg_pp);
+	free(config);
+	return err;
+}
+
+/* Convert Topology2.0 conf to the existing conf syntax */
+static int pre_process_conf(const char *source_file, const char *output_file,
+			    const char *pre_processor_defs, const char *include_path)
+{
+	struct tplg_pre_processor *tplg_pp;
+	int err;
+
+	err = pre_process_run(&tplg_pp, source_file, output_file,
+			      pre_processor_defs, include_path);
+	if (err < 0)
+		return err;
 
 	/* free pre-processor */
 	free_pre_preprocessor(tplg_pp);
-	free(config);
 	return err;
 }
 
@@ -290,7 +308,7 @@ static int compile(const char *source_file, const char *output_file, int cflags,
 {
 	struct tplg_pre_processor *tplg_pp = NULL;
 	snd_tplg_t *tplg;
-	char *config, *inc_path;
+	char *config;
 	void *bin;
 	size_t config_size, size;
 	int err;
@@ -304,21 +322,10 @@ static int compile(const char *source_file, const char *output_file, int cflags,
 		char *pconfig;
 		size_t size;
 
-		/* init pre-processor */
-		init_pre_processor(&tplg_pp, SND_OUTPUT_BUFFER, NULL);
-
-		/* pre-process conf file */
-		if (!include_path)
-			inc_path = get_inc_path(source_file);
-		else
-			inc_path = strdup(include_path);
-		err = pre_process(tplg_pp, config, config_size, pre_processor_defs, inc_path);
-		free(inc_path);
-		if (err) {
-			free_pre_preprocessor(tplg_pp);
-			free(config);
+		err = pre_process_run(&tplg_pp, source_file, NULL,
+				      pre_processor_defs, include_path);
+		if (err < 0)
 			return err;
-		}
 
 		/* load topology */
 		size = snd_output_buffer_string(tplg_pp->output, &pconfig);
