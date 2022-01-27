@@ -281,7 +281,7 @@ static int pre_process_run(struct tplg_pre_processor **tplg_pp,
 	free(inc_path);
 
 	if (err < 0)
-		free_pre_preprocessor(*tplg_pp);
+		free_pre_processor(*tplg_pp);
 	free(config);
 	return err;
 }
@@ -299,7 +299,7 @@ static int pre_process_conf(const char *source_file, const char *output_file,
 		return err;
 
 	/* free pre-processor */
-	free_pre_preprocessor(tplg_pp);
+	free_pre_processor(tplg_pp);
 	return err;
 }
 
@@ -332,7 +332,7 @@ static int compile(const char *source_file, const char *output_file, int cflags,
 		err = load_topology(&tplg, pconfig, size, cflags);
 
 		/* free pre-processor */
-		free_pre_preprocessor(tplg_pp);
+		free_pre_processor(tplg_pp);
 	} else {
 		err = load_topology(&tplg, config, config_size, cflags);
 	}

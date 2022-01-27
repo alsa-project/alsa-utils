@@ -167,7 +167,7 @@ static int pre_process_config(struct tplg_pre_processor *tplg_pp, snd_config_t *
 	return 0;
 }
 
-void free_pre_preprocessor(struct tplg_pre_processor *tplg_pp)
+void free_pre_processor(struct tplg_pre_processor *tplg_pp)
 {
 	snd_output_close(tplg_pp->output);
 	snd_output_close(tplg_pp->dbg_output);
