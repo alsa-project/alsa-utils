@@ -387,6 +387,22 @@ static int decode(const char *source_file, const char *output_file,
 	return err;
 }
 
+#if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
+static int add_define(char **defs, char *d)
+{
+	size_t len = (*defs ? strlen(*defs) : 0) + strlen(d) + 2;
+	char *m = realloc(*defs, len);
+	if (m) {
+		if (*defs)
+			strcat(m, ",");
+		strcat(m, d);
+		*defs = m;
+		return 0;
+	}
+	return 1;
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 	static const char short_options[] = "hc:d:n:u:v:o:pP:sgxzV"
@@ -417,7 +433,7 @@ int main(int argc, char *argv[])
 	char *source_file = NULL;
 	char *output_file = NULL;
 	const char *inc_path = NULL;
-	const char *pre_processor_defs = NULL;
+	char *pre_processor_defs = NULL;
 	int c, err, op = 'c', cflags = 0, dflags = 0, sflags = 0, option_index;
 
 #ifdef ENABLE_NLS
@@ -476,7 +492,10 @@ int main(int argc, char *argv[])
 			break;
 #if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
 		case 'D':
-			pre_processor_defs = optarg;
+			if (add_define(&pre_processor_defs, optarg)) {
+				fprintf(stderr, _("No enough memory"));
+				return 1;
+			}
 			break;
 #endif
 		case 'V':
@@ -524,5 +543,6 @@ int main(int argc, char *argv[])
 	}
 
 	snd_output_close(log);
+	free(pre_processor_defs);
 	return err ? 1 : 0;
 }
