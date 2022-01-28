@@ -295,12 +295,8 @@ static bool tplg_is_attribute_valid_expanded_value(struct tplg_pre_processor *tp
 						   snd_config_t *valid_values, int value)
 {
 	snd_config_iterator_t i, next;
-	snd_config_t *n, *var, *conf_defines;
+	snd_config_t *n, *var;
 	int ret;
-
-	ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
-	if (ret < 0)
-		return false;
 
 	snd_config_for_each(i, next, valid_values) {
 		const char *s, *id;
@@ -317,7 +313,7 @@ static bool tplg_is_attribute_valid_expanded_value(struct tplg_pre_processor *tp
 			continue;
 
 		/* find the variable definition */
-		ret = pre_process_find_variable(&var, s + 1, conf_defines);
+		ret = pre_process_find_variable(&var, s + 1, tplg_pp->define_cfg_merged);
 		if (ret < 0) {
 			SNDERR("No definition for variable %s\n", s + 1);
 			return false;
@@ -1586,16 +1582,11 @@ pre_process_object_variables_expand_fcn(snd_config_t **dst, const char *str, voi
 
 	struct tplg_pre_processor *tplg_pp = private_data;
 	snd_config_t *object_cfg = tplg_pp->current_obj_cfg;
-	snd_config_t *conf_defines;
 	const char *object_id;
 	int ret;
 
-	ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
-	if (ret < 0)
-		return 0;
-
 	/* find variable from global definitions first */
-	ret = pre_process_find_variable(dst, str, conf_defines);
+	ret = pre_process_find_variable(dst, str, tplg_pp->define_cfg_merged);
 	if (ret >= 0)
 		return ret;
 
