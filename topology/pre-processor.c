@@ -249,7 +249,7 @@ static int pre_process_set_defines(struct tplg_pre_processor *tplg_pp, const cha
 
 static int pre_process_add_defines(struct tplg_pre_processor *tplg_pp, snd_config_t *from)
 {
-	snd_config_t *conf_defines;
+	snd_config_t *conf_defines, *conf_tmp;
 	int ret;
 
 	ret = snd_config_search(from, "Define", &conf_defines);
@@ -280,16 +280,6 @@ create:
 			return ret;
 	}
 
-	/*
-	 * merge the command line defines with the variables in the conf file to override
-	 * default values
-	 */
-	ret = snd_config_merge(conf_defines, tplg_pp->define_cfg, true);
-	if (ret < 0) {
-		fprintf(stderr, "Failed to override variable definitions\n");
-		return ret;
-	}
-
 	if (tplg_pp->define_cfg_merged != conf_defines) {
 		/*
 		 * merge back to the main configuration tree (Define subtree)
@@ -299,6 +289,22 @@ create:
 			fprintf(stderr, "Failed to override main variable definitions\n");
 			return ret;
 		}
+	}
+
+	/*
+	 * merge the command line defines with the variables in the conf file to override
+	 * default values; use a copy (merge deletes the source tree)
+	 */
+	ret = snd_config_copy(&conf_tmp, tplg_pp->define_cfg);
+	if (ret < 0) {
+		fprintf(stderr, "Failed to copy variable definitions\n");
+		return ret;
+	}
+	ret = snd_config_merge(tplg_pp->define_cfg_merged, conf_tmp, true);
+	if (ret < 0) {
+		fprintf(stderr, "Failed to override variable definitions\n");
+		snd_config_delete(conf_tmp);
+		return ret;
 	}
 
 	return 0;
