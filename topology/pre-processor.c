@@ -253,6 +253,12 @@ static int pre_process_add_defines(struct tplg_pre_processor *tplg_pp, snd_confi
 	int ret;
 
 	ret = snd_config_search(from, "Define", &conf_defines);
+	if (ret == -ENOENT) {
+		if (tplg_pp->input_cfg == from && tplg_pp->define_cfg) {
+			conf_defines = NULL;
+			goto create;
+		}
+	}
 	if (ret < 0)
 		return ret;
 
@@ -265,6 +271,7 @@ static int pre_process_add_defines(struct tplg_pre_processor *tplg_pp, snd_confi
 		tplg_pp->define_cfg_merged = conf_defines;
 
 	if (tplg_pp->define_cfg_merged == NULL) {
+create:
 		ret = snd_config_make_compound(&tplg_pp->define_cfg_merged, "Define", 0);
 		if (ret < 0)
 			return ret;
