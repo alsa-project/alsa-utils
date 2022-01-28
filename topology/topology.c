@@ -58,6 +58,7 @@ _("Usage: %s [OPTIONS]...\n"
 "-o, --output=FILE       set output file\n"
 #if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
 "-D, --define=ARGS       define variables (VAR1=VAL1[,VAR2=VAL2] ...)\n"
+"                        (may be used multiple times)\n"
 "-I, --inc-dir=DIR       set include path\n"
 #endif
 "-s, --sort              sort the identifiers in the normalized output\n"
