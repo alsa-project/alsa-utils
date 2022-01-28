@@ -462,8 +462,8 @@ static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t
 		}
 	}
 
-	/* remove all includes from current top */
-	snd_config_remove(includes);
+	/* delete all includes from current top */
+	snd_config_delete(includes);
 
 	return 0;
 }
