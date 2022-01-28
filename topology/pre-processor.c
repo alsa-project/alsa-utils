@@ -419,19 +419,18 @@ err:
 static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t *top)
 {
 	snd_config_iterator_t i, next;
-	snd_config_t *includes, *conf_defines;
+	snd_config_t *includes;
 	const char *top_id;
 	int ret;
+
+	if (tplg_pp->define_cfg_merged == NULL)
+		return 0;
 
 	ret = snd_config_search(top, "IncludeByKey", &includes);
 	if (ret < 0)
 		return 0;
 
 	snd_config_get_id(top, &top_id);
-
-	ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
-	if (ret < 0)
-		return 0;
 
 	snd_config_for_each(i, next, includes) {
 		snd_config_t *n, *new, *define;
@@ -442,7 +441,7 @@ static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t
 			continue;
 
 		/* find id from variable definitions */
-		ret = snd_config_search(conf_defines, id, &define);
+		ret = snd_config_search(tplg_pp->define_cfg_merged, id, &define);
 		if (ret < 0) {
 			fprintf(stderr, "No variable defined for %s\n", id);
 			return ret;
