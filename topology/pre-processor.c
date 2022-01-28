@@ -249,12 +249,15 @@ static int pre_process_set_defines(struct tplg_pre_processor *tplg_pp, const cha
 
 static int pre_process_add_defines(struct tplg_pre_processor *tplg_pp, snd_config_t *from)
 {
-	snd_config_t *conf_defines;
+	snd_config_t *conf_defines, *temp_defines;
 	int ret;
 
 	ret = snd_config_search(from, "Define", &conf_defines);
-	if (ret < 0)
-		return ret;
+	if (ret < 0) {
+		ret = snd_config_make_compound(&conf_defines, "Define", 0);
+		if (ret < 0)
+			return ret;
+	}
 
 	if (snd_config_get_type(conf_defines) != SND_CONFIG_TYPE_COMPOUND) {
 		fprintf(stderr, "Define must be a compound!\n");
@@ -273,14 +276,22 @@ static int pre_process_add_defines(struct tplg_pre_processor *tplg_pp, snd_confi
 			return ret;
 	}
 
-	/*
-	 * merge the command line defines with the variables in the conf file to override
-	 * default values
-	 */
-	ret = snd_config_merge(conf_defines, tplg_pp->define_cfg, true);
-	if (ret < 0) {
-		fprintf(stderr, "Failed to override variable definitions\n");
-		return ret;
+	if (tplg_pp->define_cfg) {
+		ret = snd_config_copy(&temp_defines, tplg_pp->define_cfg);
+		if (ret < 0) {
+			SNDERR("Failed to copy command line definitions\n");
+			return ret;
+		}
+
+		/*
+		 * merge the command line defines with the variables in the conf file to override
+		 * default values
+		 */
+		ret = snd_config_merge(conf_defines, temp_defines, true);
+		if (ret < 0) {
+			fprintf(stderr, "Failed to override variable definitions\n");
+			return ret;
+		}
 	}
 
 	if (tplg_pp->define_cfg_merged != conf_defines) {
