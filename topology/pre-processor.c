@@ -247,40 +247,51 @@ static int pre_process_set_defines(struct tplg_pre_processor *tplg_pp, const cha
 	return 0;
 }
 
-static int pre_process_defines(struct tplg_pre_processor *tplg_pp)
+static int pre_process_add_defines(struct tplg_pre_processor *tplg_pp, snd_config_t *from)
 {
 	snd_config_t *conf_defines;
 	int ret;
 
-	conf_defines = tplg_pp->define_cfg_merged;
-	if (conf_defines == NULL) {
-		ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
-		if (ret == -ENOENT) {
-			ret = snd_config_make_compound(&conf_defines, "Define", 0);
-			if (ret < 0)
-				return ret;
-			ret = snd_config_add(tplg_pp->input_cfg, conf_defines);
-		}
+	ret = snd_config_search(from, "Define", &conf_defines);
+	if (ret < 0)
+		return ret;
+
+	if (snd_config_get_type(conf_defines) != SND_CONFIG_TYPE_COMPOUND) {
+		fprintf(stderr, "Define must be a compound!\n");
+		return -EINVAL;
+	}
+
+	if (tplg_pp->input_cfg == from)
+		tplg_pp->define_cfg_merged = conf_defines;
+
+	if (tplg_pp->define_cfg_merged == NULL) {
+		ret = snd_config_make_compound(&tplg_pp->define_cfg_merged, "Define", 0);
 		if (ret < 0)
 			return ret;
-
-		if (snd_config_get_type(conf_defines) != SND_CONFIG_TYPE_COMPOUND) {
-			fprintf(stderr, "Define must be a compound!\n");
-			return -EINVAL;
-		}
-
-		/* cache for the next possible iteration, skip the search and verification */
-		tplg_pp->define_cfg_merged = conf_defines;
+		ret = snd_config_add(tplg_pp->input_cfg, tplg_pp->define_cfg_merged);
+		if (ret < 0)
+			return ret;
 	}
 
 	/*
-	 * load and merge the command line defines with the variables in the conf file to override
+	 * merge the command line defines with the variables in the conf file to override
 	 * default values
 	 */
 	ret = snd_config_merge(conf_defines, tplg_pp->define_cfg, true);
 	if (ret < 0) {
 		fprintf(stderr, "Failed to override variable definitions\n");
 		return ret;
+	}
+
+	if (tplg_pp->define_cfg_merged != conf_defines) {
+		/*
+		 * merge back to the main configuration tree (Define subtree)
+		 */
+		ret = snd_config_merge(tplg_pp->define_cfg_merged, conf_defines, true);
+		if (ret < 0) {
+			fprintf(stderr, "Failed to override main variable definitions\n");
+			return ret;
+		}
 	}
 
 	return 0;
@@ -389,6 +400,13 @@ static int pre_process_include_conf(struct tplg_pre_processor *tplg_pp, snd_conf
 			goto err;
 		}
 
+		/* forcefully overwrite with defines from the command line */
+		ret = pre_process_add_defines(tplg_pp, *new);
+		if (ret < 0) {
+			fprintf(stderr, "Failed to parse arguments in input config\n");
+			goto err;
+		}
+
 		/* recursively process any nested includes */
 		return pre_process_includes(tplg_pp, *new);
 	}
@@ -441,13 +459,6 @@ static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t
 		ret = snd_config_merge(top, new, 0);
 		if (ret < 0) {
 			fprintf(stderr, "Failed to add included conf\n");
-			return ret;
-		}
-
-		/* forcefully overwrite with defines from the command line */
-		ret = pre_process_defines(tplg_pp);
-		if (ret < 0) {
-			fprintf(stderr, "Failed to parse arguments in input config\n");
 			return ret;
 		}
 	}
@@ -526,7 +537,7 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 	}
 
 	/* parse command line definitions */
-	err = pre_process_defines(tplg_pp);
+	err = pre_process_add_defines(tplg_pp, top);
 	if (err < 0) {
 		fprintf(stderr, "Failed to parse arguments in input config\n");
 		goto err;
