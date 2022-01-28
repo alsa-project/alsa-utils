@@ -409,7 +409,7 @@ static int pre_process_include_conf(struct tplg_pre_processor *tplg_pp, snd_conf
 
 		/* forcefully overwrite with defines from the command line */
 		ret = pre_process_add_defines(tplg_pp, *new);
-		if (ret < 0) {
+		if (ret < 0 && ret != -ENOENT) {
 			fprintf(stderr, "Failed to parse arguments in input config\n");
 			goto err;
 		}
