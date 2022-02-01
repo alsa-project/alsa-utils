@@ -27,8 +27,17 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <signal.h>
+#include <sys/time.h>
 #include <sys/stat.h>
 #include "alsactl.h"
+
+static int alarm_flag;
+
+static void signal_handler_alarm(int sig)
+{
+	alarm_flag = 1;
+}
 
 static int state_lock_(int lock, int timeout, int _fd)
 {
@@ -36,6 +45,8 @@ static int state_lock_(int lock, int timeout, int _fd)
 	struct flock lck;
 	struct stat st;
 	char lcktxt[14];
+	struct sigaction sig_alarm, sig_alarm_orig;
+	struct itimerval itv;
 	char *nfile = lockfile;
 
 	if (do_lock <= 0)
@@ -93,15 +104,31 @@ static int state_lock_(int lock, int timeout, int _fd)
 			goto out;
 		}
 	}
-	while (timeout > 0) {
-		if (fcntl(fd, F_SETLK, &lck) < 0) {
-			sleep(1);
-			timeout--;
-		} else {
-			break;
-		}
+	alarm_flag = 0;
+	memset(&sig_alarm, 0, sizeof(sig_alarm));
+	sigemptyset(&sig_alarm.sa_mask);
+	sig_alarm.sa_handler = signal_handler_alarm;
+	if (sigaction(SIGALRM, &sig_alarm, &sig_alarm_orig) < 0) {
+		err = -ENXIO;
+		goto out;
 	}
-	if (timeout <= 0) {
+	memset(&itv, 0, sizeof(itv));
+	itv.it_value.tv_sec = timeout;
+	if (setitimer(ITIMER_REAL, &itv, NULL) < 0) {
+		err = -ENXIO;
+		sigaction(SIGALRM, &sig_alarm_orig, NULL);
+		goto out;
+	}
+	while (alarm_flag == 0) {
+		if (fcntl(fd, F_SETLKW, &lck) == 0)
+			break;
+		if (errno == EAGAIN || errno == ERESTART)
+			continue;
+	}
+	memset(&itv, 0, sizeof(itv));
+	setitimer(ITIMER_REAL, &itv, NULL);
+	sigaction(SIGALRM, &sig_alarm_orig, NULL);
+	if (alarm_flag) {
 		err = -EBUSY;
 		goto out;
 	}
