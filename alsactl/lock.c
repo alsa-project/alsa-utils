@@ -30,7 +30,7 @@
 #include <sys/stat.h>
 #include "alsactl.h"
 
-static int state_lock_(const char *file, int lock, int timeout, int _fd)
+static int state_lock_(int lock, int timeout, int _fd)
 {
 	int fd = -1, err = 0;
 	struct flock lck;
@@ -124,7 +124,7 @@ int state_lock(const char *file, int timeout)
 {
 	int err;
 
-	err = state_lock_(file, 1, timeout, -1);
+	err = state_lock_(1, timeout, -1);
 	if (err < 0)
 		error("file %s lock error: %s", file, strerror(-err));
 	return err;
@@ -134,7 +134,7 @@ int state_unlock(int _fd, const char *file)
 {
 	int err;
 
-	err = state_lock_(file, 0, 10, _fd);
+	err = state_lock_(0, 10, _fd);
 	if (err < 0)
 		error("file %s unlock error: %s", file, strerror(-err));
 	return err;
