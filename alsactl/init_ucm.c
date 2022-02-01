@@ -37,16 +37,20 @@ int init_ucm(int flags, int cardno)
 	char id[32], *nodev;
 	int err;
 
-	if (flags & FLAG_UCM_DISABLED)
+	if (flags & FLAG_UCM_DISABLED) {
+		dbg("ucm disabled");
 		return -ENXIO;
+	}
 
 	nodev = (flags & FLAG_UCM_NODEV) ? "" : "-";
 	snprintf(id, sizeof(id), "%shw:%d", nodev, cardno);
 	err = snd_use_case_mgr_open(&uc_mgr, id);
+	dbg("ucm open '%s': %d", id, err);
 	if (err < 0)
 		return err;
 	if (flags & FLAG_UCM_FBOOT) {
 		err = snd_use_case_set(uc_mgr, "_fboot", NULL);
+		dbg("ucm _fboot: %d", err);
 		if (err == -ENOENT && (flags & FLAG_UCM_BOOT) != 0) {
 			/* nothing */
 		} else if (err < 0) {
@@ -55,6 +59,7 @@ int init_ucm(int flags, int cardno)
 	}
 	if (flags & FLAG_UCM_BOOT) {
 		err = snd_use_case_set(uc_mgr, "_boot", NULL);
+		dbg("ucm _boot: %d", err);
 		if (err < 0)
 			goto _error;
 		if ((flags & FLAG_UCM_DEFAULTS) != 0)
