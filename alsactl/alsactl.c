@@ -51,6 +51,7 @@ int do_lock = 0;
 int use_syslog = 0;
 char *command;
 char *statefile = NULL;
+char *lockpath = SYS_LOCKPATH;
 char *lockfile = SYS_LOCKFILE;
 
 #define TITLE	0x0100
@@ -79,6 +80,7 @@ static struct arg args[] = {
 { FILEARG | 'a', "config-dir", "boot / hotplug configuration directory (default " SYS_ASOUND_DIR ")" },
 { 'l', "lock", "use file locking to serialize concurrent access" },
 { 'L', "no-lock", "do not use file locking to serialize concurrent access" },
+{ FILEARG | 'K', "lock-dir", "lock path (default " SYS_LOCKPATH ")" },
 { FILEARG | 'O', "lock-state-file", "state lock file path (default " SYS_LOCKFILE ")" },
 { 'F', "force", "try to restore the matching controls as much as possible" },
 { 0, NULL, "  (default mode)" },
@@ -305,6 +307,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'L':
 			do_lock = -1;
+			break;
+		case 'K':
+			lockpath = optarg;
 			break;
 		case 'O':
 			lockfile = optarg;

@@ -14,7 +14,8 @@ alsactl_SOURCES=alsactl.c state.c lock.c utils.c init_parse.c init_ucm.c \
 
 alsactl_CFLAGS=$(AM_CFLAGS) -D__USE_GNU \
                -DSYS_ASOUNDRC=\"$(ASOUND_STATE_DIR)/asound.state\" \
-               -DSYS_LOCKFILE=\"$(ASOUND_LOCK_DIR)/asound.state.lock\" \
+               -DSYS_LOCKPATH=\"$(ASOUND_LOCK_DIR)\" \
+               -DSYS_LOCKFILE=\"asound.state.lock\" \
                -DSYS_PIDFILE=\"$(ALSACTL_PIDFILE_DIR)/alsactl.pid\"
 
 noinst_HEADERS=alsactl.h list.h init_sysdeps.c init_utils_string.c \

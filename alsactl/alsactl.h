@@ -1,6 +1,8 @@
 #include <stdbool.h>
 #include <alsa/asoundlib.h>
 
+#define LOCK_TIMEOUT 10
+
 extern int debugflag;
 extern int force_restore;
 extern int ignore_nocards;
@@ -8,6 +10,7 @@ extern int do_lock;
 extern int use_syslog;
 extern char *command;
 extern char *statefile;
+extern char *lockpath;
 extern char *lockfile;
 
 struct snd_card_iterator {
@@ -50,7 +53,9 @@ int load_configuration(const char *file, snd_config_t **top, int *open_failed);
 int init(const char *cfgdir, const char *file, int flags, const char *cardname);
 int init_ucm(int flags, int cardno);
 int state_lock(const char *file, int timeout);
-int state_unlock(int fd, const char *file);
+int state_unlock(int lock_fd, const char *file);
+int card_lock(int card_number, int timeout);
+int card_unlock(int lock_fd, int card_number);
 int save_state(const char *file, const char *cardname);
 int load_state(const char *cfgdir, const char *file,
 	       const char *initfile, int initflags,

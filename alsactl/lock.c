@@ -32,6 +32,8 @@
 #include <sys/stat.h>
 #include "alsactl.h"
 
+#define PATH_SIZE 512
+
 static int alarm_flag;
 
 static void signal_handler_alarm(int sig)
@@ -39,7 +41,7 @@ static void signal_handler_alarm(int sig)
 	alarm_flag = 1;
 }
 
-static int state_lock_(int lock, int timeout, int _fd)
+static int state_lock_(const char *lock_file, int lock, int timeout, int _fd)
 {
 	int fd = -1, err = 0;
 	struct flock lck;
@@ -47,7 +49,6 @@ static int state_lock_(int lock, int timeout, int _fd)
 	char lcktxt[14];
 	struct sigaction sig_alarm, sig_alarm_orig;
 	struct itimerval itv;
-	char *nfile = lockfile;
 
 	if (do_lock <= 0)
 		return 0;
@@ -64,20 +65,20 @@ static int state_lock_(int lock, int timeout, int _fd)
 		fd = _fd;
 	}
 	while (fd < 0 && timeout-- > 0) {
-		fd = open(nfile, O_RDWR);
+		fd = open(lock_file, O_RDWR);
 		if (!lock && fd < 0) {
 			err = -EIO;
 			goto out;
 		}
 		if (fd < 0) {
-			fd = open(nfile, O_RDWR|O_CREAT|O_EXCL, 0644);
+			fd = open(lock_file, O_RDWR|O_CREAT|O_EXCL, 0644);
 			if (fd < 0) {
 				if (errno == EBUSY || errno == EAGAIN) {
 					sleep(1);
 					continue;
 				}
 				if (errno == EEXIST) {
-					fd = open(nfile, O_RDWR);
+					fd = open(lock_file, O_RDWR);
 					if (fd >= 0)
 						break;
 				}
@@ -147,11 +148,21 @@ out:
 	return err;
 }
 
+static void state_lock_file(char *buf, size_t buflen)
+{
+	if (lockfile[0] == '/')
+		snprintf(buf, buflen, "%s", lockfile);
+	else
+		snprintf(buf, buflen, "%s/%s", lockpath, lockfile);
+}
+
 int state_lock(const char *file, int timeout)
 {
+	char fn[PATH_SIZE];
 	int err;
 
-	err = state_lock_(1, timeout, -1);
+	state_lock_file(fn, sizeof(fn));
+	err = state_lock_(fn, 1, timeout, -1);
 	if (err < 0)
 		error("file %s lock error: %s", file, strerror(-err));
 	return err;
@@ -159,10 +170,41 @@ int state_lock(const char *file, int timeout)
 
 int state_unlock(int _fd, const char *file)
 {
+	char fn[PATH_SIZE];
 	int err;
 
-	err = state_lock_(0, 10, _fd);
+	state_lock_file(fn, sizeof(fn));
+	err = state_lock_(fn, 0, 10, _fd);
 	if (err < 0)
 		error("file %s unlock error: %s", file, strerror(-err));
+	return err;
+}
+
+static void card_lock_file(char *buf, size_t buflen, int card_number)
+{
+	snprintf(buf, buflen, "%s/card%i.lock", lockpath, card_number);
+}
+
+int card_lock(int card_number, int timeout)
+{
+	char fn[PATH_SIZE];
+	int err;
+
+	card_lock_file(fn, sizeof(fn), card_number);
+	err = state_lock_(fn, 1, timeout, -1);
+	if (err < 0)
+		error("card %d lock error: %s", card_number, strerror(-err));
+	return err;
+}
+
+int card_unlock(int _fd, int card_number)
+{
+	char fn[PATH_SIZE];
+	int err;
+
+	card_lock_file(fn, sizeof(fn), card_number);
+	err = state_lock_(fn, 0, 10, _fd);
+	if (err < 0)
+		error("card %d unlock error: %s", card_number, strerror(-err));
 	return err;
 }

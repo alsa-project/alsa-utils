@@ -211,7 +211,7 @@ int load_configuration(const char *file, snd_config_t **top, int *open_failed)
 	if (stdio_flag) {
 		err = snd_input_stdio_attach(&in, stdin, 0);
 	} else {
-		lock_fd = state_lock(file, 10);
+		lock_fd = state_lock(file, LOCK_TIMEOUT);
 		err = lock_fd >= 0 ? snd_input_stdio_open(&in, file, "r") : lock_fd;
 	}
 	if (err < 0) {
