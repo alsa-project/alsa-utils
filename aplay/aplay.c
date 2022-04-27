@@ -885,7 +885,7 @@ int main(int argc, char *argv[])
 	    isatty(fileno(stdin)) &&
 	    stream == SND_PCM_STREAM_CAPTURE &&
 	    snd_pcm_format_width(rhwparams.format) <= 8)
-		fprintf(stderr, "Warning: Some sources (like microphones) may produce inaudiable results\n"
+		fprintf(stderr, "Warning: Some sources (like microphones) may produce inaudible results\n"
 				"         with 8-bit sampling. Use '-f' argument to increase resolution\n"
 				"         e.g. '-f S16_LE'.\n");
 
