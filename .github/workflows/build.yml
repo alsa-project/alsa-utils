@@ -63,6 +63,7 @@ jobs:
         cd alsa-utils
         aclocal
         gettextize -c -f --no-changelog
+        libtoolize --force --copy --automake
         aclocal -I m4
         autoheader
         automake --foreign --copy --add-missing
@@ -152,6 +153,7 @@ jobs:
         sed -e 's;po/Makefile.in;;' < configure.ac.old > configure.ac
         aclocal
         gettextize -c -f --no-changelog
+        libtoolize --force --copy --automake
         aclocal -I m4
         autoheader
         automake --foreign --copy --add-missing
