@@ -12,5 +12,19 @@ libalsatplg_module_nhlt_la_SOURCES = nhlt-processor.c \
 				intel/ssp-nhlt.c \
 				intel/ssp/ssp-debug.c intel/ssp/ssp-process.c
 
+noinst_HEADERS = nhlt.h \
+		intel/intel-nhlt.h \
+		intel/dmic-nhlt.h \
+		intel/dmic/dmic-intel.h \
+		intel/dmic/dmic-process.h \
+		intel/dmic/dmic-debug.h \
+		intel/dmic/dmic-internal.h \
+		intel/dmic/pdm-decim-fir.h \
+		intel/ssp-nhlt.h \
+		intel/ssp/ssp-debug.h \
+		intel/ssp/ssp-intel.h \
+		intel/ssp/ssp-process.h \
+		intel/ssp/ssp-internal.h
+
 libalsatplg_module_nhlt_la_LDFLAGS = -shared
 libalsatplg_module_nhlt_la_LIBADD = -lasound
