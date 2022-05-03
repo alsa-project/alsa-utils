@@ -35,8 +35,7 @@
 
 #define SND_TOPOLOGY_MAX_PLUGINS 32
 
-static int get_plugin_string(struct tplg_pre_processor *tplg_pp, const char *pre_processor_defs,
-			     char **plugin_string)
+static int get_plugin_string(struct tplg_pre_processor *tplg_pp, char **plugin_string)
 {
 	const char *lib_names_t = NULL;
 	snd_config_t *defines;
@@ -112,7 +111,7 @@ err:
 	return ret;
 }
 
-static int pre_process_plugins(struct tplg_pre_processor *tplg_pp, const char *pre_processor_defs)
+static int pre_process_plugins(struct tplg_pre_processor *tplg_pp)
 {
 	char *plugins[SND_TOPOLOGY_MAX_PLUGINS];
 	char *plugin_string;
@@ -121,7 +120,7 @@ static int pre_process_plugins(struct tplg_pre_processor *tplg_pp, const char *p
 	int i;
 
 	/* parse plugin names */
-	ret = get_plugin_string(tplg_pp, pre_processor_defs, &plugin_string);
+	ret = get_plugin_string(tplg_pp, &plugin_string);
 
 	/* no plugins defined, so just return */
 	if (ret < 0)
@@ -688,7 +687,7 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 	}
 
 	/* process topology plugins */
-	err = pre_process_plugins(tplg_pp, pre_processor_defs);
+	err = pre_process_plugins(tplg_pp);
 	if (err < 0) {
 		fprintf(stderr, "Unable to run pre-process plugins\n");
 		goto err;
