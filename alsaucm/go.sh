@@ -5,8 +5,8 @@
 #GDB="valgrind --leak-check=yes --show-reachable=yes"
 #GDB="perf stat"
 PROG=./alsaucm
-PROG=/home/perex/git/pipewire/builddir/spa/plugins/alsa/spa-acp-tool
-PROG="$HOME/git/pulseaudio/build/src/daemon/pulseaudio -n -F $HOME/git/pulseaudio/build/src/daemon/default.pa -p $HOME/git/pulseaudio/build/src/modules/"
+#PROG=/home/perex/git/pipewire/builddir/spa/plugins/alsa/spa-acp-tool
+#PROG="$HOME/git/pulseaudio/build/src/daemon/pulseaudio -n -F $HOME/git/pulseaudio/build/src/daemon/default.pa -p $HOME/git/pulseaudio/build/src/modules/"
 #PROG=pulseaudio
 
 #ALSA_CONFIG_UCM="$HOME/alsa/alsa-ucm-conf/ucm" \
