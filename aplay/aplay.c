@@ -2268,7 +2268,7 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 		}
 	}
 abort:
-	return rcount;
+	return result;
 }
 
 static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
@@ -3326,7 +3326,7 @@ static void capture(char *orig_name)
 			}
 			count -= c;
 			rest -= c;
-			fdcount += c;
+			fdcount += save;
 		}
 
 		/* re-enable SIGUSR1 signal */
