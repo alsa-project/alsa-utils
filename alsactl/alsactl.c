@@ -119,6 +119,7 @@ static struct arg args[] = {
 { CARDCMD, "rdaemon", "like daemon but do the state restore at first" },
 { KILLCMD, "kill", "notify daemon to quit, rescan or save_and_quit" },
 { CARDCMD, "monitor", "monitor control events" },
+{ CARDCMD, "info", "general information" },
 { CARDCMD, "clean", "clean application controls" },
 { EMPCMD, "dump-state", "dump the state (for all cards)" },
 { EMPCMD, "dump-cfg", "dump the configuration (expanded, for all cards)" },
@@ -465,6 +466,8 @@ int main(int argc, char *argv[])
 		res = state_daemon_kill(pidfile, cardname);
 	} else if (!strcmp(cmd, "monitor")) {
 		res = monitor(cardname);
+	} else if (!strcmp(cmd, "info")) {
+		res = general_info(cardname);
 	} else if (!strcmp(cmd, "clean")) {
 		res = clean(cardname, extra_args);
 	} else if (!strcmp(cmd, "dump-state")) {
