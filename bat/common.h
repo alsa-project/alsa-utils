@@ -25,6 +25,7 @@
 #define OPT_ROUNDTRIPLATENCY		(OPT_BASE + 6)
 #define OPT_SNRTHD_DB			(OPT_BASE + 7)
 #define OPT_SNRTHD_PC			(OPT_BASE + 8)
+#define OPT_READCAPTURE			(OPT_BASE + 9)
 
 #define COMPOSE(a, b, c, d)		((a) | ((b)<<8) | ((c)<<16) | ((d)<<24))
 #define WAV_RIFF			COMPOSE('R', 'I', 'F', 'F')
@@ -151,6 +152,7 @@ enum _bat_op_mode {
 	MODE_UNKNOWN = -1,
 	MODE_SINGLE = 0,
 	MODE_LOOPBACK,
+	MODE_ANALYZE_ONLY,
 	MODE_LAST
 };
 
@@ -223,6 +225,7 @@ struct bat {
 	char *narg;			/* argument string of duration */
 	char *logarg;			/* path name of log file */
 	char *debugplay;		/* path name to store playback signal */
+	char *capturefile;		/* path name for previously saved recording */
 	bool standalone;		/* enable to bypass analysis */
 	bool roundtriplatency;		/* enable round trip latency */
 
