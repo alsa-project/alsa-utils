@@ -331,6 +331,8 @@ _("Usage: alsabat [-options]...\n"
 "      --log=#            file that both stdout and strerr redirecting to\n"
 "      --file=#           file for playback\n"
 "      --saveplay=#       file that storing playback content, for debug\n"
+"      --readcapture=#    file with previously captured content.  File data\n"
+"                         is used for analysis instead of capturing it.\n"
 "      --local            internal loop, set to bypass pcm hardware devices\n"
 "      --standalone       standalone mode, to bypass analysis\n"
 "      --roundtriplatency round trip latency mode\n"
@@ -397,6 +399,7 @@ static void parse_arguments(struct bat *bat, int argc, char *argv[])
 		{"roundtriplatency", 0, 0, OPT_ROUNDTRIPLATENCY},
 		{"snr-db",   1, 0, OPT_SNRTHD_DB},
 		{"snr-pc",   1, 0, OPT_SNRTHD_PC},
+		{"readcapture", 1, 0, OPT_READCAPTURE},
 		{0, 0, 0, 0}
 	};
 
@@ -411,6 +414,11 @@ static void parse_arguments(struct bat *bat, int argc, char *argv[])
 			break;
 		case OPT_SAVEPLAY:
 			bat->debugplay = optarg;
+			break;
+		case OPT_READCAPTURE:
+			bat->capturefile = optarg;
+			bat->capture.mode = MODE_ANALYZE_ONLY;
+			bat->playback.mode = MODE_ANALYZE_ONLY;
 			break;
 		case OPT_LOCAL:
 			bat->local = true;
@@ -705,6 +713,15 @@ int main(int argc, char *argv[])
 	/* single line capture thread: capture only, no playback */
 	if (bat.capture.mode == MODE_SINGLE) {
 		test_capture(&bat);
+		goto analyze;
+	}
+
+	if (bat.capture.mode == MODE_ANALYZE_ONLY && bat.capturefile) {
+		bat.capture.file = strdup(bat.capturefile);
+		fprintf(bat.log,
+			_("Using data from file %s for analysis\n"),
+			bat.capture.file);
+		fprintf(bat.log, _("Skipping playback and capture\n"));
 		goto analyze;
 	}
 
