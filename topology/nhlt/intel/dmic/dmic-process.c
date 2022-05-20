@@ -120,10 +120,10 @@ static int norm_int32(int32_t val)
  * parameters. The parameters such as microphone clock min/max and duty cycle requirements need be
  * checked from used microphone component datasheet.
  */
-static void find_modes(struct intel_dmic_params *dmic, struct dmic_calc_decim_modes *modes)
+static void find_modes(struct intel_dmic_params *dmic, struct dmic_calc_decim_modes *modes,
+		       uint32_t fs)
 {
 	int di = dmic->dmic_dai_index;
-	uint32_t fs = dmic->dmic_prm[di].fifo_fs;
 	int clkdiv_min;
 	int clkdiv_max;
 	int clkdiv;
@@ -993,14 +993,14 @@ int dmic_calculate(struct intel_nhlt_params *nhlt)
 	 * contains the scale value to use for FIR coefficient RAM write as well as the CIC and FIR
 	 * shift values.
 	 */
-	find_modes(dmic, &modes_a);
+	find_modes(dmic, &modes_a, dmic->dmic_prm[0].fifo_fs);
 	if (modes_a.num_of_modes == 0 && dmic->dmic_prm[0].fifo_fs > 0) {
 		fprintf(stderr, "dmic_set_config(): No modes found for FIFO A\n");
 		ret = -EINVAL;
 		goto out;
 	}
 
-	find_modes(dmic, &modes_b);
+	find_modes(dmic, &modes_b, dmic->dmic_prm[1].fifo_fs);
 	if (modes_b.num_of_modes == 0 && dmic->dmic_prm[1].fifo_fs > 0) {
 		fprintf(stderr, "dmic_set_config(): No modes found for FIFO B\n");
 		ret = -EINVAL;
