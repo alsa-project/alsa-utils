@@ -26,4 +26,5 @@ noinst_HEADERS = nhlt.h \
 		intel/ssp/ssp-process.h \
 		intel/ssp/ssp-internal.h
 
+libalsatplg_module_nhlt_la_LDFLAGS = -shared $(AM_LDFLAGS)
 libalsatplg_module_nhlt_la_LIBADD = @ALSA_LIBS@
