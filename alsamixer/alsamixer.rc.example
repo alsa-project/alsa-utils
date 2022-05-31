@@ -1,0 +1,192 @@
+### alsamixer configuration file
+#
+# location: ~/alsamixer.rc  or  ~/.config/alsamixer.rc  or  ~/.alsamixer.rc
+
+
+### color configuration
+# color <element> <fg-color> <bg-color> [<attr> ...]
+#
+# color:
+#   default, black, red, green, yellow, blue, magenta, cyan, white
+#
+# attr:
+#   bold, reverse, standout, dim, underline, italic, normal, blink
+#
+# element:
+#   mixer_frame, mixer_text, mixer_active, ctl_frame, ctl_mute, ctl_nomute,
+#   ctl_capture, ctl_nocapture, ctl_label, ctl_label_focus, ctl_mark_focus,
+#   ctl_bar_lo, ctl_bar_mi, ctl_bar_hi, ctl_inactive, ctl_label_inactive,
+#   errormsg, infomsg, textbox, textfield, menu, menu_selected
+
+#color mixer_frame               cyan    default
+#color mixer_text                cyan    default
+#color mixer_active              yellow  default bold
+#color ctl_frame                 cyan    default bold
+#color ctl_mute                  cyan    default
+#color ctl_nomute                white   green   bold
+#color ctl_capture               red     default bold
+#color ctl_nocapture             white   default
+#color ctl_label                 white   blue    bold
+#color ctl_label_focus           red     blue    bold
+#color ctl_mark_focus            red     default bold
+#color ctl_bar_lo                green   green   bold
+#color ctl_bar_mi                white   white   bold
+#color ctl_bar_hi                red     red     bold
+#color ctl_inactive              white   default
+#color ctl_label_inactive        white   default reverse
+#color errormsg                  white   red     bold
+#color infomsg                   white   blue    bold
+#color textbox                   white   blue    bold
+#color textfield                 white   default reverse
+#color menu                      white   blue    bold
+#color menu_selected             white   blue    reverse
+
+
+### key bindings
+# bind <key> [mixer] <mixer-cmd>
+# bind <key> textbox <textbox-cmd>
+#
+# mixer-cmd:
+#   help, close, refresh, select_card, system_information, mode_all,
+#   mode_capture, mode_playback, mode_toggle, balance_control, next[_<N>],
+#   previous[_<N>], control_focus_<[_left|_right]N>,
+#   control_up[_<N>][_left|_right], control_down[_<N>][_left|_right],
+#   control_set_<N>[_left|_right], toggle_mute[_left|_right],
+#   toggle_capture[_left|_right]
+#
+# textbox-cmd:
+#   close, down, up, left, right, page_down, page_up, page_left, page_right,
+#   top, bottom
+#
+# key: a key definition may be:
+#   - a single character (A, a, Z, z, ...)
+#   - a character with control-modifier (^x, C-x, c-x, ...)
+#   - a character with meta/alt-modifier (M-x, m-x, A-x, a-x, ...)
+#   - a character with both modifiers (C-M-x, M-C-x, M-^x, ...)
+#   - a curses keyname, no modifiers allowed (KEY_HOME, Home, F1, F(1), ...)
+
+#bind Escape    mixer close
+#bind Cancel    mixer close
+#bind F10       mixer close
+#bind F1        mixer help
+#bind Help      mixer help
+#bind H         mixer help
+#bind h         mixer help
+#bind ?         mixer help
+#bind F2        mixer system_information
+#bind /         mixer system_information
+#bind F3        mixer mode_playback
+#bind F4        mixer mode_capture
+#bind F5        mixer mode_all
+#bind Tab       mixer mode_toggle
+#bind F6        mixer select_card
+#bind S         mixer select_card
+#bind s         mixer select_card
+#bind Refresh   mixer refresh
+#bind ^L        mixer refresh
+#bind L         mixer refresh
+#bind l         mixer refresh
+#bind Left      mixer previous
+#bind P         mixer previous
+#bind p         mixer previous
+#bind Right     mixer next
+#bind N         mixer next
+#bind n         mixer next
+#bind PPage     mixer control_up_5
+#bind NPage     mixer control_down_5
+#bind LL        mixer control_set_0
+#bind END       mixer control_set_0
+#bind 0         mixer control_set_0
+#bind 1         mixer control_set_10
+#bind 2         mixer control_set_20
+#bind 3         mixer control_set_30
+#bind 4         mixer control_set_40
+#bind 5         mixer control_set_50
+#bind 6         mixer control_set_60
+#bind 7         mixer control_set_70
+#bind 8         mixer control_set_80
+#bind 9         mixer control_set_90
+#bind Up        mixer control_up
+#bind +         mixer control_up
+#bind K         mixer control_up
+#bind k         mixer control_up
+#bind W         mixer control_up
+#bind w         mixer control_up
+#bind Down      mixer control_down
+#bind -         mixer control_down
+#bind J         mixer control_down
+#bind j         mixer control_down
+#bind X         mixer control_down
+#bind x         mixer control_down
+#bind Q         mixer control_up_left
+#bind q         mixer control_up_left
+#bind Y         mixer control_down_left
+#bind y         mixer control_down_left
+#bind Z         mixer control_down_left
+#bind z         mixer control_down_left
+#bind E         mixer control_up_right
+#bind e         mixer control_up_right
+#bind C         mixer control_down_right
+#bind c         mixer control_down_right
+#bind M         mixer toggle_mute
+#bind m         mixer toggle_mute
+#bind <         mixer toggle_mute_left
+#bind ,         mixer toggle_mute_left
+#bind >         mixer toggle_mute_right
+#bind .         mixer toggle_mute_right
+#bind Space     mixer toggle_capture
+#bind IC        mixer toggle_capture_left
+#bind ;         mixer toggle_capture_left
+#bind DC        mixer toggle_capture_right
+#bind '         mixer toggle_capture_right
+#bind B         mixer balance_control
+#bind b         mixer balance_control
+#bind =         mixer balance_control
+
+#bind Escape    textbox close
+#bind Cancel    textbox close
+#bind Enter     textbox close
+#bind Close     textbox close
+#bind Exit      textbox close
+#bind Down      textbox down
+#bind SF        textbox down
+#bind J         textbox down
+#bind j         textbox down
+#bind X         textbox down
+#bind x         textbox down
+#bind Up        textbox up
+#bind SR        textbox up
+#bind K         textbox up
+#bind k         textbox up
+#bind W         textbox up
+#bind w         textbox up
+#bind Left      textbox left
+#bind H         textbox left
+#bind h         textbox left
+#bind P         textbox left
+#bind p         textbox left
+#bind Right     textbox right
+#bind L         textbox right
+#bind l         textbox right
+#bind N         textbox right
+#bind n         textbox right
+#bind NPage     textbox page_down
+#bind SPace     textbox page_down
+#bind PPage     textbox page_up
+#bind Backspace textbox page_up
+#bind B         textbox page_up
+#bind b         textbox page_up
+#bind Home      textbox top
+#bind Beg       textbox top
+#bind LL        textbox bottom
+#bind End       textbox bottom
+#bind Tab       textbox page_right
+#bind BTab      textbox page_left
+
+
+### misc configuration
+# set mouse_wheel_step [0..100]
+# set mouse_wheel_focuses_control [0|1]
+
+#set mouse_wheel_step            1
+#set mouse_wheel_focuses_control 1
