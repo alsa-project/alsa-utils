@@ -3,7 +3,7 @@ AC_PREREQ(2.59)
 AC_INIT(alsa-utils, 1.2.7)
 AC_CONFIG_SRCDIR([aplay/aplay.c])
 AC_PREFIX_DEFAULT(/usr)
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 
 AM_MAINTAINER_MODE([enable])
 
