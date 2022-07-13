@@ -433,14 +433,12 @@ static void print_byte(unsigned char byte, struct timespec *ts)
 			fputs("\n  ", stdout);
 	}
 
-	if (newline) {
-		printf("\n");
-
+	putchar(newline ? '\n' : ' ');
+	if (newline && do_print_timestamp) {
 		/* Nanoseconds does not make a lot of sense for serial MIDI (the
 		 * 31250 bps one) but I'm not sure about MIDI over USB.
 		 */
-		if (do_print_timestamp)
-			printf("%lld.%.9ld) ", (long long)ts->tv_sec, ts->tv_nsec);
+		printf("%lld.%.9ld) ", (long long)ts->tv_sec, ts->tv_nsec);
 	}
 
 	printf("%02X", byte);
