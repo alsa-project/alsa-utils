@@ -1,7 +1,7 @@
 # alsa-utils
 ## Advanced Linux Sound Architecture - Utilities
 
-![Build alsa-utils](https://github.com/alsa-project/alsa-utils/workflows/Build%20alsa-utils/badge.svg?branch=master)
+[![Build alsa-utils](https://github.com/alsa-project/alsa-utils/workflows/Build%20alsa-utils/badge.svg?branch=master)](https://github.com/alsa-project/alsa-utils/actions/workflows/build.yml?query=branch%3Amaster++)
 
 This package contains the command line utilities for the ALSA project.
 The package can be compiled only with the installed ALSA driver and
