@@ -96,7 +96,7 @@ static int print_as_hex_bytes(uint8_t *manifest_buffer, uint32_t manifest_size,
 	char *dst;
 	int i;
 
-	bytes_string_buffer = calloc((manifest_size + nhlt_size) * ALSA_BYTE_CHARS,
+	bytes_string_buffer = calloc((manifest_size + nhlt_size) * ALSA_BYTE_CHARS + 1,
 				     sizeof(uint8_t));
 	if (!bytes_string_buffer)
 		return -ENOMEM;
