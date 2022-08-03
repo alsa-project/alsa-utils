@@ -2268,7 +2268,7 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
 		}
 	}
 abort:
-	return result;
+	return result > rcount ? rcount : result;
 }
 
 static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
