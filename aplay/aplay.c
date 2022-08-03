@@ -41,7 +41,6 @@
 #include <time.h>
 #include <locale.h>
 #include <alsa/asoundlib.h>
-#include <alsa/use-case.h>
 #include <assert.h>
 #include <termios.h>
 #include <signal.h>
@@ -453,30 +452,6 @@ static ssize_t xwrite(int fd, const void *buf, size_t count)
 	return offset;
 }
 
-static int open_ucm(snd_use_case_mgr_t **uc_mgr, char **pcm_name, const char *name)
-{
-	char *s, *p;
-	int err;
-
-	s = strdup(name);
-	if (s == NULL)
-		return -ENOMEM;
-	p = strchr(s, '.');
-	if (p == NULL)
-		return -EINVAL;
-	*p = '\0';
-	err = snd_use_case_mgr_open(uc_mgr, s);
-	if (err < 0)
-		return err;
-	err = snd_use_case_get(*uc_mgr, p + 1, (const char **)pcm_name);
-	if (err < 0) {
-		error(_("UCM value '%s' error: %s"), p + 1, snd_strerror(err));
-		snd_use_case_mgr_close(*uc_mgr);
-		return err;
-	}
-	return err;
-}
-
 static long parse_long(const char *str, int *err)
 {
 	long val;
@@ -553,7 +528,6 @@ int main(int argc, char *argv[])
 	int do_device_list = 0, do_pcm_list = 0, force_sample_format = 0;
 	snd_pcm_info_t *info;
 	FILE *direction;
-	snd_use_case_mgr_t *uc_mgr = NULL;
 
 #ifdef ENABLE_NLS
 	setlocale(LC_ALL, "");
@@ -852,16 +826,6 @@ int main(int argc, char *argv[])
 		goto __end;
 	}
 
-	if (strncmp(pcm_name, "ucm.", 4) == 0) {
-		err = open_ucm(&uc_mgr, &pcm_name, pcm_name + 4);
-		if (err < 0) {
-			error(_("UCM open error: %s"), snd_strerror(err));
-			return 1;
-		}
-		if (verbose)
-			fprintf(stderr, _("Found UCM PCM device: %s\n"), pcm_name);
-	}
-
 	err = snd_pcm_open(&handle, pcm_name, stream, open_mode);
 	if (err < 0) {
 		error(_("audio open error: %s"), snd_strerror(err));
@@ -951,8 +915,6 @@ int main(int argc, char *argv[])
 	if (verbose==2)
 		putchar('\n');
 	snd_pcm_close(handle);
-	if (uc_mgr)
-		snd_use_case_mgr_close(uc_mgr);
 	handle = NULL;
 	free(audiobuf);
       __end:
