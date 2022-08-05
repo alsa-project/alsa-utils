@@ -69,7 +69,7 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	ssp->ssp_blob[di][hwi].gateway_attributes = 0;
 
 	for (j = 0; j < SSP_TDM_MAX_SLOT_MAP_COUNT; j++) {
-		for (i = 0; i < ssp->ssp_prm.hw_cfg[hwi].tdm_slots; i++)
+		for (i = 0; i < ssp->ssp_prm[di].hw_cfg[hwi].tdm_slots; i++)
 			ssp->ssp_blob[di][hwi].ts_group[j] |= (i << (i * 4));
 		for (; i < SSP_TDM_MAX_SLOT_MAP_COUNT; i++)
 			ssp->ssp_blob[di][hwi].ts_group[j] |= (0xF << (i * 4));
@@ -102,12 +102,12 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	ssp->ssp_blob[di][hwi].sscto = 0x0;
 
 	/* sstsa dynamic setting is TTSA, default 2 slots */
-	ssp->ssp_blob[di][hwi].sstsa = SSTSA_SSTSA(ssp->ssp_prm.hw_cfg[hwi].tx_slots);
+	ssp->ssp_blob[di][hwi].sstsa = SSTSA_SSTSA(ssp->ssp_prm[di].hw_cfg[hwi].tx_slots);
 
 	/* ssrsa dynamic setting is RTSA, default 2 slots */
-	ssp->ssp_blob[di][hwi].ssrsa = SSRSA_SSRSA(ssp->ssp_prm.hw_cfg[hwi].rx_slots);
+	ssp->ssp_blob[di][hwi].ssrsa = SSRSA_SSRSA(ssp->ssp_prm[di].hw_cfg[hwi].rx_slots);
 
-	switch (ssp->ssp_prm.hw_cfg[hwi].format & SSP_FMT_CLOCK_PROVIDER_MASK) {
+	switch (ssp->ssp_prm[di].hw_cfg[hwi].format & SSP_FMT_CLOCK_PROVIDER_MASK) {
 	case SSP_FMT_CBP_CFP:
 		ssp->ssp_blob[di][hwi].ssc1 |= SSCR1_SCLKDIR | SSCR1_SFRMDIR;
 		break;
@@ -131,7 +131,7 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	}
 
 	/* clock signal polarity */
-	switch (ssp->ssp_prm.hw_cfg[hwi].format & SSP_FMT_INV_MASK) {
+	switch (ssp->ssp_prm[di].hw_cfg[hwi].format & SSP_FMT_INV_MASK) {
 	case SSP_FMT_NB_NF:
 		break;
 	case SSP_FMT_NB_IF:
@@ -150,7 +150,7 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	}
 
 	/* supporting bclk idle state */
-	if (ssp->ssp_prm.clks_control &
+	if (ssp->ssp_prm[di].clks_control &
 		SSP_INTEL_CLKCTRL_BCLK_IDLE_HIGH) {
 		/* bclk idle state high */
 		ssp->ssp_blob[di][hwi].sspsp |= SSPSP_SCMODE((inverted_bclk ^ 0x3) & 0x3);
@@ -164,82 +164,86 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	/* Additional hardware settings */
 
 	/* Receiver Time-out Interrupt Disabled/Enabled */
-	ssp->ssp_blob[di][hwi].ssc1 |= (ssp->ssp_prm.quirks & SSP_INTEL_QUIRK_TINTE) ?
+	ssp->ssp_blob[di][hwi].ssc1 |= (ssp->ssp_prm[di].quirks & SSP_INTEL_QUIRK_TINTE) ?
 		SSCR1_TINTE : 0;
 
 	/* Peripheral Trailing Byte Interrupts Disable/Enable */
-	ssp->ssp_blob[di][hwi].ssc1 |= (ssp->ssp_prm.quirks & SSP_INTEL_QUIRK_PINTE) ?
+	ssp->ssp_blob[di][hwi].ssc1 |= (ssp->ssp_prm[di].quirks & SSP_INTEL_QUIRK_PINTE) ?
 		SSCR1_PINTE : 0;
 
 	/* Enable/disable internal loopback. Output of transmit serial
 	 * shifter connected to input of receive serial shifter, internally.
 	 */
-	ssp->ssp_blob[di][hwi].ssc1 |= (ssp->ssp_prm.quirks & SSP_INTEL_QUIRK_LBM) ?
+	ssp->ssp_blob[di][hwi].ssc1 |= (ssp->ssp_prm[di].quirks & SSP_INTEL_QUIRK_LBM) ?
 		SSCR1_LBM : 0;
 
 	/* Transmit data are driven at the same/opposite clock edge specified
 	 * in SSPSP.SCMODE[1:0]
 	 */
-	ssp->ssp_blob[di][hwi].ssc2 |= (ssp->ssp_prm.quirks & SSP_INTEL_QUIRK_SMTATF) ?
+	ssp->ssp_blob[di][hwi].ssc2 |= (ssp->ssp_prm[di].quirks & SSP_INTEL_QUIRK_SMTATF) ?
 		SSCR2_SMTATF : 0;
 
 	/* Receive data are sampled at the same/opposite clock edge specified
 	 * in SSPSP.SCMODE[1:0]
 	 */
-	ssp->ssp_blob[di][hwi].ssc2 |= (ssp->ssp_prm.quirks & SSP_INTEL_QUIRK_MMRATF) ?
+	ssp->ssp_blob[di][hwi].ssc2 |= (ssp->ssp_prm[di].quirks & SSP_INTEL_QUIRK_MMRATF) ?
 		SSCR2_MMRATF : 0;
 
 	/* Enable/disable the fix for PSP consumer mode TXD wait for frame
 	 * de-assertion before starting the second channel
 	 */
-	ssp->ssp_blob[di][hwi].ssc2 |= (ssp->ssp_prm.quirks & SSP_INTEL_QUIRK_PSPSTWFDFD) ?
+	ssp->ssp_blob[di][hwi].ssc2 |= (ssp->ssp_prm[di].quirks & SSP_INTEL_QUIRK_PSPSTWFDFD) ?
 		SSCR2_PSPSTWFDFD : 0;
 
 	/* Enable/disable the fix for PSP provider mode FSRT with dummy stop &
 	 * frame end padding capability
 	 */
-	ssp->ssp_blob[di][hwi].ssc2 |= (ssp->ssp_prm.quirks & SSP_INTEL_QUIRK_PSPSRWFDFD) ?
+	ssp->ssp_blob[di][hwi].ssc2 |= (ssp->ssp_prm[di].quirks & SSP_INTEL_QUIRK_PSPSRWFDFD) ?
 		SSCR2_PSPSRWFDFD : 0;
 
-	if (!ssp->ssp_prm.hw_cfg[hwi].mclk_rate) {
+	if (!ssp->ssp_prm[di].hw_cfg[hwi].mclk_rate) {
 		fprintf(stderr, "ssp_calculate(): invalid MCLK = %u \n",
-			ssp->ssp_prm.hw_cfg[hwi].mclk_rate);
+			ssp->ssp_prm[di].hw_cfg[hwi].mclk_rate);
 		return -EINVAL;
 	}
 
-	if (!ssp->ssp_prm.hw_cfg[hwi].bclk_rate ||
-	    ssp->ssp_prm.hw_cfg[hwi].bclk_rate > ssp->ssp_prm.hw_cfg[hwi].mclk_rate) {
+	if (!ssp->ssp_prm[di].hw_cfg[hwi].bclk_rate ||
+	    ssp->ssp_prm[di].hw_cfg[hwi].bclk_rate > ssp->ssp_prm[di].hw_cfg[hwi].mclk_rate) {
 		fprintf(stderr, "ssp_calculate(): BCLK %u Hz = 0 or > MCLK %u Hz\n",
-			ssp->ssp_prm.hw_cfg[hwi].bclk_rate, ssp->ssp_prm.hw_cfg[hwi].mclk_rate);
+			ssp->ssp_prm[di].hw_cfg[hwi].bclk_rate,
+			ssp->ssp_prm[di].hw_cfg[hwi].mclk_rate);
 		return -EINVAL;
 	}
 
 	/* calc frame width based on BCLK and rate - must be divisible */
-	if (ssp->ssp_prm.hw_cfg[hwi].bclk_rate % ssp->ssp_prm.hw_cfg[hwi].fsync_rate) {
+	if (ssp->ssp_prm[di].hw_cfg[hwi].bclk_rate % ssp->ssp_prm[di].hw_cfg[hwi].fsync_rate) {
 		fprintf(stderr, "ssp_calculate(): BCLK %u is not divisible by rate %u\n",
-			ssp->ssp_prm.hw_cfg[hwi].bclk_rate, ssp->ssp_prm.hw_cfg[hwi].fsync_rate);
+			ssp->ssp_prm[di].hw_cfg[hwi].bclk_rate,
+			ssp->ssp_prm[di].hw_cfg[hwi].fsync_rate);
 		return -EINVAL;
 	}
 
 	/* must be enough BCLKs for data */
-	bdiv = ssp->ssp_prm.hw_cfg[hwi].bclk_rate / ssp->ssp_prm.hw_cfg[hwi].fsync_rate;
-	if (bdiv < ssp->ssp_prm.hw_cfg[hwi].tdm_slot_width * ssp->ssp_prm.hw_cfg[hwi].tdm_slots) {
+	bdiv = ssp->ssp_prm[di].hw_cfg[hwi].bclk_rate / ssp->ssp_prm[di].hw_cfg[hwi].fsync_rate;
+	if (bdiv < ssp->ssp_prm[di].hw_cfg[hwi].tdm_slot_width *
+	    ssp->ssp_prm[di].hw_cfg[hwi].tdm_slots) {
 		fprintf(stderr, "ssp_calculate(): not enough BCLKs need %u\n",
-			ssp->ssp_prm.hw_cfg[hwi].tdm_slot_width *
-			ssp->ssp_prm.hw_cfg[hwi].tdm_slots);
+			ssp->ssp_prm[di].hw_cfg[hwi].tdm_slot_width *
+			ssp->ssp_prm[di].hw_cfg[hwi].tdm_slots);
 		return -EINVAL;
 	}
 
 	/* tdm_slot_width must be <= 38 for SSP */
-	if (ssp->ssp_prm.hw_cfg[hwi].tdm_slot_width > 38) {
+	if (ssp->ssp_prm[di].hw_cfg[hwi].tdm_slot_width > 38) {
 		fprintf(stderr, "ssp_calculate(): tdm_slot_width %u > 38\n",
-			ssp->ssp_prm.hw_cfg[hwi].tdm_slot_width);
+			ssp->ssp_prm[di].hw_cfg[hwi].tdm_slot_width);
 		return -EINVAL;
 	}
 
-	bdiv_min = ssp->ssp_prm.hw_cfg[hwi].tdm_slots *
-		   (ssp->ssp_prm.tdm_per_slot_padding_flag ?
-		    ssp->ssp_prm.hw_cfg[hwi].tdm_slot_width : ssp->ssp_prm.sample_valid_bits);
+	bdiv_min = ssp->ssp_prm[di].hw_cfg[hwi].tdm_slots *
+		   (ssp->ssp_prm[di].tdm_per_slot_padding_flag ?
+		    ssp->ssp_prm[di].hw_cfg[hwi].tdm_slot_width :
+		    ssp->ssp_prm[di].sample_valid_bits);
 	if (bdiv < bdiv_min) {
 		fprintf(stderr, "ssp_calculate(): bdiv(%u) < bdiv_min(%u)\n",
 			bdiv, bdiv_min);
@@ -254,12 +258,12 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	}
 
 	/* format */
-	switch (ssp->ssp_prm.hw_cfg[hwi].format & SSP_FMT_FORMAT_MASK) {
+	switch (ssp->ssp_prm[di].hw_cfg[hwi].format & SSP_FMT_FORMAT_MASK) {
 	case SSP_FMT_I2S:
 
 		start_delay = true;
 
-		ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_FRDC(ssp->ssp_prm.hw_cfg[hwi].tdm_slots);
+		ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_FRDC(ssp->ssp_prm[di].hw_cfg[hwi].tdm_slots);
 
 		if (bdiv % 2) {
 			fprintf(stderr, "ssp_calculate(): bdiv %u is not divisible by 2\n",
@@ -307,7 +311,7 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 
 		/* default start_delay value is set to false */
 
-		ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_FRDC(ssp->ssp_prm.hw_cfg[hwi].tdm_slots);
+		ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_FRDC(ssp->ssp_prm[di].hw_cfg[hwi].tdm_slots);
 
 		/* LJDFD enable */
 		ssp->ssp_blob[di][hwi].ssc2 &= ~SSCR2_LJDFD;
@@ -364,19 +368,19 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 		/* default start_delay value is set to false */
 
 		ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_MOD |
-			SSCR0_FRDC(ssp->ssp_prm.hw_cfg[hwi].tdm_slots);
+			SSCR0_FRDC(ssp->ssp_prm[di].hw_cfg[hwi].tdm_slots);
 
 		/* set asserted frame length */
 		frame_len = 1; /* default */
 
-		if (cfs && ssp->ssp_prm.frame_pulse_width > 0 &&
-		    ssp->ssp_prm.frame_pulse_width <=
+		if (cfs && ssp->ssp_prm[di].frame_pulse_width > 0 &&
+		    ssp->ssp_prm[di].frame_pulse_width <=
 		    SSP_INTEL_FRAME_PULSE_WIDTH_MAX) {
-			frame_len = ssp->ssp_prm.frame_pulse_width;
+			frame_len = ssp->ssp_prm[di].frame_pulse_width;
 		}
 
 		/* frame_pulse_width must less or equal 38 */
-		if (ssp->ssp_prm.frame_pulse_width >
+		if (ssp->ssp_prm[di].frame_pulse_width >
 			SSP_INTEL_FRAME_PULSE_WIDTH_MAX) {
 			fprintf(stderr, "ssp_set_config(): frame_pulse_width > %d\n",
 				SSP_INTEL_FRAME_PULSE_WIDTH_MAX);
@@ -390,20 +394,20 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 		 */
 		ssp->ssp_blob[di][hwi].sspsp |= SSPSP_SFRMP(!inverted_frame ? 1 : 0);
 
-		active_tx_slots = popcount(ssp->ssp_prm.hw_cfg[hwi].tx_slots);
-		active_rx_slots = popcount(ssp->ssp_prm.hw_cfg[hwi].rx_slots);
+		active_tx_slots = popcount(ssp->ssp_prm[di].hw_cfg[hwi].tx_slots);
+		active_rx_slots = popcount(ssp->ssp_prm[di].hw_cfg[hwi].rx_slots);
 
 		/*
 		 * handle TDM mode, TDM mode has padding at the end of
 		 * each slot. The amount of padding is equal to result of
 		 * subtracting slot width and valid bits per slot.
 		 */
-		if (ssp->ssp_prm.tdm_per_slot_padding_flag) {
-			frame_end_padding = bdiv - ssp->ssp_prm.hw_cfg[hwi].tdm_slots *
-				ssp->ssp_prm.hw_cfg[hwi].tdm_slot_width;
+		if (ssp->ssp_prm[di].tdm_per_slot_padding_flag) {
+			frame_end_padding = bdiv - ssp->ssp_prm[di].hw_cfg[hwi].tdm_slots *
+				ssp->ssp_prm[di].hw_cfg[hwi].tdm_slot_width;
 
-			slot_end_padding = ssp->ssp_prm.hw_cfg[hwi].tdm_slot_width -
-				ssp->ssp_prm.sample_valid_bits;
+			slot_end_padding = ssp->ssp_prm[di].hw_cfg[hwi].tdm_slot_width -
+				ssp->ssp_prm[di].sample_valid_bits;
 
 			if (slot_end_padding >
 				SSP_INTEL_SLOT_PADDING_MAX) {
@@ -422,7 +426,7 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 		break;
 	default:
 		fprintf(stderr, "ssp_set_config(): invalid format 0x%04x\n",
-			ssp->ssp_prm.hw_cfg[hwi].format);
+			ssp->ssp_prm[di].hw_cfg[hwi].format);
 		return -EINVAL;
 	}
 
@@ -431,7 +435,7 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 
 	ssp->ssp_blob[di][hwi].sspsp |= SSPSP_SFRMWDTH(frame_len);
 
-	data_size = ssp->ssp_prm.sample_valid_bits;
+	data_size = ssp->ssp_prm[di].sample_valid_bits;
 
 	if (data_size > 16)
 		ssp->ssp_blob[di][hwi].ssc0 |= (SSCR0_EDSS | SSCR0_DSIZE(data_size - 16));
@@ -439,10 +443,10 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 		ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_DSIZE(data_size);
 
 	end_padding = 0;
-	total_sample_size = ssp->ssp_prm.hw_cfg[hwi].tdm_slot_width *
-		ssp->ssp_prm.hw_cfg[hwi].tdm_slots;
-	while (ssp->ssp_prm.io_clk % ((total_sample_size + end_padding) *
-				      ssp->ssp_prm.hw_cfg[hwi].fsync_rate)) {
+	total_sample_size = ssp->ssp_prm[di].hw_cfg[hwi].tdm_slot_width *
+		ssp->ssp_prm[di].hw_cfg[hwi].tdm_slots;
+	while (ssp->ssp_prm[di].io_clk % ((total_sample_size + end_padding) *
+				      ssp->ssp_prm[di].hw_cfg[hwi].fsync_rate)) {
 		if (++end_padding >= 256)
 			break;
 	}
@@ -451,15 +455,15 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 		return -EINVAL;
 
 	/* calc scr divisor */
-	clk_div = ssp->ssp_prm.io_clk / ((total_sample_size + end_padding) *
-					 ssp->ssp_prm.hw_cfg[hwi].fsync_rate);
+	clk_div = ssp->ssp_prm[di].io_clk / ((total_sample_size + end_padding) *
+					 ssp->ssp_prm[di].hw_cfg[hwi].fsync_rate);
 	if (clk_div >= 4095)
 		return -EINVAL;
 
 	ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_SCR(clk_div - 1);
 
 	/* setting TFT and RFT */
-	switch (ssp->ssp_prm.sample_valid_bits) {
+	switch (ssp->ssp_prm[di].sample_valid_bits) {
 	case 16:
 		/* use 2 bytes for each slot */
 		sample_width = 2;
@@ -471,7 +475,7 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 		break;
 	default:
 		fprintf(stderr, "ssp_set_config(): sample_valid_bits %u\n",
-			ssp->ssp_prm.sample_valid_bits);
+			ssp->ssp_prm[di].sample_valid_bits);
 		return -EINVAL;
 	}
 
@@ -483,12 +487,12 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	ssp->ssp_blob[di][hwi].ssc3 |= SSCR3_TX(tft) | SSCR3_RX(rft);
 
 	/* calc mn divisor */
-	if (ssp->ssp_prm.io_clk % ssp->ssp_prm.hw_cfg[hwi].mclk_rate) {
+	if (ssp->ssp_prm[di].io_clk % ssp->ssp_prm[di].hw_cfg[hwi].mclk_rate) {
 		fprintf(stderr, "ssp_set_config(): io_clk not divisible with mclk\n");
 		return -EINVAL;
 	}
 
-	clk_div = ssp->ssp_prm.io_clk / ssp->ssp_prm.hw_cfg[hwi].mclk_rate;
+	clk_div = ssp->ssp_prm[di].io_clk / ssp->ssp_prm[di].hw_cfg[hwi].mclk_rate;
 	if (clk_div > 1)
 		clk_div -= 2;
 	else
@@ -498,7 +502,7 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	/* clock will always go through the divider */
 	ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_ECS;
 	/* enable divider for this clock id */
-	ssp->ssp_blob[di][hwi].mdivc |= BIT(ssp->ssp_prm.mclk_id);
+	ssp->ssp_blob[di][hwi].mdivc |= BIT(ssp->ssp_prm[di].mclk_id);
 	/* set mclk source always for audio cardinal clock */
 	ssp->ssp_blob[di][hwi].mdivc |= MCDSS(SSP_CLOCK_AUDIO_CARDINAL);
 	/* set bclk source for audio cardinal clock */
@@ -535,7 +539,7 @@ int ssp_get_dir(struct intel_nhlt_params *nhlt, int dai_index, uint8_t *dir)
 	if (!ssp)
 		return -EINVAL;
 
-	*dir = ssp->ssp_prm.direction;
+	*dir = ssp->ssp_prm[dai_index].direction;
 
 	return 0;
 }
@@ -554,17 +558,17 @@ int ssp_get_params(struct intel_nhlt_params *nhlt, int dai_index, uint32_t *virt
 	return 0;
 }
 
-int ssp_get_hw_params(struct intel_nhlt_params *nhlt, int hw_index, uint32_t *sample_rate,
-		      uint16_t *channel_count, uint32_t *bits_per_sample)
+int ssp_get_hw_params(struct intel_nhlt_params *nhlt, int dai_index, int hw_index,
+		      uint32_t *sample_rate, uint16_t *channel_count, uint32_t *bits_per_sample)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
 
 	if (!ssp)
 		return -EINVAL;
 
-	*channel_count = ssp->ssp_prm.hw_cfg[hw_index].tdm_slots;
-	*sample_rate = ssp->ssp_prm.hw_cfg[hw_index].fsync_rate;
-	*bits_per_sample = ssp->ssp_prm.hw_cfg[hw_index].tdm_slot_width;
+	*channel_count = ssp->ssp_prm[dai_index].hw_cfg[hw_index].tdm_slots;
+	*sample_rate = ssp->ssp_prm[dai_index].hw_cfg[hw_index].fsync_rate;
+	*bits_per_sample = ssp->ssp_prm[dai_index].hw_cfg[hw_index].tdm_slot_width;
 
 	return 0;
 }
@@ -619,29 +623,30 @@ int ssp_set_params(struct intel_nhlt_params *nhlt, const char *dir, int dai_inde
 
 	if (dir) {
 		if (!strcmp(dir, "playback"))
-			ssp->ssp_prm.direction = NHLT_ENDPOINT_DIRECTION_RENDER;
+			ssp->ssp_prm[ssp->ssp_count].direction = NHLT_ENDPOINT_DIRECTION_RENDER;
 		else if (!strcmp(dir, "capture"))
-			ssp->ssp_prm.direction = NHLT_ENDPOINT_DIRECTION_CAPTURE;
+			ssp->ssp_prm[ssp->ssp_count].direction = NHLT_ENDPOINT_DIRECTION_CAPTURE;
 		else if (!strcmp(dir, "duplex"))
-			ssp->ssp_prm.direction = NHLT_ENDPOINT_DIRECTION_FEEDBACK_FOR_RENDER + 1;
+			ssp->ssp_prm[ssp->ssp_count].direction =
+			  NHLT_ENDPOINT_DIRECTION_FEEDBACK_FOR_RENDER + 1;
 		else
 			return -EINVAL;
 	}
 	ssp->ssp_dai_index[ssp->ssp_count] = dai_index;
-	ssp->ssp_prm.io_clk = io_clk;
-	ssp->ssp_prm.bclk_delay = bclk_delay;
-	ssp->ssp_prm.sample_valid_bits = sample_bits;
-	ssp->ssp_prm.mclk_id = mclk_id;
-	ssp->ssp_prm.clks_control = clks_control;
-	ssp->ssp_prm.frame_pulse_width = frame_pulse_width;
+	ssp->ssp_prm[ssp->ssp_count].io_clk = io_clk;
+	ssp->ssp_prm[ssp->ssp_count].bclk_delay = bclk_delay;
+	ssp->ssp_prm[ssp->ssp_count].sample_valid_bits = sample_bits;
+	ssp->ssp_prm[ssp->ssp_count].mclk_id = mclk_id;
+	ssp->ssp_prm[ssp->ssp_count].clks_control = clks_control;
+	ssp->ssp_prm[ssp->ssp_count].frame_pulse_width = frame_pulse_width;
 	if (tdm_padding_per_slot && !strcmp(tdm_padding_per_slot, "true"))
-		ssp->ssp_prm.tdm_per_slot_padding_flag = 1;
+		ssp->ssp_prm[ssp->ssp_count].tdm_per_slot_padding_flag = 1;
 	else
-		ssp->ssp_prm.tdm_per_slot_padding_flag = 0;
+		ssp->ssp_prm[ssp->ssp_count].tdm_per_slot_padding_flag = 0;
 	if (quirks && !strcmp(quirks, "lbm_mode"))
-		ssp->ssp_prm.quirks = 64; /* 1 << 6 */
+		ssp->ssp_prm[ssp->ssp_count].quirks = 64; /* 1 << 6 */
 	else
-		ssp->ssp_prm.quirks = 0;
+		ssp->ssp_prm[ssp->ssp_count].quirks = 0;
 
 	/* reset hw config count for this ssp instance */
 	ssp->ssp_hw_config_count[ssp->ssp_count] = 0;
@@ -666,15 +671,15 @@ int ssp_hw_set_params(struct intel_nhlt_params *nhlt, const char *format, const 
 	hwi = ssp->ssp_hw_config_count[ssp->ssp_count];
 
 	if (!strcmp(format, "I2S")) {
-		ssp->ssp_prm.hw_cfg[hwi].format = SSP_FMT_I2S;
+		ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format = SSP_FMT_I2S;
 	} else if (!strcmp(format, "RIGHT_J")) {
-		ssp->ssp_prm.hw_cfg[hwi].format = SSP_FMT_RIGHT_J;
+		ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format = SSP_FMT_RIGHT_J;
 	} else if (!strcmp(format, "LEFT_J")) {
-		ssp->ssp_prm.hw_cfg[hwi].format = SSP_FMT_LEFT_J;
+		ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format = SSP_FMT_LEFT_J;
 	} else if (!strcmp(format, "DSP_A")) {
-		ssp->ssp_prm.hw_cfg[hwi].format = SSP_FMT_DSP_A;
+		ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format = SSP_FMT_DSP_A;
 	} else if (!strcmp(format, "DSP_B")) {
-		ssp->ssp_prm.hw_cfg[hwi].format = SSP_FMT_DSP_B;
+		ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format = SSP_FMT_DSP_B;
 	} else {
 		fprintf(stderr, "no valid format specified for ssp: %s\n", format);
 		return -EINVAL;
@@ -684,37 +689,37 @@ int ssp_hw_set_params(struct intel_nhlt_params *nhlt, const char *format, const 
 	if (bclk && !strcmp(bclk, "coded_provider")) {
 		/* codec is bclk provider */
 		if (fsync && !strcmp(fsync, "coded_provider"))
-			ssp->ssp_prm.hw_cfg[hwi].format |= SSP_FMT_CBP_CFP;
+			ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format |= SSP_FMT_CBP_CFP;
 		else
-			ssp->ssp_prm.hw_cfg[hwi].format |= SSP_FMT_CBP_CFC;
+			ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format |= SSP_FMT_CBP_CFC;
 	} else {
 		/* codec is bclk consumer */
 		if (fsync && !strcmp(fsync, "coded_provider"))
-			ssp->ssp_prm.hw_cfg[hwi].format |= SSP_FMT_CBC_CFP;
+			ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format |= SSP_FMT_CBC_CFP;
 		else
-			ssp->ssp_prm.hw_cfg[hwi].format |= SSP_FMT_CBC_CFC;
+			ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format |= SSP_FMT_CBC_CFC;
 	}
 
 	/* inverted clocks ? */
 	if (bclk_invert && !strcmp(bclk_invert, "true")) {
 		if (fsync_invert && !strcmp(fsync_invert, "true"))
-			ssp->ssp_prm.hw_cfg[hwi].format |= SSP_FMT_IB_IF;
+			ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format |= SSP_FMT_IB_IF;
 		else
-			ssp->ssp_prm.hw_cfg[hwi].format |= SSP_FMT_IB_NF;
+			ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format |= SSP_FMT_IB_NF;
 	} else {
 		if (fsync_invert && !strcmp(fsync_invert, "true"))
-			ssp->ssp_prm.hw_cfg[hwi].format |= SSP_FMT_NB_IF;
+			ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format |= SSP_FMT_NB_IF;
 		else
-			ssp->ssp_prm.hw_cfg[hwi].format |= SSP_FMT_NB_NF;
+			ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format |= SSP_FMT_NB_NF;
 	}
 
-	ssp->ssp_prm.hw_cfg[hwi].mclk_rate = mclk_freq;
-	ssp->ssp_prm.hw_cfg[hwi].bclk_rate = bclk_freq;
-	ssp->ssp_prm.hw_cfg[hwi].fsync_rate = fsync_freq;
-	ssp->ssp_prm.hw_cfg[hwi].tdm_slots = tdm_slots;
-	ssp->ssp_prm.hw_cfg[hwi].tdm_slot_width = tdm_slot_width;
-	ssp->ssp_prm.hw_cfg[hwi].tx_slots = tx_slots;
-	ssp->ssp_prm.hw_cfg[hwi].rx_slots = rx_slots;
+	ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].mclk_rate = mclk_freq;
+	ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].bclk_rate = bclk_freq;
+	ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].fsync_rate = fsync_freq;
+	ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].tdm_slots = tdm_slots;
+	ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].tdm_slot_width = tdm_slot_width;
+	ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].tx_slots = tx_slots;
+	ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].rx_slots = rx_slots;
 
 	ssp->ssp_hw_config_count[ssp->ssp_count]++;
 

@@ -168,7 +168,8 @@ int nhlt_ssp_get_ep(struct intel_nhlt_params *nhlt, struct endpoint_descriptor *
 		/* fill in wave format extensible types */
 		f_conf1[i].format.wFormatTag = 0xFFFE;
 
-		ret = ssp_get_hw_params(nhlt, i, &sample_rate, &channel_count, &bits_per_sample);
+		ret = ssp_get_hw_params(nhlt, dai_index, i, &sample_rate, &channel_count,
+					&bits_per_sample);
 
 		if (ret < 0) {
 			fprintf(stderr, "nhlt_ssp_get_ep: ssp_get_hw_params failed\n");

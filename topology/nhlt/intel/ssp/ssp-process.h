@@ -29,8 +29,8 @@ int ssp_calculate(struct intel_nhlt_params *nhlt);
 /* get spec parameters when building the nhlt endpoint */
 int ssp_get_params(struct intel_nhlt_params *nhlt, int dai_index, uint32_t *virtualbus_id,
 		   uint32_t *formats_count);
-int ssp_get_hw_params(struct intel_nhlt_params *nhlt, int hw_index, uint32_t *sample_rate,
-		      uint16_t *channel_count, uint32_t *bits_per_sample);
+int ssp_get_hw_params(struct intel_nhlt_params *nhlt, int dai_index, int hw_index,
+		      uint32_t *sample_rate, uint16_t *channel_count, uint32_t *bits_per_sample);
 int ssp_get_dir(struct intel_nhlt_params *nhlt, int dai_index, uint8_t *dir);
 /* get vendor specific blob when building the nhlt endpoint */
 int ssp_get_vendor_blob_count(struct intel_nhlt_params *nhlt);
