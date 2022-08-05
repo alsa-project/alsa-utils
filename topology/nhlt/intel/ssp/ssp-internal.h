@@ -47,7 +47,7 @@ struct ssp_config_dai {
 
 struct intel_ssp_params {
 	/* structs to gather ssp params before calculations */
-	struct ssp_config_dai ssp_prm;
+	struct ssp_config_dai ssp_prm[SSP_MAX_DAIS];
 	uint32_t ssp_dai_index[SSP_MAX_DAIS];
 	uint32_t ssp_hw_config_count[SSP_MAX_DAIS];
 	int ssp_count;
