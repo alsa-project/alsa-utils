@@ -251,7 +251,7 @@ int nhlt_dmic_get_ep(struct intel_nhlt_params *nhlt, struct endpoint_descriptor 
 	ep.subsystem_id = 0;
 	ep.device_type = 0;
 	ep.direction = NHLT_ENDPOINT_DIRECTION_CAPTURE;
-	ep.virtualbus_id = 0;
+	ep.virtualbus_id = index;
 
 	ret = dmic_get_params(nhlt, index, &sample_rate, &channel_count, &bits_per_sample,
 			      &array_type, &num_mics, &extension, &snr, &sensitivity);

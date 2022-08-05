@@ -327,9 +327,8 @@ static int nhlt_create(struct intel_nhlt_params *nhlt, snd_config_t *input, snd_
 		eps[i] = NULL;
 
 	/* we always have only 0 or 1 dmic ep */
-	if (nhlt_dmic_get_ep_count(nhlt)) {
-		/* the index is always 0 in dmic case */
-		ret = nhlt_dmic_get_ep(nhlt, &eps[eps_count], 0);
+	for (i = 0; i < nhlt_dmic_get_ep_count(nhlt); i++) {
+		ret = nhlt_dmic_get_ep(nhlt, &eps[eps_count], i);
 		if (ret < 0)
 			return -EINVAL;
 		eps_count++;
