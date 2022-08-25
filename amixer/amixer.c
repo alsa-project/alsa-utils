@@ -83,7 +83,7 @@ static int help(void)
 	printf("  cget cID        get control contents for one control\n");
 	printf("\nAvailable advanced commands:\n");
 	printf("  sevents	  show the mixer events for simple controls\n");
-	printf("  events	  show the mixer events for simple controls\n");
+	printf("  events	  show the mixer events for controls\n");
 	return 0;
 }
 
