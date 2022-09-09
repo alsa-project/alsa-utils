@@ -1,0 +1,378 @@
+# Georgian translation for alsaconf.
+# Copyright (C) 2022 alsaconf's authors
+# This file is distributed under the same license as the alsaconf package.
+# Temuri Doghonadze <temuri.doghonadze@gmail.com>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: alsaconf\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-10-22 22:12+0200\n"
+"PO-Revision-Date: 2022-10-22 22:41+0200\n"
+"Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
+"Language-Team: Georgian <(nothing)>\n"
+"Language: ka\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.2\n"
+
+#: ../alsaconf.in:36
+msgid "-s"
+msgstr "-s"
+
+#: ../alsaconf.in:82
+msgid "ALSA configurator"
+msgstr "ALSA -ის მორგება"
+
+#: ../alsaconf.in:84
+msgid ""
+"usage: alsaconf [options]\n"
+"  -l|--legacy    check only legacy non-isapnp cards\n"
+"  -m|--modinfo   read module descriptions instead of reading card db\n"
+"  -s|--sound wav-file\n"
+"                 use the specified wav file as a test sound\n"
+"  -u|--uid uid   set the uid for the ALSA devices (default = 0) "
+"[obsoleted]\n"
+"  -g|--gid gid   set the gid for the ALSA devices (default = 0) "
+"[obsoleted]\n"
+"  -d|--devmode mode\n"
+"                 set the permission for ALSA devices (default = 0666) "
+"[obs.]\n"
+"  -r|--strict    set strict device mode (equiv. with -g 17 -d 0660) "
+"[obsoleted]\n"
+"  -L|--log file  logging on the specified file (for debugging purpose "
+"only)\n"
+"  -p|--probe card-name\n"
+"                 probe a legacy non-isapnp card and print module options\n"
+"  -P|--listprobe list the supported legacy card modules\n"
+"  -c|--config file\n"
+"                 specify the module config file\n"
+"  -R|--resources list available DMA and IRQ resources with debug for "
+"legacy\n"
+"  -h|--help      what you're reading"
+msgstr ""
+"გამოყენება: alsaconf [პარამეტრები]\n"
+"  -l|--legacy    მხოლოდ მოძველებული არა-isanpn ბარათების ძებნა\n"
+"  -m|--modinfo   ბარათების ბაზის მაგიერ მოდულების აღწერების წაკითხვა\n"
+"  -s|--sound wav-file\n"
+"                 სატესტო ხმად მითითებული WAV ფაილის გამოყენება\n"
+"  -u|--uid uid   ALSA -ის მოწყობილობების UID-ის მითითება (ნაგულისხმები = 0) "
+"[მოძველებულია]\n"
+"  -g|--gid gid   ALSA -ის მოწყობილობების GID-ის მითითება (ნაგულისხმები = 0) "
+"[მოძველებულია]\n"
+"  -d|--devmode რეჟიმი\n"
+"                 ALSA-ის მოწყობილობების ფაილების წვდომის მითითება "
+"(ნაგულისხმები = 0666) [მოძველებულია]\n"
+"  -r|--strict    მკაცრი მოწყობილობის რეჟიმი (იგივე, რაც -g 17 -d 0660) "
+"[მოძველებულია]\n"
+"  -L|--log ფაილი  ჟურნალის მითითებულ ფაილში ჩაწერა (მხოლოდ გამართვისას)\n"
+"  -p|--probe card-name\n"
+"                 მოძველებული არა-isanpnp ბარათების ძებნა და მოდულების "
+"პარამეტრების გამოტანა\n"
+"  -P|--listprobe მხარდაჭერილი მოძველებული ბარათების მოდულების ჩამონათვალი\n"
+"  -c|--config ფაილი\n"
+"                 მოდულის კონფიგურაციის ფაილის მითითება\n"
+"  -R|--resources ხელმისაწვდომი DMA და IRQ რესურსების ჩამონათვალი. მხოლოდ "
+"გამართვისთვის\n"
+"  -h|--help      რასაც კითხულობთ"
+
+#: ../alsaconf.in:254
+msgid "You must be root to use this script."
+msgstr "ამ სკრიპტის გამოსაყენებლად root-ის პრივილეგიებია საჭირო."
+
+#: ../alsaconf.in:298
+msgid "ERROR: The config file doesn't exist: "
+msgstr "შეცდომა: კონფიგურაციის ფაილი არ არსებობს: "
+
+#: ../alsaconf.in:352
+msgid "Error, dialog or whiptail not found."
+msgstr "შეცდომა: dialog და whiptail აღმოჩენილი არაა."
+
+#: ../alsaconf.in:358
+msgid "Error, awk not found. Can't continue."
+msgstr "შეცდომა: awk დაყენებული არაა. გაგრძელება შეუძლებელია."
+
+#: ../alsaconf.in:463
+msgid ""
+"\n"
+"                   ALSA  CONFIGURATOR\n"
+"                   version %s\n"
+"\n"
+"            This script is a configurator for\n"
+"    Advanced Linux Sound Architecture (ALSA) driver.\n"
+"\n"
+"\n"
+"  If ALSA is already running, you should close all sound\n"
+"  apps now and stop the sound driver.\n"
+"  alsaconf will try to do this, but it's not 100%% sure."
+msgstr ""
+"\n"
+"                   ALSA  -ის მომრგები\n"
+"                   ვერსია %s\n"
+"\n"
+"\t\t\t\t\tეს სკრიპტი \n"
+"    Advanced Linux Sound Architecture (ALSA) დრაივერის მორგებისთვისაა.\n"
+"\n"
+"\n"
+"  თუ ALSA უკვე გაშვებულია, თქვენ უნდა დახუროთ ხმის ყველა აპლიკაცია და\n"
+"  გააჩეროთ ხმის ბარათის დრაივერი.\n"
+"  alsaconf -ი ცდის, ეს გააკეთოს, მაგრამ პროცედურა 100%% -ით ყოველთვის არ "
+"მუშაობს."
+
+#: ../alsaconf.in:479
+msgid ""
+"\n"
+"\n"
+"     OK, sound driver is configured.\n"
+"\n"
+"                  ALSA  CONFIGURATOR\n"
+"\n"
+"          will prepare the card for playing now.\n"
+"\n"
+"     Now I'll run alsasound init script, then I'll use\n"
+"     amixer to raise the default volumes.\n"
+"     You can change the volume later via a mixer\n"
+"     program such as alsamixer or gamix.\n"
+"  \n"
+"  "
+msgstr ""
+"\n"
+"\n"
+"     ხმის ბარათის დრაივერის კონფიგურაცია დასრულდა.\n"
+"\n"
+"                ALSA -ის მომრგები\n"
+"\n"
+"       მოამზადებს ბარათს.\n"
+"\n"
+"    ახლა გავუშვებ alsasound-ის init-ის სკრიპტს, შემდეგ კი\n"
+"    amixer-ით ხმის სიძლიერეს ნაგულისხმებ დონეზე დავაყენებ.\n"
+"    ხმის სიძლიერის შეცვლა მოგვიანებით მიქსერის რომელიმე პროგრამით,\n"
+"    როგორიცაა alsamixer და gamix, შეგიძლიათ.\n"
+"  "
+
+#: ../alsaconf.in:544 ../alsaconf.in:549 ../alsaconf.in:554 ../alsaconf.in:559
+msgid "Can't create temp file, exiting..."
+msgstr "დროებითი ფაილების შექმნის შეცდომა. მუშაობის დასრულება..."
+
+#: ../alsaconf.in:669
+msgid "Building card database.."
+msgstr "ბარათების ბაზის აგება.."
+
+#: ../alsaconf.in:673
+msgid "No card database is found.."
+msgstr "ბარათების ბაზა ვერ ვიპოვე.."
+
+#: ../alsaconf.in:678
+msgid "Searching sound cards"
+msgstr "ხმის ბარათების ძებნა"
+
+#: ../alsaconf.in:832
+msgid ""
+"\n"
+"Configuring %s\n"
+"Do you want to modify %s (and %s if present)?"
+msgstr ""
+"\n"
+"%s-ის მორგება\n"
+"გნებავთ, შეცვალოთ %s (და %s, თუ ის არსებობს)?"
+
+#: ../alsaconf.in:837
+msgid ""
+"\n"
+"Configuring %s\n"
+"Do you want to modify %s?"
+msgstr ""
+"\n"
+"%s-ის მორგება\n"
+"გნებავთ, შეცვალოთ %s?"
+
+#: ../alsaconf.in:928
+msgid "Running update-modules..."
+msgstr "\"update-modules\"-ის გაშვება.."
+
+#: ../alsaconf.in:943
+msgid ""
+"\n"
+"       The mixer is set up now for for playing.\n"
+"       Shall I try to play a sound sample now?\n"
+"\n"
+"                           NOTE:\n"
+"If you have a big amplifier, lower your volumes or say no.\n"
+"    Otherwise check that your speaker volume is open,\n"
+"          and look if you can hear test sound.\n"
+msgstr ""
+"\n"
+"      მიქსერი ახლა დაკვრისთვის მზადაა.\n"
+"      დავუკრა სატესტო ხმა?\n"
+"\n"
+"                   გაფრთხილება:\n"
+"თუ დიდი გამაძლიერებელი გაქვთ, ჩაუწიეთ ხმას, ან აირჩიეთ \"არა\".\n"
+"    სხვა შემთხვევაში შეამოწმეთ, რომ დინამიკს ხმა ჩართული ჰქონდეს\n"
+"  და ნახეთ, გაიგებთ თუ არა ხმას.\n"
+
+#: ../alsaconf.in:961
+msgid ""
+"Saving the mixer setup used for this in @ASOUND_STATE_DIR@/asound.state."
+msgstr ""
+"ამისთვის გამოყენებული მიქსერის პარამეტრები @ASOUND_STATE_DIR@/asound.state -"
+"ში შეინახება."
+
+#: ../alsaconf.in:965
+msgid ""
+"\n"
+"===============================================================================\n"
+"\n"
+" Now ALSA is ready to use.\n"
+" For adjustment of volumes, use your favorite mixer.\n"
+"\n"
+" Have a lot of fun!\n"
+"\n"
+msgstr ""
+"\n"
+"===============================================================================\n"
+"\n"
+"ახლა ALSA გამოყენებისთვის მზადაა.\n"
+"ხმის ასაწევ ჩასაწევად თქვენი საყვარელი მიქსერის გამოყენება შეგიძლიათ.\n"
+"\n"
+"გაერთეთ!\n"
+"\n"
+
+#: ../alsaconf.in:1273
+msgid "WARNING"
+msgstr "გაფრთხილება"
+
+#: ../alsaconf.in:1274
+msgid ""
+"\n"
+"   Probing legacy ISA cards might make\n"
+"   your system unstable.\n"
+"\n"
+"        Do you want to proceed?\n"
+"\n"
+msgstr ""
+"\n"
+"   მიმდინარეობს მოძველებული ISA ბარათების ძებნა. ამან\n"
+"   თქვენი სისტემა არასტაბილური შეიძლება გახადოს.\n"
+"\n"
+"        გნებავთ, გააგრძელოთ?\n"
+"\n"
+
+#: ../alsaconf.in:1297
+msgid ""
+"No legacy drivers are available\n"
+"   for your machine"
+msgstr ""
+"თქვენი მანქანისთვის მოძველებული\n"
+"დრაივერები აღმოჩენილი არაა"
+
+#: ../alsaconf.in:1302
+msgid "Driver Selection"
+msgstr "დრაივერის არჩევანი"
+
+#: ../alsaconf.in:1303
+msgid ""
+"           Probing legacy ISA cards\n"
+"\n"
+"        Please select the drivers to probe:"
+msgstr ""
+"         მოძველებული ISA ბარათების ძებნა\n"
+"\n"
+"      აირჩიეთ ჩასატვირთი დრაივერები:"
+
+#: ../alsaconf.in:1310
+msgid ""
+"\n"
+" Shall I try all possible DMA and IRQ combinations?\n"
+" With this option, some unconventional configuration\n"
+" might be found, but it will take much longer time."
+msgstr ""
+"\n"
+"ვცადო DMA/IRQ-ის ყველა შესაძლო კომბინაცია?\n"
+"ამ პარამეტრით შეიძლება უჩვეულო კომბინაციებიც აღმოაჩნინოთ\n"
+"მაგრამ მას გაცილებით მეტი დრო სჭირდება."
+
+#: ../alsaconf.in:1320
+msgid "Probing legacy cards..   This may take a few minutes.."
+msgstr ""
+"მოძველებული ხმის ბარათების ძებნა.    ამას რამდენიმე წუთი შეიძლება "
+"დასჭირდეს.."
+
+#: ../alsaconf.in:1321
+msgid "Probing: "
+msgstr "ძებნა: "
+
+#: ../alsaconf.in:1327
+msgid " : FOUND!!"
+msgstr " : ვიპოვე!!"
+
+#: ../alsaconf.in:1333
+msgid "Result"
+msgstr "შედეგი"
+
+#: ../alsaconf.in:1334
+msgid "No legacy cards found"
+msgstr "მოძველებული ბარათები ვერ ვიპოვე"
+
+#: ../alsaconf.in:1393
+msgid ""
+"\n"
+" Looks like you having a Thinkpad 600E or 770 notebook.\n"
+" On this notebook, CS4236 driver should be used\n"
+" although CS46xx chip is detected.\n"
+"\n"
+" Shall I try to snd-cs4236 driver and probe\n"
+" the legacy ISA configuration?"
+msgstr ""
+"\n"
+"როგორც ჩანს, თქვენ Thinkpad 600E ან 770 ნოუთბუქი გაქვთ.\n"
+"ამ ნოუთბუქზე CS46xx ჩიპის მაგიერ CS4236 დრაივერის გამოყენებაა საჭირო\n"
+"\n"
+"ვცადო snd-cs4236 დრაივერი და მოვძებნო\n"
+"მოძველებული ICS კონფიგურაცია?"
+
+#: ../alsaconf.in:1407
+msgid ""
+"\n"
+" Looks like you having a Dell Dimension machine.\n"
+" On this machine, CS4232 driver should be used\n"
+" although CS46xx chip is detected.\n"
+"\n"
+" Shall I try to snd-cs4232 driver and probe\n"
+" the legacy ISA configuration?"
+msgstr ""
+"\n"
+"როგორც ჩანს, თქვენ Dell Dimension მანქანა გაქვთ.\n"
+"ამ მანქანაზე CS46xx ჩიპის მაგიერ CS4232 დრაივერის გამოყენებაა საჭირო\n"
+"\n"
+"ვცადო snd-cs4232 დრაივერი და მოვძებნო\n"
+"მოძველებული ICS კონფიგურაცია?"
+
+#: ../alsaconf.in:1424
+msgid "Soundcard Selection"
+msgstr "ხმის ბარათის არჩევანი"
+
+#: ../alsaconf.in:1425
+msgid ""
+"\n"
+"         Following card(s) are found on your system.\n"
+"         Choose a soundcard to configure:\n"
+msgstr ""
+"\n"
+"          თქვენს სისტემაში შემდეგი ხმის ბარათებია ნაპოვნი.\n"
+"          აირჩიეთ მოსარგები ხმის ბარათი:\n"
+
+#: ../alsaconf.in:1438
+msgid ""
+"\n"
+"        No supported PnP or PCI card found.\n"
+"\n"
+" Would you like to probe legacy ISA sound cards/chips?\n"
+"\n"
+msgstr ""
+"\n"
+"         მხარდაჭერილი PnP და PCI ბარათები აღმოჩენილი არაა.\n"
+"\n"
+"გნებავთ მოძველებული ISA ხმოვანი ბარათების/ჩიპების მოძებნა?\n"
+"\n"
