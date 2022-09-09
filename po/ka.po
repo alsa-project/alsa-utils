@@ -1,0 +1,1764 @@
+# alsa-utils translationto Georgian.
+# Copyright (C) 2022 The ALSA Team
+# This file is distributed under the same license as the alsa-utils package.
+# Temuri Doghonadze <temuri.doghonadze@gmail.com>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: alsa-utils 1.2.7\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-09-08 09:06+0200\n"
+"PO-Revision-Date: 2022-09-09 10:28+0200\n"
+"Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
+"Language-Team: Georgian <(nothing)>\n"
+"Language: ka\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.1.1\n"
+
+#: alsamixer/card_select.c:77 alsamixer/device_name.c:127
+msgid "Sound Card"
+msgstr "ხმის ბარათი"
+
+#: alsamixer/card_select.c:115
+msgid "(default)"
+msgstr "(ნაგულისხმები)"
+
+#: alsamixer/card_select.c:125
+msgid "cannot enumerate sound cards"
+msgstr "ხმის ბარათების სიის მიღების შეცდომა"
+
+#: alsamixer/card_select.c:151
+msgid "enter device name..."
+msgstr "შეიყვანეთ მოწყობილობის სახელი..."
+
+#: alsamixer/cli.c:43
+msgid "Usage: alsamixer [options]"
+msgstr "გამოყენება: alsamixer [პარამეტრები]"
+
+#: alsamixer/cli.c:44
+msgid ""
+"Useful options:\n"
+"  -h, --help              this help\n"
+"  -c, --card=NUMBER       sound card number or id\n"
+"  -D, --device=NAME       mixer device name\n"
+"  -m, --mouse             enable mouse\n"
+"  -M, --no-mouse          disable mouse\n"
+"  -f, --config=FILE       configuration file\n"
+"  -F, --no-config         do not load configuration file\n"
+"  -V, --view=MODE         starting view mode: playback/capture/all"
+msgstr ""
+"სასარგებლო პარამეტრები:\n"
+"  -h, --help              ეს დახმარება\n"
+"  -c, --card=რიცხვი        ხმის ბარათის ნომერი ან ID\n"
+"  -D, --device=სახელი      მიქსერის მოწყობილობის სახელი\n"
+"  -m, --mouse             თაგუნას ჩართვა\n"
+"  -M, --no-mouse          თაგუნას გამორთვა\n"
+"  -f, --config=ფაილი      კონფიგურაციის ფაილი\n"
+"  -F, --no-config         კონფიგურაციის ფაილი არ ჩაიტვირთება\n"
+"  -V, --view=რეჟიმი         ხედის რეჟიმის გაშვება: playback (დაკვრა)/record "
+"(ჩაჭერა)/all (ყველა)"
+
+#: alsamixer/cli.c:53
+msgid ""
+"Debugging options:\n"
+"  -g, --no-color          toggle using of colors\n"
+"  -a, --abstraction=NAME  mixer abstraction level: none/basic"
+msgstr ""
+"გამართვის პარამეტრები:\n"
+"   -g, --no-color        ფერების გამოყენების გადართვა\n"
+"   -a, --abstraction=სახელი    მიქსერის აბსტრაქციის დონე: none(არც ერთი)/"
+"basic (ძირითადი)"
+
+#: alsamixer/cli.c:88
+#, c-format
+msgid "invalid card index: %s\n"
+msgstr "ბარათის არასწორი ინდექსი: %s\n"
+
+#: alsamixer/cli.c:130
+#, c-format
+msgid "unknown abstraction level: %s\n"
+msgstr "უცნობი აბსტრაქციის დონე: %s\n"
+
+#: alsamixer/cli.c:135
+#, c-format
+msgid "unknown option: %c\n"
+msgstr "უცნობი პარამეტრი: %c\n"
+
+#: alsamixer/cli.c:137
+msgid "try `alsamixer --help' for more information\n"
+msgstr "მეტი ინფორმაციისთვის სცადეთ 'alsamixer --help'\n"
+
+#: alsamixer/device_name.c:177
+msgid "Device name:"
+msgstr "მოწყობილობის სახელი:"
+
+#: alsamixer/die.c:37
+#, c-format
+msgid "%s: %s\n"
+msgstr "%s: %s\n"
+
+#: alsamixer/mixer_display.c:99
+msgid "Card:"
+msgstr "ბარათი:"
+
+#: alsamixer/mixer_display.c:100
+msgid "Chip:"
+msgstr "ჩიპი:"
+
+#: alsamixer/mixer_display.c:101
+msgid "View:"
+msgstr "ხედი:"
+
+#: alsamixer/mixer_display.c:102
+msgid "Item:"
+msgstr "ელემენტი:"
+
+#: alsamixer/mixer_display.c:105
+msgid "F1:  Help"
+msgstr "F1:  დახმარება"
+
+#: alsamixer/mixer_display.c:106
+msgid "F2:  System information"
+msgstr "F2: ინფორმაცია სისტემის შესახებ"
+
+#: alsamixer/mixer_display.c:107
+msgid "F6:  Select sound card"
+msgstr "F6:  აირჩეთ ხმის ბარათი"
+
+#: alsamixer/mixer_display.c:108
+msgid "Esc: Exit"
+msgstr "Esc: გასვლა"
+
+#: alsamixer/mixer_display.c:179
+msgid "(unplugged)"
+msgstr "(გამოერთებული)"
+
+#: alsamixer/mixer_display.c:197
+msgid "Playback"
+msgstr "დაკვრა"
+
+#: alsamixer/mixer_display.c:198
+msgid "Capture"
+msgstr "ჩაჭერა"
+
+#: alsamixer/mixer_display.c:199
+msgid "All"
+msgstr "&ყველა"
+
+#: alsamixer/mixer_display.c:240
+msgid "mute"
+msgstr "დადუმება"
+
+#: alsamixer/mixer_display.c:281 alsamixer/mixer_display.c:291
+msgid "dB gain:"
+msgstr "გაძლიერება (დბ):"
+
+#: alsamixer/mixer_display.c:291
+#, c-format
+msgid " [%s %s, %s]"
+msgstr " [%s %s, %s]"
+
+#: alsamixer/mixer_display.c:300 alsamixer/mixer_display.c:306
+#: alsamixer/mixer_display.c:312 alsamixer/mixer_display.c:318
+msgid "Off"
+msgstr "გამორთული"
+
+#: alsamixer/mixer_display.c:306 alsamixer/mixer_display.c:318
+msgid "On"
+msgstr "ჩართული"
+
+#: alsamixer/mixer_display.c:370
+msgid "The sound device was unplugged."
+msgstr "ხმის მოწყობილობა გამოერთებულია."
+
+#: alsamixer/mixer_display.c:371
+msgid "Press F6 to select another sound card."
+msgstr "სხვა ხმის ბარათის ასარჩევად დააწექით F6-ს."
+
+#: alsamixer/mixer_display.c:386
+msgid "This sound device does not have any playback controls."
+msgstr "ამ ხმის მოწყობილობას დაკვრის არანაირი კონტროლი არ გააჩნია."
+
+#: alsamixer/mixer_display.c:388
+msgid "This sound device does not have any capture controls."
+msgstr "ამ ხმის მოწყობილობას ჩაჭერის არანაირი კონტროლი არ გააჩნია."
+
+#: alsamixer/mixer_display.c:390
+msgid "This sound device does not have any controls."
+msgstr "ამ ხმის მოწყობილობას არანაირი კონტროლი არ გააჩნია."
+
+#. TRANSLATORS: playback on; one character
+#: alsamixer/mixer_display.c:523 alsamixer/mixer_display.c:528
+msgid "O"
+msgstr "O"
+
+#. TRANSLATORS: playback muted; one character
+#: alsamixer/mixer_display.c:525 alsamixer/mixer_display.c:529
+msgid "M"
+msgstr "მ"
+
+#. TRANSLATORS: "left"; no more than two characters
+#: alsamixer/mixer_display.c:545
+msgid "L"
+msgstr "მხ"
+
+#. TRANSLATORS: "right"; no more than two characters
+#: alsamixer/mixer_display.c:551
+msgid "R"
+msgstr "მჯ"
+
+#. TRANSLATORS: no more than eight characters
+#: alsamixer/mixer_display.c:555
+msgid "CAPTURE"
+msgstr "ჩაჭერა"
+
+#: alsamixer/mixer_display.c:611
+msgid "Front"
+msgstr "წინა"
+
+#: alsamixer/mixer_display.c:614
+msgid "Rear"
+msgstr "უკანა"
+
+#: alsamixer/mixer_display.c:617 speaker-test/speaker-test.c:124
+msgid "Center"
+msgstr "ცენტრი"
+
+#: alsamixer/mixer_display.c:620
+msgid "Woofer"
+msgstr "ვუფერი"
+
+#: alsamixer/mixer_display.c:623
+msgid "Side"
+msgstr "გვერდითი"
+
+#: alsamixer/mixer_widget.c:91 alsamixer/mixer_widget.c:96
+msgid "cannot open mixer"
+msgstr "მიქსერის გახსნის შეცდომა"
+
+#: alsamixer/mixer_widget.c:102 alsamixer/mixer_widget.c:179
+msgid "cannot load mixer controls"
+msgstr "მიქსერის კონტროლის ჩატვირთვის შეცდომა"
+
+#: alsamixer/mixer_widget.c:169
+#, c-format
+msgid "Cannot open mixer device '%s'."
+msgstr "მიქსერის მოწყობილობის გახსნის შეცდომა: '%s'."
+
+#: alsamixer/mixer_widget.c:190
+msgid "Esc     Exit"
+msgstr "Esc     გასვლა"
+
+#: alsamixer/mixer_widget.c:191
+msgid "F1 ? H  Help"
+msgstr "F1 ? H  დახმარება"
+
+#: alsamixer/mixer_widget.c:192
+msgid "F2 /    System information"
+msgstr "F2 /    ინფორმაცია სისტემის შესახებ"
+
+#: alsamixer/mixer_widget.c:193
+msgid "F3      Show playback controls"
+msgstr "F3      დაკვრის კონტროლების ჩვენება"
+
+#: alsamixer/mixer_widget.c:194
+msgid "F4      Show capture controls"
+msgstr "F4      ჩაჭერის კონტროლების ჩვენება"
+
+#: alsamixer/mixer_widget.c:195
+msgid "F5      Show all controls"
+msgstr "F5      ყველა კონტროლის ჩვენება"
+
+#: alsamixer/mixer_widget.c:196
+msgid "Tab     Toggle view mode (F3/F4/F5)"
+msgstr "Tab     ხედის რეჟიმს გადართავს (F3/F4/F5)"
+
+#: alsamixer/mixer_widget.c:197
+msgid "F6 S    Select sound card"
+msgstr "F6 S    აირჩიეთ ხმის ბარათი"
+
+#: alsamixer/mixer_widget.c:198
+msgid "L       Redraw screen"
+msgstr "L       ეკრანის გადახატვა"
+
+#: alsamixer/mixer_widget.c:200
+msgid "Left    Move to the previous control"
+msgstr "მარცხნივ    წინა კონტროლზე გადასვლა"
+
+#: alsamixer/mixer_widget.c:201
+msgid "Right   Move to the next control"
+msgstr "მარჯვნივ   შემდეგ კონტროლზე გადასვლა"
+
+#: alsamixer/mixer_widget.c:203
+msgid "Up/Down    Change volume"
+msgstr "მაღლა/დაბლა    ხმის შეცვლა"
+
+#: alsamixer/mixer_widget.c:204
+msgid "+ -        Change volume"
+msgstr "+ -        ხმის შეცვლა"
+
+#: alsamixer/mixer_widget.c:205
+msgid "Page Up/Dn Change volume in big steps"
+msgstr "Page Up/Dn ხმის დიდი ნაბიჯებით შეცვლა"
+
+#: alsamixer/mixer_widget.c:206
+msgid "End        Set volume to 0%"
+msgstr "End        ხმის 0%-ზე დაყენება"
+
+#: alsamixer/mixer_widget.c:207
+msgid "0-9        Set volume to 0%-90%"
+msgstr "0-9        ხმის დაყენება to 0%-90%-ზე"
+
+#: alsamixer/mixer_widget.c:208
+msgid "Q W E      Increase left/both/right volumes"
+msgstr "Q W E      მარცხენა/ორივე/მარჯვენა არხის ხმის გაზრდა"
+
+#. TRANSLATORS: or Y instead of Z
+#: alsamixer/mixer_widget.c:210
+msgid "Z X C      Decrease left/both/right volumes"
+msgstr "Z X C      მარცხენა/ორივე/მარჯვენა არხის ხმის შემცირება"
+
+#: alsamixer/mixer_widget.c:211
+msgid "B          Balance left and right volumes"
+msgstr "B          მარჯვენა და მარცხენა არხების დაბალანსება"
+
+#: alsamixer/mixer_widget.c:213
+msgid "M          Toggle mute"
+msgstr "M          დადუმების გადართვა"
+
+#. TRANSLATORS: or , .
+#: alsamixer/mixer_widget.c:215
+msgid "< >        Toggle left/right mute"
+msgstr "< >        მარცხენა/მარჯვენა არხების დადუმება"
+
+#: alsamixer/mixer_widget.c:217
+msgid "Space      Toggle capture"
+msgstr "Space      ჩაჭერის გადართვა"
+
+#. TRANSLATORS: or Insert Delete
+#: alsamixer/mixer_widget.c:219
+msgid "; '        Toggle left/right capture"
+msgstr "; '        მარცხენა/მარჯვენა არხის ჩაჭერის გადართვა"
+
+#: alsamixer/mixer_widget.c:221
+msgid "Authors:"
+msgstr "ავტორები:"
+
+#: alsamixer/mixer_widget.c:222
+msgid "  Tim Janik"
+msgstr "  Tim Janik"
+
+#: alsamixer/mixer_widget.c:223
+msgid "  Jaroslav Kysela <perex@perex.cz>"
+msgstr "  Jaroslav Kysela <perex@perex.cz>"
+
+#: alsamixer/mixer_widget.c:224
+msgid "  Clemens Ladisch <clemens@ladisch.de>"
+msgstr "  Clemens Ladisch <clemens@ladisch.de>"
+
+#: alsamixer/mixer_widget.c:226
+msgid "Help"
+msgstr "დახმარება"
+
+#: alsamixer/proc_files.c:56
+msgid "Select File"
+msgstr "აირჩიეთ ფაილი"
+
+#: alsamixer/textbox.c:51 alsamixer/textbox.c:65
+msgid "Error"
+msgstr "შეცდომა"
+
+#: alsamixer/textbox.c:80
+#, c-format
+msgid "Cannot open file \"%s\"."
+msgstr "ფაილის გახსნის შეცდომა: %s."
+
+#: aplay/aplay.c:180
+msgid "raw data"
+msgstr "დაუმუშავებელი მონაცემი"
+
+#: aplay/aplay.c:181
+msgid "VOC"
+msgstr "VOC"
+
+#: aplay/aplay.c:183
+msgid "WAVE"
+msgstr "WAVE"
+
+#: aplay/aplay.c:184
+msgid "Sparc Audio"
+msgstr "Sparc აუდიო"
+
+#: aplay/aplay.c:205
+#, c-format
+msgid ""
+"Usage: %s [OPTION]... [FILE]...\n"
+"\n"
+"-h, --help              help\n"
+"    --version           print current version\n"
+"-l, --list-devices      list all soundcards and digital audio devices\n"
+"-L, --list-pcms         list device names\n"
+"-D, --device=NAME       select PCM by name\n"
+"-q, --quiet             quiet mode\n"
+"-t, --file-type TYPE    file type (voc, wav, raw or au)\n"
+"-c, --channels=#        channels\n"
+"-f, --format=FORMAT     sample format (case insensitive)\n"
+"-r, --rate=#            sample rate\n"
+"-d, --duration=#        interrupt after # seconds\n"
+"-s, --samples=#         interrupt after # samples per channel\n"
+"-M, --mmap              mmap stream\n"
+"-N, --nonblock          nonblocking mode\n"
+"-F, --period-time=#     distance between interrupts is # microseconds\n"
+"-B, --buffer-time=#     buffer duration is # microseconds\n"
+"    --period-size=#     distance between interrupts is # frames\n"
+"    --buffer-size=#     buffer duration is # frames\n"
+"-A, --avail-min=#       min available space for wakeup is # microseconds\n"
+"-R, --start-delay=#     delay for automatic PCM start is # microseconds \n"
+"                        (relative to buffer size if <= 0)\n"
+"-T, --stop-delay=#      delay for automatic PCM stop is # microseconds from "
+"xrun\n"
+"-v, --verbose           show PCM structure and setup (accumulative)\n"
+"-V, --vumeter=TYPE      enable VU meter (TYPE: mono or stereo)\n"
+"-I, --separate-channels one file for each channel\n"
+"-i, --interactive       allow interactive operation from stdin\n"
+"-m, --chmap=ch1,ch2,..  Give the channel map to override or follow\n"
+"    --disable-resample  disable automatic rate resample\n"
+"    --disable-channels  disable automatic channel conversions\n"
+"    --disable-format    disable automatic format conversions\n"
+"    --disable-softvol   disable software volume control (softvol)\n"
+"    --test-position     test ring buffer position\n"
+"    --test-coef=#       test coefficient for ring buffer position (default "
+"8)\n"
+"                        expression for validation is: coef * (buffer_size / "
+"2)\n"
+"    --test-nowait       do not wait for ring buffer - eats whole CPU\n"
+"    --max-file-time=#   start another output file when the old file has "
+"recorded\n"
+"                        for this many seconds\n"
+"    --process-id-file   write the process ID here\n"
+"    --use-strftime      apply the strftime facility to the output file "
+"name\n"
+"    --dump-hw-params    dump hw_params of the device\n"
+"    --fatal-errors      treat all errors as fatal\n"
+msgstr ""
+"გამოყენება: %s [პარამეტრი]... [ფაილი]...\n"
+"\n"
+"-h, --help              დახმარება\n"
+"    --version           მიმდინარე ვერსიის გამოტანა\n"
+"-l, --list-devices      ხმის ბარათებისა და ციფრული აუდიო მოწყობილობების "
+"სია\n"
+"-L, --list-pcms         მოწყობილობების სახელების სია\n"
+"-D, --device=NAME       PCM -ის სახელით არჩევა\n"
+"-q, --quiet             ჩუმი რეჟიმი\n"
+"-t, --file-type TYPE    ფაილის ტიპი (voc, wav, raw ან au)\n"
+"-c, --channels=#        არხები\n"
+"-f, --format=FORMAT     სემპლის ფორმატი (მგრძნობიარეა რეგისტრზე)\n"
+"-r, --rate=#            სემპლის სიხშირე\n"
+"-d, --duration=#        შეწყვეტა # წამის შემდეგ\n"
+"-s, --samples=#         შეწყვეტა # სემპლის შემდეგ თითოეულ არხზე\n"
+"-M, --mmap              mmap -ის ნაკადი\n"
+"-N, --nonblock          არაბლოკირებადი რეჟიმი\n"
+"-F, --period-time=#     წყვეტებს შორის დაშორება # მიკროწამია\n"
+"-B, --buffer-time=#     ბაფერის სიგრძე # მიკროწამია\n"
+"    --period-size=#     წყვეტების სიგრძე # კადრია\n"
+"    --buffer-size=#     ბაფერის სიგრძე # კადრია\n"
+"-A, --avail-min=#       მინიმალური ხელმისაწვდომი სივრცე გაღვიძებისთვის # "
+"მიკროწამია\n"
+"-R, --start-delay=#     PCM -ის გაშვების ავტომატური დაყოვნება # მიკროწამია\n"
+"                        (ბაფერის ზომასთან შედარებით, თუ ის  <= 0)\n"
+"-T, --stop-delay=#      PCM-ის ავტომატური გაჩერების დაყოვნება xrun-დან # "
+"მიკროწამია\n"
+"-v, --verbose           PCM-ის სტრუქტურა და მორგება (დაგროვებადი)\n"
+"-V, --vumeter=TYPE      VU-ის მზომავის ჩართვა (ტიპი: mono ან stereo)\n"
+"-I, --separate-channels ერთი ფაილი ერთი არხისთვის\n"
+"-i, --interactive       ინტერაქტიური ურთიერთობა stdin-დან\n"
+"-m, --chmap=ch1,ch2,..  არხების რუკა გადასაფარად ან მისაყოლად\n"
+"    --disable-resample  სიხშირის ავტომატური რესემპლის გამორთვა\n"
+"    --disable-channels  არხების ავტომატური გარდაქმნის გამორთვა\n"
+"    --disable-format    ფორმატის ავტომატური გარდაქმნის გამორთვა\n"
+"    --disable-softvol   ხმის პროგრამული კონტროლის გამორთვა (softvol)\n"
+"    --test-position     ბეჭდის ბაფერის მდებარეობის ტესტი\n"
+"    --test-coef=#       ბეჭდის ბაფერის მდებარეობის სატესტო კოეფიციენტი "
+"(ნაგულისხმები 8)\n"
+"                        შემოწმების გამოსახულებაა: coef * (buffer_size / 2)\n"
+"    --test-nowait       არ დაუცდის ბეჭდის ბაფერს (სრულად ხარჯავს CPU-ს "
+"რესურსს)\n"
+"    --max-file-time=#   როცა ძველი ფაილი მითითებული რაოდენობაჯერ "
+"ჩაიწერება, \n"
+"\t\t\t\t\t\tახალი ფაილის დაწყება\n"
+"    --process-id-file   პროცესის ID-ის ფაილში ჩაწერა\n"
+"    --use-strftime      გამოტანის ფაილის სახელზე strftime-ის გადატარება\n"
+"    --dump-hw-params    მოწყობილობის აპარატურული პარამეტრების ფაილში "
+"ჩაწერა\n"
+"    --fatal-errors      ყველა შეცდომის ფატალურად ჩათვლა\n"
+
+#: aplay/aplay.c:250 speaker-test/speaker-test.c:961
+#, c-format
+msgid "Recognized sample formats are:"
+msgstr "სემპლის მისაღები ფორმატებია:"
+
+#: aplay/aplay.c:256
+#, c-format
+msgid ""
+"\n"
+"Some of these may not be available on selected hardware\n"
+msgstr ""
+"\n"
+"აქედან ზოგიერთი შეიძლება არჩეულ აპარატურაზე წვდომადი არ იყოს\n"
+
+#: aplay/aplay.c:257
+#, c-format
+msgid "The available format shortcuts are:\n"
+msgstr "ფორმატების ხელმისაწვდომი შემოკლებები:\n"
+
+#: aplay/aplay.c:258
+#, c-format
+msgid "-f cd (16 bit little endian, 44100, stereo)\n"
+msgstr "-f cd (16 bit little endian, 44100, stereo)\n"
+
+#: aplay/aplay.c:259
+#, c-format
+msgid "-f cdr (16 bit big endian, 44100, stereo)\n"
+msgstr "-f cdr (16 bit big endian, 44100, stereo)\n"
+
+#: aplay/aplay.c:260
+#, c-format
+msgid "-f dat (16 bit little endian, 48000, stereo)\n"
+msgstr "-f dat (16 bit little endian, 48000, stereo)\n"
+
+#: aplay/aplay.c:274
+msgid "no soundcards found..."
+msgstr "ხმის ბარათის პოვნა შეუძლებელია..."
+
+#: aplay/aplay.c:277
+#, c-format
+msgid "**** List of %s Hardware Devices ****\n"
+msgstr "**** %s აპარატურული მოწყობილობის სია ****\n"
+
+#: aplay/aplay.c:306
+#, c-format
+msgid "card %i: %s [%s], device %i: %s [%s]\n"
+msgstr "ბარათი %i: %s [%s], მოწყობილობა %i: %s [%s]\n"
+
+#: aplay/aplay.c:312
+#, c-format
+msgid "  Subdevices: %i/%i\n"
+msgstr "  ქვემოწყობილობები: %i/%i\n"
+
+#: aplay/aplay.c:319
+#, c-format
+msgid "  Subdevice #%i: %s\n"
+msgstr "  ქვემოწყობილობა #%i: %s\n"
+
+#: aplay/aplay.c:400
+#, c-format
+msgid "Aborted by signal %s...\n"
+msgstr "ავარიულად დასრულდა სიგნალით %s...\n"
+
+#: aplay/aplay.c:555
+msgid "command should be named either arecord or aplay"
+msgstr "ბრძანებას arecord ან aplay უნდა ერქვას"
+
+#: aplay/aplay.c:599
+#, c-format
+msgid "unrecognized file format %s"
+msgstr "ფაილის უცნობი ფორმატი: %s"
+
+#: aplay/aplay.c:606
+#, c-format
+msgid "invalid channels argument '%s'"
+msgstr "არხის არასწორი არგუმენტი: '%s'"
+
+#: aplay/aplay.c:610
+#, c-format
+msgid "value %i for channels is invalid"
+msgstr "არხებისთვის მნიშვნელობა \"%i\" არასწორია"
+
+#: aplay/aplay.c:630
+#, c-format
+msgid "wrong extended format '%s'"
+msgstr "არასწორი გაფართოებული ფორმატი \"%s\""
+
+#: aplay/aplay.c:638
+#, c-format
+msgid "invalid rate argument '%s'"
+msgstr "სიხშირის არასწორი არგუმენტი: '%s'"
+
+#: aplay/aplay.c:645
+#, c-format
+msgid "bad speed value %i"
+msgstr "სიჩქარის არასწორი მნიშვნელობა: %i"
+
+#: aplay/aplay.c:651
+msgid "duration and samples arguments cannot be used together"
+msgstr "ხანგრძლივობის და სემპლის არგუმენტებს ერთდრულად ვერ გამოიყენებთ"
+
+#: aplay/aplay.c:656
+#, c-format
+msgid "invalid duration argument '%s'"
+msgstr "ხანგრძლივობს არასწორი არგუმენტი: '%s'"
+
+#: aplay/aplay.c:663
+msgid "samples and duration arguments cannot be used together"
+msgstr "ხანგრძლივობის და სემპლის არგუმენტებს ერთდრულად ვერ გამოიყენებთ"
+
+#: aplay/aplay.c:668
+#, c-format
+msgid "invalid samples argument '%s'"
+msgstr "სემპლის არასწორი არგუმენტი: '%s'"
+
+#: aplay/aplay.c:680
+#, c-format
+msgid "invalid period time argument '%s'"
+msgstr "დროის პერიოდის არასწორი არგუმენტი: '%s'"
+
+#: aplay/aplay.c:687
+#, c-format
+msgid "invalid buffer time argument '%s'"
+msgstr "ბუფერის დროის არასწორი არგუმენტი: '%s'"
+
+#: aplay/aplay.c:694
+#, c-format
+msgid "invalid period size argument '%s'"
+msgstr "პერიოდის ზომის არასწორი არგუმენტი: '%s'"
+
+#: aplay/aplay.c:701
+#, c-format
+msgid "invalid buffer size argument '%s'"
+msgstr "ბუფერის ზომის არასწორი არგუმენტი: '%s'"
+
+#: aplay/aplay.c:708
+#, c-format
+msgid "invalid min available space argument '%s'"
+msgstr "მინინალური ხელმისაწვდომი ადგილის არასწორი არგუმენტი: '%s'"
+
+#: aplay/aplay.c:715
+#, c-format
+msgid "invalid start delay argument '%s'"
+msgstr "დაწყების დაყოვნების არასწორი არგუმენტი: '%s'"
+
+#: aplay/aplay.c:722
+#, c-format
+msgid "invalid stop delay argument '%s'"
+msgstr "გაჩერების დაყოვნების არასწორი არგუმენტი: '%s'"
+
+#: aplay/aplay.c:777
+#, c-format
+msgid "invalid test coef argument '%s'"
+msgstr "სატესტო კოეფიც. არასწორი არგუმენტი: '%s'"
+
+#: aplay/aplay.c:789
+#, c-format
+msgid "invalid max file time argument '%s'"
+msgstr "მაქსიმალური ფაილის დროის არასწორი არგუმენტი:'%s'"
+
+#: aplay/aplay.c:809 speaker-test/speaker-test.c:587
+#, c-format
+msgid "Unable to parse channel map string: %s\n"
+msgstr "არხების რუკის სტრიქონის დამუშავების შეცდომა: %s\n"
+
+#: aplay/aplay.c:815
+#, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr "მეტი ინფორმაციისთვის სცადეთ '%s --help'\n"
+
+#: aplay/aplay.c:831
+#, c-format
+msgid "audio open error: %s"
+msgstr "აუდიოს გახსნის პრობლემა: %s"
+
+#: aplay/aplay.c:836
+#, c-format
+msgid "info error: %s"
+msgstr "ინფორმაციის შეცდომა: %s"
+
+#: aplay/aplay.c:843
+#, c-format
+msgid "nonblock setting error: %s"
+msgstr "არაბლოკირებადი პარამეტრის შეცდომა: %s"
+
+#: aplay/aplay.c:861 aplay/aplay.c:985 aplay/aplay.c:1275 aplay/aplay.c:1475
+#: aplay/aplay.c:2055 aplay/aplay.c:2085
+msgid "not enough memory"
+msgstr "მეხსიერება საკმარისი არ არის"
+
+#: aplay/aplay.c:885
+#, c-format
+msgid "Cannot create process ID file %s: %s"
+msgstr "პროცესის ID-ის ფაილის (\"%s\") შექმნის შეცდომა: %s"
+
+#: aplay/aplay.c:975
+#, c-format
+msgid "read error (called from line %i)"
+msgstr "კითხვის შეცდომა (გამოძახებულია ხაზიდან %i)"
+
+#: aplay/aplay.c:1042
+#, c-format
+msgid "unknown length of 'fmt ' chunk (read %u, should be %u at least)"
+msgstr "'fmt'-ის ნაწილის უცნობი სიგრძე (წავიკითხე %u, %u მაინც უნდა იყოს)"
+
+#: aplay/aplay.c:1053
+#, c-format
+msgid ""
+"unknown length of extensible 'fmt ' chunk (read %u, should be %u at least)"
+msgstr ""
+"გაგრძელებადი 'fmt' ნაწილის უცნობი სიგრძე (წავიკითხე %u, %u მაინც უნდა იყოს)"
+
+#: aplay/aplay.c:1058
+msgid "wrong format tag in extensible 'fmt ' chunk"
+msgstr "ფორმატის არასწორი ჭდე გაფართოებად 'fmt' ნაწილში"
+
+#: aplay/aplay.c:1065
+#, c-format
+msgid "can't play WAVE-file format 0x%04x which is not PCM or FLOAT encoded"
+msgstr ""
+"შეუძლებელია WAVE ფაილის დაკვრა (ფორმატით 0x%04x), რომელიც PCM-ის ან FLOAT-"
+"ით არაა კოდირებული"
+
+#: aplay/aplay.c:1070
+#, c-format
+msgid "can't play WAVE-files with %d tracks"
+msgstr "შეუძლებელია WAVE ფაილის დაკვრა %d აუდიობილიკით"
+
+#: aplay/aplay.c:1078 aplay/aplay.c:1204
+#, c-format
+msgid "Warning: format is changed to U8\n"
+msgstr "გაფრთხილება: ფორმატი U8-ზე შეიცვალა\n"
+
+#: aplay/aplay.c:1088 aplay/aplay.c:1101 aplay/aplay.c:1112
+#, c-format
+msgid "Warning: format is changed to %s\n"
+msgstr "გაფრთხილება: ფორმატი %s-ზე შეიცვალა\n"
+
+#: aplay/aplay.c:1117
+#, c-format
+msgid ""
+" can't play WAVE-files with sample %d bits in %d bytes wide (%d channels)"
+msgstr ""
+" შეუძლებელია WAVE ფაილის დაკვრა სემპლით %d ბიტი, %d ბაიტის სიგანეში (%d "
+"არხი)"
+
+#: aplay/aplay.c:1140
+#, c-format
+msgid " can't play WAVE-files with sample %d bits wide"
+msgstr " შეუძლებელია WAVE ფაილის დაკვრა, %d ბიტიანი სიგანის მქონე სემპლით"
+
+#: aplay/aplay.c:1198
+#, c-format
+msgid "Warning: format is changed to MU_LAW\n"
+msgstr "გაფრთხილება: ფორმატი MU_LAW-ზე შეიცვალა\n"
+
+#: aplay/aplay.c:1210
+#, c-format
+msgid "Warning: format is changed to S16_BE\n"
+msgstr "გაფრთხილება: ფორმატი S16_BE-ზე შეიცვალა\n"
+
+#: aplay/aplay.c:1223 aplay/aplay.c:2376 aplay/aplay.c:2383 aplay/aplay.c:2912
+msgid "read error"
+msgstr "წაკითხვის შეცდომა"
+
+#: aplay/aplay.c:1253
+msgid "Channel numbers don't match between hw_params and channel map"
+msgstr "არხების რაოდენობა hw_params და channel_map-ში ერმანეთს არ ემთხვევა"
+
+#: aplay/aplay.c:1262
+#, c-format
+msgid "Warning: unable to get channel map\n"
+msgstr "გაფრთხილება: არხების რუკის მიღების შეცდომა\n"
+
+#: aplay/aplay.c:1296
+#, c-format
+msgid "Channel %d doesn't match with hw_params"
+msgstr "არხი %d hw_params-ში არსებულს არ ემთხვევა"
+
+#: aplay/aplay.c:1323
+msgid "Broken configuration for this PCM: no configurations available"
+msgstr "დაზიანებული კონფიგურაცია ამ PCM-ისთვის: კონფიგურაცია მიუწვდომელია"
+
+#: aplay/aplay.c:1327
+#, c-format
+msgid "HW Params of device \"%s\":\n"
+msgstr "HW პარამეტრები მოწყობილობისთვის \"%s\".\n"
+
+#: aplay/aplay.c:1347
+msgid "Access type not available"
+msgstr "წვდომის ტიპი ხელმიუწვდომელია"
+
+#: aplay/aplay.c:1352
+msgid "Sample format non available"
+msgstr "სემპლის ფორმატი ხელიმიუწვდომელია"
+
+#: aplay/aplay.c:1358
+msgid "Channels count non available"
+msgstr "არხების რაოდენობა ხელიუწვდომელია"
+
+#: aplay/aplay.c:1373
+#, c-format
+msgid "Warning: rate is not accurate (requested = %iHz, got = %iHz)\n"
+msgstr "გაფრთხლება: სიხშირე სწორი არაა (მოთხოვნილი = %iჰც, მივიღე = %iჰც)\n"
+
+#: aplay/aplay.c:1379
+#, c-format
+msgid "         please, try the plug plugin %s\n"
+msgstr "         სცადეთ შეერთოთ დამატება %s\n"
+
+#: aplay/aplay.c:1416
+msgid "Unable to install hw params:"
+msgstr "აპარატურული პარამეტრების დაყენების შეცდომა:"
+
+#: aplay/aplay.c:1423
+#, c-format
+msgid "Can't use period equal to buffer size (%lu == %lu)"
+msgstr "ბუფერის ზომის ტოლ პერიოდს ვერ გამოვიყენებ (%lu == %lu)"
+
+#: aplay/aplay.c:1429
+msgid "Unable to get current sw params."
+msgstr "პროგრამის მიმდინარე პარამეტრების მიღების შეცდომა."
+
+#: aplay/aplay.c:1458
+msgid "unable to install sw params:"
+msgstr "პროგრამული პარამეტრების დაყენების შეცდომა:"
+
+#: aplay/aplay.c:1493
+#, c-format
+msgid "snd_pcm_mmap_begin problem: %s"
+msgstr "snd_pcm_mmap_begin -ის პრობლემა: %s"
+
+#: aplay/aplay.c:1522
+#, c-format
+msgid "stdin O_NONBLOCK flag setup failed\n"
+msgstr "stdin-დან O_NONBLOCK ალმის დაყენების შეცდომა\n"
+
+#: aplay/aplay.c:1559
+#, c-format
+msgid "\rPAUSE command ignored (no hw support)\n"
+msgstr ""
+"\rშეჩერების ბრძანება იგნორირებულია (აპარატურული მხარდაჭერა არ არსებობს)\n"
+
+#: aplay/aplay.c:1567
+#, c-format
+msgid "pause push error: %s"
+msgstr "შეჩერების გადაცემის შეცდომა: %s"
+
+#: aplay/aplay.c:1578
+#, c-format
+msgid "pause release error: %s"
+msgstr "შეჩერების მოხსნის შეცდომა: %s"
+
+#: aplay/aplay.c:1594
+#, c-format
+msgid ""
+"\r=== PAUSE ===                                                            "
+msgstr ""
+"\r=== შეჩერება "
+"===                                                            "
+
+#: aplay/aplay.c:1636
+#, c-format
+msgid "status error: %s"
+msgstr "შეცდომის სტატუსი: %s"
+
+#: aplay/aplay.c:1641
+#, c-format
+msgid "fatal %s: %s"
+msgstr "გატალური %s: %s"
+
+#: aplay/aplay.c:1642 aplay/aplay.c:1653 aplay/aplay.c:1656 aplay/aplay.c:1664
+msgid "underrun"
+msgstr "არშევსება"
+
+#: aplay/aplay.c:1642 aplay/aplay.c:1653 aplay/aplay.c:1664
+msgid "overrun"
+msgstr "გადავსება"
+
+#: aplay/aplay.c:1652 aplay/aplay.c:1663
+#, c-format
+msgid "%s!!! (at least %.3f ms long)\n"
+msgstr "%s!!! (სულ ცოტა %.3f მწმ სიგრძით)\n"
+
+#: aplay/aplay.c:1668
+#, c-format
+msgid "Status:\n"
+msgstr "სტატუსი:\n"
+
+#: aplay/aplay.c:1672
+#, c-format
+msgid "xrun: prepare error: %s"
+msgstr "xrun: მომზადების შეცდომა: %s"
+
+#: aplay/aplay.c:1679
+#, c-format
+msgid "Status(DRAINING):\n"
+msgstr "სტატუსი(DRAINING):\n"
+
+#: aplay/aplay.c:1683
+#, c-format
+msgid "capture stream format change? attempting recover...\n"
+msgstr "ჩასაჭერი ნაკადის ფორმატი შეიცვალა? ვცდილობ აღვდგე....\n"
+
+#: aplay/aplay.c:1685
+#, c-format
+msgid "xrun(DRAINING): prepare error: %s"
+msgstr "xrun(DRAINING): მომზადების შეცდომა: %s"
+
+#: aplay/aplay.c:1692
+#, c-format
+msgid "Status(R/W):\n"
+msgstr "სტატუსი(R/W):\n"
+
+#: aplay/aplay.c:1695
+#, c-format
+msgid "read/write error, state = %s"
+msgstr "წაკითხვა/ჩაწერის შეცდომა. მდგომარეობა = %s"
+
+#: aplay/aplay.c:1705
+#, c-format
+msgid "Suspended. Trying resume. "
+msgstr "შეჩერებულია. ვცდილობ, გავაგრძელო. "
+
+#: aplay/aplay.c:1711
+#, c-format
+msgid "Failed. Restarting stream. "
+msgstr "შეცდომა. ნაკადის გადატვირთვა. "
+
+#: aplay/aplay.c:1714
+#, c-format
+msgid "suspend: prepare error: %s"
+msgstr "შეჩერება: მომზადების შეცდომა: %s"
+
+#: aplay/aplay.c:1719
+#, c-format
+msgid "Done.\n"
+msgstr "დასრულდა.\n"
+
+#: aplay/aplay.c:1741
+#, c-format
+msgid " !clip  "
+msgstr " !clip  "
+
+#: aplay/aplay.c:1893
+#, c-format
+msgid "Unsupported bit size %d.\n"
+msgstr "ბიტის არასწორი ზომა %d.\n"
+
+#: aplay/aplay.c:1929
+#, c-format
+msgid "Max peak (%li samples): 0x%08x "
+msgstr "მაქს პიკი (%li სემპლი): 0x%08x "
+
+#: aplay/aplay.c:1970
+#, c-format
+msgid ""
+"Suspicious buffer position (%li total): avail = %li, delay = %li, buffer = "
+"%li\n"
+msgstr ""
+"ბუფერის საეჭვო მდებარეობა (%li სულ): ხელმის. = %li, დაყოვნება = %li, ბუფერი "
+"= %li\n"
+
+#: aplay/aplay.c:1979
+#, c-format
+msgid ""
+"Suspicious status buffer position (%li total): avail = %li, delay = %li, "
+"buffer = %li\n"
+msgstr ""
+"სტატუსის ბუფერის საეჭვო მდებარეობა (%li სულ): ხელმის. = %li, დაყოვნება = "
+"%li, ბუფერი = %li\n"
+
+#: aplay/aplay.c:1983
+#, c-format
+msgid ""
+"Suspicious buffer position avail > delay (%li total): avail = %li, delay = "
+"%li\n"
+msgstr ""
+"ბუფერის საეჭვო მდებარეობის ხელმის. > დაყოვნება (%li სულ): ხელმის. = %li, "
+"დაყოვნება = %li\n"
+
+#: aplay/aplay.c:1987
+#, c-format
+msgid ""
+"Suspicious status buffer position avail > delay (%li total): avail = %li, "
+"delay = %li\n"
+msgstr ""
+"სტატუსის ბუფერის საეჭვო მდებარეობის ხელმის. > დაყოვნება (%li სულ): ხელმის. "
+"= %li, დაყოვნება = %li\n"
+
+#: aplay/aplay.c:2030
+#, c-format
+msgid "Status(R/W) (standalone avail=%li delay=%li):\n"
+msgstr "სტატუსი(R/W) (ხელმისაწვდ=%li დაყოვნება=%li):\n"
+
+#: aplay/aplay.c:2127
+#, c-format
+msgid "write error: %s"
+msgstr "ჩაწერის შეცდომა: %s"
+
+#: aplay/aplay.c:2175
+#, c-format
+msgid "writev error: %s"
+msgstr "writev -ის შეცდომა: %s"
+
+#: aplay/aplay.c:2221
+#, c-format
+msgid "read error: %s"
+msgstr "read -ის შეცდომა: %s"
+
+#: aplay/aplay.c:2268
+#, c-format
+msgid "readv error: %s"
+msgstr "readv -ის შეცდომა: %s"
+
+#: aplay/aplay.c:2317
+msgid "can't allocate buffer for silence"
+msgstr "დადუმების ბუფერისთვის მეხსიერების გამოყოფის შეცდომა"
+
+#: aplay/aplay.c:2326 aplay/aplay.c:2554 aplay/aplay.c:2559 aplay/aplay.c:2611
+#: aplay/aplay.c:2620 aplay/aplay.c:2627 aplay/aplay.c:2637 aplay/aplay.c:2643
+#: aplay/aplay.c:2715 aplay/aplay.c:2745 aplay/aplay.c:2759
+msgid "write error"
+msgstr "ჩაწერის შეცდომა"
+
+#: aplay/aplay.c:2339
+#, c-format
+msgid "voc_pcm_flush - silence error"
+msgstr "voc_pcm_flush - დადუმების სეცდომა"
+
+#: aplay/aplay.c:2342
+msgid "voc_pcm_flush error"
+msgstr "voc_pcm_flush -ის შეცდომა"
+
+#: aplay/aplay.c:2367
+msgid "malloc error"
+msgstr "malloc -ის შეცდომა"
+
+#: aplay/aplay.c:2371
+#, c-format
+msgid "Playing Creative Labs Channel file '%s'...\n"
+msgstr "Creative Labs-ი არხის ფაილის \"%s\"-ის დაკვრა...\n"
+
+#: aplay/aplay.c:2439 aplay/aplay.c:2534
+msgid "can't play packed .voc files"
+msgstr "შეკუმშული .voc ფაილების დაკვრა შეუძლებელია"
+
+#: aplay/aplay.c:2494
+#, c-format
+msgid "can't play loops; %s isn't seekable\n"
+msgstr "მარყუჟების დაკვრის პრობლემა: %s გადახვევადი არაა\n"
+
+#: aplay/aplay.c:2543
+#, c-format
+msgid "unknown blocktype %d. terminate."
+msgstr "ბლოკის უცნობი ტიპი %d. მუშაობის დასასრული."
+
+#: aplay/aplay.c:2679
+#, c-format
+msgid "Wave doesn't support %s format..."
+msgstr "Waved-ს %s ფორმატის მხარდაჭერა არ გააჩნია..."
+
+#: aplay/aplay.c:2739
+#, c-format
+msgid "Sparc Audio doesn't support %s format..."
+msgstr "Sparc-ის აუდიოს %s ფორმატის მხარდაჭერა არ გააჩნია..."
+
+#: aplay/aplay.c:2814
+msgid "Playing"
+msgstr "მიმდინარეობს დაკვრა"
+
+#: aplay/aplay.c:2814
+msgid "Recording"
+msgstr "ჩაწერა"
+
+#: aplay/aplay.c:2818
+#, c-format
+msgid "Rate %d Hz, "
+msgstr "სიხშირე %d ჰც, "
+
+#: aplay/aplay.c:2820
+#, c-format
+msgid "Mono"
+msgstr "მონო"
+
+#: aplay/aplay.c:2822
+#, c-format
+msgid "Stereo"
+msgstr "სტერეო"
+
+#: aplay/aplay.c:2824
+#, c-format
+msgid "Channels %i"
+msgstr "არხები %i"
+
+#: aplay/aplay.c:3431
+#, c-format
+msgid "You need to specify %u files"
+msgstr "საჭიროა %u ფაილის მითითება"
+
+#: aplay/aplay.c:3484
+#, c-format
+msgid "You need to specify %d files"
+msgstr "საჭიროა %d ფაილის მითითება"
+
+#: seq/aconnect/aconnect.c:49
+#, c-format
+msgid "aconnect - ALSA sequencer connection manager\n"
+msgstr "aconnect - ALSA -ის სეკვენსერთან მიერთების მმართველი\n"
+
+#: seq/aconnect/aconnect.c:50
+#, c-format
+msgid "Copyright (C) 1999-2000 Takashi Iwai\n"
+msgstr "(C) 1999-2000 Takashi Iwai, ყველა უფლება დაცულია\n"
+
+#: seq/aconnect/aconnect.c:51
+#, c-format
+msgid "Usage:\n"
+msgstr "გამოყენება:\n"
+
+#: seq/aconnect/aconnect.c:52
+#, c-format
+msgid " * Connection/disconnection between two ports\n"
+msgstr " * ორ პორტს შორის კავშირი/გათიშვა\n"
+
+#: seq/aconnect/aconnect.c:53
+#, c-format
+msgid "   aconnect [-options] sender receiver\n"
+msgstr "   aconnect [-პარამეტრები] გამგზავნი მიმღები\n"
+
+#: seq/aconnect/aconnect.c:54
+#, c-format
+msgid "     sender, receiver = client:port pair\n"
+msgstr "     გამგზავნი, მიმღები = კლიენტი:პორტი წყვილებს\n"
+
+#: seq/aconnect/aconnect.c:55
+#, c-format
+msgid "     -d,--disconnect     disconnect\n"
+msgstr "     -d,--disconnect     disconnecგათიშვაt\n"
+
+#: seq/aconnect/aconnect.c:56
+#, c-format
+msgid "     -e,--exclusive      exclusive connection\n"
+msgstr "     -e,--exclusive      ექსკლუზიური შეერთება\n"
+
+#: seq/aconnect/aconnect.c:57
+#, c-format
+msgid "     -r,--real #         convert real-time-stamp on queue\n"
+msgstr "     -r,--real #         რიგში real-time-stamp -ის გარდაქმნა\n"
+
+#: seq/aconnect/aconnect.c:58
+#, c-format
+msgid "     -t,--tick #         convert tick-time-stamp on queue\n"
+msgstr "     -t,--tick #         რიგში tick-time-stamp -ის გარდაქმნა\n"
+
+#: seq/aconnect/aconnect.c:59
+#, c-format
+msgid " * List connected ports (no subscription action)\n"
+msgstr " * მიერთებული პორტების სია (გამოწერის ქმედების გარეშე)\n"
+
+#: seq/aconnect/aconnect.c:60
+#, c-format
+msgid "   aconnect -i|-o [-options]\n"
+msgstr "   aconnect -i|-o [-პარამეტრები]\n"
+
+#: seq/aconnect/aconnect.c:61
+#, c-format
+msgid "     -i,--input          list input (readable) ports\n"
+msgstr "     -i,--input          შეტანის (წაკითხვადი) პორტების სია\n"
+
+#: seq/aconnect/aconnect.c:62
+#, c-format
+msgid "     -o,--output         list output (writable) ports\n"
+msgstr "     -o,--output         გამოტანის (ჩაწერადი) პორტების სია\n"
+
+#: seq/aconnect/aconnect.c:63
+#, c-format
+msgid "     -l,--list           list current connections of each port\n"
+msgstr "     -l,--list           თითოეულ პორტზე მიმდინარე შეერთებების სია\n"
+
+#: seq/aconnect/aconnect.c:64
+#, c-format
+msgid " * Remove all exported connections\n"
+msgstr " * ყველა გატანილი შეერთების მოცილება\n"
+
+#: seq/aconnect/aconnect.c:65
+#, c-format
+msgid "     -x, --removeall\n"
+msgstr "     -x, --removeall\n"
+
+#: seq/aconnect/aconnect.c:132
+msgid "Connecting To"
+msgstr "დაკავშირების სამიზნე"
+
+#: seq/aconnect/aconnect.c:133
+msgid "Connected From"
+msgstr "დაკავშირების წყარო"
+
+#: seq/aconnect/aconnect.c:171
+#, c-format
+msgid "client %d: '%s' [type=%s"
+msgstr "კლიენტი %d: '%s' [ტიპი=%s"
+
+#: seq/aconnect/aconnect.c:175
+msgid "user"
+msgstr "მომხმარებელი"
+
+#: seq/aconnect/aconnect.c:175
+msgid "kernel"
+msgstr "ბირთვი"
+
+#: seq/aconnect/aconnect.c:323
+#, c-format
+msgid "can't open sequencer\n"
+msgstr "სეკვენსერის გახსნის შეცდომა\n"
+
+#: seq/aconnect/aconnect.c:351
+#, c-format
+msgid "can't get client id\n"
+msgstr "კლიენტის ID-ის მიღების შეცდოა\n"
+
+#: seq/aconnect/aconnect.c:358
+#, c-format
+msgid "can't set client info\n"
+msgstr "კლიენტის ინფორმაციის დაყენების შეცდომა\n"
+
+#: seq/aconnect/aconnect.c:365
+#, c-format
+msgid "invalid sender address %s\n"
+msgstr "გამგზავნის მისამართის დაყენების შეცდომა: %s\n"
+
+#: seq/aconnect/aconnect.c:370 seq/aseqnet/aseqnet.c:303
+#, c-format
+msgid "invalid destination address %s\n"
+msgstr "არასწორი სამიზნე მისამართი: %s\n"
+
+#: seq/aconnect/aconnect.c:384
+#, c-format
+msgid "No subscription is found\n"
+msgstr "გამოწერის გარეშე\n"
+
+#: seq/aconnect/aconnect.c:389
+#, c-format
+msgid "Disconnection failed (%s)\n"
+msgstr "გათიშვის შეცდომა (%s)\n"
+
+#: seq/aconnect/aconnect.c:395
+#, c-format
+msgid "Connection is already subscribed\n"
+msgstr "შეერთება უკვე გამოწერილია\n"
+
+#: seq/aconnect/aconnect.c:400
+#, c-format
+msgid "Connection failed (%s)\n"
+msgstr "შეერთების შეცდომა (%s)\n"
+
+#: seq/aseqnet/aseqnet.c:171
+#, c-format
+msgid "aseqnet - network client/server on ALSA sequencer\n"
+msgstr "aseqnet - ქსელური კლიენტ/სერვერი ALSA სეკვენსერზე\n"
+
+#: seq/aseqnet/aseqnet.c:172
+#, c-format
+msgid "  Copyright (C) 1999 Takashi Iwai\n"
+msgstr "    (C) 1999-2000 Takashi Iwai\n"
+
+#: seq/aseqnet/aseqnet.c:173
+#, c-format
+msgid "usage:\n"
+msgstr "გამოყენება:\n"
+
+#: seq/aseqnet/aseqnet.c:174
+#, c-format
+msgid "  server mode: aseqnet [-options]\n"
+msgstr "  სერვერის რეჟიმი: aseqnet [-პარამეტრები]\n"
+
+#: seq/aseqnet/aseqnet.c:175
+#, c-format
+msgid "  client mode: aseqnet [-options] server_host\n"
+msgstr "  კლიენტის რეჟიმი: aseqnet [-პარამეტრები] სერვერის_ჰოსტი\n"
+
+#: seq/aseqnet/aseqnet.c:176
+#, c-format
+msgid "options:\n"
+msgstr "პარამეტრები:\n"
+
+#: seq/aseqnet/aseqnet.c:177
+#, c-format
+msgid "  -6,--ipv6 : use IPv6 TCP protocol\n"
+msgstr "  -6,--ipv6 : IPv6 TCP პროტოკოლის გამოყენება\n"
+
+#: seq/aseqnet/aseqnet.c:178
+#, c-format
+msgid "  -p,--port # : specify TCP port (digit or service name)\n"
+msgstr "  -p,--port # : TCP პორტი. (რიცხვი ან სერვისის სახელი)\n"
+
+#: seq/aseqnet/aseqnet.c:179
+#, c-format
+msgid "  -s,--source addr : read from given addr (client:port)\n"
+msgstr ""
+"  -s,--source მისამართი : მითითბული მისამართიდან (კლიენტი:პორტი) წაკითხვა\n"
+
+#: seq/aseqnet/aseqnet.c:180
+#, c-format
+msgid "  -d,--dest addr : write to given addr (client:port)\n"
+msgstr "  -d,--dest მისამართი : მითითებულ მისამართზე ჩაწერა (კლიენტი:პორტი)\n"
+
+#: seq/aseqnet/aseqnet.c:181
+#, c-format
+msgid "  -n,--name value : use a specific midi process name\n"
+msgstr "  -n,--name value : მითითებული MIDI პროცესის გამოყენება\n"
+
+#: seq/aseqnet/aseqnet.c:182
+#, c-format
+msgid "  -v, --verbose : print verbose messages\n"
+msgstr "  -v, --verbose : დამატებითი ინფორმაციის გამოტანა\n"
+
+#: seq/aseqnet/aseqnet.c:183
+#, c-format
+msgid "  -i, --info : print certain received events\n"
+msgstr "  -i, --info : ზოგიერთი მიღებული მოვლენის გამოტანა\n"
+
+#: seq/aseqnet/aseqnet.c:197
+#, c-format
+msgid "can't malloc\n"
+msgstr "malloc -ის შეცდომა\n"
+
+#: seq/aseqnet/aseqnet.c:222
+#, c-format
+msgid "closing files..\n"
+msgstr "ფაილების დახურვა...\n"
+
+#: seq/aseqnet/aseqnet.c:285
+#, c-format
+msgid "sequencer opened: %d:%d\n"
+msgstr "სეკვენსერი გავაღე: %d:%d\n"
+
+#: seq/aseqnet/aseqnet.c:292
+#, c-format
+msgid "invalid source address %s\n"
+msgstr "წყაროს არასწორი მისამართი %s\n"
+
+#: seq/aseqnet/aseqnet.c:362
+#, c-format
+msgid "can't get address\n"
+msgstr "მისამართის მიღება შეუძლებელია\n"
+
+#: seq/aseqnet/aseqnet.c:376 seq/aseqnet/aseqnet.c:461
+#, c-format
+msgid "connecting to: %s\n"
+msgstr "მიერთება: %s\n"
+
+#: seq/aseqnet/aseqnet.c:414
+#, c-format
+msgid "too many connections!\n"
+msgstr "მეტისმეტად ბევრი მიერთება!\n"
+
+#: seq/aseqnet/aseqnet.c:425
+#, c-format
+msgid "accepted[%d]\n"
+msgstr "მიღებულია[%d]\n"
+
+#: seq/aseqnet/aseqnet.c:447
+#, c-format
+msgid "can't get address %s\n"
+msgstr "%s-ის მისამართის მიღების შეცდომა\n"
+
+#: seq/aseqnet/aseqnet.c:475
+#, c-format
+msgid "ok.. connected\n"
+msgstr "შეერთება წარმატებულია\n"
+
+#: seq/aseqnet/aseqnet.c:574
+#, c-format
+msgid "Channel %2d: Control event : %5d\n"
+msgstr "არხი %2d: საკონტროლო მოვლენა : %5d\n"
+
+#: seq/aseqnet/aseqnet.c:578
+#, c-format
+msgid "Channel %2d: Pitchbender   : %5d\n"
+msgstr "არხი %2d: Pitchbender   : %5d\n"
+
+#: seq/aseqnet/aseqnet.c:582
+#, c-format
+msgid "Channel %2d: Note On event : %5d\n"
+msgstr "არხი %2d: ნოტის ჩართვის მოვლენა : %5d\n"
+
+#: seq/aseqnet/aseqnet.c:586
+#, c-format
+msgid "Channel %2d: Note Off event: %5d\n"
+msgstr "არხი %2d: ნოტის გამორთვის მოვლენა: %5d\n"
+
+#: seq/aseqnet/aseqnet.c:641
+#, c-format
+msgid "disconnected\n"
+msgstr "გათიშულია\n"
+
+#: speaker-test/speaker-test.c:120
+msgid "Front Left"
+msgstr "წინა მარცხენა"
+
+#: speaker-test/speaker-test.c:121
+msgid "Front Right"
+msgstr "წინა მარჯვენა"
+
+#: speaker-test/speaker-test.c:122
+msgid "Rear Left"
+msgstr "უკანა მარცხენა"
+
+#: speaker-test/speaker-test.c:123
+msgid "Rear Right"
+msgstr "უკანა მარკვენა"
+
+#: speaker-test/speaker-test.c:125
+msgid "LFE"
+msgstr "LFE"
+
+#: speaker-test/speaker-test.c:126
+msgid "Side Left"
+msgstr "მარცხენა მხარეს"
+
+#: speaker-test/speaker-test.c:127
+msgid "Side Right"
+msgstr "მარჯვენა მხარეს"
+
+#: speaker-test/speaker-test.c:128
+msgid "Channel 9"
+msgstr "არხი 9"
+
+#: speaker-test/speaker-test.c:129
+msgid "Channel 10"
+msgstr "არხი 10"
+
+#: speaker-test/speaker-test.c:130
+msgid "Channel 11"
+msgstr "არხი 11"
+
+#: speaker-test/speaker-test.c:131
+msgid "Channel 12"
+msgstr "არხი 12"
+
+#: speaker-test/speaker-test.c:132
+msgid "Channel 13"
+msgstr "არხი 13"
+
+#: speaker-test/speaker-test.c:133
+msgid "Channel 14"
+msgstr "არხი 14"
+
+#: speaker-test/speaker-test.c:134
+msgid "Channel 15"
+msgstr "არხი 15"
+
+#: speaker-test/speaker-test.c:135
+msgid "Channel 16"
+msgstr "არხი 16"
+
+#: speaker-test/speaker-test.c:440
+#, c-format
+msgid "Broken configuration for playback: no configurations available: %s\n"
+msgstr "დაკვრის კონფიგურაცია დაზიანებულია: კონფიგურაციის გარეშე: %s\n"
+
+#: speaker-test/speaker-test.c:447
+#, c-format
+msgid "Access type not available for playback: %s\n"
+msgstr "წვდომის ტიპი დასაკრავად ხელმიუწვდომელია: %s\n"
+
+#: speaker-test/speaker-test.c:454
+#, c-format
+msgid "Sample format not available for playback: %s\n"
+msgstr "სემპლის ტიპი დასაკრავად ხელმიუწვდომელია: %s\n"
+
+#: speaker-test/speaker-test.c:461
+#, c-format
+msgid "Channels count (%i) not available for playbacks: %s\n"
+msgstr "არხების რაოდენობა (%i) დასაკრავად ხელმიუწვდომელია: %s\n"
+
+#: speaker-test/speaker-test.c:469
+#, c-format
+msgid "Rate %iHz not available for playback: %s\n"
+msgstr "სიხშირე %iჰც დასაკრავად მიუწვდომელია: %s\n"
+
+#: speaker-test/speaker-test.c:474
+#, c-format
+msgid "Rate doesn't match (requested %iHz, get %iHz, err %d)\n"
+msgstr "სიხშირე არ ემთხვევა (მოთხოვნილი %iჰც, მიღებული %iჰც, შეცდომა %d)\n"
+
+#: speaker-test/speaker-test.c:478
+#, c-format
+msgid "Rate set to %iHz (requested %iHz)\n"
+msgstr "სიხშირე დაყენებულია %iჰც-ზე (მოთხოვნილია %iჰც)\n"
+
+#: speaker-test/speaker-test.c:484
+#, c-format
+msgid "Buffer size range from %lu to %lu\n"
+msgstr "ბუფერის ზომის დიაპაზონია %lu-დან %lu-მდე\n"
+
+#: speaker-test/speaker-test.c:485
+#, c-format
+msgid "Period size range from %lu to %lu\n"
+msgstr ""
+"პერიოდის ზომის დიაპაზონია %lu-დან %lu-მდე\n"
+"\n"
+
+#: speaker-test/speaker-test.c:487
+#, c-format
+msgid "Requested period time %u us\n"
+msgstr "მოთხოვნილი პერიოდის დროა %u მიკროწამი\n"
+
+#: speaker-test/speaker-test.c:490
+#, c-format
+msgid "Unable to set period time %u us for playback: %s\n"
+msgstr "დაკვრისთვის პერიოდის დროდ %u მკწმ-ის დაყენების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:496
+#, c-format
+msgid "Requested buffer time %u us\n"
+msgstr "მოთხოვნილი ბუფერის დროა %u მიკროწამი\n"
+
+#: speaker-test/speaker-test.c:499
+#, c-format
+msgid "Unable to set buffer time %u us for playback: %s\n"
+msgstr "დაკვრისთვის ბაფერის დროდ %u მკწმ-ის დაყენების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:508
+#, c-format
+msgid "Using max buffer size %lu\n"
+msgstr "გამოიყენება ბუფერის მაქსიმალური ზომა %lu\n"
+
+#: speaker-test/speaker-test.c:511
+#, c-format
+msgid "Unable to set buffer size %lu for playback: %s\n"
+msgstr "დაკვრისთვის ბაფერის ზომად %lu-ის დაყენების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:517
+#, c-format
+msgid "Periods = %u\n"
+msgstr "პერიოდები = %u\n"
+
+#: speaker-test/speaker-test.c:520
+#, c-format
+msgid "Unable to set nperiods %u for playback: %s\n"
+msgstr "დაკვრისთვის nperiods-ის %u-ზე დაყენების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:529
+#, c-format
+msgid "Unable to set hw params for playback: %s\n"
+msgstr "დაკვრისთვის აპარატურული პარამეტრების დაყენების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:535
+#, c-format
+msgid "was set period_size = %lu\n"
+msgstr "period_size დაყენებულ იყო= %lu\n"
+
+#: speaker-test/speaker-test.c:536
+#, c-format
+msgid "was set buffer_size = %lu\n"
+msgstr "buffer_size დაყენებული იყო = %lu\n"
+
+#: speaker-test/speaker-test.c:538
+#, c-format
+msgid "buffer to small, could not use\n"
+msgstr "ბაფერი მეტისმეტად პატარაა. ვერ გამოვიყენებ\n"
+
+#: speaker-test/speaker-test.c:551
+#, c-format
+msgid "Unable to determine current swparams for playback: %s\n"
+msgstr "დაკვრისთვის მიმდინარე პროგრამული პარამეტრების დადგენის შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:558
+#, c-format
+msgid "Unable to set start threshold mode for playback: %s\n"
+msgstr "დაკვრისთვის დასაწყისის ზღვარის რეჟიმის დაყენების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:565
+#, c-format
+msgid "Unable to set avail min for playback: %s\n"
+msgstr "დაკვრისთვის ხელმისაწვდომი მინიმუმის დაყენების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:572
+#, c-format
+msgid "Unable to set sw params for playback: %s\n"
+msgstr "დაკვრისთვის პროგრამული პარამეტრების დაყენების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:592
+#, c-format
+msgid "Unable to set channel map: %s\n"
+msgstr "არხების რუკის დაყენების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:617
+#, c-format
+msgid "Can't recovery from underrun, prepare failed: %s\n"
+msgstr "ბაფერის ვერშევსებიდან აღდგენა შეუძლებელია. მომზადების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:628
+#, c-format
+msgid "Can't recovery from suspend, prepare failed: %s\n"
+msgstr "შეჩერებიდან აღდგენა შეუძლებელია. მომზადების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:692 speaker-test/speaker-test.c:1207
+#, c-format
+msgid "No enough memory\n"
+msgstr "არასაკმარისი მეხსიერება\n"
+
+#: speaker-test/speaker-test.c:697
+#, c-format
+msgid "Cannot open WAV file %s\n"
+msgstr "WAV ფაილის გახსნის შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:701 speaker-test/speaker-test.c:730
+#, c-format
+msgid "Invalid WAV file %s\n"
+msgstr "არასწორი WAV ფაილი: %s\n"
+
+#: speaker-test/speaker-test.c:706
+#, c-format
+msgid "Not a WAV file: %s\n"
+msgstr "არასწორი WAV ფაილი: %s\n"
+
+#: speaker-test/speaker-test.c:710
+#, c-format
+msgid "Unsupported WAV format %d for %s\n"
+msgstr "WAV ფაილის არასწორი ფორმატი \"%d\" \"%s\"-სთვის\n"
+
+#: speaker-test/speaker-test.c:715
+#, c-format
+msgid "%s is not a mono stream (%d channels)\n"
+msgstr "%s მონო ნაკადს არ წარმოადგენს (%d არხი)\n"
+
+#: speaker-test/speaker-test.c:720
+#, c-format
+msgid "Sample rate doesn't match (%d) for %s\n"
+msgstr "სემპლინგის სიჩქარე არ ემთხვევა (%d) %s-სთვის\n"
+
+#: speaker-test/speaker-test.c:725
+#, c-format
+msgid "Unsupported sample format bits %d for %s\n"
+msgstr "სემპლის მხარდაუჭერელი ბიტები (%d) %s-სთვის\n"
+
+#: speaker-test/speaker-test.c:786
+#, c-format
+msgid "Undefined channel %d\n"
+msgstr "აღუწერელი არხი %d\n"
+
+#: speaker-test/speaker-test.c:837
+#, c-format
+msgid "Write error: %d,%s\n"
+msgstr "ჩაწერის შეცდომა: %d,%s\n"
+
+#: speaker-test/speaker-test.c:839
+#, c-format
+msgid "xrun_recovery failed: %d,%s\n"
+msgstr "xrun_recovery -ის შეცდომა: %d,%s\n"
+
+#: speaker-test/speaker-test.c:942
+#, c-format
+msgid ""
+"Usage: speaker-test [OPTION]... \n"
+"-h,--help\thelp\n"
+"-D,--device\tplayback device\n"
+"-r,--rate\tstream rate in Hz\n"
+"-c,--channels\tcount of channels in stream\n"
+"-f,--frequency\tsine wave frequency in Hz\n"
+"-F,--format\tsample format\n"
+"-b,--buffer\tring buffer size in us\n"
+"-p,--period\tperiod size in us\n"
+"-P,--nperiods\tnumber of periods\n"
+"-t,--test\tpink=use pink noise, sine=use sine wave, wav=WAV file\n"
+"-l,--nloops\tspecify number of loops to test, 0 = infinite\n"
+"-s,--speaker\tsingle speaker test. Values 1=Left, 2=right, etc\n"
+"-w,--wavfile\tUse the given WAV file as a test sound\n"
+"-W,--wavdir\tSpecify the directory containing WAV files\n"
+"-m,--chmap\tSpecify the channel map to override\n"
+"-X,--force-frequency\tforce frequencies outside the 30-8000hz range\n"
+"-S,--scale\tScale of generated test tones in percent (default=80)\n"
+"\n"
+msgstr ""
+"გამოყენება: speaker-test [პარამეტრი]... \n"
+"-h,--help\tდახმარება\n"
+"-D,--device\tდამკვრელი მოწყობილობა\n"
+"-r,--rate\tნაკადის სიხშირე ჰერცებში\n"
+"-c,--channels\tარხების რაოდენობა ნაკადში\n"
+"-f,--frequency\tსინუსოიდალური ტალღის სიხშირე ჰერცებში\n"
+"-F,--format\tსემპლის ფორმატი\n"
+"-b,--buffer\tბეჭდის ბაფერის ზომა მიკროწამებში\n"
+"-p,--period\tპერიოდის ზომა მიკროწამებში\n"
+"-P,--nperiods\tპერიოდების რიცხვი\n"
+"-t,--test\tpink=ვარდისფერი ხმაური, sine=სინუსოიდალური ტალღა, wav=WAV ფაილი\n"
+"-l,--nloops\tსატესტო მარყუჟების რაოდენობა, 0 = უსასრულო\n"
+"-s,--speaker\tერთი დინამიკის ტესტი. მნიშვნელობები 1=მარცხენა, 2=მარჯვენა, "
+"და ა.შ.\n"
+"-w,--wavfile\tსატესტო ხმად მითითებული WAV ფაილის გამოყენება\n"
+"-W,--wavdir\t WAV ფაილების შემცველი საქაღალდე\n"
+"-m,--chmap\tგადასაფარი არხების რუკა\n"
+"-X,--force-frequency\tსიხშირის ძალით მითითება 30-8000ჰც დიაპაზონის გარედან\n"
+"-S,--scale\tსატესტო ტონების გაძლიერება პროცენტებში (ნაგულისხმები=80)\n"
+"\n"
+
+#: speaker-test/speaker-test.c:1074
+#, c-format
+msgid "Invalid number of periods %d\n"
+msgstr "პერიოდების არასწორი რიცხვი: %d\n"
+
+#: speaker-test/speaker-test.c:1090 speaker-test/speaker-test.c:1094
+#, c-format
+msgid "Invalid test type %s\n"
+msgstr "ტესტის არასწორი ტიპი %s\n"
+
+#: speaker-test/speaker-test.c:1127
+#, c-format
+msgid "Unknown option '%c'\n"
+msgstr "უცნობი პარამეტრი '%c'\n"
+
+#: speaker-test/speaker-test.c:1141
+#, c-format
+msgid "Invalid parameter for -s option.\n"
+msgstr "-s პარამეტრის არასწორი მნიშვნელობა.\n"
+
+#: speaker-test/speaker-test.c:1156
+#, c-format
+msgid "Playback device is %s\n"
+msgstr "დამკვრელი მოწყობილობაა %s\n"
+
+#: speaker-test/speaker-test.c:1157
+#, c-format
+msgid "Stream parameters are %iHz, %s, %i channels\n"
+msgstr "ნაკადის პარამეტრებია %iჰც, %s, %i არხი\n"
+
+#: speaker-test/speaker-test.c:1160
+#, c-format
+msgid "Using 16 octaves of pink noise\n"
+msgstr "ვარდისფერი ხმაურისთვის 16 ოქტავის გამოყენება\n"
+
+#: speaker-test/speaker-test.c:1163
+#, c-format
+msgid "Sine wave rate is %.4fHz\n"
+msgstr "სინუსოიდალური ტალღის სიხშირე %.4fჰც-ა\n"
+
+#: speaker-test/speaker-test.c:1166
+#, c-format
+msgid "WAV file(s)\n"
+msgstr "WAV ფაილ(ებ)-ი\n"
+
+#: speaker-test/speaker-test.c:1176
+#, c-format
+msgid "Playback open error: %d,%s\n"
+msgstr "დაკვრის მოწყობილობის გახსნის შეცდომა: %d,%s\n"
+
+#: speaker-test/speaker-test.c:1182
+#, c-format
+msgid "Setting of hwparams failed: %s\n"
+msgstr "აპარატურული პარამეტრების დაყენების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:1186
+#, c-format
+msgid "Setting of swparams failed: %s\n"
+msgstr "პროგრამული პარამეტრების დაყენების შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:1232 speaker-test/speaker-test.c:1254
+#, c-format
+msgid "Transfer failed: %s\n"
+msgstr "გადატანის შეცდომა: %s\n"
+
+#: speaker-test/speaker-test.c:1240
+#, c-format
+msgid "Time per period = %lf\n"
+msgstr "დრო თითოეულ პერიოდში = %lf\n"
