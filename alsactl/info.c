@@ -203,6 +203,7 @@ static int card_info(snd_ctl_t *ctl)
 		snd_ctl_card_info_get_id(info),
 		snd_ctl_card_info_get_name(info),
 		snd_ctl_card_info_get_longname(info));
+	printf("  driver_name: %s\n", snd_ctl_card_info_get_driver(info));
 	printf("  mixer_name: %s\n", snd_ctl_card_info_get_mixername(info));
 	printf("  components: %s\n", snd_ctl_card_info_get_components(info));
 	if ((err = snd_ctl_elem_list(ctl, clist)) < 0) {
