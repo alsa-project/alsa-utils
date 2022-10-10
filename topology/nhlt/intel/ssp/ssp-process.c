@@ -686,15 +686,15 @@ int ssp_hw_set_params(struct intel_nhlt_params *nhlt, const char *format, const 
 	}
 
 	/* clock directions wrt codec */
-	if (bclk && !strcmp(bclk, "coded_provider")) {
+	if (bclk && !strcmp(bclk, "codec_provider")) {
 		/* codec is bclk provider */
-		if (fsync && !strcmp(fsync, "coded_provider"))
+		if (fsync && !strcmp(fsync, "codec_provider"))
 			ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format |= SSP_FMT_CBP_CFP;
 		else
 			ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format |= SSP_FMT_CBP_CFC;
 	} else {
 		/* codec is bclk consumer */
-		if (fsync && !strcmp(fsync, "coded_provider"))
+		if (fsync && !strcmp(fsync, "codec_provider"))
 			ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format |= SSP_FMT_CBC_CFP;
 		else
 			ssp->ssp_prm[ssp->ssp_count].hw_cfg[hwi].format |= SSP_FMT_CBC_CFC;
