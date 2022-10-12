@@ -16,41 +16,330 @@
 #include "intel-nhlt.h"
 #include "ssp-nhlt.h"
 #include "ssp/ssp-process.h"
+#include "ssp/ssp-internal.h"
 
-static int set_ssp_data(struct intel_nhlt_params *nhlt, snd_config_t *dai_cfg, snd_config_t *top)
+static int set_mn_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
 {
-	const char *tdm_padding_per_slot = NULL;
-	const char *direction = NULL;
-	const char *quirks = NULL;
-	long frame_pulse_width = 0;
-	long clks_control = 0;
-	long sample_bits = 0;
-	long bclk_delay = 0;
-	long dai_index = 0;
-	long mclk_id = 0;
-	long io_clk = 0;
-	int ret;
+	long m_div;
+	long n_div;
+	long ret;
 
-	struct dai_values ssp_data[] = {
-		{ "io_clk",  SND_CONFIG_TYPE_INTEGER, NULL, &io_clk, NULL},
-		{ "direction", SND_CONFIG_TYPE_STRING, NULL, NULL, &direction},
-		{ "quirks", SND_CONFIG_TYPE_STRING, NULL, NULL, &quirks},
-		{ "dai_index", SND_CONFIG_TYPE_INTEGER, NULL, &dai_index, NULL},
-		{ "sample_bits", SND_CONFIG_TYPE_INTEGER, NULL, &sample_bits, NULL},
-		{ "bclk_delay", SND_CONFIG_TYPE_INTEGER, NULL, &bclk_delay, NULL},
-		{ "mclk_id", SND_CONFIG_TYPE_INTEGER, NULL, &mclk_id, NULL},
-		{ "clks_control", SND_CONFIG_TYPE_INTEGER, NULL, &clks_control, NULL},
-		{ "frame_pulse_width", SND_CONFIG_TYPE_INTEGER, NULL, &frame_pulse_width, NULL},
-		{ "tdm_padding_per_slot", SND_CONFIG_TYPE_STRING, NULL, NULL,
-		  &tdm_padding_per_slot},
+	struct dai_values ssp_mn_data[] = {
+		{"m_div", SND_CONFIG_TYPE_INTEGER, NULL, &m_div, NULL},
+		{"n_div", SND_CONFIG_TYPE_INTEGER, NULL, &n_div, NULL},
 	};
 
-	ret = find_set_values(&ssp_data[0], ARRAY_SIZE(ssp_data), dai_cfg, top, "Class.Dai.SSP");
+	ret = find_set_values(&ssp_mn_data[0], ARRAY_SIZE(ssp_mn_data), cfg, top,
+			      "Class.Base.mn_config");
 	if (ret < 0)
 		return ret;
 
-	return ssp_set_params(nhlt, direction, dai_index, io_clk, bclk_delay, sample_bits, mclk_id,
-			      clks_control, frame_pulse_width, tdm_padding_per_slot, quirks);
+	return ssp_mn_set_params(nhlt, m_div, n_div);
+}
+
+static int set_clk_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
+{
+	long clock_warm_up;
+	long mclk;
+	long warm_up_ovr;
+	long clock_stop_delay;
+	long keep_running;
+	long clock_stop_ovr;
+	long ret;
+
+	struct dai_values ssp_clk_data[] = {
+		{"clock_warm_up", SND_CONFIG_TYPE_INTEGER, NULL, &clock_warm_up, NULL},
+		{"mclk", SND_CONFIG_TYPE_INTEGER, NULL, &mclk, NULL},
+		{"warm_up_ovr", SND_CONFIG_TYPE_INTEGER, NULL, &warm_up_ovr, NULL},
+		{"clock_stop_delay", SND_CONFIG_TYPE_INTEGER, NULL, &clock_stop_delay, NULL},
+		{"keep_running", SND_CONFIG_TYPE_INTEGER, NULL, &keep_running, NULL},
+		{"clock_stop_ovr", SND_CONFIG_TYPE_INTEGER, NULL, &clock_stop_ovr, NULL},
+	};
+
+	ret = find_set_values(&ssp_clk_data[0], ARRAY_SIZE(ssp_clk_data), cfg, top,
+			      "Class.Base.clk_config");
+	if (ret < 0)
+		return ret;
+
+	return ssp_clk_set_params(nhlt, clock_warm_up, mclk, warm_up_ovr, clock_stop_delay,
+				  keep_running, clock_stop_ovr);
+}
+
+static int set_tr_start_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
+{
+	long sampling_frequency;
+	long bit_depth;
+	long channel_map;
+	long channel_config;
+	long interleaving_style;
+	long number_of_channels;
+	long valid_bit_depth;
+	long sample_type;
+	long ret;
+
+	struct dai_values ssp_tr_data[] = {
+		{"sampling_frequency", SND_CONFIG_TYPE_INTEGER, NULL, &sampling_frequency, NULL},
+		{"bit_depth", SND_CONFIG_TYPE_INTEGER, NULL, &bit_depth, NULL},
+		{"channel_map", SND_CONFIG_TYPE_INTEGER, NULL, &channel_map, NULL},
+		{"channel_config", SND_CONFIG_TYPE_INTEGER, NULL, &channel_config, NULL},
+		{"interleaving_style", SND_CONFIG_TYPE_INTEGER, NULL, &interleaving_style, NULL},
+		{"number_of_channels", SND_CONFIG_TYPE_INTEGER, NULL, &number_of_channels, NULL},
+		{"valid_bit_depth", SND_CONFIG_TYPE_INTEGER, NULL, &valid_bit_depth, NULL},
+		{"sample_type", SND_CONFIG_TYPE_INTEGER, NULL, &sample_type, NULL},
+	};
+
+	ret = find_set_values(&ssp_tr_data[0], ARRAY_SIZE(ssp_tr_data), cfg, top,
+			      "Class.Base.tr_start_config");
+	if (ret < 0)
+		return ret;
+
+	return ssp_tr_start_set_params(nhlt, sampling_frequency, bit_depth, channel_map,
+				       channel_config, interleaving_style, number_of_channels,
+				       valid_bit_depth,sample_type);
+}
+
+static int set_tr_stop_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
+{
+	long sampling_frequency;
+	long bit_depth;
+	long channel_map;
+	long channel_config;
+	long interleaving_style;
+	long number_of_channels;
+	long valid_bit_depth;
+	long sample_type;
+	long ret;
+
+	struct dai_values ssp_tr_data[] = {
+		{"sampling_frequency", SND_CONFIG_TYPE_INTEGER, NULL, &sampling_frequency, NULL},
+		{"bit_depth", SND_CONFIG_TYPE_INTEGER, NULL, &bit_depth, NULL},
+		{"channel_map", SND_CONFIG_TYPE_INTEGER, NULL, &channel_map, NULL},
+		{"channel_config", SND_CONFIG_TYPE_INTEGER, NULL, &channel_config, NULL},
+		{"interleaving_style", SND_CONFIG_TYPE_INTEGER, NULL, &interleaving_style, NULL},
+		{"number_of_channels", SND_CONFIG_TYPE_INTEGER, NULL, &number_of_channels, NULL},
+		{"valid_bit_depth", SND_CONFIG_TYPE_INTEGER, NULL, &valid_bit_depth, NULL},
+		{"sample_type", SND_CONFIG_TYPE_INTEGER, NULL, &sample_type, NULL},
+	};
+
+	ret = find_set_values(&ssp_tr_data[0], ARRAY_SIZE(ssp_tr_data), cfg, top,
+			      "Class.Base.tr_stop_config");
+	if (ret < 0)
+		return ret;
+
+	return ssp_tr_stop_set_params(nhlt, sampling_frequency, bit_depth, channel_map,
+				      channel_config, interleaving_style, number_of_channels,
+				      valid_bit_depth,sample_type);
+}
+
+static int set_run_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
+{
+	long always_run;
+	long ret;
+
+	struct dai_values ssp_run_data[] = {
+		{"always_run", SND_CONFIG_TYPE_INTEGER, NULL, &always_run, NULL},
+	};
+
+	ret = find_set_values(&ssp_run_data[0], ARRAY_SIZE(ssp_run_data), cfg, top,
+			      "Class.Base.run_config");
+	if (ret < 0)
+		return ret;
+
+	return ssp_run_set_params(nhlt, always_run);
+}
+
+static int set_node_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
+{
+	long sampling_rate;
+	long node_id;
+	long ret;
+
+	struct dai_values ssp_node_data[] = {
+		{"node_id", SND_CONFIG_TYPE_INTEGER, NULL, &node_id, NULL},
+		{"sampling_rate", SND_CONFIG_TYPE_INTEGER, NULL, &sampling_rate, NULL},
+	};
+
+	ret = find_set_values(&ssp_node_data[0], ARRAY_SIZE(ssp_node_data), cfg, top,
+			      "Class.Base.node_config");
+	if (ret < 0)
+		return ret;
+
+	return ssp_node_set_params(nhlt, node_id, sampling_rate);
+}
+
+static int set_sync_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
+{
+	long sync_denominator;
+	long ret;
+
+	struct dai_values ssp_sync_data[] = {
+		{"sync_denominator", SND_CONFIG_TYPE_INTEGER, NULL, &sync_denominator, NULL},
+	};
+
+	ret = find_set_values(&ssp_sync_data[0], ARRAY_SIZE(ssp_sync_data), cfg, top,
+			      "Class.Base.sync_config");
+	if (ret < 0)
+		return ret;
+
+	return ssp_sync_set_params(nhlt, sync_denominator);
+}
+
+static int set_ext_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
+{
+	long mclk_policy_override;
+	long mclk_always_running;
+	long mclk_starts_on_gtw_init;
+	long mclk_starts_on_run;
+	long mclk_starts_on_pause;
+	long mclk_stops_on_pause;
+	long mclk_stops_on_reset;
+
+	long bclk_policy_override;
+	long bclk_always_running;
+	long bclk_starts_on_gtw_init;
+	long bclk_starts_on_run;
+	long bclk_starts_on_pause;
+	long bclk_stops_on_pause;
+	long bclk_stops_on_reset;
+
+	long sync_policy_override;
+	long sync_always_running;
+	long sync_starts_on_gtw_init;
+	long sync_starts_on_run;
+	long sync_starts_on_pause;
+	long sync_stops_on_pause;
+	long sync_stops_on_reset;
+	long ret;
+
+	struct dai_values ssp_ext_data[] = {
+		{"mclk_policy_override", SND_CONFIG_TYPE_INTEGER, NULL, &mclk_policy_override, NULL},
+		{"mclk_always_running", SND_CONFIG_TYPE_INTEGER, NULL, &mclk_always_running, NULL},
+		{"mclk_starts_on_gtw_init", SND_CONFIG_TYPE_INTEGER, NULL, &mclk_starts_on_gtw_init, NULL},
+		{"mclk_starts_on_run", SND_CONFIG_TYPE_INTEGER, NULL, &mclk_starts_on_run, NULL},
+		{"mclk_starts_on_pause", SND_CONFIG_TYPE_INTEGER, NULL, &mclk_starts_on_pause, NULL},
+		{"mclk_stops_on_pause", SND_CONFIG_TYPE_INTEGER, NULL, &mclk_stops_on_pause, NULL},
+		{"mclk_stops_on_reset", SND_CONFIG_TYPE_INTEGER, NULL, &mclk_stops_on_reset, NULL},
+		{"bclk_policy_override", SND_CONFIG_TYPE_INTEGER, NULL, &bclk_policy_override, NULL},
+		{"bclk_always_running", SND_CONFIG_TYPE_INTEGER, NULL, &bclk_always_running, NULL},
+		{"bclk_starts_on_gtw_init", SND_CONFIG_TYPE_INTEGER, NULL, &bclk_starts_on_gtw_init, NULL},
+		{"bclk_starts_on_run", SND_CONFIG_TYPE_INTEGER, NULL, &bclk_starts_on_run, NULL},
+		{"bclk_starts_on_pause", SND_CONFIG_TYPE_INTEGER, NULL, &bclk_starts_on_pause, NULL},
+		{"bclk_stops_on_pause", SND_CONFIG_TYPE_INTEGER, NULL, &bclk_stops_on_pause, NULL},
+		{"bclk_stops_on_reset", SND_CONFIG_TYPE_INTEGER, NULL, &bclk_stops_on_reset, NULL},
+		{"sync_policy_override", SND_CONFIG_TYPE_INTEGER, NULL, &sync_policy_override, NULL},
+		{"sync_always_running", SND_CONFIG_TYPE_INTEGER, NULL, &sync_always_running, NULL},
+		{"sync_starts_on_gtw_init", SND_CONFIG_TYPE_INTEGER, NULL, &sync_starts_on_gtw_init, NULL},
+		{"sync_starts_on_run", SND_CONFIG_TYPE_INTEGER, NULL, &sync_starts_on_run, NULL},
+		{"sync_starts_on_pause", SND_CONFIG_TYPE_INTEGER, NULL, &sync_starts_on_pause, NULL},
+		{"sync_stops_on_pause", SND_CONFIG_TYPE_INTEGER, NULL, &sync_stops_on_pause, NULL},
+		{"sync_stops_on_reset", SND_CONFIG_TYPE_INTEGER, NULL, &sync_stops_on_reset, NULL},
+	};
+
+	ret = find_set_values(&ssp_ext_data[0], ARRAY_SIZE(ssp_ext_data), cfg, top,
+			      "Class.Base.ext_config");
+	if (ret < 0)
+		return ret;
+
+	return ssp_ext_set_params(nhlt, mclk_policy_override, mclk_always_running,
+				  mclk_starts_on_gtw_init, mclk_starts_on_run, mclk_starts_on_pause,
+				  mclk_stops_on_pause, mclk_stops_on_reset,
+				  bclk_policy_override, bclk_always_running,
+				  bclk_starts_on_gtw_init, bclk_starts_on_run, bclk_starts_on_pause,
+				  bclk_stops_on_pause, bclk_stops_on_reset,
+				  sync_policy_override, sync_always_running,
+				  sync_starts_on_gtw_init, sync_starts_on_run, sync_starts_on_pause,
+				  sync_stops_on_pause, sync_stops_on_reset);
+}
+
+static int set_link_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
+{
+	long clock_source;
+	long ret;
+
+	struct dai_values ssp_link_data[] = {
+		{"clock_source", SND_CONFIG_TYPE_INTEGER, NULL, &clock_source, NULL},
+	};
+
+	ret = find_set_values(&ssp_link_data[0], ARRAY_SIZE(ssp_link_data), cfg, top,
+			      "Class.Base.link_config");
+	if (ret < 0)
+		return ret;
+
+	return ssp_link_set_params(nhlt, clock_source);
+}
+
+static int set_aux_params(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
+{
+	struct aux_map {
+		const char *name;
+		int id;
+	};
+
+	struct aux_map aux_maps[] = {
+		{ "Object.Base.mn_config", SSP_MN_DIVIDER_CONTROLS },
+		{"Object.Base.clk_config", SSP_DMA_CLK_CONTROLS },
+		{"Object.Base.tr_start_config", SSP_DMA_TRANSMISSION_START },
+		{"Object.Base.tr_stop_config", SSP_DMA_TRANSMISSION_STOP },
+		{"Object.Base.run_config", SSP_DMA_ALWAYS_RUNNING_MODE} ,
+		{"Object.Base.sync_config", SSP_DMA_SYNC_DATA },
+		{"Object.Base.ext_config", SSP_DMA_CLK_CONTROLS_EXT },
+		{"Object.Base.link_config", SSP_LINK_CLK_SOURCE },
+		{"Object.Base.node_config", SSP_DMA_SYNC_NODE },
+	};
+
+	snd_config_iterator_t iter, next;
+	snd_config_t *items, *n;
+	const char *id;
+	int i, ret = 0;
+
+	for (i = 0; i < ARRAY_SIZE(aux_maps); i++) {
+		if (snd_config_search(cfg, aux_maps[i].name, &items) < 0)
+			continue;
+
+		snd_config_for_each(iter, next, items) {
+			n = snd_config_iterator_entry(iter);
+
+			if (snd_config_get_id(n, &id) < 0)
+				continue;
+
+			switch(aux_maps[i].id) {
+			case SSP_MN_DIVIDER_CONTROLS:
+				ret = set_mn_config(nhlt, n, top);
+				break;
+			case SSP_DMA_CLK_CONTROLS:
+				ret = set_clk_config(nhlt, n, top);
+				break;
+			case SSP_DMA_TRANSMISSION_START:
+				ret = set_tr_start_config(nhlt, n, top);
+				break;
+			case SSP_DMA_TRANSMISSION_STOP:
+				ret = set_tr_stop_config(nhlt, n, top);
+				break;
+			case SSP_DMA_ALWAYS_RUNNING_MODE:
+				ret = set_run_config(nhlt, n, top);
+				break;
+			case SSP_DMA_SYNC_DATA:
+				ret = set_sync_config(nhlt, n, top);
+				break;
+			case SSP_DMA_CLK_CONTROLS_EXT:
+				ret = set_ext_config(nhlt, n, top);
+				break;
+			case SSP_LINK_CLK_SOURCE:
+				ret = set_link_config(nhlt, n, top);
+				break;
+			case SSP_DMA_SYNC_NODE:
+				ret = set_node_config(nhlt, n, top);
+				break;
+			default:
+				ret = -EINVAL;
+			}
+
+			if (ret < 0)
+				return ret;
+		}
+	}
+
+	return ret;
 }
 
 static int set_hw_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
@@ -91,9 +380,49 @@ static int set_hw_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_
 	if (ret < 0)
 		return ret;
 
+	ret = set_aux_params(nhlt, cfg, top);
+	if (ret < 0)
+		return ret;
+
 	return ssp_hw_set_params(nhlt, format, mclk, bclk, bclk_invert, fsync, fsync_invert,
 				 mclk_freq, bclk_freq, fsync_freq, tdm_slots, tdm_slot_width,
 				 tx_slots, rx_slots);
+}
+
+static int set_ssp_data(struct intel_nhlt_params *nhlt, snd_config_t *dai_cfg, snd_config_t *top)
+{
+	const char *tdm_padding_per_slot = NULL;
+	const char *direction = NULL;
+	const char *quirks = NULL;
+	long frame_pulse_width = 0;
+	long clks_control = 0;
+	long sample_bits = 0;
+	long bclk_delay = 0;
+	long dai_index = 0;
+	long mclk_id = 0;
+	long io_clk = 0;
+	int ret;
+
+	struct dai_values ssp_data[] = {
+		{ "io_clk",  SND_CONFIG_TYPE_INTEGER, NULL, &io_clk, NULL},
+		{ "direction", SND_CONFIG_TYPE_STRING, NULL, NULL, &direction},
+		{ "quirks", SND_CONFIG_TYPE_STRING, NULL, NULL, &quirks},
+		{ "dai_index", SND_CONFIG_TYPE_INTEGER, NULL, &dai_index, NULL},
+		{ "sample_bits", SND_CONFIG_TYPE_INTEGER, NULL, &sample_bits, NULL},
+		{ "bclk_delay", SND_CONFIG_TYPE_INTEGER, NULL, &bclk_delay, NULL},
+		{ "mclk_id", SND_CONFIG_TYPE_INTEGER, NULL, &mclk_id, NULL},
+		{ "clks_control", SND_CONFIG_TYPE_INTEGER, NULL, &clks_control, NULL},
+		{ "frame_pulse_width", SND_CONFIG_TYPE_INTEGER, NULL, &frame_pulse_width, NULL},
+		{ "tdm_padding_per_slot", SND_CONFIG_TYPE_STRING, NULL, NULL,
+		  &tdm_padding_per_slot},
+	};
+
+	ret = find_set_values(&ssp_data[0], ARRAY_SIZE(ssp_data), dai_cfg, top, "Class.Dai.SSP");
+	if (ret < 0)
+		return ret;
+
+	return ssp_set_params(nhlt, direction, dai_index, io_clk, bclk_delay, sample_bits, mclk_id,
+			      clks_control, frame_pulse_width, tdm_padding_per_slot, quirks);
 }
 
 /* init ssp parameters, should be called before parsing dais */
@@ -194,7 +523,7 @@ int nhlt_ssp_get_ep(struct intel_nhlt_params *nhlt, struct endpoint_descriptor *
 		f_conf1[i].format.SubFormat[2] = 0;
 		f_conf1[i].format.SubFormat[3] = 0;
 
-		ret = ssp_get_vendor_blob_size(nhlt, &blob_size);
+		ret = ssp_get_vendor_blob_size(nhlt, dai_index, i, &blob_size);
 		if (ret < 0) {
 			fprintf(stderr, "nhlt_ssp_get_ep: dmic_get_vendor_blob_size failed\n");
 			return ret;

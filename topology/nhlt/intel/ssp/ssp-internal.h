@@ -16,7 +16,91 @@
 #define SSP_MAX_HW_CONFIG 8
 #define SSP_TDM_MAX_SLOT_MAP_COUNT 8
 
+struct ssp_aux_config_mn {
+	uint32_t m_div;
+	uint32_t n_div;
+};
 
+struct ssp_aux_config_clk {
+	uint32_t clock_warm_up;
+	uint32_t mclk;
+	uint32_t warm_up_ovr;
+	uint32_t clock_stop_delay;
+	uint32_t keep_running;
+	uint32_t clock_stop_ovr;
+};
+
+struct ssp_aux_config_tr {
+	uint32_t sampling_frequency;
+	uint32_t bit_depth;
+	uint32_t channel_map;
+	uint32_t channel_config;
+	uint32_t interleaving_style;
+        uint32_t number_of_channels;
+        uint32_t valid_bit_depth;
+        uint32_t sample_type;
+};
+
+struct ssp_aux_config_run {
+	uint32_t always_run;
+};
+
+struct ssp_aux_config_node {
+	uint32_t node_id;
+	uint32_t sampling_rate;
+};
+
+struct ssp_aux_config_sync {
+	uint32_t sync_denominator;
+	uint32_t count;
+	struct ssp_aux_config_node nodes[SSP_MAX_DAIS];
+};
+
+struct ssp_aux_config_ext {
+	uint32_t mclk_policy_override;
+	uint32_t mclk_always_running;
+	uint32_t mclk_starts_on_gtw_init;
+	uint32_t mclk_starts_on_run;
+	uint32_t mclk_starts_on_pause;
+	uint32_t mclk_stops_on_pause;
+	uint32_t mclk_stops_on_reset;
+	uint32_t bclk_policy_override;
+	uint32_t bclk_always_running;
+	uint32_t bclk_starts_on_gtw_init;
+	uint32_t bclk_starts_on_run;
+	uint32_t bclk_starts_on_pause;
+	uint32_t bclk_stops_on_pause;
+	uint32_t bclk_stops_on_reset;
+	uint32_t sync_policy_override;
+	uint32_t sync_always_running;
+	uint32_t sync_starts_on_gtw_init;
+	uint32_t sync_starts_on_run;
+	uint32_t sync_starts_on_pause;
+	uint32_t sync_stops_on_pause;
+	uint32_t sync_stops_on_reset;
+};
+
+struct ssp_aux_config_link {
+	uint32_t clock_source;
+};
+
+struct ssp_config_aux {
+	/* bits set for found aux structs */
+	uint32_t enabled;
+	struct ssp_aux_config_mn mn;
+	struct ssp_aux_config_clk clk;
+	struct ssp_aux_config_tr tr_start;
+	struct ssp_aux_config_tr tr_stop;
+	struct ssp_aux_config_run run;
+	struct ssp_aux_config_sync sync;
+	struct ssp_aux_config_ext ext;
+	struct ssp_aux_config_link link;
+};
+
+struct ssp_aux_blob {
+	uint32_t size;
+	uint8_t aux_blob[256];
+};
 
 /* structs for gathering the ssp parameters from topology */
 struct ssp_config_hw {
@@ -43,6 +127,7 @@ struct ssp_config_dai {
 	uint32_t bclk_delay;
 	uint8_t direction;
 	struct ssp_config_hw hw_cfg[SSP_MAX_HW_CONFIG];
+	struct ssp_config_aux aux_cfg[SSP_MAX_HW_CONFIG];
 };
 
 struct intel_ssp_params {
@@ -54,7 +139,19 @@ struct intel_ssp_params {
 
 	/* ssp vendor blob structs */
 	struct ssp_intel_config_data ssp_blob[SSP_MAX_DAIS][SSP_MAX_HW_CONFIG];
+	struct ssp_aux_blob ssp_blob_ext[SSP_MAX_DAIS][SSP_MAX_HW_CONFIG];
 };
+
+#define SSP_MN_DIVIDER_CONTROLS                 0
+#define SSP_DMA_CLK_CONTROLS                    1
+#define SSP_DMA_TRANSMISSION_START              2
+#define SSP_DMA_TRANSMISSION_STOP               3
+#define SSP_DMA_ALWAYS_RUNNING_MODE             4
+#define SSP_DMA_SYNC_DATA                       5
+#define SSP_DMA_CLK_CONTROLS_EXT                6
+#define SSP_LINK_CLK_SOURCE                     7
+/* officially "undefined" node for topology parsing */
+#define SSP_DMA_SYNC_NODE                       32
 
 #define SSP_CLOCK_XTAL_OSCILLATOR       0x0
 #define SSP_CLOCK_AUDIO_CARDINAL        0x1

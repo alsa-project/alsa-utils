@@ -52,4 +52,51 @@ struct ssp_intel_config_data_1_5 {
 	uint32_t mdivr[];
 } __attribute__((packed));
 
+struct ssp_intel_aux_tlv {
+	uint32_t type;
+	uint32_t size;
+	uint32_t val[];
+} __attribute__((packed));
+
+struct ssp_intel_mn_ctl {
+	uint32_t div_m;
+	uint32_t div_n;
+} __attribute__((packed));
+
+struct ssp_intel_clk_ctl {
+	uint32_t start;
+	uint32_t stop;
+} __attribute__((packed));
+
+struct ssp_intel_tr_ctl {
+	uint32_t sampling_frequency;
+	uint32_t bit_depth;
+	uint32_t channel_map;
+	uint32_t channel_config;
+	uint32_t interleaving_style;
+	uint32_t format;
+} __attribute__((packed));
+
+struct ssp_intel_run_ctl {
+	uint32_t enabled;
+} __attribute__((packed));
+
+struct ssp_intel_node_ctl {
+	uint32_t node_id;
+	uint32_t sampling_rate;
+} __attribute__((packed));
+
+struct ssp_intel_sync_ctl {
+	uint32_t sync_denominator;
+	uint32_t count;
+} __attribute__((packed));
+
+struct ssp_intel_ext_ctl {
+	uint32_t ext_data;
+} __attribute__((packed));
+
+struct ssp_intel_link_ctl {
+	uint32_t clock_source;
+} __attribute__((packed));
+
 #endif /* __SSP_INTEL_H */
