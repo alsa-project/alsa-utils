@@ -511,6 +511,186 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	return 0;
 }
 
+static int ssp_calculate_intern_ext(struct intel_nhlt_params *nhlt, int hwi)
+{
+	size_t aux_size, mn_size, clk_size, tr_size, run_size, sync_size, node_size, ext_size,
+		link_size, size, total_size;
+	struct intel_ssp_params *ssp;
+	struct ssp_config_aux *aux;
+	struct ssp_intel_aux_tlv *tlv;
+	struct ssp_intel_mn_ctl *mn;
+	struct ssp_intel_clk_ctl *clk;
+	struct ssp_intel_tr_ctl *tr;
+	struct ssp_intel_run_ctl *run;
+	struct ssp_intel_sync_ctl *sync;
+	struct ssp_intel_node_ctl *node;
+	struct ssp_intel_ext_ctl *ext;
+	struct ssp_intel_link_ctl *link;
+	uint8_t *aux_blob;
+	uint32_t enabled;
+	int di, i;
+
+	aux_size = sizeof(struct ssp_intel_aux_tlv);
+	mn_size = sizeof(struct ssp_intel_mn_ctl);
+	clk_size = sizeof(struct ssp_intel_clk_ctl);
+	tr_size = sizeof(struct ssp_intel_tr_ctl);
+	run_size = sizeof(struct ssp_intel_run_ctl);
+	sync_size = sizeof(struct ssp_intel_sync_ctl);
+	node_size = sizeof(struct ssp_intel_node_ctl);
+	ext_size = sizeof(struct ssp_intel_ext_ctl);
+	link_size = sizeof(struct ssp_intel_link_ctl);
+
+	ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	di = ssp->ssp_count;
+	enabled = ssp->ssp_prm[di].aux_cfg[hwi].enabled;
+	aux = &(ssp->ssp_prm[di].aux_cfg[hwi]);
+	aux_blob = ssp->ssp_blob_ext[di][hwi].aux_blob;
+	total_size = 0;
+	size = 0;
+
+	if (enabled & BIT(SSP_MN_DIVIDER_CONTROLS)) {
+		tlv = (struct ssp_intel_aux_tlv *)aux_blob;
+		mn = (struct ssp_intel_mn_ctl *)(aux_blob + aux_size);
+		size = mn_size + aux_size;
+		tlv->type = SSP_MN_DIVIDER_CONTROLS;
+		tlv->size = mn_size;
+		mn->div_m = aux->mn.m_div;
+		mn->div_n = aux->mn.n_div;
+		aux_blob += size;
+		total_size += size;
+	}
+
+	if (enabled & BIT(SSP_DMA_CLK_CONTROLS)) {
+		tlv = (struct ssp_intel_aux_tlv *)aux_blob;
+		clk = (struct ssp_intel_clk_ctl *)(aux_blob + aux_size);
+		size = clk_size + aux_size;
+		tlv->type = SSP_DMA_CLK_CONTROLS;
+		tlv->size = clk_size;
+		clk->start |= SET_BITS(15, 0, aux->clk.clock_warm_up);
+		clk->start |= SET_BIT(16, aux->clk.mclk);
+		clk->start |= SET_BIT(17, aux->clk.warm_up_ovr);
+		clk->stop |= SET_BITS(15, 0, aux->clk.clock_stop_delay);
+		clk->stop |= SET_BIT(16, aux->clk.keep_running);
+		clk->stop |= SET_BIT(17, aux->clk.clock_stop_ovr);
+		aux_blob += size;
+		total_size += size;
+	}
+
+	if (enabled & BIT(SSP_DMA_TRANSMISSION_START)) {
+		tlv = (struct ssp_intel_aux_tlv *)aux_blob;
+		tr = (struct ssp_intel_tr_ctl *)(aux_blob + aux_size);
+		size = tr_size + aux_size;
+		tlv->type = SSP_DMA_TRANSMISSION_START;
+		tlv->size = tr_size;
+		tr->sampling_frequency = aux->tr_start.sampling_frequency;
+		tr->bit_depth = aux->tr_start.bit_depth;
+		tr->channel_map = aux->tr_start.channel_map;
+		tr->channel_config = aux->tr_start.channel_config;
+		tr->interleaving_style = aux->tr_start.interleaving_style;
+		tr->format |= SET_BITS(7, 0, aux->tr_start.number_of_channels);
+		tr->format |= SET_BITS(15, 8, aux->tr_start.valid_bit_depth);
+		tr->format |= SET_BITS(23, 16, aux->tr_start.sample_type);
+		aux_blob += size;
+		total_size += size;
+	}
+
+	if (enabled & BIT(SSP_DMA_TRANSMISSION_STOP)) {
+		tlv = (struct ssp_intel_aux_tlv *)aux_blob;
+		tr = (struct ssp_intel_tr_ctl *)(aux_blob + aux_size);
+		size = tr_size + aux_size;
+		tlv->type = SSP_DMA_TRANSMISSION_STOP;
+		tlv->size = tr_size;
+		tr->sampling_frequency = aux->tr_stop.sampling_frequency;
+		tr->bit_depth = aux->tr_stop.bit_depth;
+		tr->channel_map = aux->tr_stop.channel_map;
+		tr->channel_config = aux->tr_stop.channel_config;
+		tr->interleaving_style = aux->tr_stop.interleaving_style;
+		tr->format |= SET_BITS(7, 0, aux->tr_stop.number_of_channels);
+		tr->format |= SET_BITS(15, 8, aux->tr_stop.valid_bit_depth);
+		tr->format |= SET_BITS(23, 16, aux->tr_stop.sample_type);
+		aux_blob += size;
+		total_size += size;
+	}
+
+	if (enabled & BIT(SSP_DMA_ALWAYS_RUNNING_MODE)) {
+		tlv = (struct ssp_intel_aux_tlv *)aux_blob;
+		run = (struct ssp_intel_run_ctl *)(aux_blob + aux_size);
+		size = run_size + aux_size;
+		tlv->type = SSP_DMA_ALWAYS_RUNNING_MODE;
+		tlv->size = run_size;
+		run->enabled = aux->run.always_run;
+		aux_blob += size;
+		total_size += size;
+	}
+
+	if (enabled & BIT(SSP_DMA_SYNC_DATA)) {
+		tlv = (struct ssp_intel_aux_tlv *)aux_blob;
+		sync = (struct ssp_intel_sync_ctl *)(aux_blob + aux_size);
+		size = sync_size + aux_size;
+		tlv->type = SSP_DMA_SYNC_DATA;
+		tlv->size = sync_size;
+		sync->sync_denominator = aux->sync.sync_denominator;
+		sync->count = aux->sync.count;
+		aux_blob += size;
+		total_size += size;
+		for (i = 0; i < sync->count; i++) {
+			node = (struct ssp_intel_node_ctl *)(aux_blob);
+			size = node_size;
+			node->node_id = aux->sync.nodes[i].node_id;
+			node->sampling_rate = aux->sync.nodes[i].sampling_rate;
+			tlv->size += node_size;
+			aux_blob += size;
+			total_size += size;
+		}
+	}
+
+	if (enabled & BIT(SSP_DMA_CLK_CONTROLS_EXT)) {
+		tlv = (struct ssp_intel_aux_tlv *)aux_blob;
+		ext = (struct ssp_intel_ext_ctl *)(aux_blob + aux_size);
+		size = ext_size + aux_size;
+		tlv->type = SSP_DMA_CLK_CONTROLS_EXT;
+		tlv->size = ext_size;
+		ext->ext_data |= SET_BIT(0, aux->ext.mclk_policy_override);
+		ext->ext_data |= SET_BIT(1, aux->ext.mclk_always_running);
+		ext->ext_data |= SET_BIT(2, aux->ext.mclk_starts_on_gtw_init);
+		ext->ext_data |= SET_BIT(3, aux->ext.mclk_starts_on_run);
+		ext->ext_data |= SET_BIT(4, aux->ext.mclk_starts_on_pause);
+		ext->ext_data |= SET_BIT(5, aux->ext.mclk_stops_on_pause);
+		ext->ext_data |= SET_BIT(6, aux->ext.mclk_stops_on_reset);
+		ext->ext_data |= SET_BIT(8, aux->ext.bclk_policy_override);
+		ext->ext_data |= SET_BIT(9, aux->ext.bclk_always_running);
+		ext->ext_data |= SET_BIT(10, aux->ext.bclk_starts_on_gtw_init);
+		ext->ext_data |= SET_BIT(11, aux->ext.bclk_starts_on_run);
+		ext->ext_data |= SET_BIT(12, aux->ext.bclk_starts_on_pause);
+		ext->ext_data |= SET_BIT(13, aux->ext.bclk_stops_on_pause);
+		ext->ext_data |= SET_BIT(14, aux->ext.bclk_stops_on_reset);
+		ext->ext_data |= SET_BIT(16, aux->ext.sync_policy_override);
+		ext->ext_data |= SET_BIT(17, aux->ext.sync_always_running);
+		ext->ext_data |= SET_BIT(18, aux->ext.sync_starts_on_gtw_init);
+		ext->ext_data |= SET_BIT(19, aux->ext.sync_starts_on_run);
+		ext->ext_data |= SET_BIT(20, aux->ext.sync_starts_on_pause);
+		ext->ext_data |= SET_BIT(21, aux->ext.sync_stops_on_pause);
+		ext->ext_data |= SET_BIT(22, aux->ext.sync_stops_on_reset);
+		aux_blob += size;
+		total_size += size;
+	}
+
+	if (enabled & BIT(SSP_LINK_CLK_SOURCE)) {
+		tlv = (struct ssp_intel_aux_tlv *)aux_blob;
+		link = (struct ssp_intel_link_ctl *)(aux_blob + aux_size);
+		size = link_size + aux_size;
+		tlv->type = SSP_LINK_CLK_SOURCE;
+		tlv->size = link_size;
+		link->clock_source = aux->link.clock_source;
+		aux_blob += size;
+		total_size += size;
+	}
+
+	ssp->ssp_blob_ext[di][hwi].size = total_size;
+
+	return 0;
+}
+
 int ssp_calculate(struct intel_nhlt_params *nhlt)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
@@ -520,9 +700,12 @@ int ssp_calculate(struct intel_nhlt_params *nhlt)
 		return -EINVAL;
 
 	/* calculate blob for every hw config */
-	for (i = 0; i < ssp->ssp_hw_config_count[ssp->ssp_count]; i++)
+	for (i = 0; i < ssp->ssp_hw_config_count[ssp->ssp_count]; i++) {
 		if (ssp_calculate_intern(nhlt, i) < 0)
 			return -EINVAL;
+		if (ssp_calculate_intern_ext(nhlt, i) < 0)
+			return -EINVAL;
+	}
 
 	ssp_print_internal(ssp);
 	ssp_print_calculated(ssp);
@@ -579,9 +762,13 @@ int ssp_get_hw_params(struct intel_nhlt_params *nhlt, int dai_index, int hw_inde
  * Supposed to be called after all ssp DAIs are parsed from topology and the final nhlt blob is
  * generated.
  */
-int ssp_get_vendor_blob_size(struct intel_nhlt_params *nhlt, size_t *size)
+int ssp_get_vendor_blob_size(struct intel_nhlt_params *nhlt, int dai_index,
+			     int hw_config_index, size_t *size)
 {
-	*size = sizeof(struct ssp_intel_config_data);
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+
+	*size = sizeof(struct ssp_intel_config_data) +
+		ssp->ssp_blob_ext[dai_index][hw_config_index].size;
 
 	return 0;
 }
@@ -608,6 +795,11 @@ int ssp_get_vendor_blob(struct intel_nhlt_params *nhlt, uint8_t *vendor_blob,
 	/* top level struct */
 	memcpy(vendor_blob, &ssp->ssp_blob[dai_index][hw_config_index],
 	       sizeof(struct ssp_intel_config_data));
+
+	/* ext data */
+	memcpy(vendor_blob + sizeof(struct ssp_intel_config_data),
+	       ssp->ssp_blob_ext[dai_index][hw_config_index].aux_blob,
+	       ssp->ssp_blob_ext[dai_index][hw_config_index].size);
 
 	return 0;
 }
@@ -726,11 +918,224 @@ int ssp_hw_set_params(struct intel_nhlt_params *nhlt, const char *format, const 
 	return 0;
 }
 
+int ssp_mn_set_params(struct intel_nhlt_params *nhlt, int m_div, int n_div)
+{
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	int di = ssp->ssp_count;
+	int hwi = ssp->ssp_hw_config_count[di];
+
+	if (di < 0 || hwi < 0)
+		return -EINVAL;
+
+	ssp->ssp_prm[di].aux_cfg[hwi].enabled |= BIT(SSP_MN_DIVIDER_CONTROLS);
+
+	ssp->ssp_prm[di].aux_cfg[hwi].mn.m_div = m_div;
+	ssp->ssp_prm[di].aux_cfg[hwi].mn.n_div = n_div;
+
+	return 0;
+}
+
+int ssp_clk_set_params(struct intel_nhlt_params *nhlt, int clock_warm_up, int mclk, int warm_up_ovr,
+		       int clock_stop_delay, int keep_running, int clock_stop_ovr)
+{
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	int di = ssp->ssp_count;
+	int hwi = ssp->ssp_hw_config_count[di];
+
+	if (di < 0 || hwi < 0)
+		return -EINVAL;
+
+	ssp->ssp_prm[di].aux_cfg[hwi].enabled |= BIT(SSP_DMA_CLK_CONTROLS);
+
+	ssp->ssp_prm[di].aux_cfg[hwi].clk.clock_warm_up = clock_warm_up;
+	ssp->ssp_prm[di].aux_cfg[hwi].clk.mclk = mclk;
+	ssp->ssp_prm[di].aux_cfg[hwi].clk.warm_up_ovr = warm_up_ovr;
+	ssp->ssp_prm[di].aux_cfg[hwi].clk.clock_stop_delay = clock_stop_delay;
+	ssp->ssp_prm[di].aux_cfg[hwi].clk.keep_running = keep_running;
+	ssp->ssp_prm[di].aux_cfg[hwi].clk.clock_stop_ovr = clock_stop_ovr;
+
+	return 0;
+}
+
+int ssp_tr_start_set_params(struct intel_nhlt_params *nhlt, int sampling_frequency,
+			    int bit_depth, int channel_map, int channel_config,
+			    int interleaving_style, int number_of_channels,
+			    int valid_bit_depth, int sample_type)
+{
+	struct intel_ssp_params *ssp;
+	struct ssp_aux_config_tr *tr;
+	int di, hwi;
+
+	ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	di = ssp->ssp_count;
+	hwi = ssp->ssp_hw_config_count[di];
+	if (di < 0 || hwi < 0)
+		return -EINVAL;
+	tr = (struct ssp_aux_config_tr *)&(ssp->ssp_prm[di].aux_cfg[hwi].tr_start);
+
+	ssp->ssp_prm[di].aux_cfg[hwi].enabled |= BIT(SSP_DMA_TRANSMISSION_START);
+
+	tr->sampling_frequency = sampling_frequency;
+	tr->bit_depth = bit_depth;
+	tr->channel_map = channel_map;
+	tr->channel_config = channel_config;
+	tr->interleaving_style = interleaving_style;
+	tr->number_of_channels = number_of_channels;
+	tr->valid_bit_depth = valid_bit_depth;
+	tr->sample_type = sample_type;
+
+	return 0;
+}
+
+int ssp_tr_stop_set_params(struct intel_nhlt_params *nhlt, int sampling_frequency,
+			    int bit_depth, int channel_map, int channel_config,
+			    int interleaving_style, int number_of_channels,
+			    int valid_bit_depth, int sample_type)
+{
+	struct intel_ssp_params *ssp;
+	struct ssp_aux_config_tr *tr;
+	int di, hwi;
+
+	ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	di = ssp->ssp_count;
+	hwi = ssp->ssp_hw_config_count[di];
+	if (di < 0 || hwi < 0)
+		return -EINVAL;
+	tr = (struct ssp_aux_config_tr *)&(ssp->ssp_prm[di].aux_cfg[hwi].tr_stop);
+
+	ssp->ssp_prm[di].aux_cfg[hwi].enabled |= BIT(SSP_DMA_TRANSMISSION_STOP);
+
+	tr->sampling_frequency = sampling_frequency;
+	tr->bit_depth = bit_depth;
+	tr->channel_map = channel_map;
+	tr->channel_config = channel_config;
+	tr->interleaving_style = interleaving_style;
+	tr->number_of_channels = number_of_channels;
+	tr->valid_bit_depth = valid_bit_depth;
+	tr->sample_type = sample_type;
+
+	return 0;
+}
+
+int ssp_run_set_params(struct intel_nhlt_params *nhlt, int always_run)
+{
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	int di = ssp->ssp_count;
+	int hwi = ssp->ssp_hw_config_count[di];
+
+	if (di < 0 || hwi < 0)
+		return -EINVAL;
+
+	ssp->ssp_prm[di].aux_cfg[hwi].enabled |= BIT(SSP_DMA_ALWAYS_RUNNING_MODE);
+
+	ssp->ssp_prm[di].aux_cfg[hwi].run.always_run = always_run;
+
+	return 0;
+}
+
+int ssp_sync_set_params(struct intel_nhlt_params *nhlt, int sync_denominator)
+{
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	int di = ssp->ssp_count;
+	int hwi = ssp->ssp_hw_config_count[di];
+
+	if (di < 0 || hwi < 0)
+		return -EINVAL;
+
+	ssp->ssp_prm[di].aux_cfg[hwi].enabled |= BIT(SSP_DMA_SYNC_DATA);
+
+	ssp->ssp_prm[di].aux_cfg[hwi].sync.sync_denominator = sync_denominator;
+
+	return 0;
+}
+
+int ssp_node_set_params(struct intel_nhlt_params *nhlt, int node_id, int sampling_rate)
+{
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	int di = ssp->ssp_count;
+	int hwi = ssp->ssp_hw_config_count[di];
+	int count;
+
+	if (di < 0 || hwi < 0)
+		return -EINVAL;
+
+	count = ssp->ssp_prm[di].aux_cfg[hwi].sync.count;
+	if (count > SSP_MAX_DAIS)
+		return -EINVAL;
+
+	ssp->ssp_prm[di].aux_cfg[hwi].sync.nodes[count].node_id = node_id;
+	ssp->ssp_prm[di].aux_cfg[hwi].sync.nodes[count].sampling_rate = sampling_rate;
+
+	ssp->ssp_prm[di].aux_cfg[hwi].sync.count++;
+
+	return 0;
+}
+
+int ssp_ext_set_params(struct intel_nhlt_params *nhlt, int mclk_policy_override,
+		       int mclk_always_running, int mclk_starts_on_gtw_init, int mclk_starts_on_run,
+		       int mclk_starts_on_pause, int mclk_stops_on_pause, int mclk_stops_on_reset,
+		       int bclk_policy_override, int bclk_always_running,
+		       int bclk_starts_on_gtw_init, int bclk_starts_on_run,
+		       int bclk_starts_on_pause, int bclk_stops_on_pause, int bclk_stops_on_reset,
+		       int sync_policy_override, int sync_always_running,
+		       int sync_starts_on_gtw_init, int sync_starts_on_run,
+		       int sync_starts_on_pause, int sync_stops_on_pause, int sync_stops_on_reset)
+{
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	int di = ssp->ssp_count;
+	int hwi = ssp->ssp_hw_config_count[di];
+
+	if (di < 0 || hwi < 0)
+		return -EINVAL;
+
+	ssp->ssp_prm[di].aux_cfg[hwi].enabled |= BIT(SSP_DMA_CLK_CONTROLS_EXT);
+
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.mclk_policy_override = mclk_policy_override;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.mclk_always_running = mclk_always_running;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.mclk_starts_on_gtw_init  = mclk_starts_on_gtw_init;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.mclk_starts_on_run = mclk_starts_on_run;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.mclk_starts_on_pause = mclk_starts_on_pause;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.mclk_stops_on_pause = mclk_stops_on_pause;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.mclk_stops_on_reset = mclk_stops_on_reset;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.bclk_policy_override = bclk_policy_override;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.bclk_always_running = bclk_always_running;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.bclk_starts_on_gtw_init = bclk_starts_on_gtw_init;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.bclk_starts_on_run = bclk_starts_on_run;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.bclk_starts_on_pause = bclk_starts_on_pause;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.bclk_stops_on_pause = bclk_stops_on_pause;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.bclk_stops_on_reset = bclk_stops_on_reset;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.sync_policy_override = sync_policy_override;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.sync_always_running = sync_always_running;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.sync_starts_on_gtw_init = sync_starts_on_gtw_init;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.sync_starts_on_run = sync_starts_on_run;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.sync_starts_on_pause = sync_starts_on_pause;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.sync_stops_on_pause = sync_stops_on_pause;
+	ssp->ssp_prm[di].aux_cfg[hwi].ext.sync_stops_on_reset = sync_stops_on_reset;
+
+	return 0;
+}
+
+int ssp_link_set_params(struct intel_nhlt_params *nhlt, int clock_source)
+{
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	int di = ssp->ssp_count;
+	int hwi = ssp->ssp_hw_config_count[di];
+
+	if (di < 0 || hwi < 0)
+		return -EINVAL;
+
+	ssp->ssp_prm[di].aux_cfg[hwi].enabled |= BIT(SSP_LINK_CLK_SOURCE);
+
+	ssp->ssp_prm[di].aux_cfg[hwi].link.clock_source = clock_source;
+
+	return 0;
+}
+
 /* init ssp parameters, should be called before parsing dais */
 int ssp_init_params(struct intel_nhlt_params *nhlt)
 {
 	struct intel_ssp_params *ssp;
-	int i;
+	int i, j;
 
 	ssp = calloc(1, sizeof(struct intel_ssp_params));
 	if (!ssp)
@@ -739,8 +1144,11 @@ int ssp_init_params(struct intel_nhlt_params *nhlt)
 	nhlt->ssp_params = ssp;
 	ssp->ssp_count = 0;
 
-	for (i = 0; i < SSP_MAX_DAIS; i++)
+	for (i = 0; i < SSP_MAX_DAIS; i++) {
 		ssp->ssp_hw_config_count[i] = 0;
+		for (j = 0; j < SSP_MAX_HW_CONFIG; j++)
+			ssp->ssp_prm[i].aux_cfg[j].sync.count = 0;
+	}
 
 	return 0;
 }
