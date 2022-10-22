@@ -1,4 +1,4 @@
-POFILES = ja.po ru.po
+POFILES = ja.po ka.po ru.po
 
 DOMAIN = alsaconf
 GETTEXT_SRC = ../alsaconf.in
