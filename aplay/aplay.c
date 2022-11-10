@@ -1002,6 +1002,7 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 	u_int type, len;
 	unsigned short format, channels;
 	int big_endian, native_format;
+	u_char vbps = 0;
 
 	if (size < sizeof(WaveHeader))
 		return -1;
@@ -1058,6 +1059,7 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 			error(_("wrong format tag in extensible 'fmt ' chunk"));
 			prg_exit(EXIT_FAILURE);
 		}
+		vbps = TO_CPU_SHORT(fe->bit_p_spl, big_endian);
 		format = TO_CPU_SHORT(fe->guid_format, big_endian);
 	}
 	if (format != WAV_FMT_PCM &&
@@ -1071,6 +1073,10 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 		prg_exit(EXIT_FAILURE);
 	}
 	hwparams.channels = channels;
+	if (vbps > TO_CPU_SHORT(f->bit_p_spl, big_endian)) {
+		error(_("valid bps greater than bps: %d > %d"), vbps, TO_CPU_SHORT(f->bit_p_spl, big_endian));
+		prg_exit(EXIT_FAILURE);
+	}
 	switch (TO_CPU_SHORT(f->bit_p_spl, big_endian)) {
 	case 8:
 		if (hwparams.format != DEFAULT_FORMAT &&
@@ -1123,10 +1129,20 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 		break;
 	case 32:
 		if (format == WAV_FMT_PCM) {
-			if (big_endian)
-				native_format = SND_PCM_FORMAT_S32_BE;
-			else
-				native_format = SND_PCM_FORMAT_S32_LE;
+			switch (vbps) {
+			case 24:
+				if (big_endian)
+					native_format = SND_PCM_FORMAT_S24_BE;
+				else
+					native_format = SND_PCM_FORMAT_S24_LE;
+				break;
+			default:
+				if (big_endian)
+					native_format = SND_PCM_FORMAT_S32_BE;
+				else
+					native_format = SND_PCM_FORMAT_S32_LE;
+				break;
+			}
                         hwparams.format = native_format;
 		} else if (format == WAV_FMT_IEEE_FLOAT) {
 			if (big_endian)
