@@ -28,6 +28,15 @@ Prints the current version.
 Prints a list of possible input ports.
 
 .TP
+.I \-u,\-\-ump=version
+Sets the client MIDI version.
+0 is for legacy mode, 1 is UMP MIDI 1.0 mode, and 2 is UMP MIDI 2.0 mode.
+
+.TP
+.I \-r,\-\-raw
+Suppress the automatic conversion of events among UMP and legacy clients.
+
+.TP
 .I \-p,\-\-port=client:port,...
 Sets the sequencer port(s) from which events are received.
 
