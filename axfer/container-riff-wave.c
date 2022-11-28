@@ -36,6 +36,7 @@ enum wave_format {
 	WAVE_FORMAT_ALAW		= 0x0006,
 	WAVE_FORMAT_MULAW		= 0x0007,
 	WAVE_FORMAT_G723_ADPCM		= 0x0014,
+	WAVE_FORMAT_EXTENSIBLE		= 0xFFFE,
 	// The others are not supported.
 };
 
@@ -64,6 +65,10 @@ static const struct format_map format_maps[] = {
 	{WAVE_FORMAT_IEEE_FLOAT, SND_PCM_FORMAT_FLOAT64_BE},
 	{WAVE_FORMAT_ALAW,	SND_PCM_FORMAT_A_LAW},
 	{WAVE_FORMAT_MULAW,	SND_PCM_FORMAT_MU_LAW},
+	{WAVE_FORMAT_EXTENSIBLE, SND_PCM_FORMAT_S24_LE},
+	{WAVE_FORMAT_EXTENSIBLE, SND_PCM_FORMAT_S24_BE},
+	{WAVE_FORMAT_EXTENSIBLE, SND_PCM_FORMAT_S32_LE},
+	{WAVE_FORMAT_EXTENSIBLE, SND_PCM_FORMAT_S32_BE},
 	// Below sample formats are not currently supported, due to width of
 	// its sample.
 	//  - WAVE_FORMAT_ADPCM
@@ -103,7 +108,10 @@ struct wave_fmt_subchunk {
 	uint32_t average_bytes_per_second;
 	uint16_t bytes_per_frame;
 	uint16_t bits_per_sample;
-	uint8_t extension[0];
+	uint16_t extension_size;
+	uint16_t valid_bits_per_sample;
+	uint32_t sample_mask;
+	uint8_t guid[16];
 };
 
 struct wave_data_subchunk {
@@ -121,6 +129,7 @@ struct parser_state {
 	unsigned int average_bytes_per_second;
 	unsigned int bytes_per_frame;
 	unsigned int bytes_per_sample;
+	unsigned int valid_bits_per_sample;
 	unsigned int avail_bits_in_sample;
 	unsigned int byte_count;
 };
@@ -194,6 +203,14 @@ static int parse_wave_fmt_subchunk(struct parser_state *state,
 		state->bytes_per_frame = be16toh(subchunk->bytes_per_frame);
 		state->avail_bits_in_sample =
 					be16toh(subchunk->bits_per_sample);
+
+		if (state->format == WAVE_FORMAT_EXTENSIBLE) {
+			if (be16toh(subchunk->extension_size) != 22)
+				return -EINVAL;
+
+			state->avail_bits_in_sample =
+					be16toh(subchunk->valid_bits_per_sample);
+		}
 	} else {
 		state->format = le16toh(subchunk->format);
 		state->samples_per_frame = le16toh(subchunk->samples_per_frame);
@@ -203,6 +220,14 @@ static int parse_wave_fmt_subchunk(struct parser_state *state,
 		state->bytes_per_frame = le16toh(subchunk->bytes_per_frame);
 		state->avail_bits_in_sample =
 					le16toh(subchunk->bits_per_sample);
+
+		if (state->format == WAVE_FORMAT_EXTENSIBLE) {
+			if (le16toh(subchunk->extension_size) != 22)
+				return -EINVAL;
+
+			state->avail_bits_in_sample =
+					le16toh(subchunk->valid_bits_per_sample);
+		}
 	}
 
 	if (state->average_bytes_per_second !=
