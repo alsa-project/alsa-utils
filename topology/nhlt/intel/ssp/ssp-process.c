@@ -519,15 +519,14 @@ int ssp_calculate(struct intel_nhlt_params *nhlt)
 	if (!ssp)
 		return -EINVAL;
 
-	ssp_print_internal(ssp);
-
 	/* calculate blob for every hw config */
 	for (i = 0; i < ssp->ssp_hw_config_count[ssp->ssp_count]; i++)
 		ssp_calculate_intern(nhlt, i);
 
-	ssp->ssp_count++;
-
+	ssp_print_internal(ssp);
 	ssp_print_calculated(ssp);
+
+	ssp->ssp_count++;
 
 	return 0;
 }
