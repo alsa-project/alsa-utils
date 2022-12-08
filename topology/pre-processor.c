@@ -98,7 +98,7 @@ static int run_plugin(struct tplg_pre_processor *tplg_pp, char *plugin)
 	}
 
 	/* process plugin */
-	process(tplg_pp->input_cfg, tplg_pp->output_cfg);
+	ret = process(tplg_pp->input_cfg, tplg_pp->output_cfg);
 
 err:
 	if (h)
@@ -689,7 +689,7 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 	/* process topology plugins */
 	err = pre_process_plugins(tplg_pp);
 	if (err < 0) {
-		fprintf(stderr, "Unable to run pre-process plugins\n");
+		fprintf(stderr, "Unable to run pre-process plugins or plugins return error\n");
 		goto err;
 	}
 

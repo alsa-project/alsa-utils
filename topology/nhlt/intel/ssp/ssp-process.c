@@ -521,7 +521,8 @@ int ssp_calculate(struct intel_nhlt_params *nhlt)
 
 	/* calculate blob for every hw config */
 	for (i = 0; i < ssp->ssp_hw_config_count[ssp->ssp_count]; i++)
-		ssp_calculate_intern(nhlt, i);
+		if (ssp_calculate_intern(nhlt, i) < 0)
+			return -EINVAL;
 
 	ssp_print_internal(ssp);
 	ssp_print_calculated(ssp);
