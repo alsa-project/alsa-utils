@@ -775,7 +775,7 @@ static int write_block_terminator(struct container_context *cntr)
 static int write_data_size(struct container_context *cntr, uint64_t byte_count)
 {
 	struct builder_state *state = cntr->private_data;
-	off64_t offset;
+	off_t offset;
 	uint8_t size_field[3];
 	int err;
 

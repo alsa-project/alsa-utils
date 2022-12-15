@@ -113,11 +113,11 @@ enum container_format container_format_from_path(const char *path)
 	return CONTAINER_FORMAT_RAW;
 }
 
-int container_seek_offset(struct container_context *cntr, off64_t offset)
+int container_seek_offset(struct container_context *cntr, off_t offset)
 {
-	off64_t pos;
+	off_t pos;
 
-	pos = lseek64(cntr->fd, offset, SEEK_SET);
+	pos = lseek(cntr->fd, offset, SEEK_SET);
 	if (pos < 0)
 		return -errno;
 	if (pos != offset)

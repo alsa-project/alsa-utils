@@ -153,7 +153,7 @@ static int callback(struct test_generator *gen, snd_pcm_access_t access,
 
 	for (i = 0; i < ARRAY_SIZE(entries); ++i) {
 		int fd;
-		off64_t pos;
+		off_t pos;
 
 		frames_per_second = entries[i];
 
@@ -172,7 +172,7 @@ static int callback(struct test_generator *gen, snd_pcm_access_t access,
 			     frames_per_second, frame_buffer, frame_count,
 			     trial->verbose);
 
-		pos = lseek64(fd, 0, SEEK_SET);
+		pos = lseek(fd, 0, SEEK_SET);
 		if (pos < 0) {
 			err = -errno;
 			break;

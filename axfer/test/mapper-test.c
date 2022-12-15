@@ -257,7 +257,7 @@ static int test_mapper(struct mapper_trial *trial, snd_pcm_access_t access,
 		goto end;
 
 	for (i = 0; i < cntr_count; ++i) {
-		off64_t pos = lseek64(cntr_fds[i], 0, SEEK_SET);
+		off_t pos = lseek(cntr_fds[i], 0, SEEK_SET);
 		if (pos != 0) {
 			err = -EIO;
 			goto end;
