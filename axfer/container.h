@@ -107,7 +107,7 @@ int container_recursive_read(struct container_context *cntr, void *buf,
 			     unsigned int byte_count);
 int container_recursive_write(struct container_context *cntr, void *buf,
 			      unsigned int byte_count);
-int container_seek_offset(struct container_context *cntr, off64_t offset);
+int container_seek_offset(struct container_context *cntr, off_t offset);
 
 extern const struct container_parser container_parser_riff_wave;
 extern const struct container_builder container_builder_riff_wave;

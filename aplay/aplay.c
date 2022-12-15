@@ -141,7 +141,7 @@ static long term_c_lflag = -1;
 static int dump_hw_params = 0;
 
 static int fd = -1;
-static off64_t pbrec_count = LLONG_MAX, fdcount;
+static off_t pbrec_count = LLONG_MAX, fdcount;
 static int vocmajor, vocminor;
 
 static char *pidfile_name = NULL;
@@ -2356,7 +2356,7 @@ static void voc_play(int fd, int ofs, char *name)
 	u_char *data, *buf;
 	char was_extended = 0, output = 0;
 	u_short *sp, repeat = 0;
-	off64_t filepos = 0;
+	off_t filepos = 0;
 
 #define COUNT(x)	nextblock -= x; in_buffer -= x; data += x
 #define COUNT1(x)	in_buffer -= x; data += x
@@ -2490,7 +2490,7 @@ static void voc_play(int fd, int ofs, char *name)
 				d_printf("Repeat loop %d times\n", repeat);
 #endif
 				if (filepos >= 0) {	/* if < 0, one seek fails, why test another */
-					if ((filepos = lseek64(fd, 0, 1)) < 0) {
+					if ((filepos = lseek(fd, 0, 1)) < 0) {
 						error(_("can't play loops; %s isn't seekable\n"), name);
 						repeat = 0;
 					} else {
@@ -2512,7 +2512,7 @@ static void voc_play(int fd, int ofs, char *name)
 					else
 						d_printf("Neverending loop\n");
 #endif
-					lseek64(fd, filepos, 0);
+					lseek(fd, filepos, 0);
 					in_buffer = 0;	/* clear the buffer */
 					goto Fill_the_buffer;
 				}
@@ -2578,9 +2578,9 @@ static void init_raw_data(void)
 }
 
 /* calculate the data count to read from/to dsp */
-static off64_t calc_count(void)
+static off_t calc_count(void)
 {
-	off64_t count;
+	off_t count;
 
 	if (timelimit == 0)
 		if (sampleslimit == 0)
@@ -2589,7 +2589,7 @@ static off64_t calc_count(void)
 			count = snd_pcm_format_size(hwparams.format, sampleslimit * hwparams.channels);
 	else {
 		count = snd_pcm_format_size(hwparams.format, hwparams.rate * hwparams.channels);
-		count *= (off64_t)timelimit;
+		count *= (off_t)timelimit;
 	}
 	return count < pbrec_count ? count : pbrec_count;
 }
@@ -2750,7 +2750,7 @@ static void begin_au(int fd, size_t cnt)
 /* closing .VOC */
 static void end_voc(int fd)
 {
-	off64_t length_seek;
+	off_t length_seek;
 	VocBlockType bt;
 	size_t cnt;
 	char dummy = 0;		/* Write a Terminator */
@@ -2770,15 +2770,15 @@ static void end_voc(int fd)
 	bt.datalen = (u_char) (cnt & 0xFF);
 	bt.datalen_m = (u_char) ((cnt & 0xFF00) >> 8);
 	bt.datalen_h = (u_char) ((cnt & 0xFF0000) >> 16);
-	if (lseek64(fd, length_seek, SEEK_SET) == length_seek)
+	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
 		xwrite(fd, &bt, sizeof(VocBlockType));
 }
 
 static void end_wave(int fd)
 {				/* only close output */
 	WaveChunkHeader cd;
-	off64_t length_seek;
-	off64_t filelen;
+	off_t length_seek;
+	off_t filelen;
 	u_int rifflen;
 	
 	length_seek = sizeof(WaveHeader) +
@@ -2788,20 +2788,20 @@ static void end_wave(int fd)
 	cd.length = fdcount > 0x7fffffff ? LE_INT(0x7fffffff) : LE_INT(fdcount);
 	filelen = fdcount + 2*sizeof(WaveChunkHeader) + sizeof(WaveFmtBody) + 4;
 	rifflen = filelen > 0x7fffffff ? LE_INT(0x7fffffff) : LE_INT(filelen);
-	if (lseek64(fd, 4, SEEK_SET) == 4)
+	if (lseek(fd, 4, SEEK_SET) == 4)
 		xwrite(fd, &rifflen, 4);
-	if (lseek64(fd, length_seek, SEEK_SET) == length_seek)
+	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
 		xwrite(fd, &cd, sizeof(WaveChunkHeader));
 }
 
 static void end_au(int fd)
 {				/* only close output */
 	AuHeader ah;
-	off64_t length_seek;
+	off_t length_seek;
 	
 	length_seek = (char *)&ah.data_size - (char *)&ah;
 	ah.data_size = fdcount > 0xffffffff ? 0xffffffff : BE_INT(fdcount);
-	if (lseek64(fd, length_seek, SEEK_SET) == length_seek)
+	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
 		xwrite(fd, &ah.data_size, sizeof(ah.data_size));
 }
 
@@ -2828,11 +2828,11 @@ static void header(int rtype, char *name)
 
 /* playing raw data */
 
-static void playback_go(int fd, size_t loaded, off64_t count, int rtype, char *name)
+static void playback_go(int fd, size_t loaded, off_t count, int rtype, char *name)
 {
 	int l, r;
-	off64_t written = 0;
-	off64_t c;
+	off_t written = 0;
+	off_t c;
 
 	header(rtype, name);
 	set_params();
@@ -3202,7 +3202,7 @@ static void capture(char *orig_name)
 	int filecount=0;	/* number of files written */
 	char *name = orig_name;	/* current filename */
 	char namebuf[PATH_MAX+2];
-	off64_t count, rest;		/* number of bytes to capture */
+	off_t count, rest;		/* number of bytes to capture */
 	struct stat statbuf;
 
 	/* get number of bytes to capture */
@@ -3273,7 +3273,7 @@ static void capture(char *orig_name)
 		/* capture */
 		fdcount = 0;
 		while (rest > 0 && recycle_capture_file == 0 && !in_aborting) {
-			size_t c = (rest <= (off64_t)chunk_bytes) ?
+			size_t c = (rest <= (off_t)chunk_bytes) ?
 				(size_t)rest : chunk_bytes;
 			size_t f = c * 8 / bits_per_frame;
 			size_t read = pcm_read(audiobuf, f);
@@ -3314,7 +3314,7 @@ static void capture(char *orig_name)
 	} while ((file_type == FORMAT_RAW && !timelimit && !sampleslimit) || count > 0);
 }
 
-static void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t count, int rtype, char **names)
+static void playbackv_go(int* fds, unsigned int channels, size_t loaded, off_t count, int rtype, char **names)
 {
 	int r;
 	size_t vsize;
@@ -3368,7 +3368,7 @@ static void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t
 	}
 }
 
-static void capturev_go(int* fds, unsigned int channels, off64_t count, int rtype, char **names)
+static void capturev_go(int* fds, unsigned int channels, off_t count, int rtype, char **names)
 {
 	size_t c;
 	ssize_t r;
