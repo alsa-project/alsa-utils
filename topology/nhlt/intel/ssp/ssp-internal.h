@@ -102,6 +102,11 @@ struct ssp_aux_blob {
 	uint8_t aux_blob[256];
 };
 
+struct ssp_config_mdivr {
+	uint32_t count;
+	uint32_t mdivrs[8];
+};
+
 /* structs for gathering the ssp parameters from topology */
 struct ssp_config_hw {
 	uint32_t mclk_rate;
@@ -126,8 +131,10 @@ struct ssp_config_dai {
 	uint32_t quirks;
 	uint32_t bclk_delay;
 	uint8_t direction;
+	uint32_t version;
 	struct ssp_config_hw hw_cfg[SSP_MAX_HW_CONFIG];
 	struct ssp_config_aux aux_cfg[SSP_MAX_HW_CONFIG];
+	struct ssp_config_mdivr mdivr[SSP_MAX_HW_CONFIG];
 };
 
 struct intel_ssp_params {
@@ -139,6 +146,7 @@ struct intel_ssp_params {
 
 	/* ssp vendor blob structs */
 	struct ssp_intel_config_data ssp_blob[SSP_MAX_DAIS][SSP_MAX_HW_CONFIG];
+	struct ssp_intel_config_data_1_5 ssp_blob_1_5[SSP_MAX_DAIS][SSP_MAX_HW_CONFIG];
 	struct ssp_aux_blob ssp_blob_ext[SSP_MAX_DAIS][SSP_MAX_HW_CONFIG];
 };
 
