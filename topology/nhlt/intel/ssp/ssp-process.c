@@ -36,6 +36,42 @@ static int popcount(uint32_t value)
 	return bits_set;
 }
 
+static void ssp_calculate_intern_v15(struct intel_nhlt_params *nhlt, int hwi)
+{
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	int di = ssp->ssp_count;;
+	struct ssp_intel_config_data_1_5 *blob15 = &ssp->ssp_blob_1_5[di][hwi];
+	struct ssp_intel_config_data *blob = &ssp->ssp_blob[di][hwi];
+	int i;
+
+	blob15->gateway_attributes = ssp->ssp_blob[di][hwi].gateway_attributes;
+	blob15->version = SSP_BLOB_VER_1_5;
+
+	for (i = 0; i < 8; i++)
+		blob15->ts_group[i] = blob->ts_group[i];
+
+	blob15->ssc0 = blob->ssc0;
+	blob15->ssc1 = blob->ssc1;
+	blob15->sscto = blob->sscto;
+	blob15->sspsp = blob->sspsp;
+	blob15->sstsa = blob->sstsa;
+	blob15->ssrsa = blob->ssrsa;
+	blob15->ssc2 = blob->ssc2;
+	blob15->sspsp2 = blob->sspsp2;
+	blob15->ssc3 = blob->ssc3;
+	blob15->ssioc = blob->ssioc;
+
+	/* for now we use only 1 divider as in legacy */
+	blob15->mdivctlr = blob->mdivc;
+	ssp->ssp_prm[di].mdivr[hwi].count = 1;
+	blob15->mdivrcnt = ssp->ssp_prm[di].mdivr[hwi].count;
+	ssp->ssp_prm[di].mdivr[hwi].mdivrs[0] = blob->mdivr;
+
+	blob15->size = sizeof(struct ssp_intel_config_data_1_5) +
+		blob15->mdivrcnt * sizeof(uint32_t) +
+		ssp->ssp_blob_ext[di][hwi].size;
+}
+
 static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
@@ -691,6 +727,8 @@ static int ssp_calculate_intern_ext(struct intel_nhlt_params *nhlt, int hwi)
 	return 0;
 }
 
+
+
 int ssp_calculate(struct intel_nhlt_params *nhlt)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
@@ -705,6 +743,8 @@ int ssp_calculate(struct intel_nhlt_params *nhlt)
 			return -EINVAL;
 		if (ssp_calculate_intern_ext(nhlt, i) < 0)
 			return -EINVAL;
+		/* v15 blob is made from legacy blob, so it can't fail */
+		ssp_calculate_intern_v15(nhlt, i);
 	}
 
 	ssp_print_internal(ssp);
@@ -767,8 +807,16 @@ int ssp_get_vendor_blob_size(struct intel_nhlt_params *nhlt, int dai_index,
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
 
-	*size = sizeof(struct ssp_intel_config_data) +
-		ssp->ssp_blob_ext[dai_index][hw_config_index].size;
+	if (!ssp)
+		return -EINVAL;
+
+	/* set size for the blob */
+	if (ssp->ssp_prm[dai_index].version == SSP_BLOB_VER_1_5)
+		*size = ssp->ssp_blob_1_5[dai_index][hw_config_index].size;
+	else
+		/* legacy */
+		*size = sizeof(struct ssp_intel_config_data) +
+			ssp->ssp_blob_ext[dai_index][hw_config_index].size;
 
 	return 0;
 }
@@ -788,25 +836,42 @@ int ssp_get_vendor_blob(struct intel_nhlt_params *nhlt, uint8_t *vendor_blob,
 			int dai_index, int hw_config_index)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	uint32_t basic_len, clock_len;
 
 	if (!ssp)
 		return -EINVAL;
 
 	/* top level struct */
-	memcpy(vendor_blob, &ssp->ssp_blob[dai_index][hw_config_index],
-	       sizeof(struct ssp_intel_config_data));
-
-	/* ext data */
-	memcpy(vendor_blob + sizeof(struct ssp_intel_config_data),
-	       ssp->ssp_blob_ext[dai_index][hw_config_index].aux_blob,
-	       ssp->ssp_blob_ext[dai_index][hw_config_index].size);
+	if (ssp->ssp_prm[dai_index].version == SSP_BLOB_VER_1_5) {
+		basic_len = sizeof(struct ssp_intel_config_data_1_5);
+		clock_len = sizeof(uint32_t) * ssp->ssp_prm[dai_index].mdivr[hw_config_index].count;
+		/* basic data */
+		memcpy(vendor_blob, &ssp->ssp_blob_1_5[dai_index][hw_config_index], basic_len);
+		/* clock data */
+		memcpy(vendor_blob + basic_len,
+		       &ssp->ssp_prm[dai_index].mdivr[hw_config_index].mdivrs[0], clock_len);
+		/* ext data */
+		memcpy(vendor_blob + basic_len + clock_len,
+		       ssp->ssp_blob_ext[dai_index][hw_config_index].aux_blob,
+		       ssp->ssp_blob_ext[dai_index][hw_config_index].size);
+	}
+	else {
+		basic_len = sizeof(struct ssp_intel_config_data);
+		/*basic data */
+		memcpy(vendor_blob, &ssp->ssp_blob[dai_index][hw_config_index], basic_len);
+		/* ext data */
+		memcpy(vendor_blob + basic_len,
+		       ssp->ssp_blob_ext[dai_index][hw_config_index].aux_blob,
+		       ssp->ssp_blob_ext[dai_index][hw_config_index].size);
+	}
 
 	return 0;
 }
 
 int ssp_set_params(struct intel_nhlt_params *nhlt, const char *dir, int dai_index, int io_clk,
 		   int bclk_delay, int sample_bits, int mclk_id, int clks_control,
-		   int frame_pulse_width, const char *tdm_padding_per_slot, const char *quirks)
+		   int frame_pulse_width, const char *tdm_padding_per_slot, const char *quirks,
+		   int version)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
 
@@ -831,6 +896,9 @@ int ssp_set_params(struct intel_nhlt_params *nhlt, const char *dir, int dai_inde
 	ssp->ssp_prm[ssp->ssp_count].mclk_id = mclk_id;
 	ssp->ssp_prm[ssp->ssp_count].clks_control = clks_control;
 	ssp->ssp_prm[ssp->ssp_count].frame_pulse_width = frame_pulse_width;
+	/* let's compare the lower 16 bits as we don't send the signature from topology */
+	if (version == (SSP_BLOB_VER_1_5 & ((1 << 16) - 1)))
+		ssp->ssp_prm[ssp->ssp_count].version = SSP_BLOB_VER_1_5;
 	if (tdm_padding_per_slot && !strcmp(tdm_padding_per_slot, "true"))
 		ssp->ssp_prm[ssp->ssp_count].tdm_per_slot_padding_flag = 1;
 	else

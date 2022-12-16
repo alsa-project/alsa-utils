@@ -18,7 +18,8 @@ int ssp_init_params(struct intel_nhlt_params *nhlt);
 /* set parameters when parsing topology2 conf */
 int ssp_set_params(struct intel_nhlt_params *nhlt, const char *dir, int dai_index, int io_clk,
 		   int bclk_delay, int sample_bits, int mclk_id, int clks_control,
-		   int frame_pulse_width, const char *tdm_padding_per_slot, const char *quirks);
+		   int frame_pulse_width, const char *tdm_padding_per_slot, const char *quirks,
+		   int version);
 int ssp_hw_set_params(struct intel_nhlt_params *nhlt, const char *format, const char *mclk,
 		      const char *bclk, const char *bclk_invert, const char *fsync,
 		      const char *fsync_invert, int mclk_freq, int bclk_freq, int fsync_freq,

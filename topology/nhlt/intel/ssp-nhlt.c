@@ -398,6 +398,7 @@ static int set_ssp_data(struct intel_nhlt_params *nhlt, snd_config_t *dai_cfg, s
 	long clks_control = 0;
 	long sample_bits = 0;
 	long bclk_delay = 0;
+	long version = 0;
 	long dai_index = 0;
 	long mclk_id = 0;
 	long io_clk = 0;
@@ -415,6 +416,7 @@ static int set_ssp_data(struct intel_nhlt_params *nhlt, snd_config_t *dai_cfg, s
 		{ "frame_pulse_width", SND_CONFIG_TYPE_INTEGER, NULL, &frame_pulse_width, NULL},
 		{ "tdm_padding_per_slot", SND_CONFIG_TYPE_STRING, NULL, NULL,
 		  &tdm_padding_per_slot},
+		{ "version", SND_CONFIG_TYPE_INTEGER, NULL, &version, NULL},
 	};
 
 	ret = find_set_values(&ssp_data[0], ARRAY_SIZE(ssp_data), dai_cfg, top, "Class.Dai.SSP");
@@ -422,7 +424,8 @@ static int set_ssp_data(struct intel_nhlt_params *nhlt, snd_config_t *dai_cfg, s
 		return ret;
 
 	return ssp_set_params(nhlt, direction, dai_index, io_clk, bclk_delay, sample_bits, mclk_id,
-			      clks_control, frame_pulse_width, tdm_padding_per_slot, quirks);
+			      clks_control, frame_pulse_width, tdm_padding_per_slot, quirks,
+			      version);
 }
 
 /* init ssp parameters, should be called before parsing dais */
