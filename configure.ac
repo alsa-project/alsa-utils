@@ -28,7 +28,7 @@ AC_CHECK_FUNC([snd_ctl_elem_add_enumerated],
 fi
 
 
-AC_CHECK_HEADERS([dlfcn.h malloc.h sys/time.h])
+AC_CHECK_HEADERS([dlfcn.h malloc.h])
 
 dnl Check components
 AC_CHECK_HEADERS([alsa/pcm.h], [have_pcm="yes"], [have_pcm="no"],

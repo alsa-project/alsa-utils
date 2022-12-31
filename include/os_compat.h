@@ -22,12 +22,6 @@
 #ifndef __OS_COMPAT_H
 #define __OS_COMPAT_H
 
-/* workaround for snd_timestamp_t -> struct timeval, "alsaloop.h" */
-#include "aconfig.h"
-#if HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-
 #ifndef ESTRPIPE
 #define ESTRPIPE EPIPE
 #endif

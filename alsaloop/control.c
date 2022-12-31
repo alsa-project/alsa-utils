@@ -24,6 +24,7 @@
 #include <ctype.h>
 #include <syslog.h>
 #include <alsa/asoundlib.h>
+#include <sys/time.h>
 #include "os_compat.h"
 #include "alsaloop.h"
 
