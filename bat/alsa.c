@@ -26,6 +26,7 @@
 #include "gettext.h"
 
 #include "common.h"
+#include "os_compat.h"
 #include "alsa.h"
 #include "latencytest.h"
 

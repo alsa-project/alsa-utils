@@ -24,6 +24,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sched.h>
+#if defined(__NetBSD__)
+#define _KMEMUSER 1	/* enable ERESTART */
+#endif
 #include <errno.h>
 #include <getopt.h>
 #include <alsa/asoundlib.h>
@@ -32,6 +35,7 @@
 #include <pthread.h>
 #include <syslog.h>
 #include <signal.h>
+#include "os_compat.h"
 #include "alsaloop.h"
 
 struct loopback_thread {
@@ -776,7 +780,11 @@ static void thread_job1(void *_data)
 			snd_output_printf(output, "pool took %lius\n", timediff(tv2, tv1));
 		}
 		if (err < 0) {
+#ifdef ERESTART
 			if (err == -EINTR || err == -ERESTART)
+#else
+			if (err == -EINTR)
+#endif
 				continue;
 			logit(LOG_CRIT, "Poll failed: %s\n", strerror(-err));
 			my_exit(thread, EXIT_FAILURE);

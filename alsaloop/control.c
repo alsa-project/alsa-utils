@@ -24,6 +24,7 @@
 #include <ctype.h>
 #include <syslog.h>
 #include <alsa/asoundlib.h>
+#include "os_compat.h"
 #include "alsaloop.h"
 
 static char *id_str(snd_ctl_elem_id_t *id)

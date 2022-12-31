@@ -1,8 +1,7 @@
 #ifndef FORMATS_H
 #define FORMATS_H		1
 
-#include <endian.h>
-#include <byteswap.h>
+#include "bswap.h"
 
 /* Definitions for .VOC files */
 

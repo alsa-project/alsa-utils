@@ -85,7 +85,9 @@ static void usage(void)
 		"-T, --timestamp=...             adds a timestamp in front of each dumped message\n"
 		"                realtime\n"
 		"                monotonic\n"
+#ifdef CLOCK_MONOTONIC_RAW
 		"                raw\n"
+#endif
 		"-t, --timeout=seconds           exits when no data has been received\n"
 		"                                for the specified duration\n"
 		"-a, --active-sensing            include active sensing bytes\n"
@@ -534,8 +536,10 @@ int main(int argc, char *argv[])
 				cid = CLOCK_REALTIME;
 			else if (strcasecmp(optarg, "monotonic") == 0)
 				cid = CLOCK_MONOTONIC;
+#ifdef CLOCK_MONOTONIC_RAW
 			else if (strcasecmp(optarg, "raw") == 0)
 				cid = CLOCK_MONOTONIC_RAW;
+#endif
 			else
 				error("Clock type not known");
 			break;

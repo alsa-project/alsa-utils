@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <syslog.h>
 #include <sched.h>
+#include "os_compat.h"
 #include "alsactl.h"
 
 #ifndef SYS_ASOUND_DIR

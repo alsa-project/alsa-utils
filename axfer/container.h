@@ -17,6 +17,8 @@
 
 #include <alsa/asoundlib.h>
 
+#include "os_compat.h"
+
 enum container_type {
 	CONTAINER_TYPE_PARSER = 0,
 	CONTAINER_TYPE_BUILDER,

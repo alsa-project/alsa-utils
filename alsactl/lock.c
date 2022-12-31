@@ -25,6 +25,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#if defined(__NetBSD__)
+#define _KMEMUSER 1	/* enable ERESTART */
+#endif
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
@@ -123,7 +126,11 @@ static int state_lock_(const char *lock_file, int lock, int timeout, int _fd)
 	while (alarm_flag == 0) {
 		if (fcntl(fd, F_SETLKW, &lck) == 0)
 			break;
+#ifdef ERESTART
 		if (errno == EAGAIN || errno == ERESTART)
+#else
+		if (errno == EAGAIN)
+#endif
 			continue;
 	}
 	memset(&itv, 0, sizeof(itv));

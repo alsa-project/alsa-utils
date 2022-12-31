@@ -44,7 +44,7 @@
 #include <getopt.h>
 #include <inttypes.h>
 #include <ctype.h>
-#include <byteswap.h>
+#include "bswap.h"
 #include <signal.h>
 
 #define ALSA_PCM_NEW_HW_PARAMS_API
@@ -56,6 +56,7 @@
 #include "aconfig.h"
 #include "gettext.h"
 #include "version.h"
+#include "os_compat.h"
 
 #ifdef ENABLE_NLS
 #include <locale.h>
