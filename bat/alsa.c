@@ -28,6 +28,7 @@
 #include "common.h"
 #include "alsa.h"
 #include "latencytest.h"
+#include "os_compat.h"
 
 struct pcm_container {
 	snd_pcm_t *handle;

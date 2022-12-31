@@ -29,7 +29,9 @@
 #define _GNU_SOURCE
 #include "aconfig.h"
 #include <stdio.h>
+#if HAVE_MALLOC_H
 #include <malloc.h>
+#endif
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +55,7 @@
 #include "gettext.h"
 #include "formats.h"
 #include "version.h"
+#include "os_compat.h"
 
 #define ABS(a)  (a) < 0 ? -(a) : (a)
 

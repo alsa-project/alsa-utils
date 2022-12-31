@@ -33,6 +33,7 @@
 #include <syslog.h>
 #include <signal.h>
 #include "alsaloop.h"
+#include "os_compat.h"
 
 struct loopback_thread {
 	int threaded;
