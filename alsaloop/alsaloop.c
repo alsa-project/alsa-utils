@@ -35,8 +35,8 @@
 #include <pthread.h>
 #include <syslog.h>
 #include <signal.h>
-#include "os_compat.h"
 #include "alsaloop.h"
+#include "os_compat.h"
 
 struct loopback_thread {
 	int threaded;

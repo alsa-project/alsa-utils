@@ -29,8 +29,8 @@
 #include <errno.h>
 #include <syslog.h>
 #include <sched.h>
-#include "os_compat.h"
 #include "alsactl.h"
+#include "os_compat.h"
 
 #ifndef SYS_ASOUND_DIR
 #define SYS_ASOUND_DIR "/var/lib/alsa"

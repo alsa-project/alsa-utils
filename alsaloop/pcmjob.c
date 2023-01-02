@@ -32,8 +32,8 @@
 #include <math.h>
 #include <syslog.h>
 #include <pthread.h>
-#include "os_compat.h"
 #include "alsaloop.h"
+#include "os_compat.h"
 
 #define XRUN_PROFILE_UNKNOWN (-10000000)
 

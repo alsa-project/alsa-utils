@@ -26,9 +26,9 @@
 #include "gettext.h"
 
 #include "common.h"
-#include "os_compat.h"
 #include "alsa.h"
 #include "latencytest.h"
+#include "os_compat.h"
 
 struct pcm_container {
 	snd_pcm_t *handle;
