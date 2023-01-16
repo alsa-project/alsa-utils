@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <alsa/asoundlib.h>
 #include "gettext.h"
 #include "topology.h"
@@ -1610,6 +1611,174 @@ pre_process_object_variables_expand_fcn(snd_config_t **dst, const char *str, voi
 
 	return ret;
 }
+
+/*
+ * Searches for the first '$VAR_NAME' or '$[<contents>]' occurrence in
+ * *stringp. Allocates memory for it and copies it there. The
+ * allocated string is returned in '*varname'. If there was a prefix
+ * before $VAR_NAME, it is returned in '*prefix'. The *stringp is
+ * moved forward to the char after the $VAR_NAME.
+ *
+ * The end of $VAR_NAME is the first char that is not alpha numeric, '_',
+ * or '\0'.
+ *
+ * In '$[<contents>]' case all letters but '[' and ']' are allow in
+ * any sequence. Nested '[]' is also allowed if the number if '[' and
+ * ']' match.
+ *
+ * The function modifies *stringp, and *prefix - if not NULL - points
+ * to the original *stringp, *varname - if not NULL - is malloced and
+ * should be freed by the caller.
+ *
+ * Returns 0		if the *stringp was an empty string.
+ *         1		if *prefix or *varname was set
+ *         -ENOMEM	if malloc failed
+ */
+static int tplg_get_varname(char **stringp, char **prefix, char **varname)
+{
+	size_t prefix_len, varname_len = 0;
+
+	*prefix = NULL;
+	*varname = NULL;
+
+	prefix_len = strcspn(*stringp, "$");
+	*prefix = *stringp;
+	(*stringp) += prefix_len;
+	if (**stringp == '$') {
+		if ((*stringp)[1] == '[') {
+			int brackets = 1;
+			varname_len = 1;
+
+			do {
+				varname_len += strcspn((*stringp) + varname_len + 1, "[]") + 1;
+				if ((*stringp)[varname_len] == '[')
+					brackets++;
+				else if ((*stringp)[varname_len] == ']')
+					brackets--;
+				else
+					break;
+			}  while (brackets > 0);
+			if (brackets != 0)
+				return -EINVAL;
+			varname_len++;
+		} else {
+			varname_len = 1;
+			while (isalnum((*stringp)[varname_len]) || (*stringp)[varname_len] == '_')
+				varname_len++;
+		}
+	}
+
+	if (varname_len == 0 && prefix_len == 0)
+		return 0;
+
+	if (varname_len) {
+		*varname = malloc(varname_len + 1);
+		if (*varname == NULL)
+			return -ENOMEM;
+		strncpy(*varname, *stringp, varname_len);
+		(*varname)[varname_len] = '\0';
+		(*stringp) += varname_len;
+	}
+
+	if (prefix_len)
+		(*prefix)[prefix_len] = '\0';
+	else
+		*prefix = NULL;
+
+	return 1;
+}
+
+static int tplg_evaluate_config_string(struct tplg_pre_processor *tplg_pp,
+				    snd_config_t **dst, const char *s, const char *id)
+{
+	char *str = strdup(s);
+	char *varname, *prefix, *freep = str;
+	int ret;
+
+	if (!str)
+		return -ENOMEM;
+
+	*dst = NULL;
+
+	/* split the string and expand global definitions or object attribute values */
+	while (tplg_get_varname(&str, &prefix, &varname) == 1) {
+		const char *current_str;
+		char *temp;
+
+		if (prefix) {
+			if (*dst == NULL) {
+				ret = snd_config_make(dst, id, SND_CONFIG_TYPE_STRING);
+				if (ret < 0)
+					goto out;
+				ret = snd_config_set_string(*dst, prefix);
+				if (ret < 0)
+					goto out;
+			} else {
+				/* concat the prefix */
+				snd_config_get_string(*dst, &current_str);
+				temp = tplg_snprintf("%s%s", current_str, prefix);
+				if (!temp) {
+					ret = -ENOMEM;
+					goto out;
+				}
+
+				ret = snd_config_set_string(*dst, temp);
+				free(temp);
+				if (ret < 0)
+					goto out;
+			}
+		}
+
+		if (varname) {
+			snd_config_t *tmp_config;
+
+			ret = snd_config_evaluate_string(&tmp_config, varname,
+							 pre_process_object_variables_expand_fcn,
+							 tplg_pp);
+			if (ret < 0)
+				goto out;
+
+			if (*dst == NULL) {
+				*dst = tmp_config;
+			} else {
+				char *ascii;
+
+				snd_config_get_string(*dst, &current_str);
+
+				ret = snd_config_get_ascii(tmp_config, &ascii);
+				if (ret)
+					goto out;
+
+				temp = tplg_snprintf("%s%s", current_str, ascii);
+				free(ascii);
+
+				if (!temp) {
+					ret = -ENOMEM;
+					goto out;
+				}
+
+				ret = snd_config_set_string(*dst, temp);
+				free(temp);
+				snd_config_delete(tmp_config);
+				if (ret < 0)
+					goto out;
+			}
+			free(varname);
+		}
+	}
+
+	free(freep);
+	snd_config_set_id(*dst, id);
+
+	return 0;
+out:
+	if (*dst)
+		snd_config_delete(*dst);
+	free(varname);
+	free(freep);
+	return ret;
+}
+
 #endif
 
 /* build object config and its child objects recursively */
@@ -1672,20 +1841,18 @@ static int tplg_build_object(struct tplg_pre_processor *tplg_pp, snd_config_t *n
 		if (snd_config_get_string(n, &s) < 0)
 			continue;
 
-		if (*s != '$')
+		if (!strstr(s, "$"))
 			goto validate;
 
 		tplg_pp->current_obj_cfg = obj_local;
 
-		/* expand config */
-		ret = snd_config_evaluate_string(&new, s, pre_process_object_variables_expand_fcn,
-						 tplg_pp);
+		/* Expand definitions and object attribute references. */
+		ret = tplg_evaluate_config_string(tplg_pp, &new, s, id);
 		if (ret < 0) {
-			SNDERR("Failed to evaluate attributes %s in %s\n", id, class_id);
+			SNDERR("Failed to evaluate attributes %s in %s, from '%s'\n",
+			       id, class_id, s);
 			return ret;
 		}
-
-		snd_config_set_id(new, id);
 
 		ret = snd_config_merge(n, new, true);
 		if (ret < 0)
