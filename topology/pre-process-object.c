@@ -1793,7 +1793,7 @@ int tplg_pre_process_objects(struct tplg_pre_processor *tplg_pp, snd_config_t *c
 			 * 		ramp_step_ms 250
             		 * 	}
 			 * }
-			 * 
+			 *
 			 * While instantiating the volume-pipeline class, the pga object
 			 * could be modified as follows:
 			 * Object.Pipeline.volume-playback.0 {
@@ -1809,7 +1809,7 @@ int tplg_pre_process_objects(struct tplg_pre_processor *tplg_pp, snd_config_t *c
 			 * 	ramp_step_ms 250
 			 * 	format "s24le"
 			 * }
-			 */ 
+			 */
 
 			if (parent) {
 				snd_config_t *parent_instance, *parent_obj, *temp;
