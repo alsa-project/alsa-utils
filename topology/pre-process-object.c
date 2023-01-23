@@ -1500,26 +1500,23 @@ static int tplg_object_set_unique_attribute(struct tplg_pre_processor *tplg_pp,
 					    const char *id)
 {
 	snd_config_t *unique_attr, *new;
-	const char *unique_name, *class_id;
+	const char *class_id;
 	int ret;
 
 	if (snd_config_get_id(class_cfg, &class_id) < 0)
 		return 0;
 
-	/* find config for class unique attribute */
-	unique_name = tplg_class_get_unique_attribute_name(tplg_pp, class_cfg);
-	if (!unique_name)
-		return -ENOENT;
-
 	/* find the unique attribute definition in the class */
-	unique_attr = tplg_class_find_attribute_by_name(tplg_pp, class_cfg, unique_name);
-	if (!unique_attr)
+	unique_attr = tplg_class_find_attribute_by_name(tplg_pp, class_cfg, "instance");
+	if (!unique_attr) {
+		SNDERR("No instance attribute defined in class %s\n", class_id);
 		return -ENOENT;
+	}
 
-	/* override value if unique attribute is set in the object instance */
-	ret = snd_config_search(obj, unique_name, &new);
+	/* override instance if set in the object */
+	ret = snd_config_search(obj, "instance", &new);
 	if (ret < 0) {
-		ret = snd_config_make(&new, unique_name,
+		ret = snd_config_make(&new, "instance",
 				      tplg_class_get_attribute_type(tplg_pp, unique_attr));
 		if (ret < 0) {
 			SNDERR("error creating new attribute cfg for object %s\n", id);
