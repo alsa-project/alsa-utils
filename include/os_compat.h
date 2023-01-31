@@ -26,11 +26,6 @@
 #define ESTRPIPE EPIPE
 #endif
 
-#if defined(__NetBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__FreeBSD__)
-#define lseek64 lseek
-#define off64_t off_t
-#endif
-
 #ifndef SCHED_IDLE
 #define SCHED_IDLE SCHED_OTHER
 #endif
