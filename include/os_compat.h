@@ -26,6 +26,10 @@
 #define ESTRPIPE EPIPE
 #endif
 
+#ifndef ERESTART
+#define ERESTART EINTR
+#endif
+
 #ifndef SCHED_IDLE
 #define SCHED_IDLE SCHED_OTHER
 #endif
