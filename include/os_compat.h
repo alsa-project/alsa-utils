@@ -23,7 +23,7 @@
 #define __OS_COMPAT_H
 
 #ifndef ESTRPIPE
-#define ESTRPIPE EPIPE
+#define ESTRPIPE ESPIPE
 #endif
 
 #ifndef ERESTART
