@@ -35,6 +35,10 @@
 
 #define SND_TOPOLOGY_MAX_PLUGINS 32
 
+typedef void (*pre_process_config_function)(struct tplg_pre_processor *tplg_pp,
+					    snd_config_t *instance_cfg, snd_config_t *parent,
+					    long *id);
+
 static int get_plugin_string(struct tplg_pre_processor *tplg_pp, char **plugin_string)
 {
 	const char *lib_names_t = NULL;
@@ -427,10 +431,112 @@ create:
 	return 0;
 }
 
+/*
+ * helper function to walk through all child nodes in a given config and apply the config update
+ * at the tagetted node based on the config function.
+ */
+static void pre_process_config_at_level(struct tplg_pre_processor *tplg_pp,
+					pre_process_config_function func,
+					snd_config_t *cfg, int current_node_level,
+					int target_node_level, long *start_id)
+{
+	snd_config_iterator_t i, next;
+
+	snd_config_for_each(i, next, cfg) {
+		snd_config_t *n;
+
+		n = snd_config_iterator_entry(i);
+		if (current_node_level < target_node_level) {
+			pre_process_config_at_level(tplg_pp, func, n, current_node_level + 1,
+						    target_node_level, start_id);
+			continue;
+		}
+
+		func(tplg_pp, n, cfg, start_id);
+	}
+}
+
+
+/* helper function to update the instance ID */
+static void pre_process_uniquify_instance_conf(struct tplg_pre_processor *tplg_pp,
+					       snd_config_t *instance_cfg,
+					       snd_config_t *parent, long *id)
+{
+	const char*parent_id;
+	char *instance_id;
+
+	if (snd_config_get_id(parent, &parent_id) < 0)
+		return;
+
+	/* do not substitute instance ID's for objects that are included conditionally */
+	if (!strcmp(parent_id, "IncludeByKey"))
+		return;
+
+	instance_id = tplg_snprintf("%ld", (*id)++);
+	snd_config_set_id(instance_cfg, instance_id);
+	free(instance_id);
+}
+
+/*
+ * Included conf files could contain additional object instantiations with the same instance ID as
+ * top-level conf file. For example, the top-level conf file could contain a PCM object as below:
+ * Object.PCM {
+ *	pcm.10 {
+ *		name	"ssp-capture"
+ *	}
+ * }
+ * If the included conf file could contain a PCM object with the same instance ID of 1 like:
+ * Object.PCM {
+ *	pcm.10 {
+ *		name	"DMIC"
+ *	}
+ * }
+ *
+ * In this case when merging the above conf file with the top-level file, the first PCM object
+ * with name "ssp-capture" will get overridden with the new one "DMIC". To prevent this and make
+ * sure that 2 separate PCM instances are added, this function makes sure that the instance ID for
+ * the PCM object in the included file does not clash with the top-level object instances. So the
+ * new conf node will modified as below before getting merged.
+ * Object.PCM {
+ *	pcm.11 {
+ *		name	"DMIC"
+ *	}
+ * }
+ *
+ * All additional objects in the same included file or any subsequent includes will use
+ * incremental values starting from 1000
+ */
+static int pre_process_inspect_objects_in_conf(struct tplg_pre_processor *tplg_pp,
+					       pre_process_config_function func,
+					       snd_config_t *cfg, long *starting_id)
+{
+	snd_config_iterator_t i, next;
+
+	snd_config_for_each(i, next, cfg) {
+		snd_config_t *n;
+		const char *id;
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		if (strcmp(id, "Object"))
+			continue;
+
+		/*
+		 * modify the instance ID for all objects to ensure that they do not conflict with
+		 * the instance ID's in the top-level conf.
+		 */
+		pre_process_config_at_level(tplg_pp, func, n, 1,
+					    3, starting_id);
+	}
+	return 0;
+}
+
 static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t *top);
 
 static int pre_process_include_conf(struct tplg_pre_processor *tplg_pp, snd_config_t *config,
-				    snd_config_t **new, snd_config_t *variable)
+				    snd_config_t **new, snd_config_t *variable, long *starting_id)
 {
 	snd_config_iterator_t i, next;
 	const char *variable_name;
@@ -537,6 +643,14 @@ static int pre_process_include_conf(struct tplg_pre_processor *tplg_pp, snd_conf
 				fprintf(stderr, "Unable to load included configuration\n");
 				goto err;
 			}
+
+			ret = pre_process_inspect_objects_in_conf(tplg_pp,
+								  pre_process_uniquify_instance_conf,
+								  *new, starting_id);
+			if (ret < 0) {
+				fprintf(stderr, "Failed to uniquify included configuration\n");
+				goto err;
+			}
 		}
 
 		/* forcefully overwrite with defines from the command line */
@@ -557,15 +671,36 @@ err:
 	return ret;
 }
 
+static void pre_process_update_start_instance_id(struct tplg_pre_processor *tplg_pp,
+						 snd_config_t *instance_cfg,
+						 snd_config_t *parent, long *start_id)
+{
+	const char *instance_id;
+	long instance;
+
+	if (snd_config_get_id(instance_cfg, &instance_id) < 0)
+		return;
+
+	instance = strtol(instance_id, NULL, 10);
+	if (instance > *start_id)
+		*start_id = instance;
+}
+
 static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t *top)
 {
 	snd_config_iterator_t i, next;
 	snd_config_t *includes;
 	const char *top_id;
+	long start_id = 0;
 	int ret;
 
 	if (tplg_pp->define_cfg_merged == NULL)
 		return 0;
+
+	/* get the largest object instance ID in the top-level conf */
+	pre_process_inspect_objects_in_conf(tplg_pp, pre_process_update_start_instance_id,
+					    top, &start_id);
+	start_id++;
 
 	ret = snd_config_search(top, "IncludeByKey", &includes);
 	if (ret < 0)
@@ -589,7 +724,7 @@ static int pre_process_includes(struct tplg_pre_processor *tplg_pp, snd_config_t
 		}
 
 		/* create conf node from included file */
-		ret = pre_process_include_conf(tplg_pp, n, &new, define);
+		ret = pre_process_include_conf(tplg_pp, n, &new, define, &start_id);
 		if (ret < 0) {
 			fprintf(stderr, "Unable to process include file \n");
 			return ret;
