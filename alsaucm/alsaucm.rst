@@ -85,7 +85,7 @@ Available commands:
   ``list`` `IDENTIFIER`
     list command, for items returning two entries (value+comment).
 
-    the value of the `IDENTIFIER` argument can can be:
+    the value of the `IDENTIFIER` argument can be:
 
     - ``_verbs`` - get verb list (in pair verb+comment)
     - ``_devices[/{verb}]`` - get list of supported devices (in pair device+comment)
@@ -109,7 +109,7 @@ Available commands:
   ``get`` `IDENTIFIER`
     get string value.
 
-    the value of the `IDENTIFIER` argument can can be:
+    the value of the `IDENTIFIER` argument can be:
 
     - ``_verb`` - return current verb
     - ``[=]{NAME}[/[{modifier}|{/device}][/{verb}]]`` (For valid NAMEs look at the
@@ -119,7 +119,7 @@ Available commands:
   ``geti`` `IDENTIFIER`
     get integer value.
 
-    the value of the `IDENTIFIER` argument can can be:
+    the value of the `IDENTIFIER` argument can be:
 
     - ``_devstatus/{device}``
     - ``_modstatus/{device}``
@@ -127,7 +127,7 @@ Available commands:
   ``set`` `IDENTIFIER` `VALUE`
     set string value
 
-    The value of the `IDENTIFIER` argument can can be:
+    The value of the `IDENTIFIER` argument can be:
 
     - ``_verb`` - set the verb to `VALUE`
     - ``_enadev`` - enable the device specified by `VALUE`
