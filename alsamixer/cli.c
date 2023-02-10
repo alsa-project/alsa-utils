@@ -28,7 +28,9 @@
 #include "mixer_widget.h"
 #include "mainloop.h"
 #include "configparser.h"
+#include "colors.h"
 
+static int black_background = 0;
 static int use_color = 1;
 static int use_mouse = 1;
 static const char* config_file = CONFIG_DEFAULT;
@@ -49,7 +51,8 @@ static void show_help(void)
 	       "  -M, --no-mouse          disable mouse\n"
 	       "  -f, --config=FILE       configuration file\n"
 	       "  -F, --no-config         do not load configuration file\n"
-	       "  -V, --view=MODE         starting view mode: playback/capture/all"));
+	       "  -V, --view=MODE         starting view mode: playback/capture/all\n"
+	       "  -B, --black-background  use black background color"));
 	puts(_("Debugging options:\n"
 	       "  -g, --no-color          toggle using of colors\n"
 	       "  -a, --abstraction=NAME  mixer abstraction level: none/basic"));
@@ -57,7 +60,7 @@ static void show_help(void)
 
 static void parse_options(int argc, char *argv[])
 {
-	static const char short_options[] = "hc:D:f:FmMV:gsa:";
+	static const char short_options[] = "hc:f:FD:mMV:Bga:";
 	static const struct option long_options[] = {
 		{ .name = "help", .val = 'h' },
 		{ .name = "card", .has_arg = 1, .val = 'c' },
@@ -67,6 +70,7 @@ static void parse_options(int argc, char *argv[])
 		{ .name = "mouse", .val = 'm' },
 		{ .name = "no-mouse", .val = 'M' },
 		{ .name = "view", .has_arg = 1, .val = 'V' },
+		{ .name = "black-background", .val = 'B' },
 		{ .name = "no-color", .val = 'g' },
 		{ .name = "abstraction", .has_arg = 1, .val = 'a' },
 		{ 0 }
@@ -118,6 +122,9 @@ static void parse_options(int argc, char *argv[])
 			else
 				view_mode = VIEW_MODE_ALL;
 			break;
+		case 'B':
+			black_background = 1;
+			break;
 		case 'g':
 			use_color = !use_color;
 			break;
@@ -160,6 +167,9 @@ int main(int argc, char *argv[])
 		parse_default_config_file();
 	else if (config_file)
 		parse_config_file(config_file);
+
+	if (black_background)
+		reinit_colors(COLOR_BLACK);
 
 	create_mixer_widget();
 
