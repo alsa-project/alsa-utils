@@ -31,6 +31,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 #include "alsactl.h"
+#include "os_compat.h"
 
 #define PATH_SIZE 512
 
