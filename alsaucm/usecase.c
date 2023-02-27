@@ -123,6 +123,20 @@ static void dump_help(struct context *context)
 );
 }
 
+int is_long(const char *str)
+{
+	char *end;
+	if (!*str)
+		return 0;
+	errno = 0;
+	strtol(str, &end, 10);
+	if (errno)
+		return 0;
+	if (*end)
+		return 0;
+	return 1;
+}
+
 static int parse_line(struct context *context, char *line)
 {
 	char *start, **nargv;
@@ -202,6 +216,15 @@ static void do_initial_open(struct context *context)
 
 	/* open library */
 	if (!context->no_open) {
+		if (is_long(context->card)) {
+			snprintf(name, sizeof(name), "hw:%s", context->card);
+			free(context->card);
+			context->card = strdup(name);
+		}
+		if (context->card == NULL) {
+			fprintf(stderr, "%s: empty card name\n", context->command);
+			my_exit(context, EXIT_FAILURE);
+		}
 		err = snd_use_case_mgr_open(&context->uc_mgr,
 					    context->card);
 		if (err < 0) {
