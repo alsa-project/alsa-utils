@@ -546,8 +546,8 @@ static int bat_init(struct bat *bat)
 	if (bat->logarg) {
 		bat->log = NULL;
 		bat->log = fopen(bat->logarg, "wb");
-		err = -errno;
 		if (bat->log == NULL) {
+			err = -errno;
 			fprintf(bat->err, _("Cannot open file: %s %d\n"),
 					bat->logarg, err);
 			return err;
@@ -572,17 +572,16 @@ static int bat_init(struct bat *bat)
 	} else {
 		/* create temp file for sound record and analysis */
 		fd = mkstemp(name);
-		err = -errno;
 		if (fd == -1) {
+			err = -errno;
 			fprintf(bat->err, _("Fail to create record file: %d\n"),
 					err);
 			return err;
 		}
 		/* store file name which is dynamically created */
 		bat->capture.file = strdup(name);
-		err = -errno;
 		if (bat->capture.file == NULL)
-			return err;
+			return -ENOMEM;
 		/* close temp file */
 		close(fd);
 	}
@@ -610,8 +609,8 @@ static int bat_init(struct bat *bat)
 		}
 	} else {
 		bat->fp = fopen(bat->playback.file, "rb");
-		err = -errno;
 		if (bat->fp == NULL) {
+			err = -errno;
 			fprintf(bat->err, _("Cannot open file: %s %d\n"),
 					bat->playback.file, err);
 			return err;
