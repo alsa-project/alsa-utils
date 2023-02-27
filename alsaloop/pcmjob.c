@@ -1962,7 +1962,7 @@ int pcmjob_pollfds_handle(struct loopback *loop, struct pollfd *fds)
 		if (play->xrun_pending || loop->reinit)
 			break;
 		loopcount++;
-	} while ((ccount > 0 || pcount > 0) && loopcount > 10);
+	} while ((ccount > 0 || pcount > 0) && loopcount < 10);
 	if (play->xrun_pending || capt->xrun_pending) {
 		if ((err = xrun_sync(loop)) < 0)
 			return err;
