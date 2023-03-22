@@ -31,6 +31,12 @@ Prints a list of possible output ports.
 Sets the sequencer port(s) to which the events in the MIDI file(s) are
 sent.
 
+.TP
+.I \-u, \-\-ump=version
+Changes the sequencer client to the given MIDI version and outputs via
+the UMP packets instead of legacy sequencer events.
+As of now, the only supported version is 1.
+
 A client can be specified by its number, its name, or a prefix of its
 name. A port is specified by its number; for port 0 of a client, the
 ":0" part of the port specification can be omitted.
