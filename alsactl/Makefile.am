@@ -45,6 +45,7 @@ edit = \
 		  -e 's,@mydatadir\@,$(mydatadir),g' \
 		  -e 's,@daemonswitch\@,$(ALSACTL_DAEMONSWITCH),g' \
 		  -e 's,@asoundrcfile\@,$(ASOUND_STATE_DIR)/asound.state,g' \
+		  -e 's,@initasoundrcfile\@,$(INIT_ASOUND_STATE_DIR)/asound.state,g' \
 							< $< > $@ || rm $@
 
 alsa-state.service: alsa-state.service.in

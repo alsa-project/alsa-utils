@@ -2,6 +2,8 @@ ACTION=="add", SUBSYSTEM=="sound", KERNEL=="controlC*", KERNELS!="card*", TEST==
 GOTO="alsa_restore_end"
 
 LABEL="alsa_restore_go"
+TEST!="@asoundrcfile@", TEST=="@initasoundrcfile@", TEST=="@daemonswitch@", RUN+="@sbindir@/alsactl -f @initasoundrcfile@ nrestore $attr{device/number}", GOTO="alsa_restore_end"
+TEST!="@asoundrcfile@", TEST=="@initasoundrcfile@", TEST!="@daemonswitch@", RUN+="@sbindir@/alsactl -f @initasoundrcfile@ restore $attr{device/number}", GOTO="alsa_restore_end"
 TEST!="@daemonswitch@", RUN+="@sbindir@/alsactl restore $attr{device/number}"
 TEST=="@daemonswitch@", RUN+="@sbindir@/alsactl nrestore $attr{device/number}"
 

@@ -425,6 +425,12 @@ AC_ARG_WITH([asound-state-dir],
         [ASOUND_STATE_DIR="/var/lib/alsa"])
 AC_SUBST(ASOUND_STATE_DIR)
 
+AC_ARG_WITH([init-asound-state-dir],
+        AS_HELP_STRING([--with-init-asound-state-dir=DIR], [Directory to place an initial asound.state file in]),
+        [INIT_ASOUND_STATE_DIR="$withval"],
+        [INIT_ASOUND_STATE_DIR="/usr/lib/alsa"])
+AC_SUBST(INIT_ASOUND_STATE_DIR)
+
 AC_ARG_WITH([alsactl-lock-dir],
         AS_HELP_STRING([--with-alsactl-lock-dir=DIR], [Directory to place lock files in]),
         [ASOUND_LOCK_DIR="$withval"],
