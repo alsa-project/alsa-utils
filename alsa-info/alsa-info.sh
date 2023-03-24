@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION=0.5.1
+SCRIPT_VERSION=0.5.2
 CHANGELOG="https://www.alsa-project.org/alsa-info.sh.changelog"
 
 #################################################################################
@@ -662,6 +662,21 @@ if [ -d "$SYSFS" ]; then
 		echo "" >> $FILE
 	done
 	echo "" >> $FILE
+	if [ -d $SYSFS/class/sound/ctl-led ]; then
+		echo "!!Sysfs ctl-led info" >> $FILE
+		echo "!!---------------" >> $FILE
+		echo "" >> $FILE
+		for path in $(echo $SYSFS/class/sound/ctl-led/[ms][ip]*/card*); do
+			echo "!!CTL-LED: $path" >> $FILE
+			if [ -r "$path/list" ]; then
+				list=$(cat "$path/list")
+				echo "List: $list" >> $FILE
+			fi
+			#echo "Tree:" >> $FILE
+			#tree --noreport $path -L 2 | sed -e 's/^/\t/g' >> $FILE
+			echo "" >> $FILE
+		done
+	fi
 fi
 
 if [ -s "$TEMPDIR/alsa-hda-intel.tmp" ]; then
