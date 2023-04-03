@@ -251,23 +251,6 @@ static int set_ext_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd
 				  sync_stops_on_pause, sync_stops_on_reset);
 }
 
-static int set_link_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
-{
-	long clock_source;
-	long ret;
-
-	struct dai_values ssp_link_data[] = {
-		{"clock_source", SND_CONFIG_TYPE_INTEGER, NULL, &clock_source, NULL},
-	};
-
-	ret = find_set_values(&ssp_link_data[0], ARRAY_SIZE(ssp_link_data), cfg, top,
-			      "Class.Base.link_config");
-	if (ret < 0)
-		return ret;
-
-	return ssp_link_set_params(nhlt, clock_source);
-}
-
 static int set_aux_params(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
 {
 	struct aux_map {
@@ -283,14 +266,32 @@ static int set_aux_params(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd
 		{"Object.Base.run_config", SSP_DMA_ALWAYS_RUNNING_MODE} ,
 		{"Object.Base.sync_config", SSP_DMA_SYNC_DATA },
 		{"Object.Base.ext_config", SSP_DMA_CLK_CONTROLS_EXT },
-		{"Object.Base.link_config", SSP_LINK_CLK_SOURCE },
 		{"Object.Base.node_config", SSP_DMA_SYNC_NODE },
 	};
 
 	snd_config_iterator_t iter, next;
-	snd_config_t *items, *n;
+	snd_config_t *items, *n, *bclk_cfg;
 	const char *id;
 	int i, ret = 0;
+	long bclk_freq;
+
+	/* set link clock source */
+	ret = snd_config_search(cfg, "bclk_freq", &bclk_cfg);
+	if (ret < 0)
+		return ret;
+
+	ret = snd_config_get_integer(bclk_cfg, &bclk_freq);
+	if (ret < 0)
+		return ret;
+
+	/*
+	 * if the bit clock frequency is derived from 19.2MHz, set clock source to 0
+	 * or if the bit clock frequency is derived from 24.576MHz, set clock source to 1
+	 */
+	if (!(19200000 % bclk_freq))
+		ssp_link_set_params(nhlt, 0);
+	else if (!(24576000 % bclk_freq))
+		ssp_link_set_params(nhlt, 1);
 
 	for (i = 0; i < ARRAY_SIZE(aux_maps); i++) {
 		if (snd_config_search(cfg, aux_maps[i].name, &items) < 0)
@@ -323,9 +324,6 @@ static int set_aux_params(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd
 				break;
 			case SSP_DMA_CLK_CONTROLS_EXT:
 				ret = set_ext_config(nhlt, n, top);
-				break;
-			case SSP_LINK_CLK_SOURCE:
-				ret = set_link_config(nhlt, n, top);
 				break;
 			case SSP_DMA_SYNC_NODE:
 				ret = set_node_config(nhlt, n, top);
