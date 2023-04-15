@@ -3224,6 +3224,9 @@ static void capture(char *orig_name)
 	off_t count, rest;		/* number of bytes to capture */
 	struct stat statbuf;
 
+	/* setup sound hardware */
+	set_params();
+
 	/* get number of bytes to capture */
 	count = calc_count();
 	if (count == 0)
@@ -3241,9 +3244,6 @@ static void capture(char *orig_name)
 
 	/* display verbose output to console */
 	header(file_type, name);
-
-	/* setup sound hardware */
-	set_params();
 
 	/* write to stdout? */
 	if (!name || !strcmp(name, "-")) {
