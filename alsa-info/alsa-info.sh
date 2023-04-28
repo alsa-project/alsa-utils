@@ -47,7 +47,7 @@ update() {
 	SHFILE=$(mktemp -t alsa-info.XXXXXXXXXX) || exit 1
 	wget -O $SHFILE "https://www.alsa-project.org/alsa-info.sh" >/dev/null 2>&1
 	REMOTE_VERSION=$(grep SCRIPT_VERSION $SHFILE | head -n1 | sed 's/.*=//')
-	if [ -s "$SHFILE" -a "$REMOTE_VERSION" != "$SCRIPT_VERSION" ]; then
+	if [ -s "$SHFILE" ] && [ "$REMOTE_VERSION" != "$SCRIPT_VERSION" ]; then
 		if [[ -n $DIALOG ]]
 		then
 			OVERWRITE=
@@ -100,7 +100,7 @@ update() {
 }
 
 cleanup() {
-	if [ -n "$TEMPDIR" -a "$KEEP_FILES" != "yes" ]; then
+	if [ -n "$TEMPDIR" ] && [ "$KEEP_FILES" != "yes" ]; then
 		rm -rf "$TEMPDIR" 2>/dev/null
 	fi
 	test -n "$KEEP_OUTPUT" || rm -f "$NFILE"
