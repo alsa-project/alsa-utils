@@ -42,7 +42,7 @@ REQUIRES="mktemp grep pgrep awk date uname cat sort dmesg amixer alsactl"
 #
 
 update() {
-	test -z "$WGET" -o ! -x "$WGET" && return
+	test -z "$WGET" || test ! -x "$WGET" && return
 
 	SHFILE=$(mktemp -t alsa-info.XXXXXXXXXX) || exit 1
 	wget -O $SHFILE "https://www.alsa-project.org/alsa-info.sh" >/dev/null 2>&1
