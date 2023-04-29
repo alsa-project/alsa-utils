@@ -415,11 +415,9 @@ fi
 # Fetch the info and store in temp files/variables
 TSTAMP=$(LANG=C TZ=UTC date)
 DISTRO=$(grep -ihs "buntu\|SUSE\|Fedora\|PCLinuxOS\|MEPIS\|Mandriva\|Debian\|Damn\|Sabayon\|Slackware\|KNOPPIX\|Gentoo\|Zenwalk\|Mint\|Kubuntu\|FreeBSD\|Puppy\|Freespire\|Vector\|Dreamlinux\|CentOS\|Arch\|Xandros\|Elive\|SLAX\|Red\|BSD\|KANOTIX\|Nexenta\|Foresight\|GeeXboX\|Frugalware\|64\|SystemRescue\|Novell\|Solaris\|BackTrack\|KateOS\|Pardus\|ALT" /etc/{issue,*release,*version})
-KERNEL_VERSION=$(uname -r)
-KERNEL_PROCESSOR=$(uname -p)
-KERNEL_MACHINE=$(uname -m)
-KERNEL_OS=$(uname -o)
-[[ $(uname -v | grep SMP) ]] && KERNEL_SMP="Yes" || KERNEL_SMP="No"
+read -r KERNEL_RELEASE KERNEL_MACHINE KERNEL_PROCESSOR KERNEL_OS < <(uname -rpmo)
+read -r KERNEL_VERSION < <(uname -v)
+if [[ "$KERNEL_VERSION" = *SMP* ]]; then KERNEL_SMP=Yes; else KERNEL_SMP=No; fi
 ALSA_DRIVER_VERSION=$(cat /proc/asound/version | head -n1 | awk '{ print $7 }' | sed 's/\.$//')
 get_alsa_library_version
 ALSA_UTILS_VERSION=$(amixer -v | awk '{ print $3 }')
