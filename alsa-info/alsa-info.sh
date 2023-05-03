@@ -1,7 +1,7 @@
 #!/bin/bash
 
-SCRIPT_VERSION=0.5.2
-CHANGELOG="https://www.alsa-project.org/alsa-info.sh.changelog"
+SCRIPT_VERSION=0.5.3
+CHANGELOG='https://www.alsa-project.org/alsa-info.sh.changelog'
 
 #################################################################################
 #Copyright (C) 2007 Free Software Foundation.
@@ -30,12 +30,12 @@ CHANGELOG="https://www.alsa-project.org/alsa-info.sh.changelog"
 export LC_ALL=C
 
 # Change the PATH variable, so we can run lspci (needed for some distros)
-PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin
+PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin"
 BGTITLE="ALSA-Info v $SCRIPT_VERSION"
-PASTEBINKEY="C9cRIO8m/9y8Cs0nVs0FraRx7U0pHsuc"
+PASTEBINKEY='C9cRIO8m/9y8Cs0nVs0FraRx7U0pHsuc'
 
-WGET=$(command -v wget)
-REQUIRES="mktemp grep pgrep awk date uname cat sort dmesg amixer alsactl"
+WGET="$(command -v wget)"
+REQUIRES=(mktemp grep pgrep awk date uname cat sort dmesg amixer alsactl)
 
 #
 # Define some simple functions
@@ -108,96 +108,96 @@ cleanup() {
 
 
 withaplay() {
-        echo "!!Aplay/Arecord output" >> $FILE
-        echo "!!--------------------" >> $FILE
-        echo "" >> $FILE
-       	echo "APLAY" >> $FILE
-	echo "" >> $FILE 
-	aplay -l >> $FILE 2>&1
-        echo "" >> $FILE
-       	echo "ARECORD" >> $FILE
-	echo "" >> $FILE
-	arecord -l >> $FILE 2>&1
-	echo "" >> $FILE
+        echo "!!Aplay/Arecord output" >> "$FILE"
+        echo "!!--------------------" >> "$FILE"
+        echo "" >> "$FILE"
+       	echo "APLAY" >> "$FILE"
+	echo "" >> "$FILE"
+	aplay -l >> "$FILE" 2>&1
+        echo "" >> "$FILE"
+       	echo "ARECORD" >> "$FILE"
+	echo "" >> "$FILE"
+	arecord -l >> "$FILE" 2>&1
+	echo "" >> "$FILE"
 }
 
 withmodules() {
-	echo "!!All Loaded Modules" >> $FILE
-	echo "!!------------------" >> $FILE
-	echo "" >> $FILE
-	awk '{print $1}' < /proc/modules | sort >> $FILE
-	echo "" >> $FILE
-	echo "" >> $FILE
+	echo "!!All Loaded Modules" >> "$FILE"
+	echo "!!------------------" >> "$FILE"
+	echo "" >> "$FILE"
+	awk '{print $1}' < /proc/modules | sort >> "$FILE"
+	echo "" >> "$FILE"
+	echo "" >> "$FILE"
 }
 
 withamixer() {
-        echo "!!Amixer output" >> $FILE
-        echo "!!-------------" >> $FILE
-        echo "" >> $FILE
+        echo "!!Amixer output" >> "$FILE"
+        echo "!!-------------" >> "$FILE"
+        echo "" >> "$FILE"
 	for f in /proc/asound/card*/id; do
 		[ -f "$f" ] && read -r CARD_NAME < "$f" || continue
-		echo "!!-------Mixer controls for card $CARD_NAME" >> $FILE
-		echo "" >>$FILE
-		amixer -c "$CARD_NAME" info >> $FILE 2>&1
-		amixer -c "$CARD_NAME" >> $FILE 2>&1
-		echo "" >> $FILE
+		echo "!!-------Mixer controls for card $CARD_NAME" >> "$FILE"
+		echo "" >> "$FILE"
+		amixer -c "$CARD_NAME" info >> "$FILE" 2>&1
+		amixer -c "$CARD_NAME" >> "$FILE" 2>&1
+		echo "" >> "$FILE"
 	done
-	echo "" >> $FILE
+	echo "" >> "$FILE"
 }
 
 withalsactl() {
-	echo "!!Alsactl output" >> $FILE
-        echo "!!--------------" >> $FILE
-        echo "" >> $FILE
-	alsactl -f $TEMPDIR/alsactl.tmp store
-	echo "--startcollapse--" >> $FILE
-	cat $TEMPDIR/alsactl.tmp >> $FILE
-	echo "--endcollapse--" >> $FILE
-	echo "" >> $FILE
-	echo "" >> $FILE
+	echo "!!Alsactl output" >> "$FILE"
+        echo "!!--------------" >> "$FILE"
+        echo "" >> "$FILE"
+	alsactl -f "$TEMPDIR/alsactl.tmp" store
+	echo "--startcollapse--" >> "$FILE"
+	cat "$TEMPDIR/alsactl.tmp" >> "$FILE"
+	echo "--endcollapse--" >> "$FILE"
+	echo "" >> "$FILE"
+	echo "" >> "$FILE"
 }
 
 withdevices() {
-        echo "!!ALSA Device nodes" >> $FILE
-        echo "!!-----------------" >> $FILE
-        echo "" >> $FILE
-        ls -la /dev/snd/* >> $FILE
-        echo "" >> $FILE
-        echo "" >> $FILE
+        echo "!!ALSA Device nodes" >> "$FILE"
+        echo "!!-----------------" >> "$FILE"
+        echo "" >> "$FILE"
+        ls -la /dev/snd/* >> "$FILE"
+        echo "" >> "$FILE"
+        echo "" >> "$FILE"
 }
 
 withconfigs() {
-if [[ -e $HOME/.asoundrc ]] || [[ -e /etc/asound.conf ]] || [[ -e $HOME/.asoundrc.asoundconf ]]; then
-        echo "!!ALSA configuration files" >> $FILE
-        echo "!!------------------------" >> $FILE
-        echo "" >> $FILE
+if [[ -e "$HOME/.asoundrc" ]] || [[ -e "/etc/asound.conf" ]] || [[ -e "$HOME/.asoundrc.asoundconf" ]]; then
+        echo "!!ALSA configuration files" >> "$FILE"
+        echo "!!------------------------" >> "$FILE"
+        echo "" >> "$FILE"
 
         #Check for ~/.asoundrc
-        if [[ -e $HOME/.asoundrc ]]
+        if [[ -e "$HOME/.asoundrc" ]]
         then
-                echo "!!User specific config file (~/.asoundrc)" >> $FILE
-                echo "" >> $FILE
-                cat $HOME/.asoundrc >> $FILE
-                echo "" >> $FILE
-                echo "" >> $FILE
+                echo "!!User specific config file (~/.asoundrc)" >> "$FILE"
+                echo "" >> "$FILE"
+                cat "$HOME/.asoundrc" >> "$FILE"
+                echo "" >> "$FILE"
+                echo "" >> "$FILE"
         fi
 	#Check for .asoundrc.asoundconf (seems to be Ubuntu specific)
-	if [[ -e $HOME/.asoundrc.asoundconf ]]
+	if [[ -e "$HOME/.asoundrc.asoundconf" ]]
 	then
-		echo "!!asoundconf-generated config file" >> $FILE
-		echo "" >> $FILE
-		cat $HOME/.asoundrc.asoundconf >> $FILE
-		echo "" >> $FILE
-		echo "" >> $FILE
+		echo "!!asoundconf-generated config file" >> "$FILE"
+		echo "" >> "$FILE"
+		cat "$HOME/.asoundrc.asoundconf" >> "$FILE"
+		echo "" >> "$FILE"
+		echo "" >> "$FILE"
 	fi
         #Check for /etc/asound.conf
         if [[ -e /etc/asound.conf ]]
         then
-                echo "!!System wide config file (/etc/asound.conf)" >> $FILE
-                echo "" >> $FILE
-                cat /etc/asound.conf >> $FILE
-                echo "" >> $FILE
-                echo "" >> $FILE
+                echo "!!System wide config file (/etc/asound.conf)" >> "$FILE"
+                echo "" >> "$FILE"
+                cat /etc/asound.conf >> "$FILE"
+                echo "" >> "$FILE"
+                echo "" >> "$FILE"
         fi
 fi
 }
@@ -208,16 +208,16 @@ withsysfs() {
     for i in /sys/class/sound/*; do
 	case "$i" in
 	    */hwC?D?)
-		if [ -f $i/init_pin_configs ]; then
+		if [ -f "$i/init_pin_configs" ]; then
 		    if [ -z "$printed" ]; then
-			echo "!!Sysfs Files" >> $FILE
-			echo "!!-----------" >> $FILE
-			echo "" >> $FILE
+			echo "!!Sysfs Files" >> "$FILE"
+			echo "!!-----------" >> "$FILE"
+			echo "" >> "$FILE"
 		    fi
 		    for f in init_pin_configs driver_pin_configs user_pin_configs init_verbs hints; do
-			echo "$i/$f:" >> $FILE
-			cat $i/$f >> $FILE
-			echo >> $FILE
+			echo "$i/$f:" >> "$FILE"
+			cat "$i/$f" >> "$FILE"
+			echo >> "$FILE"
 		    done
 		    printed=yes
 		fi
@@ -225,17 +225,17 @@ withsysfs() {
 	    esac
     done
     if [ -n "$printed" ]; then
-	echo "" >> $FILE
+	echo "" >> "$FILE"
     fi
 }
 
 withdmesg() {
-	echo "!!ALSA/HDA dmesg" >> $FILE
-	echo "!!--------------" >> $FILE
-	echo "" >> $FILE
-	dmesg | grep -C1 -E 'ALSA|HDA|HDMI|snd[_-]|sound|audio|hda.codec|hda.intel' >> $FILE
-	echo "" >> $FILE
-	echo "" >> $FILE
+	echo "!!ALSA/HDA dmesg" >> "$FILE"
+	echo "!!--------------" >> "$FILE"
+	echo "" >> "$FILE"
+	dmesg | grep -C1 -E 'ALSA|HDA|HDMI|snd[_-]|sound|audio|hda.codec|hda.intel' >> "$FILE"
+	echo "" >> "$FILE"
+	echo "" >> "$FILE"
 }
 
 withpackages() {
@@ -267,11 +267,11 @@ withall() {
 	withsysfs
 	withdmesg
 	withpackages
-	WITHALL="no"
+	WITHALL=no
 }
 
 get_alsa_library_version() {
-	ALSA_LIB_VERSION=$(grep VERSION_STR /usr/include/alsa/version.h 2>/dev/null | awk '{ print $3 }' | sed 's/"//g')
+	ALSA_LIB_VERSION="$(grep VERSION_STR /usr/include/alsa/version.h 2>/dev/null | awk '{ print $3 }' | sed 's/"//g')"
 
 	if [ -z "$ALSA_LIB_VERSION" ]; then
 		if [ -f /etc/lsb-release ]; then
@@ -279,10 +279,10 @@ get_alsa_library_version() {
 			case "$DISTRIB_ID" in
 				Ubuntu)
 					if command -v dpkg > /dev/null ; then
-						ALSA_LIB_VERSION=$(dpkg -l libasound2 | tail -1 | awk '{ print $3 }' | cut -f 1 -d -)
+						ALSA_LIB_VERSION="$(dpkg -l libasound2 | tail -1 | awk '{ print $3 }' | cut -f 1 -d -)"
 					fi
 
-					if [ "$ALSA_LIB_VERSION" = "<none>" ]; then
+					if [ "$ALSA_LIB_VERSION" = '<none>' ]; then
 						ALSA_LIB_VERSION=""
 					fi
 					return
@@ -293,10 +293,10 @@ get_alsa_library_version() {
 			esac
 		elif [ -f /etc/debian_version ]; then
 			if command -v dpkg > /dev/null ; then
-				ALSA_LIB_VERSION=$(dpkg -l libasound2 | tail -1 | awk '{ print $3 }' | cut -f 1 -d -)
+				ALSA_LIB_VERSION="$(dpkg -l libasound2 | tail -1 | awk '{ print $3 }' | cut -f 1 -d -)"
 			fi
 
-			if [ "$ALSA_LIB_VERSION" = "<none>" ]; then
+			if [ "$ALSA_LIB_VERSION" = '<none>' ]; then
 				ALSA_LIB_VERSION=""
 			fi
 			return
@@ -305,8 +305,8 @@ get_alsa_library_version() {
 }
 
 # Basic requires
-for prg in $REQUIRES; do
-  t=$(command -v $prg)
+for prg in "${REQUIRES[@]}"; do
+  t="$(command -v "$prg")"
   if test -z "$t"; then
     echo "This script requires $prg utility to continue."
     exit 1
@@ -319,38 +319,38 @@ TPUT="$(command -v tput)"
 DIALOG="$(command -v dialog)"
 
 # Check to see if sysfs is enabled in the kernel. We'll need this later on
-SYSFS=$(mount | grep sysfs | awk '{ print $3 }');
+SYSFS="$(mount | grep sysfs | awk '{ print $3 }')"
 
 # Check modprobe config files for sound related options
-SNDOPTIONS=$(modprobe -c | sed -n 's/^options \(snd[-_][^ ]*\)/\1:/p')
+SNDOPTIONS="$(modprobe -c | sed -n 's/^options \(snd[-_][^ ]*\)/\1:/p')"
 
 KEEP_OUTPUT=
 NFILE=""
 
 PASTEBIN=""
-WWWSERVICE="www.alsa-project.org"
-WELCOME="yes"
-PROCEED="yes"
-UPLOAD="ask"
+WWWSERVICE='www.alsa-project.org'
+WELCOME=yes
+PROCEED=yes
+UPLOAD=ask
 REPEAT=""
 while [ -z "$REPEAT" ]; do
-REPEAT="no"
+REPEAT=no
 case "$1" in
 	--update|--help|--about)
-		WELCOME="no"
-		PROCEED="no"
+		WELCOME=no
+		PROCEED=no
 		;;
 	--upload)
-		UPLOAD="yes"
-		WELCOME="no"
+		UPLOAD=yes
+		WELCOME=no
 		;;
 	--no-upload)
-		UPLOAD="no"
-		WELCOME="no"
+		UPLOAD=no
+		WELCOME=no
 		;;
 	--pastebin)
-		PASTEBIN="yes"
-		WWWSERVICE="pastebin"
+		PASTEBIN=yes
+		WWWSERVICE=pastebin
 		;;
 	--no-dialog)
 		DIALOG=""
@@ -359,14 +359,14 @@ case "$1" in
 		;;
 	--stdout)
 		DIALOG=""
-		WELCOME="no"
+		WELCOME=no
 		;;
 esac
 done
 
 
 #Script header output.
-if [ "$WELCOME" = "yes" ]; then
+if [ "$WELCOME" = yes ]; then
 greeting_message="\
 
 This script visits the following commands/files to collect diagnostic
@@ -396,15 +396,15 @@ fi # dialog
 fi # WELCOME
 
 # Set the output file
-TEMPDIR=$(mktemp -t -d alsa-info.XXXXXXXXXX) || exit 1
+TEMPDIR="$(mktemp -t -d alsa-info.XXXXXXXXXX)" || exit 1
 FILE="$TEMPDIR/alsa-info.txt"
 if [ -z "$NFILE" ]; then
-	NFILE=$(mktemp -t alsa-info.txt.XXXXXXXXXX) || exit 1
+	NFILE="$(mktemp -t alsa-info.txt.XXXXXXXXXX)" || exit 1
 fi
 
 trap cleanup 0
 
-if [ "$PROCEED" = "yes" ]; then
+if [ "$PROCEED" = yes ]; then
 
 if [ -z "$LSPCI" ]; then
 	if [ -d /sys/bus/pci ]; then
@@ -753,19 +753,19 @@ if [ -n "$1" ]; then
 			exit
 			;;
 		--upload)
-			UPLOAD="yes"
+			UPLOAD=yes
 			;;
 		--no-upload)
-			UPLOAD="no"
+			UPLOAD=no
 			;;
 		--output)
 			shift
 			NFILE="$1"
-			KEEP_OUTPUT="yes"
+			KEEP_OUTPUT=yes
 			;;
 		--debug)
 			echo "Debugging enabled. $FILE and $TEMPDIR will not be deleted"
-			KEEP_FILES="yes"
+			KEEP_FILES=yes
 			echo ""
 			;;
 		--with-all)
@@ -773,39 +773,39 @@ if [ -n "$1" ]; then
 			;;
 		--with-aplay)
 			withaplay
-			WITHALL="no"
+			WITHALL=no
 			;;
 		--with-amixer)
 			withamixer
-			WITHALL="no"
+			WITHALL=no
 			;;
 		--with-alsactl)
 			withalsactl
-			WITHALL="no"
+			WITHALL=no
 			;;
 		--with-devices)
 			withdevices
-			WITHALL="no"
+			WITHALL=no
 			;;
 		--with-dmesg)
 			withdmesg
-			WITHALL="no"
+			WITHALL=no
 			;;
 		--with-configs)
 			withconfigs
-			WITHALL="no"
+			WITHALL=no
 			;;
 		--with-packages)
 			withpackages
-			WITHALL="no"
+			WITHALL=no
 			;;
 		--stdout)
-			UPLOAD="no"
+			UPLOAD=no
 			if [ -z "$WITHALL" ]; then
 				withall
 			fi
-			cat $FILE
-			rm $FILE
+			cat "$FILE"
+			rm "$FILE"
 			exit
 			;;
 		--about)
@@ -836,13 +836,13 @@ if [ -n "$1" ]; then
 			echo "	--update (check server for script updates)"
 			echo "	--upload (upload contents to remote server)"
 			echo "	--no-upload (do not upload contents to remote server)"
-			echo "	--pastebin (use https://pastebin.ca) as remote server"
+			echo "	--pastebin (use 'https://pastebin.ca') as remote server"
 			echo "	    instead www.alsa-project.org"
 			echo "	--stdout (print alsa information to standard output"
 			echo "	    instead of a file)"
 			echo "	--about (show some information about the script)"
 			echo "	--debug (will run the script as normal, but will not"
-			echo "	     delete $FILE)"
+			echo "	     delete ${FILE})"
 			exit 0
 			;;
 	esac
@@ -850,7 +850,7 @@ if [ -n "$1" ]; then
 	done
 fi
 
-if [ "$PROCEED" = "no" ]; then
+if [ "$PROCEED" = no ]; then
 	exit 1
 fi
 
@@ -861,65 +861,65 @@ fi
 # Check if wget is installed, and supports --post-file.
 if ! wget --help 2>/dev/null | grep -q post-file; then
 	# We couldn't find a suitable wget. If --upload was passed, tell the user to upload manually.
-	if [ "$UPLOAD" != "yes" ]; then
+	if [ "$UPLOAD" != yes ]; then
 		:
 	elif [ -n "$DIALOG" ]; then
 		if [ -z "$PASTEBIN" ]; then
-			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to https://www.alsa-project.org.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to https://www.alsa-project.org/cardinfo-db/ and submit your post." 25 100
+			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to 'https://www.alsa-project.org'.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to 'https://www.alsa-project.org/cardinfo-db' and submit your post." 25 100
 		else
-			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to https://www.pastebin.ca.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to https://www.pastebin.ca/upload.php and submit your post." 25 100
+			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to 'https://www.pastebin.ca'.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to 'https://www.pastebin.ca/upload.php' and submit your post." 25 100
 		fi
 	else
 		if [ -z "$PASTEBIN" ]; then
 			echo ""
-			echo "Could not automatically upload output to https://www.alsa-project.org"
+			echo "Could not automatically upload output to 'https://www.alsa-project.org'"
 			echo "Possible reasons are:"
 			echo "    1. Couldn't find 'wget' in your PATH"
 			echo "    2. Your version of wget is less than 1.8.2"
 			echo ""
-			echo "Please manually upload $NFILE to https://www.alsa-project.org/cardinfo-db/ and submit your post."
+			echo "Please manually upload $NFILE to 'https://www.alsa-project.org/cardinfo-db' and submit your post."
 			echo ""
 		else
 			echo ""
-			echo "Could not automatically upload output to https://www.pastebin.ca"
+			echo "Could not automatically upload output to 'https://www.pastebin.ca'"
 			echo "Possible reasons are:"
 			echo "    1. Couldn't find 'wget' in your PATH"
 			echo "    2. Your version of wget is less than 1.8.2"
 			echo ""
-			echo "Please manually upload $NFILE to https://www.pastebin.ca/upload.php and submit your post."
+			echo "Please manually upload $NFILE to 'https://www.pastebin.ca/upload.php' and submit your post."
 			echo ""
 		fi
 	fi
-	UPLOAD="no"
+	UPLOAD=no
 fi
 
-if [ "$UPLOAD" = "ask" ]; then
+if [ "$UPLOAD" = ask ]; then
 	if [ -n "$DIALOG" ]; then
 		dialog --backtitle "$BGTITLE" --title "Information collected" --yes-label " UPLOAD / SHARE " --no-label " SAVE LOCALLY " --defaultno --yesno "\n\nAutomatically upload ALSA information to $WWWSERVICE?" 10 80
-		DIALOG_EXIT_CODE=$?
-		if [ $DIALOG_EXIT_CODE != 0 ]; then
-			UPLOAD="no"
+		DIALOG_EXIT_CODE="$?"
+		if [ "$DIALOG_EXIT_CODE" != 0 ]; then
+			UPLOAD=no
 		else
-			UPLOAD="yes"
+			UPLOAD=yes
 		fi
 	else
 		echo -n "Automatically upload ALSA information to $WWWSERVICE? [y/N] : "
 		read -e CONFIRM
-		if [ "$CONFIRM" != "y" ]; then
-			UPLOAD="no"
+		if [ "$CONFIRM" != y ]; then
+			UPLOAD=no
 		else
-			UPLOAD="yes"
+			UPLOAD=yes
 		fi
 	fi
 
 fi
 
-if [ "$UPLOAD" = "no" ]; then
+if [ "$UPLOAD" = no ]; then
 
-	mv -f $FILE $NFILE || exit 1
-	KEEP_OUTPUT="yes"
+	mv -f "$FILE" "$NFILE" || exit 1
+	KEEP_OUTPUT=yes
 
-	if [[ -n $DIALOG ]]
+	if [[ -n "$DIALOG" ]]
 	then
 		dialog --backtitle "$BGTITLE" --title "Information collected" --msgbox "\n\nYour ALSA information is in $NFILE" 10 60
 	else
@@ -932,22 +932,22 @@ if [ "$UPLOAD" = "no" ]; then
 
 fi # UPLOAD
 
-if [[ -n $DIALOG ]]
+if [[ -n "$DIALOG" ]]
 then
 	dialog --backtitle "$BGTITLE" --infobox "Uploading information to $WWWSERVICE ..." 6 70
 else
 	echo -n "Uploading information to $WWWSERVICE ..."
 fi
 
-if [[ -z $PASTEBIN ]]; then
-	wget -O - --tries=5 --timeout=60 --post-file=$FILE "https://www.alsa-project.org/cardinfo-db/" &>$TEMPDIR/wget.tmp
+if [[ -z "$PASTEBIN" ]]; then
+	wget -O - --tries=5 --timeout=60 --post-file="$FILE" 'https://www.alsa-project.org/cardinfo-db/' &> "$TEMPDIR/wget.tmp"
 else
-	wget -O - --tries=5 --timeout=60 --post-file=$FILE "https://pastebin.ca/quiet-paste.php?api=$PASTEBINKEY&encrypt=t&encryptpw=blahblah" &>$TEMPDIR/wget.tmp
+	wget -O - --tries=5 --timeout=60 --post-file="$FILE" 'https://pastebin.ca/quiet-paste.php?api='"${PASTEBINKEY}"'&encrypt=t&encryptpw=blahblah' &> "$TEMPDIR/wget.tmp"
 fi
 
-if [ $? -ne 0 ]; then
-	mv -f $FILE $NFILE || exit 1
-	KEEP_OUTPUT="yes"
+if [ "$?" -ne 0 ]; then
+	mv -f "$FILE" "$NFILE" || exit 1
+	KEEP_OUTPUT=yes
 
 	if [ -n "$DIALOG" ]; then
 		dialog --backtitle "$BGTITLE" --title "Information not uploaded" --msgbox "An error occurred while contacting $WWWSERVICE.\n Your information was NOT automatically uploaded.\n\nYour ALSA information is in $NFILE" 10 100
@@ -966,10 +966,10 @@ fi
 if [ -n "$DIALOG" ]; then
 
 dialog --backtitle "$BGTITLE" --title "Information uploaded" --yesno "Would you like to see the uploaded information?" 5 100 
-DIALOG_EXIT_CODE=$?
-if [ $DIALOG_EXIT_CODE = 0 ]; then
-	grep -v "alsa-info.txt" $FILE > $TEMPDIR/uploaded.txt
-	dialog --backtitle "$BGTITLE" --textbox $TEMPDIR/uploaded.txt 0 0
+DIALOG_EXIT_CODE="$?"
+if [ "$DIALOG_EXIT_CODE" = 0 ]; then
+	grep -v alsa-info.txt "$FILE" > "$TEMPDIR/uploaded.txt"
+	dialog --backtitle "$BGTITLE" --textbox "$TEMPDIR/uploaded.txt" 0 0
 fi
 
 clear
@@ -983,14 +983,14 @@ echo ""
 fi # dialog
 
 if [ -z "$PASTEBIN" ]; then
-	FINAL_URL=$(grep "SUCCESS:" $TEMPDIR/wget.tmp | cut -d ' ' -f 2)
+	FINAL_URL="$(grep 'SUCCESS:' "$TEMPDIR/wget.tmp" | cut -d ' ' -f 2)"
 else
-	FINAL_URL=$(grep "SUCCESS:" $TEMPDIR/wget.tmp | sed -n 's/.*\:\([0-9]\+\).*/https:\/\/pastebin.ca\/\1/p')
+	FINAL_URL="$(grep 'SUCCESS:' "$TEMPDIR/wget.tmp" | sed -n 's/.*\:\([0-9]\+\).*/https:\/\/pastebin.ca\/\1/p')"
 fi
 
 # See if tput is available, and use it if it is.
 if [ -x "$TPUT" ]; then
-	FINAL_URL=$(tput setaf 1; printf '%s' "$FINAL_URL"; tput sgr0)
+	FINAL_URL="$(tput setaf 1; printf '%s' "$FINAL_URL"; tput sgr0)"
 fi
 
 # Output the URL of the uploaded file.	
