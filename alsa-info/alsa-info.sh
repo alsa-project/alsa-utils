@@ -70,14 +70,14 @@ update() {
 					cp $SHFILE $0
 					echo "ALSA-Info script has been updated to v $REMOTE_VERSION"
 					echo "Please re-run the script"
-					rm $SHFILE 2>/dev/null
+					rm "$SHFILE" 2>/dev/null
 				else
 					echo "ALSA-Info script has been downloaded as $SHFILE."
 					echo "Please re-run the script from new location."
 				fi
 				exit
 			else
-				rm $SHFILE 2>/dev/null
+				rm "$SHFILE" 2>/dev/null
 			fi
 		else
 			echo "Newer version detected: $REMOTE_VERSION"
@@ -87,7 +87,7 @@ update() {
 				echo -n "If you do not like to proceed, press Ctrl-C now.." ; read inp
 				cp $SHFILE $0
 				echo "ALSA-Info script has been updated. Please re-run it."
-				rm $SHFILE 2>/dev/null
+				rm "$SHFILE" 2>/dev/null
 			else
 				echo "ALSA-Info script has been downloaded $SHFILE."
 				echo "Please, re-run it from new location."
@@ -95,7 +95,7 @@ update() {
 			exit
 		fi
 	else
-		rm $SHFILE 2>/dev/null
+		rm "$SHFILE" 2>/dev/null
 	fi
 }
 
