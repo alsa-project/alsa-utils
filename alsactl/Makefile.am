@@ -9,6 +9,8 @@ EXTRA_DIST=alsactl.1 alsactl_init.xml
 
 AM_CFLAGS = -D_GNU_SOURCE
 
+AM_CPPFLAGS = -I$(top_srcdir)/include
+
 alsactl_SOURCES=alsactl.c state.c lock.c utils.c init_parse.c init_ucm.c \
 		daemon.c monitor.c clean.c info.c
 
