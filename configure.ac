@@ -189,6 +189,16 @@ AC_ARG_ENABLE(alsaloop,
      esac],[alsaloop=true])
 AM_CONDITIONAL(ALSALOOP, test x$alsaloop = xtrue)
 
+dnl Disable nhlt
+AC_ARG_ENABLE(nhlt,
+     AS_HELP_STRING([--disable-nhlt], [Disable nhlt packaging]),
+     [case "${enableval}" in
+       yes) nhlt=true ;;
+       no)  nhlt=false ;;
+       *) AC_MSG_ERROR(bad value ${enableval} for --enable-nhlt) ;;
+     esac],[nhlt=true])
+AM_CONDITIONAL(NHLT, test x$nhlt = xtrue)
+
 xmlto_available=""
 AC_ARG_ENABLE(xmlto,
  AS_HELP_STRING([--disable-xmlto], [Disable man page creation via xmlto]),
@@ -475,4 +485,5 @@ AC_OUTPUT(Makefile alsactl/Makefile alsactl/init/Makefile \
 	  seq/aplaymidi/Makefile seq/aseqdump/Makefile seq/aseqnet/Makefile \
 	  speaker-test/Makefile speaker-test/samples/Makefile \
 	  alsaloop/Makefile alsa-info/Makefile \
-	  axfer/Makefile axfer/test/Makefile)
+	  axfer/Makefile axfer/test/Makefile \
+	  nhlt/Makefile)

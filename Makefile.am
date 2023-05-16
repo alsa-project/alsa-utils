@@ -31,6 +31,9 @@ endif
 if HAVE_TOPOLOGY
 SUBDIRS += topology
 endif
+if NHLT
+SUBDIRS += nhlt
+endif
 
 EXTRA_DIST= README.md TODO gitcompile
 AUTOMAKE_OPTIONS=foreign

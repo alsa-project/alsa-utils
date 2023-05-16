@@ -1,0 +1,37 @@
+.TH NHLT-DMIC-INFO 1 "16 May 2023"
+.SH NAME
+nhlt-dmic-info \- dump microphone array information from ACPI NHLT table
+.SH SYNOPSIS
+\fBnhlt-dmic-info\fP [\fI\-option\fP]
+.SH DESCRIPTION
+
+\fB\fBnhlt-dmic-info\fP\fP dumps microphone array information from ACPI NHLT
+table in JSON format.
+
+.SH OPTIONS
+
+.TP
+\fI\-h\fP | \fI\-\-help\fP
+
+Prints the help information.
+
+.TP
+\fI\-f <file>\fP | \fI\-\-file=<file>\fP
+
+Input file with the binary ACPI NHLT table (default is \fB/sys/firmware/acpi/tables/NHLT\fR).
+
+.TP
+\fI\-o <file>\fP | \fI\-\-output=<file>\fP
+
+JSON output file (default is stdout: \fB\-\fR).
+
+.SH EXAMPLES
+.nf
+\fBnhlt-dmic-info \-f nhlt.bin \-o dmic.json\fR
+
+.ne
+.SH BUGS
+None known.
+.SH AUTHOR
+\fBnhlt-dmic-info\fP is by Jaroslav Kysela <perex@perex.cz>.
+This document is by Jaroslav Kysela <perex@perex.cz>.

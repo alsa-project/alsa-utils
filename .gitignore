@@ -57,6 +57,7 @@ alsaucm/alsaucm
 alsaucm/alsaucm.1
 alsaucm/89-alsa-ucm.rules
 topology/alsatplg
+nhlt/nhlt-dmic-info
 
 include/aconfig.h*
 include/stamp-*
