@@ -1,0 +1,1684 @@
+# Basque translation for alsa-utils
+# Copyright (C) 2011 The ALSA Team
+# This file is distributed under the same license as the alsa-utils package.
+# Porrumentzio <porrumentzio@riseup.net>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: alsa-utils 1.0.23\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-01-10 09:07+0100\n"
+"PO-Revision-Date: 2023-05-25 17:58+0900\n"
+"Language-Team: Librezale <librezale@librezale.eus>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.4.2\n"
+"Last-Translator: Yi Yunseok <ironyunseok@protonmail.com>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Language: ko\n"
+
+#: alsamixer/card_select.c:126 alsamixer/device_name.c:126
+msgid "Sound Card"
+msgstr "사운드 카드"
+
+#: alsamixer/card_select.c:181
+msgid "(default)"
+msgstr "(기본)"
+
+#: alsamixer/card_select.c:191
+msgid "cannot enumerate sound cards"
+msgstr "사운드 카드를 열거할 수 없음"
+
+#: alsamixer/card_select.c:215
+msgid "enter device name..."
+msgstr "장치 이름 입력..."
+
+#: alsamixer/cli.c:40
+msgid "Usage: alsamixer [options]"
+msgstr "사용법: alsamixer [options]"
+
+# capture --> atzemate, hartze, kaptura(tze)...?
+#: alsamixer/cli.c:41
+msgid ""
+"Useful options:\n"
+"  -h, --help              this help\n"
+"  -c, --card=NUMBER       sound card number or id\n"
+"  -D, --device=NAME       mixer device name\n"
+"  -V, --view=MODE         starting view mode: playback/capture/all"
+msgstr ""
+"유용한 옵션:\n"
+"  -h, --help              도움말\n"
+"  -c, --card=NUMBER       사운드 카드 번호 또는 id\n"
+"  -D, --device=NAME       믹서 장치 이름\n"
+"  -V, --view=MODE         보기 모드 시작: 재생/캡처/모두"
+
+#: alsamixer/cli.c:46
+msgid ""
+"Debugging options:\n"
+"  -g, --no-color          toggle using of colors\n"
+"  -a, --abstraction=NAME  mixer abstraction level: none/basic"
+msgstr ""
+"디버깅 옵션:\n"
+"  -g, --no-color          색상 사용 전환\n"
+"  -a, --abstraction=NAME  믹서 추상 레벨: 없음/기본"
+
+#: alsamixer/cli.c:77
+#, c-format
+msgid "invalid card index: %s\n"
+msgstr "잘못된 카드 인덱스: %s\n"
+
+#: alsamixer/cli.c:103
+#, c-format
+msgid "unknown abstraction level: %s\n"
+msgstr "알 수 없는 추상 레벨: %s\n"
+
+#: alsamixer/cli.c:108
+#, c-format
+msgid "unknown option: %c\n"
+msgstr "알 수 없는 옵션: %c\n"
+
+#: alsamixer/cli.c:110
+msgid "try `alsamixer --help' for more information\n"
+msgstr "`alsamixer --help' 명령으로 더 많은 정보 확인\n"
+
+#: alsamixer/device_name.c:177
+msgid "Device name:"
+msgstr "장치 이름:"
+
+#: alsamixer/die.c:37
+#, c-format
+msgid "%s: %s\n"
+msgstr "%s: %s\n"
+
+#: alsamixer/mixer_display.c:98
+msgid "Card:"
+msgstr "카드:"
+
+#: alsamixer/mixer_display.c:99
+msgid "Chip:"
+msgstr "칩:"
+
+#: alsamixer/mixer_display.c:100
+msgid "View:"
+msgstr "보기:"
+
+#: alsamixer/mixer_display.c:101
+msgid "Item:"
+msgstr "도구:"
+
+#: alsamixer/mixer_display.c:104
+msgid "F1:  Help"
+msgstr "F1:  도움말"
+
+#: alsamixer/mixer_display.c:105
+msgid "F2:  System information"
+msgstr "F2:  시스템 정보"
+
+#: alsamixer/mixer_display.c:106
+msgid "F6:  Select sound card"
+msgstr "F6:  사운드 카드 선택"
+
+# Esc --> Ihes / Esc
+#: alsamixer/mixer_display.c:107
+msgid "Esc: Exit"
+msgstr "Esc: 나가기"
+
+#: alsamixer/mixer_display.c:174
+msgid "(unplugged)"
+msgstr "(연결되지 않음)"
+
+#: alsamixer/mixer_display.c:192
+msgid "Playback"
+msgstr "재생"
+
+#: alsamixer/mixer_display.c:193
+msgid "Capture"
+msgstr "캡처"
+
+#: alsamixer/mixer_display.c:194
+msgid "All"
+msgstr "모두"
+
+#: alsamixer/mixer_display.c:234
+msgid "mute"
+msgstr "음소거"
+
+#: alsamixer/mixer_display.c:275 alsamixer/mixer_display.c:285
+msgid "dB gain:"
+msgstr "dB 증폭:"
+
+#: alsamixer/mixer_display.c:285
+#, c-format
+msgid " [%s %s, %s]"
+msgstr " [%s %s, %s]"
+
+#: alsamixer/mixer_display.c:294 alsamixer/mixer_display.c:300
+#: alsamixer/mixer_display.c:306 alsamixer/mixer_display.c:312
+msgid "Off"
+msgstr "끄기"
+
+#: alsamixer/mixer_display.c:300 alsamixer/mixer_display.c:312
+msgid "On"
+msgstr "켜기"
+
+#: alsamixer/mixer_display.c:363
+msgid "The sound device was unplugged."
+msgstr "사운드 장치 연결이 해제됐습니다."
+
+#: alsamixer/mixer_display.c:364
+msgid "Press F6 to select another sound card."
+msgstr "F6을 눌러 다른 사운드 카드를 선택하세요."
+
+#: alsamixer/mixer_display.c:379
+msgid "This sound device does not have any playback controls."
+msgstr "이 사운드 장치는 재생 제어를 할 수 없습니다."
+
+#: alsamixer/mixer_display.c:381
+msgid "This sound device does not have any capture controls."
+msgstr "이 사운드 장치는 캡처 제어를 할 수 없습니다."
+
+#: alsamixer/mixer_display.c:383
+msgid "This sound device does not have any controls."
+msgstr "이 사운드 장치는 제어할 수 없습니다."
+
+#. TRANSLATORS: playback on; one character
+#: alsamixer/mixer_display.c:516 alsamixer/mixer_display.c:521
+msgid "O"
+msgstr "O"
+
+#. TRANSLATORS: playback muted; one character
+#: alsamixer/mixer_display.c:518 alsamixer/mixer_display.c:522
+msgid "M"
+msgstr "M"
+
+#. TRANSLATORS: "left"; no more than two characters
+#: alsamixer/mixer_display.c:536
+msgid "L"
+msgstr "L"
+
+#. TRANSLATORS: "right"; no more than two characters
+#: alsamixer/mixer_display.c:540
+msgid "R"
+msgstr "R"
+
+#. TRANSLATORS: no more than eight characters
+#: alsamixer/mixer_display.c:542
+msgid "CAPTURE"
+msgstr "캡처"
+
+#: alsamixer/mixer_display.c:592
+msgid "Front"
+msgstr "전면"
+
+#: alsamixer/mixer_display.c:595
+msgid "Rear"
+msgstr "후면"
+
+#: alsamixer/mixer_display.c:598 speaker-test/speaker-test.c:125
+msgid "Center"
+msgstr "중앙"
+
+#: alsamixer/mixer_display.c:601
+msgid "Woofer"
+msgstr "우퍼"
+
+#: alsamixer/mixer_display.c:604
+msgid "Side"
+msgstr "측면"
+
+#: alsamixer/mixer_widget.c:91 alsamixer/mixer_widget.c:96
+msgid "cannot open mixer"
+msgstr "믹서를 열 수 없음"
+
+#: alsamixer/mixer_widget.c:102 alsamixer/mixer_widget.c:179
+msgid "cannot load mixer controls"
+msgstr "믹서 컨트롤을 불러올 수 없음"
+
+#: alsamixer/mixer_widget.c:169
+#, c-format
+msgid "Cannot open mixer device '%s'."
+msgstr "'%s' 믹서 장치를 열 수 없습니다."
+
+#: alsamixer/mixer_widget.c:190
+msgid "Esc     Exit"
+msgstr "Esc     나가기"
+
+#: alsamixer/mixer_widget.c:191
+msgid "F1 ? H  Help"
+msgstr "F1 ? H  도움말"
+
+#: alsamixer/mixer_widget.c:192
+msgid "F2 /    System information"
+msgstr "F2 /    시스템 정보"
+
+#: alsamixer/mixer_widget.c:193
+msgid "F3      Show playback controls"
+msgstr "F3      재생 컨트롤 표시"
+
+#: alsamixer/mixer_widget.c:194
+msgid "F4      Show capture controls"
+msgstr "F4      캡처 컨트롤 표시"
+
+#: alsamixer/mixer_widget.c:195
+msgid "F5      Show all controls"
+msgstr "F5      모든 컨트롤 표시"
+
+#: alsamixer/mixer_widget.c:196
+msgid "Tab     Toggle view mode (F3/F4/F5)"
+msgstr "Tab     보기 모드 전환 (F3/F4/F5)"
+
+#: alsamixer/mixer_widget.c:197
+msgid "F6 S    Select sound card"
+msgstr "F6 S    사운드 카드 선택"
+
+#: alsamixer/mixer_widget.c:198
+msgid "L       Redraw screen"
+msgstr "L       화면 새로고침"
+
+#: alsamixer/mixer_widget.c:200
+msgid "Left    Move to the previous control"
+msgstr "Left    이전 컨트롤로 이동"
+
+#: alsamixer/mixer_widget.c:201
+msgid "Right   Move to the next control"
+msgstr "Right   다음 컨트롤로 이동"
+
+#: alsamixer/mixer_widget.c:203
+msgid "Up/Down    Change volume"
+msgstr "Up/Down    음량 변경"
+
+#: alsamixer/mixer_widget.c:204
+msgid "+ -        Change volume"
+msgstr "+ -        음량 변경"
+
+#: alsamixer/mixer_widget.c:205
+msgid "Page Up/Dn Change volume in big steps"
+msgstr "Page Up/Dn 음량을 큰 폭으로 변경"
+
+#: alsamixer/mixer_widget.c:206
+msgid "End        Set volume to 0%"
+msgstr "End        음량을 0%로 설정"
+
+#: alsamixer/mixer_widget.c:207
+msgid "0-9        Set volume to 0%-90%"
+msgstr "0-9        음량을 0%-90%로 설정"
+
+#: alsamixer/mixer_widget.c:208
+msgid "Q W E      Increase left/both/right volumes"
+msgstr "Q W E      왼쪽/전체/오른쪽 음량 늘리기"
+
+#. TRANSLATORS: or Y instead of Z
+#: alsamixer/mixer_widget.c:210
+msgid "Z X C      Decrease left/both/right volumes"
+msgstr "Z X C      왼쪽/전체/오른쪽 음량 줄이기"
+
+#: alsamixer/mixer_widget.c:211
+msgid "B          Balance left and right volumes"
+msgstr "B          좌우 음량 밸런스"
+
+#: alsamixer/mixer_widget.c:213
+msgid "M          Toggle mute"
+msgstr "M          음소거 전환"
+
+#. TRANSLATORS: or , .
+#: alsamixer/mixer_widget.c:215
+msgid "< >        Toggle left/right mute"
+msgstr "< >        좌/우 음소거 전환"
+
+#: alsamixer/mixer_widget.c:217
+msgid "Space      Toggle capture"
+msgstr "Space      캡처 전환"
+
+#. TRANSLATORS: or Insert Delete
+#: alsamixer/mixer_widget.c:219
+msgid "; '        Toggle left/right capture"
+msgstr "; '        좌/우 캡처 전환"
+
+#: alsamixer/mixer_widget.c:221
+msgid "Authors:"
+msgstr "저자:"
+
+#: alsamixer/mixer_widget.c:222
+msgid "  Tim Janik"
+msgstr "  팀 야닉(Tim Janik)"
+
+#: alsamixer/mixer_widget.c:223
+msgid "  Jaroslav Kysela <perex@perex.cz>"
+msgstr "  야로슬라프 키셀라(Jaroslav Kysela) <perex@perex.cz>"
+
+#: alsamixer/mixer_widget.c:224
+msgid "  Clemens Ladisch <clemens@ladisch.de>"
+msgstr "  클레멘스 라디쉬(Clemens Ladisch) <clemens@ladisch.de>"
+
+#: alsamixer/mixer_widget.c:226
+msgid "Help"
+msgstr "도움말"
+
+#: alsamixer/proc_files.c:103
+msgid "Select File"
+msgstr "파일 선택"
+
+#: alsamixer/textbox.c:52 alsamixer/textbox.c:66
+msgid "Error"
+msgstr "오류"
+
+#: alsamixer/textbox.c:80
+#, c-format
+msgid "Cannot open file \"%s\"."
+msgstr "\"%s\" 파일을 열 수 없습니다."
+
+#: aplay/aplay.c:178
+msgid "raw data"
+msgstr "raw 데이터"
+
+#: aplay/aplay.c:179
+msgid "VOC"
+msgstr "VOC"
+
+#: aplay/aplay.c:181
+msgid "WAVE"
+msgstr "WAVE"
+
+#: aplay/aplay.c:182
+msgid "Sparc Audio"
+msgstr "스파크 오디오"
+
+#: aplay/aplay.c:203
+#, c-format
+msgid ""
+"Usage: %s [OPTION]... [FILE]...\n"
+"\n"
+"-h, --help              help\n"
+"    --version           print current version\n"
+"-l, --list-devices      list all soundcards and digital audio devices\n"
+"-L, --list-pcms         list device names\n"
+"-D, --device=NAME       select PCM by name\n"
+"-q, --quiet             quiet mode\n"
+"-t, --file-type TYPE    file type (voc, wav, raw or au)\n"
+"-c, --channels=#        channels\n"
+"-f, --format=FORMAT     sample format (case insensitive)\n"
+"-r, --rate=#            sample rate\n"
+"-d, --duration=#        interrupt after # seconds\n"
+"-s, --samples=#         interrupt after # samples per channel\n"
+"-M, --mmap              mmap stream\n"
+"-N, --nonblock          nonblocking mode\n"
+"-F, --period-time=#     distance between interrupts is # microseconds\n"
+"-B, --buffer-time=#     buffer duration is # microseconds\n"
+"    --period-size=#     distance between interrupts is # frames\n"
+"    --buffer-size=#     buffer duration is # frames\n"
+"-A, --avail-min=#       min available space for wakeup is # microseconds\n"
+"-R, --start-delay=#     delay for automatic PCM start is # microseconds \n"
+"                        (relative to buffer size if <= 0)\n"
+"-T, --stop-delay=#      delay for automatic PCM stop is # microseconds from "
+"xrun\n"
+"-v, --verbose           show PCM structure and setup (accumulative)\n"
+"-V, --vumeter=TYPE      enable VU meter (TYPE: mono or stereo)\n"
+"-I, --separate-channels one file for each channel\n"
+"-i, --interactive       allow interactive operation from stdin\n"
+"-m, --chmap=ch1,ch2,..  Give the channel map to override or follow\n"
+"    --disable-resample  disable automatic rate resample\n"
+"    --disable-channels  disable automatic channel conversions\n"
+"    --disable-format    disable automatic format conversions\n"
+"    --disable-softvol   disable software volume control (softvol)\n"
+"    --test-position     test ring buffer position\n"
+"    --test-coef=#       test coefficient for ring buffer position (default "
+"8)\n"
+"                        expression for validation is: coef * (buffer_size / "
+"2)\n"
+"    --test-nowait       do not wait for ring buffer - eats whole CPU\n"
+"    --max-file-time=#   start another output file when the old file has "
+"recorded\n"
+"                        for this many seconds\n"
+"    --process-id-file   write the process ID here\n"
+"    --use-strftime      apply the strftime facility to the output file "
+"name\n"
+"    --dump-hw-params    dump hw_params of the device\n"
+"    --fatal-errors      treat all errors as fatal\n"
+msgstr ""
+"사용법: %s [OPTION]... [FILE]...\n"
+"\n"
+"-h, --help              도움말\n"
+"    --version           현재 버전 출력\n"
+"-l, --list-devices      모든 디지털 오디오 장치와 사운드 카드 표시\n"
+"-L, --list-pcms         장치 이름 목록\n"
+"-D, --device=NAME       PCM 이름차순\n"
+"-q, --quiet             조용한 모드\n"
+"-t, --file-type TYPE    파일 유형 (voc, wav, raw 또는 au)\n"
+"-c, --channels=#        채널\n"
+"-f, --format=FORMAT     샘플 포맷 (대소문자 구분하지 않음)\n"
+"-r, --rate=#            샘플링 속도\n"
+"-d, --duration=#        # 초 이후 인터럽트\n"
+"-s, --samples=#         # 채널 당 샘플링 후 인터럽트\n"
+"-M, --mmap              mmap 스트림\n"
+"-N, --nonblock          비차단 모드\n"
+"-F, --period-time=#     # 마이크로초 사이로 인터럽트\n"
+"-B, --buffer-time=#     # 버퍼 지속 마이크로초\n"
+"    --period-size=#     # 프레임 사이로 인터럽트\n"
+"    --buffer-size=#     # 버퍼 지속 프레임\n"
+"-A, --avail-min=#       # 최소 웨이크업 마이크로초\n"
+"-R, --start-delay=#     # 자동 PCM 시작 지연 마이크로초 \n"
+"                        (버퍼 상대적 크기 <= 0)\n"
+"-T, --stop-delay=#      # xrun 자동 PCM 중지 지연 시간\n"
+"-v, --verbose           PCM 구조 및 설정 표시(누적)\n"
+"-V, --vumeter=TYPE      VU 미터 표시 (형태: 모노 또는 스테레오)\n"
+"-I, --separate-channels 채널 당 하나의 파일\n"
+"-i, --interactive       stdin으로부터 인터렉티브 작업 허용\n"
+"-m, --chmap=ch1,ch2,..  덮어쓰거나 따를 채널 맵 제공\n"
+"    --disable-resample  자동 리샘플 속도 비활성\n"
+"    --disable-channels  자동 채널 변환 비활성\n"
+"    --disable-format    자동 포맷 변환 비활성\n"
+"    --disable-softvol   소프트웨어 음량 제어(softvol) 비활성\n"
+"    --test-position     링 버퍼 위치 테스트\n"
+"    --test-coef=#       링 버퍼 위치 계수 테스트 (기본 8)\n"
+"                        검증 표현식: coef * (buffer_size / 2)\n"
+"    --test-nowait       링 버퍼를 기다리지 않음 - CPU 소모\n"
+"    --max-file-time=#   이전 파일이 기록되면 다른 출력 파일 시작\n"
+"                        이 수초 동안\n"
+"    --process-id-file   여기에 프로세스 ID 입력\n"
+"    --use-strftime      출력 파일 이름에 strftime 기능 적용\n"
+"    --dump-hw-params    장치의 hw_params 덤프\n"
+"    --fatal-errors      모든 오류를 치명적 오류로 취급\n"
+
+#: aplay/aplay.c:248 speaker-test/speaker-test.c:1023
+#, c-format
+msgid "Recognized sample formats are:"
+msgstr "인식되는 샘플 형식:"
+
+#: aplay/aplay.c:254
+#, c-format
+msgid ""
+"\n"
+"Some of these may not be available on selected hardware\n"
+msgstr ""
+"\n"
+"이 중 일부는 선택한 하드웨어에서 사용 불가능\n"
+
+#: aplay/aplay.c:255
+#, c-format
+msgid "The available format shortcuts are:\n"
+msgstr "사용 가능한 포맷 단축키:\n"
+
+#: aplay/aplay.c:256
+#, c-format
+msgid "-f cd (16 bit little endian, 44100, stereo)\n"
+msgstr "-f cd (16비트 리틀 엔디언, 44100, 스테레오)\n"
+
+#: aplay/aplay.c:257
+#, c-format
+msgid "-f cdr (16 bit big endian, 44100, stereo)\n"
+msgstr "-f cdr (16비트 빅 엔디언, 44100, 스테레오)\n"
+
+#: aplay/aplay.c:258
+#, c-format
+msgid "-f dat (16 bit little endian, 48000, stereo)\n"
+msgstr "-f dat (16비트 리틀 엔디언, 48000, 스테레오)\n"
+
+#: aplay/aplay.c:272
+msgid "no soundcards found..."
+msgstr "사운드 카드를 찾을 수 없음..."
+
+#: aplay/aplay.c:275
+#, c-format
+msgid "**** List of %s Hardware Devices ****\n"
+msgstr "**** %s 하드웨어 장치 목록 ****\n"
+
+#: aplay/aplay.c:304
+#, c-format
+msgid "card %i: %s [%s], device %i: %s [%s]\n"
+msgstr "카드 %i: %s [%s], 장치 %i: %s [%s]\n"
+
+#: aplay/aplay.c:310
+#, c-format
+msgid "  Subdevices: %i/%i\n"
+msgstr "  주변장치: %i/%i\n"
+
+#: aplay/aplay.c:317
+#, c-format
+msgid "  Subdevice #%i: %s\n"
+msgstr "  주변장치 #%i: %s\n"
+
+#: aplay/aplay.c:398
+#, c-format
+msgid "Aborted by signal %s...\n"
+msgstr "%s 신호로 인해 중단됨...\n"
+
+#: aplay/aplay.c:553
+msgid "command should be named either arecord or aplay"
+msgstr "명령은 aplay 또는 arecord로 지정해야 함"
+
+#: aplay/aplay.c:597
+#, c-format
+msgid "unrecognized file format %s"
+msgstr "인식할 수 없는 파일 형식 %s"
+
+#: aplay/aplay.c:604
+#, c-format
+msgid "invalid channels argument '%s'"
+msgstr "잘못된 채널 인수 '%s'"
+
+#: aplay/aplay.c:608
+#, c-format
+msgid "value %i for channels is invalid"
+msgstr "채널의 %i 값이 잘못됨"
+
+#: aplay/aplay.c:627
+#, c-format
+msgid "wrong extended format '%s'"
+msgstr "잘못된 확장 형식 '%s'"
+
+#: aplay/aplay.c:635
+#, c-format
+msgid "invalid rate argument '%s'"
+msgstr "잘못된 속도 인수 '%s'"
+
+#: aplay/aplay.c:642
+#, c-format
+msgid "bad speed value %i"
+msgstr "잘못된 속도 값 %i"
+
+#: aplay/aplay.c:648
+msgid "duration and samples arguments cannot be used together"
+msgstr "샘플링과 지속시간 인수는 함께 사용할 수 없음"
+
+#: aplay/aplay.c:653
+#, c-format
+msgid "invalid duration argument '%s'"
+msgstr "잘못된 지속시간 인수 '%s'"
+
+#: aplay/aplay.c:660
+msgid "samples and duration arguments cannot be used together"
+msgstr "지속 시간과 샘플링 인수는 함께 사용할 수 없음"
+
+#: aplay/aplay.c:665
+#, c-format
+msgid "invalid samples argument '%s'"
+msgstr "잘못된 샘플링 인수 '%s'"
+
+#: aplay/aplay.c:677
+#, c-format
+msgid "invalid period time argument '%s'"
+msgstr "잘못된 주기 시간 인수 '%s'"
+
+#: aplay/aplay.c:684
+#, c-format
+msgid "invalid buffer time argument '%s'"
+msgstr "잘못된 버퍼 시간 인수 '%s'"
+
+#: aplay/aplay.c:691
+#, c-format
+msgid "invalid period size argument '%s'"
+msgstr "잘못된 주기 크기 인수 '%s'"
+
+#: aplay/aplay.c:698
+#, c-format
+msgid "invalid buffer size argument '%s'"
+msgstr "잘못된 버퍼 크기 인수 '%s'"
+
+#: aplay/aplay.c:705
+#, c-format
+msgid "invalid min available space argument '%s'"
+msgstr "잘못된 최소 사용 가능 공간 인수 '%s'"
+
+#: aplay/aplay.c:712
+#, c-format
+msgid "invalid start delay argument '%s'"
+msgstr "잘못된 시작 지연 인수 '%s'"
+
+#: aplay/aplay.c:719
+#, c-format
+msgid "invalid stop delay argument '%s'"
+msgstr "잘못된 중지 지연 인수 '%s'"
+
+#: aplay/aplay.c:774
+#, c-format
+msgid "invalid test coef argument '%s'"
+msgstr "잘못된 테스트 계수 인수 '%s'"
+
+#: aplay/aplay.c:786
+#, c-format
+msgid "invalid max file time argument '%s'"
+msgstr "잘못된 최대 파일 시간 인수 '%s'"
+
+#: aplay/aplay.c:806 speaker-test/speaker-test.c:666
+#, c-format
+msgid "Unable to parse channel map string: %s\n"
+msgstr "채널 맵 문자열 구문 분석 불가: %s\n"
+
+#: aplay/aplay.c:812
+#, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr "`%s --help' 명령으로 더 많은 정보를 확인할 수 있습니다.\n"
+
+#: aplay/aplay.c:828
+#, c-format
+msgid "audio open error: %s"
+msgstr "오디오 열기 오류: %s"
+
+#: aplay/aplay.c:833
+#, c-format
+msgid "info error: %s"
+msgstr "정보 오류: %s"
+
+#: aplay/aplay.c:840
+#, c-format
+msgid "nonblock setting error: %s"
+msgstr "비블록 설정 오류: %s"
+
+#: aplay/aplay.c:850 aplay/aplay.c:974 aplay/aplay.c:1264 aplay/aplay.c:1458
+#: aplay/aplay.c:1979 aplay/aplay.c:2009
+msgid "not enough memory"
+msgstr "메모리 부족"
+
+#: aplay/aplay.c:874
+#, c-format
+msgid "Cannot create process ID file %s: %s"
+msgstr "%s 프로세스 ID 파일을 생성할 수 없음: %s"
+
+#: aplay/aplay.c:964
+#, c-format
+msgid "read error (called from line %i)"
+msgstr "읽기 오류 (%i 행에서 호출됨)"
+
+#: aplay/aplay.c:1031
+#, c-format
+msgid "unknown length of 'fmt ' chunk (read %u, should be %u at least)"
+msgstr "알 수 없는 'fmt ' 청크 크기 (%u 읽기는 최소한 %u 값과 같아야 함)"
+
+#: aplay/aplay.c:1042
+#, c-format
+msgid ""
+"unknown length of extensible 'fmt ' chunk (read %u, should be %u at least)"
+msgstr ""
+"알 수 없는 'fmt ' 확장 가능 청크 크기 (%u 읽기는 최소한 %u 값과 같아야 함)"
+
+#: aplay/aplay.c:1047
+msgid "wrong format tag in extensible 'fmt ' chunk"
+msgstr "잘못된 'fmt ' 확장 가능 청크 포맷 태그"
+
+#: aplay/aplay.c:1054
+#, c-format
+msgid "can't play WAVE-file format 0x%04x which is not PCM or FLOAT encoded"
+msgstr "재생할 수 없는 PCM 또는 FLOAT로 인코딩되지 않은 WAVE 파일 형식 0x%04x"
+
+#: aplay/aplay.c:1059
+#, c-format
+msgid "can't play WAVE-files with %d tracks"
+msgstr "%d 트랙의 WAVE 파일 재생 불가"
+
+#: aplay/aplay.c:1067 aplay/aplay.c:1193
+#, c-format
+msgid "Warning: format is changed to U8\n"
+msgstr "주의: 형식이 U8로 변경됨\n"
+
+#: aplay/aplay.c:1077 aplay/aplay.c:1090 aplay/aplay.c:1101
+#, c-format
+msgid "Warning: format is changed to %s\n"
+msgstr "주의: 형식이 %s로 변경됨\n"
+
+#: aplay/aplay.c:1106
+#, c-format
+msgid ""
+" can't play WAVE-files with sample %d bits in %d bytes wide (%d channels)"
+msgstr " %d 바이트 폭에서 %d 비트 WAVE 샘플 파일 재생 불가 (%d 채널)"
+
+#: aplay/aplay.c:1129
+#, c-format
+msgid " can't play WAVE-files with sample %d bits wide"
+msgstr " %d 비트 폭의 WAVE 샘플 파일 재생 불가"
+
+#: aplay/aplay.c:1187
+#, c-format
+msgid "Warning: format is changed to MU_LAW\n"
+msgstr "주의: 포맷이 MU_LAW로 변경됨\n"
+
+#: aplay/aplay.c:1199
+#, c-format
+msgid "Warning: format is changed to S16_BE\n"
+msgstr "주의: 포맷이 S16_BE로 변경됨\n"
+
+#: aplay/aplay.c:1212 aplay/aplay.c:2294 aplay/aplay.c:2301 aplay/aplay.c:2831
+msgid "read error"
+msgstr "읽기 오류"
+
+#: aplay/aplay.c:1242
+msgid "Channel numbers don't match between hw_params and channel map"
+msgstr "채널 맵과 hw_param 간 채널 번호가 일치하지 않음"
+
+#: aplay/aplay.c:1251
+#, c-format
+msgid "Warning: unable to get channel map\n"
+msgstr "주의: 채널 맵을 가져올 수 없음\n"
+
+#: aplay/aplay.c:1284
+#, c-format
+msgid "Channel %d doesn't match with hw_parmas"
+msgstr "채널 %d 및 hw_params가 일치하지 않음"
+
+#: aplay/aplay.c:1310
+msgid "Broken configuration for this PCM: no configurations available"
+msgstr "손상된 PCM 구성: 사용 가능한 구성이 없음"
+
+#: aplay/aplay.c:1314
+#, c-format
+msgid "HW Params of device \"%s\":\n"
+msgstr "\"%s\" 장치의 하드웨어 매개변수:\n"
+
+#: aplay/aplay.c:1334
+msgid "Access type not available"
+msgstr "액세스 유형을 사용할 수 없음"
+
+#: aplay/aplay.c:1339
+msgid "Sample format non available"
+msgstr "사용할 수 없는 샘플 형식"
+
+#: aplay/aplay.c:1345
+msgid "Channels count non available"
+msgstr "채널 수를 사용할 수 없음"
+
+#: aplay/aplay.c:1360
+#, c-format
+msgid "Warning: rate is not accurate (requested = %iHz, got = %iHz)\n"
+msgstr "주의: 정확하지 않은 속도 (요청됨 = %iHz, 가져옴 = %iHz)\n"
+
+#: aplay/aplay.c:1366
+#, c-format
+msgid "         please, try the plug plugin %s\n"
+msgstr "         %s 플러그인을 연결해야 함\n"
+
+#: aplay/aplay.c:1403
+msgid "Unable to install hw params:"
+msgstr "하드웨어 매개변수 설치 불가:"
+
+#: aplay/aplay.c:1410
+#, c-format
+msgid "Can't use period equal to buffer size (%lu == %lu)"
+msgstr "버퍼 크기와 같은 주기는 사용할 수 없음 (%lu == %lu)"
+
+#: aplay/aplay.c:1441
+msgid "unable to install sw params:"
+msgstr "소프트웨어 매개변수 설치 불가:"
+
+#: aplay/aplay.c:1476
+#, c-format
+msgid "snd_pcm_mmap_begin problem: %s"
+msgstr "snd_pcm_mmap_begin 문제: %s"
+
+#: aplay/aplay.c:1505
+#, c-format
+msgid "stdin O_NONBLOCK flag setup failed\n"
+msgstr "stdin O_NONBLOCK 플래그 설정 실패\n"
+
+#: aplay/aplay.c:1529
+#, c-format
+msgid "\rPAUSE command ignored (no hw support)\n"
+msgstr "\r일시정지 명령이 무시됨 (하드웨어 지원 없음)\n"
+
+#: aplay/aplay.c:1537
+#, c-format
+msgid "pause push error: %s"
+msgstr "일시정지 푸시 오류: %s"
+
+#: aplay/aplay.c:1548
+#, c-format
+msgid "pause release error: %s"
+msgstr "일시정지 릴리즈 오류: %s"
+
+#: aplay/aplay.c:1564
+#, c-format
+msgid ""
+"\r=== PAUSE ===                                                            "
+msgstr ""
+"\r=== 일시정지 "
+"===                                                            "
+
+#: aplay/aplay.c:1606
+#, c-format
+msgid "status error: %s"
+msgstr "상태 오류: %s"
+
+#: aplay/aplay.c:1611
+#, c-format
+msgid "fatal %s: %s"
+msgstr "치명적인 %s: %s"
+
+#: aplay/aplay.c:1612 aplay/aplay.c:1623 aplay/aplay.c:1626 aplay/aplay.c:1634
+msgid "underrun"
+msgstr "언더런"
+
+#: aplay/aplay.c:1612 aplay/aplay.c:1623 aplay/aplay.c:1634
+msgid "overrun"
+msgstr "오버런"
+
+#: aplay/aplay.c:1622 aplay/aplay.c:1633
+#, c-format
+msgid "%s!!! (at least %.3f ms long)\n"
+msgstr "%s!!! (최소 %.3f ms 길이)\n"
+
+#: aplay/aplay.c:1638
+#, c-format
+msgid "Status:\n"
+msgstr "상태:\n"
+
+#: aplay/aplay.c:1642
+#, c-format
+msgid "xrun: prepare error: %s"
+msgstr "xrun: 준비 오류: %s"
+
+#: aplay/aplay.c:1648
+#, c-format
+msgid "Status(DRAINING):\n"
+msgstr "상태(사용 중):\n"
+
+#: aplay/aplay.c:1652
+#, c-format
+msgid "capture stream format change? attempting recover...\n"
+msgstr "스트림 형식 캡처가 변경됐나요? 복구를 시도합니다...\n"
+
+#: aplay/aplay.c:1654
+#, c-format
+msgid "xrun(DRAINING): prepare error: %s"
+msgstr "xrun(사용 중): 준비 오류: %s"
+
+#: aplay/aplay.c:1661
+#, c-format
+msgid "Status(R/W):\n"
+msgstr "상태(R/W):\n"
+
+#: aplay/aplay.c:1664
+#, c-format
+msgid "read/write error, state = %s"
+msgstr "읽기/쓰기 오류, 상태 = %s"
+
+#: aplay/aplay.c:1674
+#, c-format
+msgid "Suspended. Trying resume. "
+msgstr "중지됨. 재개합니다. "
+
+#: aplay/aplay.c:1679
+#, c-format
+msgid "Failed. Restarting stream. "
+msgstr "실패. 스트림을 재개합니다. "
+
+#: aplay/aplay.c:1681
+#, c-format
+msgid "suspend: prepare error: %s"
+msgstr "중지됨: 준비 오류: %s"
+
+#: aplay/aplay.c:1686
+#, c-format
+msgid "Done.\n"
+msgstr "완료.\n"
+
+#: aplay/aplay.c:1708
+#, c-format
+msgid " !clip  "
+msgstr " !클립  "
+
+#: aplay/aplay.c:1855
+#, c-format
+msgid "Unsupported bit size %d.\n"
+msgstr "지원되지 않는 비트 크기 %d.\n"
+
+#: aplay/aplay.c:1889
+#, c-format
+msgid "Max peak (%li samples): 0x%08x "
+msgstr "최대 피크 (%li 샘플): 0x%08x "
+
+#: aplay/aplay.c:1923
+#, c-format
+msgid ""
+"Suspicious buffer position (%li total): avail = %li, delay = %li, buffer = "
+"%li\n"
+msgstr "의심스러운 버퍼 위치 (%li 전체): 가능 = %li, 지연 = %li, 버퍼 = %li\n"
+
+#: aplay/aplay.c:2051
+#, c-format
+msgid "write error: %s"
+msgstr "쓰기 오류: %s"
+
+#: aplay/aplay.c:2099
+#, c-format
+msgid "writev error: %s"
+msgstr "쓰기 오류: %s"
+
+#: aplay/aplay.c:2143
+#, c-format
+msgid "read error: %s"
+msgstr "읽기 오류: %s"
+
+#: aplay/aplay.c:2187
+#, c-format
+msgid "readv error: %s"
+msgstr "읽기 오류: %s"
+
+#: aplay/aplay.c:2235
+msgid "can't allocate buffer for silence"
+msgstr "무음 버퍼를 할당할 수 없음"
+
+#: aplay/aplay.c:2244 aplay/aplay.c:2472 aplay/aplay.c:2477 aplay/aplay.c:2527
+#: aplay/aplay.c:2536 aplay/aplay.c:2543 aplay/aplay.c:2553 aplay/aplay.c:2559
+#: aplay/aplay.c:2631 aplay/aplay.c:2661 aplay/aplay.c:2675
+msgid "write error"
+msgstr "쓰기 오류"
+
+#: aplay/aplay.c:2257
+#, c-format
+msgid "voc_pcm_flush - silence error"
+msgstr "voc_pcm_flush - 무음 오류"
+
+#: aplay/aplay.c:2260
+msgid "voc_pcm_flush error"
+msgstr "voc_pcm_flush 오류"
+
+#: aplay/aplay.c:2285
+msgid "malloc error"
+msgstr "malloc 오류"
+
+#: aplay/aplay.c:2289
+#, c-format
+msgid "Playing Creative Labs Channel file '%s'...\n"
+msgstr "크리에이티브 랩스 채널 파일 '%s' 재생 중...\n"
+
+#: aplay/aplay.c:2357 aplay/aplay.c:2452
+msgid "can't play packed .voc files"
+msgstr "압축된 .voc 파일은 재생 불가"
+
+#: aplay/aplay.c:2412
+#, c-format
+msgid "can't play loops; %s isn't seekable\n"
+msgstr "루프 재생 불가; %s 찾을 수 없음\n"
+
+#: aplay/aplay.c:2461
+#, c-format
+msgid "unknown blocktype %d. terminate."
+msgstr "알 수 없는 블록 유형 %d. 끝냅니다."
+
+#: aplay/aplay.c:2595
+#, c-format
+msgid "Wave doesn't support %s format..."
+msgstr "Wave는 %s 형식을 지원하지 않습니다..."
+
+#: aplay/aplay.c:2655
+#, c-format
+msgid "Sparc Audio doesn't support %s format..."
+msgstr "스파크 오디오는 %s 형식을 지원하지 않습니다..."
+
+#: aplay/aplay.c:2736
+msgid "Playing"
+msgstr "재생 중"
+
+#: aplay/aplay.c:2736
+msgid "Recording"
+msgstr "녹음 중"
+
+#: aplay/aplay.c:2740
+#, c-format
+msgid "Rate %d Hz, "
+msgstr "%d Hz 속도, "
+
+#: aplay/aplay.c:2742
+#, c-format
+msgid "Mono"
+msgstr "모노"
+
+#: aplay/aplay.c:2744
+#, c-format
+msgid "Stereo"
+msgstr "스테레오"
+
+#: aplay/aplay.c:2746
+#, c-format
+msgid "Channels %i"
+msgstr "채널 %i"
+
+#: aplay/aplay.c:3344 aplay/aplay.c:3397
+#, c-format
+msgid "You need to specify %d files"
+msgstr "%d 파일을 지정해야 함"
+
+#: seq/aconnect/aconnect.c:49
+#, c-format
+msgid "aconnect - ALSA sequencer connection manager\n"
+msgstr "aconnect - ALSA 시퀀서 연결 매니저\n"
+
+#: seq/aconnect/aconnect.c:50
+#, c-format
+msgid "Copyright (C) 1999-2000 Takashi Iwai\n"
+msgstr "Copyright (C) 1999-2000 Takashi Iwai\n"
+
+#: seq/aconnect/aconnect.c:51
+#, c-format
+msgid "Usage:\n"
+msgstr "사용법:\n"
+
+#: seq/aconnect/aconnect.c:52
+#, c-format
+msgid " * Connection/disconnection between two ports\n"
+msgstr " * 두 포트 간에 연결/해제\n"
+
+#: seq/aconnect/aconnect.c:53
+#, c-format
+msgid "   aconnect [-options] sender receiver\n"
+msgstr "   aconnect [-options] sender receiver\n"
+
+#: seq/aconnect/aconnect.c:54
+#, c-format
+msgid "     sender, receiver = client:port pair\n"
+msgstr "     sender, receiver = 클라이언트:포트 연결\n"
+
+#: seq/aconnect/aconnect.c:55
+#, c-format
+msgid "     -d,--disconnect     disconnect\n"
+msgstr "     -d,--disconnect     연결 해제\n"
+
+#: seq/aconnect/aconnect.c:56
+#, c-format
+msgid "     -e,--exclusive      exclusive connection\n"
+msgstr "     -e,--exclusive      단독 연결\n"
+
+#: seq/aconnect/aconnect.c:57
+#, c-format
+msgid "     -r,--real #         convert real-time-stamp on queue\n"
+msgstr "     -r,--real #         대기열의 실시간 스탬프 변환\n"
+
+#: seq/aconnect/aconnect.c:58
+#, c-format
+msgid "     -t,--tick #         convert tick-time-stamp on queue\n"
+msgstr "     -t,--tick #         대기열의 틱-타임 스팸프 변환\n"
+
+#: seq/aconnect/aconnect.c:59
+#, c-format
+msgid " * List connected ports (no subscription action)\n"
+msgstr " * 연결된 포트 목록 (수신 행동 없음)\n"
+
+#: seq/aconnect/aconnect.c:60
+#, c-format
+msgid "   aconnect -i|-o [-options]\n"
+msgstr "   aconnect -i|-o [-options]\n"
+
+#: seq/aconnect/aconnect.c:61
+#, c-format
+msgid "     -i,--input          list input (readable) ports\n"
+msgstr "     -i,--input          인풋 (읽을 수 있는) 포트 목록\n"
+
+#: seq/aconnect/aconnect.c:62
+#, c-format
+msgid "     -o,--output         list output (writable) ports\n"
+msgstr "     -o,--output         아웃풋 (쓸 수 있는) 포트\n"
+
+#: seq/aconnect/aconnect.c:63
+#, c-format
+msgid "     -l,--list           list current connections of each port\n"
+msgstr "     -l,--list           각 포트에 현재 연결한 목록\n"
+
+#: seq/aconnect/aconnect.c:64
+#, c-format
+msgid " * Remove all exported connections\n"
+msgstr " * 내보낸 모든 연결 제거\n"
+
+#: seq/aconnect/aconnect.c:65
+#, c-format
+msgid "     -x, --removeall\n"
+msgstr "     -x, --removeall\n"
+
+#: seq/aconnect/aconnect.c:132
+msgid "Connecting To"
+msgstr "다음으로 연결 중"
+
+#: seq/aconnect/aconnect.c:133
+msgid "Connected From"
+msgstr "다음에 연결됨"
+
+#: seq/aconnect/aconnect.c:171
+#, c-format
+msgid "client %d: '%s' [type=%s"
+msgstr "클라이언트 %d: '%s' [유형=%s"
+
+#: seq/aconnect/aconnect.c:175
+msgid "user"
+msgstr "사용자"
+
+#: seq/aconnect/aconnect.c:175
+msgid "kernel"
+msgstr "커널"
+
+#: seq/aconnect/aconnect.c:323
+#, c-format
+msgid "can't open sequencer\n"
+msgstr "시퀀서를 열 수 없음\n"
+
+#: seq/aconnect/aconnect.c:351
+#, c-format
+msgid "can't get client id\n"
+msgstr "클라이언트 id를 가져올 수 없음\n"
+
+#: seq/aconnect/aconnect.c:358
+#, c-format
+msgid "can't set client info\n"
+msgstr "클라이언트 정보를 설정할 수 없음\n"
+
+#: seq/aconnect/aconnect.c:365
+#, c-format
+msgid "invalid sender address %s\n"
+msgstr "잘못된 전달 주소 %s\n"
+
+#: seq/aconnect/aconnect.c:370 seq/aseqnet/aseqnet.c:290
+#, c-format
+msgid "invalid destination address %s\n"
+msgstr "잘못된 대상 주소 %s\n"
+
+#: seq/aconnect/aconnect.c:384
+#, c-format
+msgid "No subscription is found\n"
+msgstr "수신을 찾을 수 없음\n"
+
+#: seq/aconnect/aconnect.c:389
+#, c-format
+msgid "Disconnection failed (%s)\n"
+msgstr "연결 해제 실패 (%s)\n"
+
+#: seq/aconnect/aconnect.c:395
+#, c-format
+msgid "Connection is already subscribed\n"
+msgstr "이미 수신 중인 연결\n"
+
+#: seq/aconnect/aconnect.c:400
+#, c-format
+msgid "Connection failed (%s)\n"
+msgstr "연결 실패 (%s)\n"
+
+#: seq/aseqnet/aseqnet.c:164
+#, c-format
+msgid "aseqnet - network client/server on ALSA sequencer\n"
+msgstr "aseqnet - ALSA 시퀀서 네트워크 클라이언트/서버\n"
+
+#: seq/aseqnet/aseqnet.c:165
+#, c-format
+msgid "  Copyright (C) 1999 Takashi Iwai\n"
+msgstr "  Copyright (C) 1999 Takashi Iwai\n"
+
+#: seq/aseqnet/aseqnet.c:166
+#, c-format
+msgid "usage:\n"
+msgstr "사용법:\n"
+
+#: seq/aseqnet/aseqnet.c:167
+#, c-format
+msgid "  server mode: aseqnet [-options]\n"
+msgstr "  서버 모드: aseqnet [-options]\n"
+
+#: seq/aseqnet/aseqnet.c:168
+#, c-format
+msgid "  client mode: aseqnet [-options] server_host\n"
+msgstr "  클라이언트 모드: aseqnet [-options] server_host\n"
+
+#: seq/aseqnet/aseqnet.c:169
+#, c-format
+msgid "options:\n"
+msgstr "옵션:\n"
+
+#: seq/aseqnet/aseqnet.c:170
+#, c-format
+msgid "  -p,--port # : specify TCP port (digit or service name)\n"
+msgstr "  -p,--port # : TCP 포트 지정 (서비스 이름 또는 숫자)\n"
+
+#: seq/aseqnet/aseqnet.c:171
+#, c-format
+msgid "  -s,--source addr : read from given addr (client:port)\n"
+msgstr "  -s,--source addr : 주어진 주소(addr)로부터 읽음 (클라이언트:포트)\n"
+
+#: seq/aseqnet/aseqnet.c:172
+#, c-format
+msgid "  -d,--dest addr : write to given addr (client:port)\n"
+msgstr "  -d,--dest addr : 주어진 주소(addr)로 쓰기 (클라이언트:포트)\n"
+
+#: seq/aseqnet/aseqnet.c:173
+#, c-format
+msgid "  -v, --verbose : print verbose messages\n"
+msgstr "  -v, --verbose : 자세한 메시지 출력\n"
+
+#: seq/aseqnet/aseqnet.c:174
+#, c-format
+msgid "  -i, --info : print certain received events\n"
+msgstr "  -i, --info : 수신된 특정 이벤트 출력\n"
+
+#: seq/aseqnet/aseqnet.c:188
+#, c-format
+msgid "can't malloc\n"
+msgstr "malloc 불가\n"
+
+#: seq/aseqnet/aseqnet.c:213
+#, c-format
+msgid "closing files..\n"
+msgstr "파일 닫는 중..\n"
+
+#: seq/aseqnet/aseqnet.c:272
+#, c-format
+msgid "sequencer opened: %d:%d\n"
+msgstr "시퀀서 열림: %d:%d\n"
+
+#: seq/aseqnet/aseqnet.c:279
+#, c-format
+msgid "invalid source address %s\n"
+msgstr "잘못된 소스 주소 %s\n"
+
+#: seq/aseqnet/aseqnet.c:309
+#, c-format
+msgid "service '%s' is not found in /etc/services\n"
+msgstr "/etc/services에서 서비스 '%s'를 찾을 수 없음 \n"
+
+#: seq/aseqnet/aseqnet.c:377
+#, c-format
+msgid "too many connections!\n"
+msgstr "연결이 너무 많아요!\n"
+
+#: seq/aseqnet/aseqnet.c:388
+#, c-format
+msgid "accepted[%d]\n"
+msgstr "승인됨[%d]\n"
+
+#: seq/aseqnet/aseqnet.c:411
+#, c-format
+msgid "can't get address %s\n"
+msgstr "가져올 수 없는 주소 %s\n"
+
+#: seq/aseqnet/aseqnet.c:422
+#, c-format
+msgid "ok.. connected\n"
+msgstr "확인.. 연결됨\n"
+
+#: seq/aseqnet/aseqnet.c:518
+#, c-format
+msgid "Channel %2d: Control event : %5d\n"
+msgstr "채널 %2d: 제어 이벤트 : %5d\n"
+
+#: seq/aseqnet/aseqnet.c:522
+#, c-format
+msgid "Channel %2d: Pitchbender   : %5d\n"
+msgstr "채널 %2d: 피치밴더   : %5d\n"
+
+#: seq/aseqnet/aseqnet.c:526
+#, c-format
+msgid "Channel %2d: Note On event : %5d\n"
+msgstr "채널 %2d: 노트 온 이벤트 : %5d\n"
+
+#: seq/aseqnet/aseqnet.c:530
+#, c-format
+msgid "Channel %2d: Note Off event: %5d\n"
+msgstr "채널 %2d: 노트 오프 이벤트: %5d\n"
+
+#: seq/aseqnet/aseqnet.c:585
+#, c-format
+msgid "disconnected\n"
+msgstr "연결 해제됨\n"
+
+#: speaker-test/speaker-test.c:121
+msgid "Front Left"
+msgstr "왼쪽 전면"
+
+#: speaker-test/speaker-test.c:122
+msgid "Front Right"
+msgstr "오른쪽 전면"
+
+#: speaker-test/speaker-test.c:123
+msgid "Rear Left"
+msgstr "왼쪽 후면"
+
+#: speaker-test/speaker-test.c:124
+msgid "Rear Right"
+msgstr "오른쪽 후면"
+
+#: speaker-test/speaker-test.c:126
+msgid "LFE"
+msgstr "LFE"
+
+#: speaker-test/speaker-test.c:127
+msgid "Side Left"
+msgstr "왼쪽 측면"
+
+#: speaker-test/speaker-test.c:128
+msgid "Side Right"
+msgstr "오른쪽 측면"
+
+#: speaker-test/speaker-test.c:129
+msgid "Channel 9"
+msgstr "채널 9"
+
+#: speaker-test/speaker-test.c:130
+msgid "Channel 10"
+msgstr "채널 10"
+
+#: speaker-test/speaker-test.c:131
+msgid "Channel 11"
+msgstr "채널 11"
+
+#: speaker-test/speaker-test.c:132
+msgid "Channel 12"
+msgstr "채널 12"
+
+#: speaker-test/speaker-test.c:133
+msgid "Channel 13"
+msgstr "채널 13"
+
+#: speaker-test/speaker-test.c:134
+msgid "Channel 14"
+msgstr "채널 14"
+
+#: speaker-test/speaker-test.c:135
+msgid "Channel 15"
+msgstr "채널 15"
+
+#: speaker-test/speaker-test.c:136
+msgid "Channel 16"
+msgstr "채널 16"
+
+#: speaker-test/speaker-test.c:519
+#, c-format
+msgid "Broken configuration for playback: no configurations available: %s\n"
+msgstr "손상된 재생 구성: 사용 가능한 구성 없음: %s\n"
+
+#: speaker-test/speaker-test.c:526
+#, c-format
+msgid "Access type not available for playback: %s\n"
+msgstr "재생에 사용할 수 없는 액세스 유형: %s\n"
+
+#: speaker-test/speaker-test.c:533
+#, c-format
+msgid "Sample format not available for playback: %s\n"
+msgstr "재생에 사용할 수 없는 샘플 형식: %s\n"
+
+#: speaker-test/speaker-test.c:540
+#, c-format
+msgid "Channels count (%i) not available for playbacks: %s\n"
+msgstr "재생에 사용할 수 없는 채널 수(%i): %s\n"
+
+#: speaker-test/speaker-test.c:548
+#, c-format
+msgid "Rate %iHz not available for playback: %s\n"
+msgstr "재생에 사용할 수 없는 %iHz 샘플링 속도: %s\n"
+
+#: speaker-test/speaker-test.c:553
+#, c-format
+msgid "Rate doesn't match (requested %iHz, get %iHz, err %d)\n"
+msgstr "속도가 일치하지 않음 (%iHz 요청됨, %iHz 가져옴, 오류 %d)\n"
+
+#: speaker-test/speaker-test.c:557
+#, c-format
+msgid "Rate set to %iHz (requested %iHz)\n"
+msgstr "속도를 %iHz로 설정 (%iHz 요청됨)\n"
+
+#: speaker-test/speaker-test.c:563
+#, c-format
+msgid "Buffer size range from %lu to %lu\n"
+msgstr "%lu에서 %lu로 보내는 버퍼 크기 범위\n"
+
+#: speaker-test/speaker-test.c:564
+#, c-format
+msgid "Period size range from %lu to %lu\n"
+msgstr "%lu에서 %lu로 보내는 주기 크기 범위\n"
+
+#: speaker-test/speaker-test.c:566
+#, c-format
+msgid "Requested period time %u us\n"
+msgstr "요청된 주기 시간 %u us\n"
+
+#: speaker-test/speaker-test.c:569
+#, c-format
+msgid "Unable to set period time %u us for playback: %s\n"
+msgstr "재생에 %u us 주기 시간 설정 불가: %s\n"
+
+#: speaker-test/speaker-test.c:575
+#, c-format
+msgid "Requested buffer time %u us\n"
+msgstr "요청된 버퍼 시간 %u us\n"
+
+#: speaker-test/speaker-test.c:578
+#, c-format
+msgid "Unable to set buffer time %u us for playback: %s\n"
+msgstr "재생에 %u us 버퍼 시간 적용 불가: %s\n"
+
+#: speaker-test/speaker-test.c:587
+#, c-format
+msgid "Using max buffer size %lu\n"
+msgstr "최대 버퍼 크기 %lu 사용함\n"
+
+#: speaker-test/speaker-test.c:590
+#, c-format
+msgid "Unable to set buffer size %lu for playback: %s\n"
+msgstr "재생에 버퍼 크기 %lu 설정 불가: %s\n"
+
+#: speaker-test/speaker-test.c:596
+#, c-format
+msgid "Periods = %u\n"
+msgstr "주기 = %u\n"
+
+#: speaker-test/speaker-test.c:599
+#, c-format
+msgid "Unable to set nperiods %u for playback: %s\n"
+msgstr "재생에 nperiods %u 사용 불가: %s\n"
+
+#: speaker-test/speaker-test.c:608
+#, c-format
+msgid "Unable to set hw params for playback: %s\n"
+msgstr "재생에 하드웨어 매개변수 사용 불가: %s\n"
+
+#: speaker-test/speaker-test.c:614
+#, c-format
+msgid "was set period_size = %lu\n"
+msgstr "설정된 period_size = %lu\n"
+
+#: speaker-test/speaker-test.c:615
+#, c-format
+msgid "was set buffer_size = %lu\n"
+msgstr "설정된 buffer_size = %lu\n"
+
+#: speaker-test/speaker-test.c:617
+#, c-format
+msgid "buffer to small, could not use\n"
+msgstr "버퍼가 작아 사용할 수 없음\n"
+
+#: speaker-test/speaker-test.c:630
+#, c-format
+msgid "Unable to determine current swparams for playback: %s\n"
+msgstr "재생을 위한 현재 swparams 확인 불가: %s\n"
+
+#: speaker-test/speaker-test.c:637
+#, c-format
+msgid "Unable to set start threshold mode for playback: %s\n"
+msgstr ""
+"재생을 위한 시작 임계값 모드 설정 불가: %s\n"
+"\n"
+
+#: speaker-test/speaker-test.c:644
+#, c-format
+msgid "Unable to set avail min for playback: %s\n"
+msgstr "재생을 위한 최소 효력을 설정할 수 없음: %s\n"
+
+#: speaker-test/speaker-test.c:651
+#, c-format
+msgid "Unable to set sw params for playback: %s\n"
+msgstr "재생을 위한 소프트웨어 매개변수를 설정할 수 없음: %s\n"
+
+#: speaker-test/speaker-test.c:671
+#, c-format
+msgid "Unable to set channel map: %s\n"
+msgstr "채널 맵을 설정할 수 없음: %s\n"
+
+#: speaker-test/speaker-test.c:696
+#, c-format
+msgid "Can't recovery from underrun, prepare failed: %s\n"
+msgstr "언더런에서 복구할 수 없음, 준비 실패: %s\n"
+
+#: speaker-test/speaker-test.c:707
+#, c-format
+msgid "Can't recovery from suspend, prepare failed: %s\n"
+msgstr "중지 상태에서 복구할 수 없음, 준비 실패: %s\n"
+
+#: speaker-test/speaker-test.c:771 speaker-test/speaker-test.c:1272
+#, c-format
+msgid "No enough memory\n"
+msgstr "메모리 부족\n"
+
+#: speaker-test/speaker-test.c:776
+#, c-format
+msgid "Cannot open WAV file %s\n"
+msgstr "%s WAV 파일을 열 수 없음\n"
+
+#: speaker-test/speaker-test.c:780 speaker-test/speaker-test.c:809
+#, c-format
+msgid "Invalid WAV file %s\n"
+msgstr "잘못된 WAV 파일 %s\n"
+
+#: speaker-test/speaker-test.c:785
+#, c-format
+msgid "Not a WAV file: %s\n"
+msgstr "WAV 파일이 아님: %s\n"
+
+#: speaker-test/speaker-test.c:789
+#, c-format
+msgid "Unsupported WAV format %d for %s\n"
+msgstr "%d WAV 형식은 %s에 지원되지 않음\n"
+
+#: speaker-test/speaker-test.c:794
+#, c-format
+msgid "%s is not a mono stream (%d channels)\n"
+msgstr "%s(은)는 모노 스트림이 아님 (%d 채널)\n"
+
+#: speaker-test/speaker-test.c:799
+#, c-format
+msgid "Sample rate doesn't match (%d) for %s\n"
+msgstr "샘플링 속도 (%d)가 %s와 일치하지 않음 \n"
+
+#: speaker-test/speaker-test.c:804
+#, c-format
+msgid "Unsupported sample format bits %d for %s\n"
+msgstr "샘플 형식 비트 %d가 %s에 지원되지 않음\n"
+
+#: speaker-test/speaker-test.c:865
+#, c-format
+msgid "Undefined channel %d\n"
+msgstr "정의되지 않은 채널 %d\n"
+
+#: speaker-test/speaker-test.c:916
+#, c-format
+msgid "Write error: %d,%s\n"
+msgstr "쓰기 오류: %d,%s\n"
+
+#: speaker-test/speaker-test.c:918
+#, c-format
+msgid "xrun_recovery failed: %d,%s\n"
+msgstr "xrun_recovery 실패: %d,%s\n"
+
+#: speaker-test/speaker-test.c:1004
+#, c-format
+msgid ""
+"Usage: speaker-test [OPTION]... \n"
+"-h,--help\thelp\n"
+"-D,--device\tplayback device\n"
+"-r,--rate\tstream rate in Hz\n"
+"-c,--channels\tcount of channels in stream\n"
+"-f,--frequency\tsine wave frequency in Hz\n"
+"-F,--format\tsample format\n"
+"-b,--buffer\tring buffer size in us\n"
+"-p,--period\tperiod size in us\n"
+"-P,--nperiods\tnumber of periods\n"
+"-t,--test\tpink=use pink noise, sine=use sine wave, wav=WAV file\n"
+"-l,--nloops\tspecify number of loops to test, 0 = infinite\n"
+"-s,--speaker\tsingle speaker test. Values 1=Left, 2=right, etc\n"
+"-w,--wavfile\tUse the given WAV file as a test sound\n"
+"-W,--wavdir\tSpecify the directory containing WAV files\n"
+"-m,--chmap\tSpecify the channel map to override\n"
+"-X,--force-frequency\tforce frequencies outside the 30-8000hz range\n"
+"-S,--scale\tScale of generated test tones in percent (default=80)\n"
+"\n"
+msgstr ""
+"사용법: speaker-test [OPTION]... \n"
+"-h,--help\t도움말\n"
+"-D,--device\t재생 장치\n"
+"-r,--rate\tHz 스트림 속도\n"
+"-c,--channels\t스트림 채널 수\n"
+"-f,--frequency\t사인파 주파수 Hz\n"
+"-F,--format\t샘플 형식\n"
+"-b,--buffer\tus 단위 링 버퍼 크기\n"
+"-p,--period\tus 단위 주기 크기\n"
+"-P,--nperiods\t주기 수\n"
+"-t,--test\tpink=핑크 노이즈, sine=사인파, wav=WAV 파일\n"
+"-l,--nloops\t테스트할 루프 수 지정, 0 = 무한\n"
+"-s,--speaker\t싱글 스피커 테스트. 1=왼쪽, 2=오른쪽, 기타\n"
+"-w,--wavfile\t주어진 WAV 파일을 테스트 사운드로 사용\n"
+"-W,--wavdir\tWAV 파일을 포함하는 디렉토리 지정\n"
+"-m,--chmap\t재정의할 채널 맵 지정\n"
+"-X,--force-frequency\t30-8000hz 범위 밖의 주파수 강제적용\n"
+"-S,--scale\t생성된 테스트 톤의 크기 비율 (기본값=80)\n"
+"\n"
+
+#: speaker-test/speaker-test.c:1136
+#, c-format
+msgid "Invalid number of periods %d\n"
+msgstr "유효하지 않은 주기 %d\n"
+
+#: speaker-test/speaker-test.c:1152 speaker-test/speaker-test.c:1156
+#, c-format
+msgid "Invalid test type %s\n"
+msgstr "잘못된 테스트 유형 %s\n"
+
+#: speaker-test/speaker-test.c:1189
+#, c-format
+msgid "Unknown option '%c'\n"
+msgstr "알 수 없는 옵션 '%c'\n"
+
+#: speaker-test/speaker-test.c:1203
+#, c-format
+msgid "Invalid parameter for -s option.\n"
+msgstr "-s 옵션 매개변수가 잘못됐습니다.\n"
+
+#: speaker-test/speaker-test.c:1218
+#, c-format
+msgid "Playback device is %s\n"
+msgstr "재생 장치 %s\n"
+
+#: speaker-test/speaker-test.c:1219
+#, c-format
+msgid "Stream parameters are %iHz, %s, %i channels\n"
+msgstr "스트림 매개변수 %iHz, %s, %i 채널\n"
+
+#: speaker-test/speaker-test.c:1222
+#, c-format
+msgid "Using 16 octaves of pink noise\n"
+msgstr "16 옥타브의 핑크 노이즈 사용\n"
+
+#: speaker-test/speaker-test.c:1225
+#, c-format
+msgid "Sine wave rate is %.4fHz\n"
+msgstr "%.4fHz 사인(Sine)파 속도\n"
+
+#: speaker-test/speaker-test.c:1228
+#, c-format
+msgid "WAV file(s)\n"
+msgstr "WAV 파일\n"
+
+#: speaker-test/speaker-test.c:1238
+#, c-format
+msgid "Playback open error: %d,%s\n"
+msgstr "재생 열기 오류: %d,%s\n"
+
+#: speaker-test/speaker-test.c:1244
+#, c-format
+msgid "Setting of hwparams failed: %s\n"
+msgstr "매개변수 hwparams 설정 실패: %s\n"
+
+#: speaker-test/speaker-test.c:1248
+#, c-format
+msgid "Setting of swparams failed: %s\n"
+msgstr "매개변수 swparams 설정 실패: %s\n"
+
+#: speaker-test/speaker-test.c:1295 speaker-test/speaker-test.c:1317
+#, c-format
+msgid "Transfer failed: %s\n"
+msgstr "전송 실패함: %s\n"
+
+#: speaker-test/speaker-test.c:1303
+#, c-format
+msgid "Time per period = %lf\n"
+msgstr "주기별 시간 = %lf\n"
