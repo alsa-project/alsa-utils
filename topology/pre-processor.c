@@ -637,6 +637,287 @@ static int pre_process_includes_all(struct tplg_pre_processor *tplg_pp, snd_conf
 
 	return 0;
 }
+
+/* duplicate the existing objects in src into dest and update with new attribute */
+static int pre_process_add_objects(struct tplg_pre_processor *tplg_pp, int *object_count,
+				   snd_config_t *src, snd_config_t *dest, snd_config_t *attr_cfg)
+{
+	snd_config_iterator_t i, next;
+	int ret;
+
+	snd_config_for_each(i, next, src) {
+		snd_config_t *n, *new, *new_attr;
+		char* new_id = tplg_snprintf("%d", (*object_count)++);
+
+		n = snd_config_iterator_entry(i);
+
+		/* duplicate the existing object */
+		ret = snd_config_copy(&new, n);
+		if (ret < 0) {
+			free(new_id);
+			return ret;
+		}
+
+		ret = snd_config_set_id(new, new_id);
+		free(new_id);
+		if (ret < 0) {
+			snd_config_delete(new);
+			return ret;
+		}
+
+		ret = snd_config_add(dest, new);
+		if (ret < 0) {
+			snd_config_delete(new);
+			return ret;
+		}
+
+		/* and update the new attribute */
+		ret = snd_config_copy(&new_attr, attr_cfg);
+		if (ret < 0)
+			return ret;
+
+		ret = snd_config_add(new, new_attr);
+		if (ret < 0) {
+			snd_config_delete(new_attr);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+/* Create config based on the number of items in the array */
+static int pre_process_create_items(struct tplg_pre_processor *tplg_pp,
+				    snd_config_t *cfg, snd_config_t *top,
+				    int *object_count_offset)
+{
+	snd_config_iterator_t i, next;
+	snd_config_type_t type;
+	const char *class_id;
+	char *class_id_local;
+	int attr_count = 0;
+	int object_count = *object_count_offset;
+	int ret;
+
+	snd_config_get_id(top, &class_id);
+	class_id_local = strdup(class_id);
+
+	snd_config_for_each(i, next, cfg) {
+		snd_config_iterator_t i2, next2;
+		snd_config_t *n, *local_top;
+		const char *attribute;
+		int attr_val_count = 0;
+		object_count = *object_count_offset;
+
+		n = snd_config_iterator_entry(i);
+		type = snd_config_get_type(n);
+		if (type != SND_CONFIG_TYPE_COMPOUND)
+			continue;
+		if (snd_config_get_id(n, &attribute) < 0)
+			continue;
+
+		ret = snd_config_make(&local_top, class_id_local, SND_CONFIG_TYPE_COMPOUND);
+
+		snd_config_for_each(i2, next2, n) {
+			snd_config_t *n2, *new, *new_obj;
+			snd_config_type_t attr_type;
+			char *new_id;
+
+			n2 = snd_config_iterator_entry(i2);
+
+			attr_type = snd_config_get_type(n2);
+
+			/* create new config based on type */
+			if (attr_type == SND_CONFIG_TYPE_INTEGER) {
+				long val;
+
+				ret = snd_config_get_integer(n2, &val);
+				if (ret < 0)
+					return ret;
+
+				ret = snd_config_make(&new, attribute, SND_CONFIG_TYPE_INTEGER);
+				if (ret < 0)
+					return ret;
+
+				ret = snd_config_set_integer(new, val);
+			} else {
+				const char *s;
+
+				ret = snd_config_get_string(n2, &s);
+				if (ret < 0)
+					return ret;
+				ret = snd_config_make(&new, attribute, SND_CONFIG_TYPE_STRING);
+				if (ret < 0)
+					return ret;
+
+				ret = snd_config_set_string(new, s);
+			}
+
+			if (ret < 0)
+				goto err;
+
+			/* for the first array simply create new conf nodes */
+			if (!attr_count) {
+				new_id = tplg_snprintf("%d", object_count++);
+				ret = snd_config_make(&new_obj, new_id, SND_CONFIG_TYPE_COMPOUND);
+				free(new_id);
+
+				ret = snd_config_add(new_obj, new);
+				if (ret < 0) {
+					snd_config_delete(new_obj);
+					goto err;
+				}
+
+				ret = snd_config_add(local_top, new_obj);
+				if (ret < 0) {
+					snd_config_delete(new_obj);
+					goto err;
+				}
+
+				continue;
+			}
+
+			/*
+			 * for the subsequent arrays, duplicate the existing objects
+			 * and update them with the new ones
+			 */
+			ret = pre_process_add_objects(tplg_pp, &object_count, top,
+						      local_top, new);
+			if (ret < 0) {
+				SNDERR("failed to add objects of type %s\n", class_id_local);
+				goto err;
+			}
+
+			attr_val_count++;
+err:
+			snd_config_delete(new);
+			if (ret < 0) {
+				snd_config_delete(local_top);
+				return ret;
+			}
+		}
+
+		/* substitute current list of configs with the updated list */
+		ret = snd_config_substitute(top, local_top);
+		if (ret < 0) {
+			snd_config_delete(local_top);
+			return ret;
+		}
+		attr_count++;
+	}
+
+	*object_count_offset = object_count;
+	return 0;
+}
+
+static int pre_process_array_item(struct tplg_pre_processor *tplg_pp, snd_config_t *top,
+				  snd_config_t *array)
+{
+	snd_config_iterator_t i, next;
+	int object_count;
+	int ret;
+
+	snd_config_for_each(i, next, array) {
+		snd_config_iterator_t i3, next3;
+		snd_config_t *n, *new;
+		const char *id;
+
+		n = snd_config_iterator_entry(i);
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		/* Create a new node if it doesn't exist already */
+		if (snd_config_search(top, id, &new) < 0) {
+			ret = snd_config_make(&new, id, SND_CONFIG_TYPE_COMPOUND);
+			if (ret < 0)
+				return ret;
+
+			/* add the list of objects to the current top */
+			ret = snd_config_add(top, new);
+			if (ret < 0) {
+				snd_config_delete(new);
+				return ret;
+			}
+		}
+
+		/* if the conf node is not an array, move on to parse child nodes */
+		if (snd_config_is_array(n) <= 0)
+			return pre_process_array_item(tplg_pp, new, n);
+
+		object_count = 0;
+		snd_config_for_each(i3, next3, n) {
+			snd_config_t *n3, *local_top;
+
+			n3 = snd_config_iterator_entry(i3);
+
+			ret = snd_config_make(&local_top, id, SND_CONFIG_TYPE_COMPOUND);
+			if (ret < 0)
+				return ret;
+
+			ret = pre_process_create_items(tplg_pp, n3, local_top,
+							 &object_count);
+			if (ret < 0) {
+				SNDERR("failed to create objects of type %s\n", id);
+				return ret;
+			}
+
+			ret = snd_config_merge(new, local_top, 0);
+			if (ret < 0) {
+				snd_config_delete(local_top);
+				return ret;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int pre_process_array(struct tplg_pre_processor *tplg_pp, snd_config_t *top)
+{
+	snd_config_t *arrays;
+	int ret;
+
+	ret = snd_config_search(top, "CombineArrays", &arrays);
+	if (ret < 0)
+		return 0;
+
+	ret = pre_process_array_item(tplg_pp, top, arrays);
+	if (ret < 0)
+		return ret;
+
+	snd_config_delete(arrays);
+	return 0;
+}
+
+static int pre_process_arrays(struct tplg_pre_processor *tplg_pp, snd_config_t *top)
+{
+	snd_config_iterator_t i, next;
+	int ret;
+
+	if (snd_config_get_type(top) != SND_CONFIG_TYPE_COMPOUND)
+		return 0;
+
+	/* process object arrays at this node */
+	ret = pre_process_array(tplg_pp, top);
+	if (ret < 0) {
+		fprintf(stderr, "Failed to process object arrays\n");
+		return ret;
+	}
+
+	/* process object arrays at all child nodes */
+	snd_config_for_each(i, next, top) {
+		snd_config_t *n;
+
+		n = snd_config_iterator_entry(i);
+
+		ret = pre_process_arrays(tplg_pp, n);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
 #endif /* version < 1.2.6 */
 
 int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_size,
@@ -687,6 +968,13 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 	err = pre_process_includes_all(tplg_pp, tplg_pp->input_cfg);
 	if (err < 0) {
 		fprintf(stderr, "Failed to process conditional includes in input config\n");
+		goto err;
+	}
+
+	/* expand object arrays */
+	err = pre_process_arrays(tplg_pp, tplg_pp->input_cfg);
+	if (err < 0) {
+		fprintf(stderr, "Failed to process object arrays in input config\n");
 		goto err;
 	}
 #endif
