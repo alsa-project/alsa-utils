@@ -1,0 +1,373 @@
+# Basque translation for alsa-utils
+# Copyright (C) 2011 The ALSA Team
+# This file is distributed under the same license as the alsa-utils package.
+# Porrumentzio <porrumentzio@riseup.net>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: alsaconf\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-12-02 12:37+0100\n"
+"PO-Revision-Date: 2023-05-25 17:40+0900\n"
+"Language-Team: Librezale <Librezale@librezale.eus>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.4.2\n"
+"Last-Translator: Yi Yunseok <ironyunseok@protonmail.com>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Language: ko\n"
+
+#: ../alsaconf.in:36
+msgid "-s"
+msgstr "-s"
+
+#: ../alsaconf.in:80
+msgid "ALSA configurator"
+msgstr "알사(ALSA) 구성자"
+
+#: ../alsaconf.in:82
+msgid ""
+"usage: alsaconf [options]\n"
+"  -l|--legacy    check only legacy non-isapnp cards\n"
+"  -m|--modinfo   read module descriptions instead of reading card db\n"
+"  -s|--sound wav-file\n"
+"                 use the specified wav file as a test sound\n"
+"  -u|--uid uid   set the uid for the ALSA devices (default = 0) "
+"[obsoleted]\n"
+"  -g|--gid gid   set the gid for the ALSA devices (default = 0) "
+"[obsoleted]\n"
+"  -d|--devmode mode\n"
+"                 set the permission for ALSA devices (default = 0666) "
+"[obs.]\n"
+"  -r|--strict    set strict device mode (equiv. with -g 17 -d 0660) "
+"[obsoleted]\n"
+"  -L|--log file  logging on the specified file (for debugging purpose "
+"only)\n"
+"  -p|--probe card-name\n"
+"                 probe a legacy non-isapnp card and print module options\n"
+"  -P|--listprobe list the supported legacy card modules\n"
+"  -c|--config file\n"
+"                 specify the module config file\n"
+"  -R|--resources list available DMA and IRQ resources with debug for "
+"legacy\n"
+"  -h|--help      what you're reading"
+msgstr ""
+"사용법e: alsaconf [options]\n"
+"  -l|--legacy    레거시 비-isapnp카드만 확인\n"
+"  -m|--modinfo   카드 db 대신 모듈 설명 읽기\n"
+"  -s|--sound wav 파일\n"
+"                 테스트에 지정된 wav 파일을 사용\n"
+"  -u|--uid uid   알사 디바이스 uid 설정 (기본값 = 0) [폐기됨]\n"
+"  -g|--gid gid   알사 디바이스 gid 설정 (기본값 = 0) [폐기됨]\n"
+"  -d|--devmode mode\n"
+"                 알사 디바이스 권한 설정 (기본값 = 0666) [폐기됨]\n"
+"  -r|--strict    엄격한 장치 모드 설정 (-g 17 -d 0660과 동일) [폐기됨]\n"
+"  -L|--log file  지정된 파일에 로그인 (디버깅 목적)\n"
+"  -p|--probe card-name\n"
+"                 레거시 비-isapnp 카드 및 출력 모듈 옵션 조사\n"
+"  -P|--listprobe 지원되는 레거시 모듈 목록\n"
+"  -c|--config 파일\n"
+"                 모듈 구성 파일 지정\n"
+"  -R|--resources 레거시의 디버그로 사용 가능한 IRQ 및 DMA 리소스 목록\n"
+"  -h|--help      도움말, 당신이 읽고 있는 것"
+
+#: ../alsaconf.in:252
+msgid "You must be root to use this script."
+msgstr "이 스크립트는 관리자 권한으로 사용해야 합니다."
+
+#: ../alsaconf.in:294
+msgid "ERROR: The config file doesn't exist: "
+msgstr "오류: 구성 파일이 없음: "
+
+#: ../alsaconf.in:336
+msgid "Error, dialog or whiptail not found."
+msgstr "오류, 다이얼로그 또는 위프테일을 찾을 수 없습니다."
+
+#: ../alsaconf.in:342
+msgid "Error, awk not found. Can't continue."
+msgstr "오류, awk를 찾을 수 없어 계속할 수 없습니다."
+
+#: ../alsaconf.in:439
+msgid ""
+"\n"
+"                   ALSA  CONFIGURATOR\n"
+"                   version %s\n"
+"\n"
+"            This script is a configurator for\n"
+"    Advanced Linux Sound Architecture (ALSA) driver.\n"
+"\n"
+"\n"
+"  If ALSA is already running, you should close all sound\n"
+"  apps now and stop the sound driver.\n"
+"  alsaconf will try to do this, but it's not 100%% sure."
+msgstr ""
+"\n"
+"                   알사(ALSA)  구성자\n"
+"                   버전 %s\n"
+"\n"
+"            이 스크립트는 알사(ALSA),\n"
+"    어드밴스드 리눅스 사운드 아키텍쳐 드라이버 구성자입니다.\n"
+"\n"
+"\n"
+"  알사가 이미 실행 중인 경우 모든 사운드를 닫아야 함으로\n"
+"  지금 앱을 실행하고 사운드 드라이버를 중지합니다.\n"
+"  alsaconf가 이 작업을 시도할 것이나 100% 확실하진 않습니다."
+
+#: ../alsaconf.in:455
+msgid ""
+"\n"
+"\n"
+"     OK, sound driver is configured.\n"
+"\n"
+"                  ALSA  CONFIGURATOR\n"
+"\n"
+"          will prepare the card for playing now.\n"
+"\n"
+"     Now I'll run alsasound init script, then I'll use\n"
+"     amixer to raise the default volumes.\n"
+"     You can change the volume later via a mixer\n"
+"     program such as alsamixer or gamix.\n"
+"  \n"
+"  "
+msgstr ""
+"\n"
+"\n"
+"     사운드 드라이버가 구성됐습니다.\n"
+"\n"
+"                  알사(ALSA)  구성자\n"
+"\n"
+"          이제 사용할 카드를 준비합니다.\n"
+"\n"
+"     이제 alsasound 초기화 스크립트를 실행,\n"
+"     amixer를 사용해 기본 음량을 높입니다.\n"
+"     나중에 alsamixer 또는 gamix와 같은 프로그램으로\n"
+"     믹서를 통해 음량을 변경할 수 있습니다.\n"
+"  \n"
+"  "
+
+#: ../alsaconf.in:518 ../alsaconf.in:523 ../alsaconf.in:528 ../alsaconf.in:533
+msgid "Can't create temp file, exiting..."
+msgstr "임시 파일을 생성할 수 없음, 종료합니다..."
+
+#: ../alsaconf.in:643
+msgid "Building card database.."
+msgstr "카드 데이터베이스를 구축합니다.."
+
+#: ../alsaconf.in:647
+msgid "No card database is found.."
+msgstr "카드 데이터베이스를 찾을 수 없습니다.."
+
+#: ../alsaconf.in:652
+msgid "Searching sound cards"
+msgstr "사운드 카드 검색"
+
+#: ../alsaconf.in:806
+msgid ""
+"\n"
+"Configuring %s\n"
+"Do you want to modify %s (and %s if present)?"
+msgstr ""
+"\n"
+"%s 구성\n"
+"%s 수정을 원하십니까? (%s 있는 경우)?"
+
+#: ../alsaconf.in:811
+msgid ""
+"\n"
+"Configuring %s\n"
+"Do you want to modify %s?"
+msgstr ""
+"\n"
+"%s 구성\n"
+"%s 수정을 원하십니까?"
+
+#: ../alsaconf.in:900
+msgid "Running modules-update..."
+msgstr "모듈 업데이트를 실행 중..."
+
+#: ../alsaconf.in:903
+msgid "Running update-modules..."
+msgstr "업데이트 모듈을 실행 중..."
+
+#: ../alsaconf.in:915
+msgid ""
+"\n"
+"       The mixer is set up now for for playing.\n"
+"       Shall I try to play a sound sample now?\n"
+"\n"
+"                           NOTE:\n"
+"If you have a big amplifier, lower your volumes or say no.\n"
+"    Otherwise check that your speaker volume is open,\n"
+"          and look if you can hear test sound.\n"
+msgstr ""
+"\n"
+"       이제 믹서를 사용할 수 있게 설정했습니다.\n"
+"       사운드 샘플을 재생해 볼까요?\n"
+"\n"
+"                           NOTE:\n"
+"If you have a big amplifier, lower your volumes or say no.\n"
+"    Otherwise check that your speaker volume is open,\n"
+"          and look if you can hear test sound.\n"
+
+#: ../alsaconf.in:932
+msgid "Saving the mixer setup used for this in /etc/asound.state."
+msgstr "사용한 믹서 설정을 /etc/asound.state에 저장합니다."
+
+#: ../alsaconf.in:936
+msgid ""
+"\n"
+"===============================================================================\n"
+"\n"
+" Now ALSA is ready to use.\n"
+" For adjustment of volumes, use your favorite mixer.\n"
+"\n"
+" Have a lot of fun!\n"
+"\n"
+msgstr ""
+"\n"
+"===============================================================================\n"
+"\n"
+" 이제 알사를 사용할 준비가 됐습니다..\n"
+" 좋아하는 믹서를 사용해 음량을 조정할 수 있습니다.\n"
+"\n"
+" 즐거운 시간 보내세요!\n"
+"\n"
+
+#: ../alsaconf.in:1244
+msgid "WARNING"
+msgstr "주의"
+
+#: ../alsaconf.in:1245
+msgid ""
+"\n"
+"   Probing legacy ISA cards might make\n"
+"   your system unstable.\n"
+"\n"
+"        Do you want to proceed?\n"
+"\n"
+msgstr ""
+"\n"
+"   레거시 ISA 카드를 조사하면\n"
+"   시스템이 불안정할 수 있습니다.\n"
+"\n"
+"        계속 하시겠습니까?\n"
+"\n"
+
+#: ../alsaconf.in:1268
+msgid ""
+"No legacy drivers are available\n"
+"   for your machine"
+msgstr ""
+"이 머신에서 사용 가능한\n"
+"   레거시 드라이버가 없음"
+
+#: ../alsaconf.in:1273
+msgid "Driver Selection"
+msgstr "드라이버 선택"
+
+#: ../alsaconf.in:1274
+msgid ""
+"           Probing legacy ISA cards\n"
+"\n"
+"        Please select the drivers to probe:"
+msgstr ""
+"           레거시 ISA 카드 조사\n"
+"\n"
+"        조사할 드라이버를 선택:"
+
+#: ../alsaconf.in:1281
+msgid ""
+"\n"
+" Shall I try all possible DMA and IRQ combinations?\n"
+" With this option, some unconventional configuration\n"
+" might be found, but it will take much longer time."
+msgstr ""
+"\n"
+" 가능한 모든 IRQ 및 DMA 조합을 시도합니까?\n"
+" 이 옵션을 사용하면 일반적이지 않은 일부 구성을 찾을 수 있지만\n"
+" 더 많은 시간이 필요합니다."
+
+#: ../alsaconf.in:1291
+msgid "Probing legacy cards..   This may take a few minutes.."
+msgstr "레거시 카드 조사 중..   몇 분 정도 걸릴 수 있습니다.."
+
+#: ../alsaconf.in:1292
+msgid "Probing: "
+msgstr "조사 중: "
+
+#: ../alsaconf.in:1298
+msgid " : FOUND!!"
+msgstr " : 찾음!!"
+
+#: ../alsaconf.in:1304
+msgid "Result"
+msgstr "결과"
+
+#: ../alsaconf.in:1305
+msgid "No legacy cards found"
+msgstr "레거시 카드를 찾을 수 없음"
+
+#: ../alsaconf.in:1364
+msgid ""
+"\n"
+" Looks like you having a Thinkpad 600E or 770 notebook.\n"
+" On this notebook, CS4236 driver should be used\n"
+" although CS46xx chip is detected.\n"
+"\n"
+" Shall I try to snd-cs4236 driver and probe\n"
+" the legacy ISA configuration?"
+msgstr ""
+"\n"
+" 씽크패드(Thinkpad) 600LE 또는 770 노트북을 사용 중인 것 같습니다.\n"
+" 이 노트북에서는 CS46xx 칩이 감지되어도\n"
+" CS4236 드라이버를 사용해야 합니다.\n"
+"\n"
+" snd-cs4236 드라이버로 시도하고\n"
+" 레거시 ISA 구성 조사를 하시겠습니까?"
+
+#: ../alsaconf.in:1378
+msgid ""
+"\n"
+" Looks like you having a Dell Dimension machine.\n"
+" On this machine, CS4232 driver should be used\n"
+" although CS46xx chip is detected.\n"
+"\n"
+" Shall I try to snd-cs4232 driver and probe\n"
+" the legacy ISA configuration?"
+msgstr ""
+"\n"
+" 델 디멘션(Dell Dimension) 시스템을 사용 중인 것 같습니다.\n"
+" 이 머신에서는 CS46xx 칩이 감지되어도\n"
+" CS4236 드라이버를 사용해야 합니다.\n"
+"\n"
+" snd-cs4236 드라이버로 시도하고\n"
+" 레거시 ISA 구성 조사를 하시겠습니까?"
+
+#: ../alsaconf.in:1395
+msgid "Soundcard Selection"
+msgstr "사운드 카드 선택"
+
+#: ../alsaconf.in:1396
+msgid ""
+"\n"
+"         Following card(s) are found on your system.\n"
+"         Choose a soundcard to configure:\n"
+msgstr ""
+"\n"
+"         시스템에서 다음의 카드를 찾았습니다.\n"
+"         구성할 사운드 카드 선택:\n"
+
+#: ../alsaconf.in:1409
+msgid ""
+"\n"
+"        No supported PnP or PCI card found.\n"
+"\n"
+" Would you like to probe legacy ISA sound cards/chips?\n"
+"\n"
+msgstr ""
+"\n"
+"        지원하는 PCI 또는 PnP 카드를 찾을 수 없습니다.\n"
+"\n"
+" 레거시 ISA 사운드 카드/칩을 조사하시겠습니까?\n"
+"\n"
