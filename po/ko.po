@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: alsa-utils 1.0.23\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-01-10 09:07+0100\n"
-"PO-Revision-Date: 2023-05-21 18:17+0900\n"
+"PO-Revision-Date: 2023-05-25 17:58+0900\n"
 "Language-Team: Librezale <librezale@librezale.eus>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -315,7 +315,7 @@ msgstr "Z X C      왼쪽/전체/오른쪽 음량 줄이기"
 
 #: alsamixer/mixer_widget.c:211
 msgid "B          Balance left and right volumes"
-msgstr "B          좌우 볼륨 밸런스"
+msgstr "B          좌우 음량 밸런스"
 
 #: alsamixer/mixer_widget.c:213
 msgid "M          Toggle mute"
