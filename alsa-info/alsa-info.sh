@@ -48,25 +48,25 @@ update() {
 	wget -O "$SHFILE" 'https://www.alsa-project.org/alsa-info.sh' >/dev/null 2>&1
 	REMOTE_VERSION="$(grep SCRIPT_VERSION "$SHFILE" | head -n1 | sed 's/.*=//')"
 	if [ -s "$SHFILE" ] && [ "$REMOTE_VERSION" != "$SCRIPT_VERSION" ]; then
-		if [[ -n "$DIALOG" ]]
+		if [[ -n $DIALOG ]]
 		then
 			OVERWRITE=
 			if [ -w "$0" ]; then
 				dialog --yesno "Newer version of ALSA-Info has been found\n\nDo you wish to install it?\nNOTICE: The original file $0 will be overwritten!" 0 0
 				DIALOG_EXIT_CODE=$?
-				if [[ "$DIALOG_EXIT_CODE" = 0 ]]; then
+				if [[ $DIALOG_EXIT_CODE = 0 ]]; then
 				  OVERWRITE=yes
 				fi
 			fi
-			if [ -z "$OVERWRITE" ]; then
+			if [ -z $OVERWRITE ]; then
 				dialog --yesno "Newer version of ALSA-Info has been found\n\nDo you wish to download it?" 0 0
 				DIALOG_EXIT_CODE=$?
 			fi
-			if [[ "$DIALOG_EXIT_CODE" = 0 ]]
+			if [[ $DIALOG_EXIT_CODE = 0 ]]
 			then
 				echo "Newer version detected: $REMOTE_VERSION"
 				echo "To view the ChangeLog, please visit $CHANGELOG"
-				if [ "$OVERWRITE" = 'yes' ]; then
+				if [ $OVERWRITE = yes ]; then
 					cp "$SHFILE" "$0"
 					echo "ALSA-Info script has been updated to v $REMOTE_VERSION"
 					echo "Please re-run the script"
@@ -100,10 +100,10 @@ update() {
 }
 
 cleanup() {
-	if [ -n "$TEMPDIR" ] && [ "$KEEP_FILES" != 'yes' ]; then
+	if [ -n "$TEMPDIR" ] && [ $KEEP_FILES != yes ]; then
 		rm -rf "$TEMPDIR" 2>/dev/null
 	fi
-	test -n "$KEEP_OUTPUT" || rm -f "$NFILE"
+	test -n $KEEP_OUTPUT || rm -f "$NFILE"
 }
 
 
@@ -167,13 +167,13 @@ withdevices() {
 }
 
 withconfigs() {
-if [[ -e "$HOME/.asoundrc" ]] || [[ -e "/etc/asound.conf" ]] || [[ -e "$HOME/.asoundrc.asoundconf" ]]; then
+if [[ -e $HOME/.asoundrc ]] || [[ -e /etc/asound.conf ]] || [[ -e $HOME/.asoundrc.asoundconf ]]; then
         echo "!!ALSA configuration files" >> "$FILE"
         echo "!!------------------------" >> "$FILE"
         echo "" >> "$FILE"
 
         #Check for ~/.asoundrc
-        if [[ -e "$HOME/.asoundrc" ]]
+        if [[ -e $HOME/.asoundrc ]]
         then
                 echo "!!User specific config file (~/.asoundrc)" >> "$FILE"
                 echo "" >> "$FILE"
@@ -182,7 +182,7 @@ if [[ -e "$HOME/.asoundrc" ]] || [[ -e "/etc/asound.conf" ]] || [[ -e "$HOME/.as
                 echo "" >> "$FILE"
         fi
 	#Check for .asoundrc.asoundconf (seems to be Ubuntu specific)
-	if [[ -e "$HOME/.asoundrc.asoundconf" ]]
+	if [[ -e $HOME/.asoundrc.asoundconf ]]
 	then
 		echo "!!asoundconf-generated config file" >> "$FILE"
 		echo "" >> "$FILE"
@@ -209,7 +209,7 @@ withsysfs() {
 	case "$i" in
 	    */hwC?D?)
 		if [ -f "$i/init_pin_configs" ]; then
-		    if [ -z "$printed" ]; then
+		    if [ -z $printed ]; then
 			echo "!!Sysfs Files" >> "$FILE"
 			echo "!!-----------" >> "$FILE"
 			echo "" >> "$FILE"
@@ -224,7 +224,7 @@ withsysfs() {
 		;;
 	    esac
     done
-    if [ -n "$printed" ]; then
+    if [ -n $printed ]; then
 	echo "" >> "$FILE"
     fi
 }
@@ -273,7 +273,7 @@ withall() {
 get_alsa_library_version() {
 	ALSA_LIB_VERSION="$(grep VERSION_STR /usr/include/alsa/version.h 2>/dev/null | awk '{ print $3 }' | sed 's/"//g')"
 
-	if [ -z "$ALSA_LIB_VERSION" ]; then
+	if [ -z $ALSA_LIB_VERSION ]; then
 		if [ -f /etc/lsb-release ]; then
 			. /etc/lsb-release
 			case "$DISTRIB_ID" in
@@ -329,11 +329,11 @@ NFILE=""
 
 PASTEBIN=""
 WWWSERVICE='www.alsa-project.org'
-WELCOME='yes'
-PROCEED='yes'
+WELCOME=yes
+PROCEED=yes
 UPLOAD=ask
 REPEAT=""
-while [ -z "$REPEAT" ]; do
+while [ -z $REPEAT ]; do
 REPEAT=no
 case "$1" in
 	--update|--help|--about)
@@ -341,7 +341,7 @@ case "$1" in
 		PROCEED=no
 		;;
 	--upload)
-		UPLOAD='yes'
+		UPLOAD=yes
 		WELCOME=no
 		;;
 	--no-upload)
@@ -349,8 +349,8 @@ case "$1" in
 		WELCOME=no
 		;;
 	--pastebin)
-		PASTEBIN='yes'
-		WWWSERVICE='pastebin'
+		PASTEBIN=yes
+		WWWSERVICE=pastebin
 		;;
 	--no-dialog)
 		DIALOG=""
@@ -366,7 +366,7 @@ done
 
 
 #Script header output.
-if [ "$WELCOME" = 'yes' ]; then
+if [ $WELCOME = yes ]; then
 greeting_message="\
 
 This script visits the following commands/files to collect diagnostic
@@ -385,7 +385,7 @@ information about your ALSA installation and sound related hardware.
 See '$0 --help' for command line options.
 "
 if [ -n "$DIALOG" ]; then
-	dialog  --backtitle "$BGTITLE" \
+	dialog  --backtitle $BGTITLE \
 		--title "ALSA-Info script v $SCRIPT_VERSION" \
 		--msgbox "$greeting_message" 20 80
 else
@@ -404,7 +404,7 @@ fi
 
 trap cleanup 0
 
-if [ "$PROCEED" = 'yes' ]; then
+if [ $PROCEED = yes ]; then
 
 if [ -z "$LSPCI" ]; then
 	if [ -d /sys/bus/pci ]; then
@@ -417,7 +417,7 @@ TSTAMP="$(LANG=C TZ=UTC date)"
 DISTRO="$(grep -ihs "buntu\|SUSE\|Fedora\|PCLinuxOS\|MEPIS\|Mandriva\|Debian\|Damn\|Sabayon\|Slackware\|KNOPPIX\|Gentoo\|Zenwalk\|Mint\|Kubuntu\|FreeBSD\|Puppy\|Freespire\|Vector\|Dreamlinux\|CentOS\|Arch\|Xandros\|Elive\|SLAX\|Red\|BSD\|KANOTIX\|Nexenta\|Foresight\|GeeXboX\|Frugalware\|64\|SystemRescue\|Novell\|Solaris\|BackTrack\|KateOS\|Pardus\|ALT" /etc/{issue,*release,*version})"
 read -r KERNEL_RELEASE KERNEL_MACHINE KERNEL_PROCESSOR KERNEL_OS < <(uname -rpmo)
 read -r KERNEL_VERSION < <(uname -v)
-if [[ "$KERNEL_VERSION" = *SMP* ]]; then KERNEL_SMP=Yes; else KERNEL_SMP=No; fi
+if [[ $KERNEL_VERSION = *SMP* ]]; then KERNEL_SMP=Yes; else KERNEL_SMP=No; fi
 ALSA_DRIVER_VERSION="$(cat /proc/asound/version | head -n1 | awk '{ print $7 }' | sed 's/\.$//')"
 get_alsa_library_version
 ALSA_UTILS_VERSION="$(amixer -v | awk '{ print $3 }')"
@@ -455,7 +455,7 @@ fi
 if [ -d /sys/bus/acpi/devices ]; then
     for f in /sys/bus/acpi/devices/*/status; do
 	ACPI_STATUS="$(cat "$f" 2>/dev/null)"
-	if [[ "$ACPI_STATUS" -ne 0 ]]; then
+	if [[ $ACPI_STATUS -ne 0 ]]; then
 	    echo "$f" $'\t' "$ACPI_STATUS" >> "$TEMPDIR/acpidevicestatus.tmp"
 	fi
     done
@@ -463,7 +463,7 @@ fi
 
 awk '{ print $2 " (card " $1 ")" }' < /proc/asound/modules > "$TEMPDIR/alsamodules.tmp" 2> /dev/null
 cat /proc/asound/cards > "$TEMPDIR/alsacards.tmp"
-if [[ ! -z "$LSPCI" ]]; then
+if [[ ! -z $LSPCI ]]; then
 	for class in 0401 0402 0403; do
 		lspci -vvnn -d "::$class" | sed -n '/^[^\t]/,+1p'
 	done > "$TEMPDIR/lspci.tmp"
@@ -492,7 +492,7 @@ cat /proc/asound/card*/stream[0-9]* > "$TEMPDIR/alsa-usbstream.tmp" 2> /dev/null
 cat /proc/asound/card*/usbmixer > "$TEMPDIR/alsa-usbmixer.tmp" 2> /dev/null
 
 #Fetch the info, and put it in FILE in a nice readable format.
-if [[ -z "$PASTEBIN" ]]; then
+if [[ -z $PASTEBIN ]]; then
 echo "upload=true&script=true&cardinfo=" > "$FILE"
 else
 echo "name=$USER&type=33&description=/tmp/alsa-info.txt&expiry=&s=Submit+Post&content=" > "$FILE"
@@ -555,56 +555,56 @@ echo "" >> "$FILE"
 echo "!!Sound Servers on this system" >> "$FILE"
 echo "!!----------------------------" >> "$FILE"
 echo "" >> "$FILE"
-if [[ -n "$PWINST" ]];then
+if [[ -n $PWINST ]];then
 [[ "$(pgrep '^(.*/)?pipewire$')" ]] && PWRUNNING=Yes || PWRUNNING=No
 echo "PipeWire:" >> "$FILE"
 echo "      Installed - Yes ($PWINST)" >> "$FILE"
 echo "      Running - $PWRUNNING" >> "$FILE"
 echo "" >> "$FILE"
 fi
-if [[ -n "$PAINST" ]];then
+if [[ -n $PAINST ]];then
 [[ "$(pgrep '^(.*/)?pulseaudio$')" ]] && PARUNNING=Yes || PARUNNING=No
 echo "Pulseaudio:" >> "$FILE"
 echo "      Installed - Yes ($PAINST)" >> "$FILE"
 echo "      Running - $PARUNNING" >> "$FILE"
 echo "" >> "$FILE"
 fi
-if [[ -n "$ESDINST" ]];then
+if [[ -n $ESDINST ]];then
 [[ "$(pgrep '^(.*/)?esd$')" ]] && ESDRUNNING=Yes || ESDRUNNING=No
 echo "ESound Daemon:" >> "$FILE"
 echo "      Installed - Yes ($ESDINST)" >> "$FILE"
 echo "      Running - $ESDRUNNING" >> "$FILE"
 echo "" >> "$FILE"
 fi
-if [[ -n "$ARTSINST" ]];then
+if [[ -n $ARTSINST ]];then
 [[ "$(pgrep '^(.*/)?artsd$')" ]] && ARTSRUNNING=Yes || ARTSRUNNING=No
 echo "aRts:" >> "$FILE"
 echo "      Installed - Yes ($ARTSINST)" >> "$FILE"
 echo "      Running - $ARTSRUNNING" >> "$FILE"
 echo "" >> "$FILE"
 fi
-if [[ -n "$JACKINST" ]];then
+if [[ -n $JACKINST ]];then
 [[ "$(pgrep '^(.*/)?jackd$')" ]] && JACKRUNNING=Yes || JACKRUNNING=No
 echo "Jack:" >> "$FILE"
 echo "      Installed - Yes ($JACKINST)" >> "$FILE"
 echo "      Running - $JACKRUNNING" >> "$FILE"
 echo "" >> "$FILE"
 fi
-if [[ -n "$JACK2INST" ]];then
+if [[ -n $JACK2INST ]];then
 [[ "$(pgrep '^(.*/)?jackdbus$')" ]] && JACK2RUNNING=Yes || JACK2RUNNING=No
 echo "Jack2:" >> "$FILE"
 echo "      Installed - Yes ($JACK2INST)" >> "$FILE"
 echo "      Running - $JACK2RUNNING" >> "$FILE"
 echo "" >> "$FILE"
 fi
-if [[ -n "$ROARINST" ]];then
+if [[ -n $ROARINST ]];then
 [[ "$(pgrep '^(.*/)?roard$')" ]] && ROARRUNNING=Yes || ROARRUNNING=No
 echo "RoarAudio:" >> "$FILE"
 echo "      Installed - Yes ($ROARINST)" >> "$FILE"
 echo "      Running - $ROARRUNNING" >> "$FILE"
 echo "" >> "$FILE"
 fi
-if [[ -z "$PAINST" && -z "$ESDINST" && -z "$ARTSINST" && -z "$JACKINST" && -z "$ROARINST" ]];then
+if [[ -z $PAINST && -z $ESDINST && -z $ARTSINST && -z $JACKINST && -z $ROARINST ]];then
 echo "No sound servers found." >> "$FILE"
 echo "" >> "$FILE"
 fi
@@ -616,7 +616,7 @@ cat "$TEMPDIR/alsacards.tmp" >> "$FILE"
 echo "" >> "$FILE"
 echo "" >> "$FILE"
 
-if [[ ! -z "$LSPCI" ]]; then
+if [[ ! -z $LSPCI ]]; then
 echo "!!PCI Soundcards installed in the system" >> "$FILE"
 echo "!!--------------------------------------" >> "$FILE"
 echo "" >> "$FILE"
@@ -753,7 +753,7 @@ if [ -n "$1" ]; then
 			exit
 			;;
 		--upload)
-			UPLOAD='yes'
+			UPLOAD=yes
 			;;
 		--no-upload)
 			UPLOAD=no
@@ -761,11 +761,11 @@ if [ -n "$1" ]; then
 		--output)
 			shift
 			NFILE="$1"
-			KEEP_OUTPUT='yes'
+			KEEP_OUTPUT=yes
 			;;
 		--debug)
 			echo "Debugging enabled. $FILE and $TEMPDIR will not be deleted"
-			KEEP_FILES='yes'
+			KEEP_FILES=yes
 			echo ""
 			;;
 		--with-all)
@@ -850,27 +850,27 @@ if [ -n "$1" ]; then
 	done
 fi
 
-if [ "$PROCEED" = no ]; then
+if [ $PROCEED = no ]; then
 	exit 1
 fi
 
-if [ -z "$WITHALL" ]; then
+if [ -z $WITHALL ]; then
 	withall
 fi
 
 # Check if wget is installed, and supports --post-file.
 if ! wget --help 2>/dev/null | grep -q post-file; then
 	# We couldn't find a suitable wget. If --upload was passed, tell the user to upload manually.
-	if [ "$UPLOAD" != yes ]; then
+	if [ $UPLOAD != yes ]; then
 		:
 	elif [ -n "$DIALOG" ]; then
-		if [ -z "$PASTEBIN" ]; then
-			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to 'https://www.alsa-project.org'.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to 'https://www.alsa-project.org/cardinfo-db' and submit your post." 25 100
+		if [ -z $PASTEBIN ]; then
+			dialog --backtitle $BGTITLE --msgbox "Could not automatically upload output to 'https://www.alsa-project.org'.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to 'https://www.alsa-project.org/cardinfo-db' and submit your post." 25 100
 		else
-			dialog --backtitle "$BGTITLE" --msgbox "Could not automatically upload output to 'https://www.pastebin.ca'.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to 'https://www.pastebin.ca/upload.php' and submit your post." 25 100
+			dialog --backtitle $BGTITLE --msgbox "Could not automatically upload output to 'https://www.pastebin.ca'.\nPossible reasons are:\n\n    1. Couldn't find 'wget' in your PATH\n    2. Your version of wget is less than 1.8.2\n\nPlease manually upload $NFILE to 'https://www.pastebin.ca/upload.php' and submit your post." 25 100
 		fi
 	else
-		if [ -z "$PASTEBIN" ]; then
+		if [ -z $PASTEBIN ]; then
 			echo ""
 			echo "Could not automatically upload output to 'https://www.alsa-project.org'"
 			echo "Possible reasons are:"
@@ -893,35 +893,35 @@ if ! wget --help 2>/dev/null | grep -q post-file; then
 	UPLOAD=no
 fi
 
-if [ "$UPLOAD" = ask ]; then
+if [ $UPLOAD = ask ]; then
 	if [ -n "$DIALOG" ]; then
-		dialog --backtitle "$BGTITLE" --title "Information collected" --yes-label " UPLOAD / SHARE " --no-label " SAVE LOCALLY " --defaultno --yesno "\n\nAutomatically upload ALSA information to $WWWSERVICE?" 10 80
+		dialog --backtitle $BGTITLE --title "Information collected" --yes-label " UPLOAD / SHARE " --no-label " SAVE LOCALLY " --defaultno --yesno "\n\nAutomatically upload ALSA information to $WWWSERVICE?" 10 80
 		DIALOG_EXIT_CODE=$?
-		if [ "$DIALOG_EXIT_CODE" != 0 ]; then
+		if [ $DIALOG_EXIT_CODE != 0 ]; then
 			UPLOAD=no
 		else
-			UPLOAD='yes'
+			UPLOAD=yes
 		fi
 	else
 		echo -n "Automatically upload ALSA information to $WWWSERVICE? [y/N] : "
 		read -e CONFIRM
-		if [ "$CONFIRM" != y ]; then
+		if [ $CONFIRM != y ]; then
 			UPLOAD=no
 		else
-			UPLOAD='yes'
+			UPLOAD=yes
 		fi
 	fi
 
 fi
 
-if [ "$UPLOAD" = no ]; then
+if [ $UPLOAD = no ]; then
 
 	mv -f "$FILE" "$NFILE" || exit 1
-	KEEP_OUTPUT='yes'
+	KEEP_OUTPUT=yes
 
-	if [[ -n "$DIALOG" ]]
+	if [[ -n $DIALOG ]]
 	then
-		dialog --backtitle "$BGTITLE" --title "Information collected" --msgbox "\n\nYour ALSA information is in $NFILE" 10 60
+		dialog --backtitle $BGTITLE --title "Information collected" --msgbox "\n\nYour ALSA information is in $NFILE" 10 60
 	else
 		echo ""
 		echo "Your ALSA information is in $NFILE"
@@ -932,14 +932,14 @@ if [ "$UPLOAD" = no ]; then
 
 fi # UPLOAD
 
-if [[ -n "$DIALOG" ]]
+if [[ -n $DIALOG ]]
 then
-	dialog --backtitle "$BGTITLE" --infobox "Uploading information to $WWWSERVICE ..." 6 70
+	dialog --backtitle $BGTITLE --infobox "Uploading information to $WWWSERVICE ..." 6 70
 else
 	echo -n "Uploading information to $WWWSERVICE ..."
 fi
 
-if [[ -z "$PASTEBIN" ]]; then
+if [[ -z $PASTEBIN ]]; then
 	wget -O - --tries=5 --timeout=60 --post-file="$FILE" 'https://www.alsa-project.org/cardinfo-db/' &> "$TEMPDIR/wget.tmp"
 else
 	wget -O - --tries=5 --timeout=60 --post-file="$FILE" 'https://pastebin.ca/quiet-paste.php?api='"${PASTEBINKEY}"'&encrypt=t&encryptpw=blahblah' &> "$TEMPDIR/wget.tmp"
@@ -947,10 +947,10 @@ fi
 
 if [ $? -ne 0 ]; then
 	mv -f "$FILE" "$NFILE" || exit 1
-	KEEP_OUTPUT='yes'
+	KEEP_OUTPUT=yes
 
 	if [ -n "$DIALOG" ]; then
-		dialog --backtitle "$BGTITLE" --title "Information not uploaded" --msgbox "An error occurred while contacting $WWWSERVICE.\n Your information was NOT automatically uploaded.\n\nYour ALSA information is in $NFILE" 10 100
+		dialog --backtitle $BGTITLE --title "Information not uploaded" --msgbox "An error occurred while contacting $WWWSERVICE.\n Your information was NOT automatically uploaded.\n\nYour ALSA information is in $NFILE" 10 100
 	else
 		echo ""
 		echo "An error occurred while contacting $WWWSERVICE."
@@ -967,9 +967,9 @@ if [ -n "$DIALOG" ]; then
 
 dialog --backtitle "$BGTITLE" --title "Information uploaded" --yesno "Would you like to see the uploaded information?" 5 100 
 DIALOG_EXIT_CODE=$?
-if [ "$DIALOG_EXIT_CODE" = 0 ]; then
+if [ $DIALOG_EXIT_CODE = 0 ]; then
 	grep -v alsa-info.txt "$FILE" > "$TEMPDIR/uploaded.txt"
-	dialog --backtitle "$BGTITLE" --textbox "$TEMPDIR/uploaded.txt" 0 0
+	dialog --backtitle $BGTITLE --textbox "$TEMPDIR/uploaded.txt" 0 0
 fi
 
 clear
@@ -982,7 +982,7 @@ echo ""
 
 fi # dialog
 
-if [ -z "$PASTEBIN" ]; then
+if [ -z $PASTEBIN ]; then
 	FINAL_URL="$(grep 'SUCCESS:' "$TEMPDIR/wget.tmp" | cut -d ' ' -f 2)"
 else
 	FINAL_URL="$(grep 'SUCCESS:' "$TEMPDIR/wget.tmp" | sed -n 's/.*\:\([0-9]\+\).*/https:\/\/pastebin.ca\/\1/p')"
