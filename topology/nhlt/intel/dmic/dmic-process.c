@@ -146,7 +146,6 @@ static void find_modes(struct intel_dmic_params *dmic, struct dmic_calc_decim_mo
 	 * num_of_modes as zero.
 	 */
 	if (fs == 0) {
-		fprintf(stderr, "find_modes(): fs not set\n");
 		return;
 	}
 
