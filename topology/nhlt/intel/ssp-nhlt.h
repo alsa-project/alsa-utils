@@ -16,4 +16,5 @@ int nhlt_ssp_get_ep(struct intel_nhlt_params *nhlt, struct endpoint_descriptor *
 		    int dai_index, uint8_t dir);
 int nhlt_ssp_get_ep_count(struct intel_nhlt_params *nhlt);
 int nhlt_ssp_get_dir(struct intel_nhlt_params *nhlt, int dai_index, uint8_t *dir);
+int nhlt_ssp_calculate(struct intel_nhlt_params *nhlt);
 #endif

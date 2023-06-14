@@ -11,12 +11,11 @@
 
 #ifdef NHLT_DEBUG
 
-void ssp_print_calculated(struct intel_ssp_params *ssp)
+void ssp_print_calculated(struct intel_ssp_params *ssp, int ssp_index)
 {
 	struct ssp_intel_config_data *blob;
 	struct ssp_intel_config_data_1_5 *blob15;
 	struct ssp_aux_blob *blob_aux;
-	int ssp_index = ssp->ssp_count;
 	uint32_t *ptr;
 	int i, j;
 
@@ -35,7 +34,7 @@ void ssp_print_calculated(struct intel_ssp_params *ssp)
 	fprintf(stdout, "\n");
 
 	for (i = 0; i < ssp->ssp_hw_config_count[ssp_index]; i++) {
-		fprintf(stdout, "ssp blob %d hw_config %d\n", ssp->ssp_count, i);
+		fprintf(stdout, "ssp blob %d hw_config %d\n", ssp_index, i);
 		if (ssp->ssp_prm[ssp_index].version == SSP_BLOB_VER_1_5) {
 			blob15 = &ssp->ssp_blob_1_5[ssp_index][i];
 			fprintf(stdout, "gateway_attributes %u\n", blob15->gateway_attributes);
@@ -101,7 +100,7 @@ void ssp_print_calculated(struct intel_ssp_params *ssp)
 	fprintf(stdout, "\n");
 }
 
-void ssp_print_internal(struct intel_ssp_params *ssp)
+void ssp_print_internal(struct intel_ssp_params *ssp, int ssp_index)
 {
 	struct ssp_aux_config_link *link;
 	struct ssp_aux_config_sync *sync;
@@ -115,7 +114,7 @@ void ssp_print_internal(struct intel_ssp_params *ssp)
 	uint32_t enabled;
 	int i, j;
 
-	dai = &ssp->ssp_prm[ssp->ssp_count];
+	dai = &ssp->ssp_prm[ssp_index];
 
 	fprintf(stdout, "printing ssp nhlt internal data:\n");
 
@@ -133,9 +132,9 @@ void ssp_print_internal(struct intel_ssp_params *ssp)
 
 	fprintf(stdout, "\n");
 
-	fprintf(stdout, "hw_config_count %u\n", ssp->ssp_hw_config_count[ssp->ssp_count]);
+	fprintf(stdout, "hw_config_count %u\n", ssp->ssp_hw_config_count[ssp_index]);
 
-	for (i = 0; i < ssp->ssp_hw_config_count[ssp->ssp_count]; i++) {
+	for (i = 0; i < ssp->ssp_hw_config_count[ssp_index]; i++) {
 		hw_conf = &dai->hw_cfg[i];
 		fprintf(stdout, "mclk_rate %u\n", hw_conf->mclk_rate);
 		fprintf(stdout, "bclk_rate %u\n", hw_conf->bclk_rate);
@@ -251,6 +250,6 @@ void ssp_print_internal(struct intel_ssp_params *ssp)
 }
 
 #else /* NHLT_DEBUG */
-void ssp_print_internal(struct intel_ssp_params *ssp) {}
-void ssp_print_calculated(struct intel_ssp_params *ssp) {}
+void ssp_print_internal(struct intel_ssp_params *ssp, int ssp_index) {}
+void ssp_print_calculated(struct intel_ssp_params *ssp, int ssp_index) {}
 #endif

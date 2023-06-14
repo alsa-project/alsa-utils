@@ -578,8 +578,8 @@ int nhlt_ssp_get_ep(struct intel_nhlt_params *nhlt, struct endpoint_descriptor *
  * You can see an example of topology v2 config of ssp below. In this example the default
  * object parameters are spelled out for clarity. General parameters like sample_bits are parsed
  * with set_ssp_data and hw_config object data with set_hw_data. Ssp can have multiple hw_configs.
- * Values are saved into intermediate structs and the vendor specific blob is calculated at the end
- * of parsing with ssp_calculate.
+ * Values are saved into intermediate structs and the vendor specific blob is calculated in
+ * another function nhlt_ssp_calculate.
  *
  * 	SSP."0" {
  *		id 			0
@@ -613,11 +613,15 @@ int nhlt_ssp_get_ep(struct intel_nhlt_params *nhlt, struct endpoint_descriptor *
  */
 int nhlt_ssp_set_params(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
 {
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
 	snd_config_iterator_t i, next;
 	snd_config_t *items;
 	snd_config_t *n;
 	const char *id;
 	int ret;
+
+	if (!ssp)
+		return -EINVAL;
 
 	ret = set_ssp_data(nhlt, cfg, top);
 	if (ret < 0)
@@ -638,7 +642,24 @@ int nhlt_ssp_set_params(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_c
 			return ret;
 	}
 
-	ret = ssp_calculate(nhlt);
+	ssp->ssp_count++;
+
+	return ret;
+}
+
+int nhlt_ssp_calculate(struct intel_nhlt_params *nhlt)
+{
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	int i, ret;
+
+	if (!ssp)
+		return -EINVAL;
+
+	for (i = 0; i < ssp->ssp_count; i++) {
+		ret = ssp_calculate(nhlt, i);
+		if (ret < 0)
+			return ret;
+	}
 
 	return ret;
 }

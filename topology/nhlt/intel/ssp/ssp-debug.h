@@ -9,7 +9,7 @@
 
 #include "ssp-internal.h"
 
-void ssp_print_internal(struct intel_ssp_params *ssp);
-void ssp_print_calculated(struct intel_ssp_params *ssp);
+void ssp_print_internal(struct intel_ssp_params *ssp, int ssp_index);
+void ssp_print_calculated(struct intel_ssp_params *ssp, int ssp_index);
 
 #endif

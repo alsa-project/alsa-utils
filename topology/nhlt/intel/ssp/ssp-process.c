@@ -36,10 +36,9 @@ static int popcount(uint32_t value)
 	return bits_set;
 }
 
-static void ssp_calculate_intern_v15(struct intel_nhlt_params *nhlt, int hwi)
+static void ssp_calculate_intern_v15(struct intel_nhlt_params *nhlt, int di, int hwi)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
-	int di = ssp->ssp_count;;
 	struct ssp_intel_config_data_1_5 *blob15 = &ssp->ssp_blob_1_5[di][hwi];
 	struct ssp_intel_config_data *blob = &ssp->ssp_blob[di][hwi];
 	int i;
@@ -72,7 +71,7 @@ static void ssp_calculate_intern_v15(struct intel_nhlt_params *nhlt, int hwi)
 		ssp->ssp_blob_ext[di][hwi].size;
 }
 
-static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
+static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int di, int hwi)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
 	uint32_t active_tx_slots = 2;
@@ -93,13 +92,10 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	uint32_t bdiv;
 	uint32_t tft;
 	uint32_t rft;
-	int di;
 	int i, j;
 
 	if (!ssp)
 		return -EINVAL;
-
-	di = ssp->ssp_count;
 
 	/* should be eventually the lp_mode defined in pipeline */
 	ssp->ssp_blob[di][hwi].gateway_attributes = 0;
@@ -547,7 +543,7 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	return 0;
 }
 
-static int ssp_calculate_intern_ext(struct intel_nhlt_params *nhlt, int hwi)
+static int ssp_calculate_intern_ext(struct intel_nhlt_params *nhlt, int di, int hwi)
 {
 	size_t aux_size, mn_size, clk_size, tr_size, run_size, sync_size, node_size, ext_size,
 		link_size, size, total_size;
@@ -564,7 +560,7 @@ static int ssp_calculate_intern_ext(struct intel_nhlt_params *nhlt, int hwi)
 	struct ssp_intel_link_ctl *link;
 	uint8_t *aux_blob;
 	uint32_t enabled;
-	int di, i;
+	int i;
 
 	aux_size = sizeof(struct ssp_intel_aux_tlv);
 	mn_size = sizeof(struct ssp_intel_mn_ctl);
@@ -577,7 +573,6 @@ static int ssp_calculate_intern_ext(struct intel_nhlt_params *nhlt, int hwi)
 	link_size = sizeof(struct ssp_intel_link_ctl);
 
 	ssp = (struct intel_ssp_params *)nhlt->ssp_params;
-	di = ssp->ssp_count;
 	enabled = ssp->ssp_prm[di].aux_cfg[hwi].enabled;
 	aux = &(ssp->ssp_prm[di].aux_cfg[hwi]);
 	aux_blob = ssp->ssp_blob_ext[di][hwi].aux_blob;
@@ -729,7 +724,7 @@ static int ssp_calculate_intern_ext(struct intel_nhlt_params *nhlt, int hwi)
 
 
 
-int ssp_calculate(struct intel_nhlt_params *nhlt)
+int ssp_calculate(struct intel_nhlt_params *nhlt, int di)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
 	int i;
@@ -738,19 +733,17 @@ int ssp_calculate(struct intel_nhlt_params *nhlt)
 		return -EINVAL;
 
 	/* calculate blob for every hw config */
-	for (i = 0; i < ssp->ssp_hw_config_count[ssp->ssp_count]; i++) {
-		if (ssp_calculate_intern(nhlt, i) < 0)
+	for (i = 0; i < ssp->ssp_hw_config_count[di]; i++) {
+		if (ssp_calculate_intern(nhlt, di, i) < 0)
 			return -EINVAL;
-		if (ssp_calculate_intern_ext(nhlt, i) < 0)
+		if (ssp_calculate_intern_ext(nhlt, di, i) < 0)
 			return -EINVAL;
 		/* v15 blob is made from legacy blob, so it can't fail */
-		ssp_calculate_intern_v15(nhlt, i);
+		ssp_calculate_intern_v15(nhlt, di, i);
 	}
 
-	ssp_print_internal(ssp);
-	ssp_print_calculated(ssp);
-
-	ssp->ssp_count++;
+	ssp_print_internal(ssp, di);
+	ssp_print_calculated(ssp, di);
 
 	return 0;
 }

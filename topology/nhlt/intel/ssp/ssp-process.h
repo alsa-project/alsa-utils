@@ -52,7 +52,7 @@ int ssp_ext_set_params(struct intel_nhlt_params *nhlt, int mclk_policy_override,
 int ssp_link_set_params(struct intel_nhlt_params *nhlt, int clock_source);
 
 /* calculate the blob after parsing the values*/
-int ssp_calculate(struct intel_nhlt_params *nhlt);
+int ssp_calculate(struct intel_nhlt_params *nhlt, int di);
 /* get spec parameters when building the nhlt endpoint */
 int ssp_get_params(struct intel_nhlt_params *nhlt, int dai_index, uint32_t *virtualbus_id,
 		   uint32_t *formats_count);

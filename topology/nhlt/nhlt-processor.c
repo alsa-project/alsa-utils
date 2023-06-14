@@ -436,7 +436,7 @@ SND_TOPOLOGY_PLUGIN_DEFINE_FUNC(nhlt)
 	snd_config_t *n, *n2;
 	snd_config_t *items;
 	const char *id, *id2;
-	int ret;
+	int ret, count = 0;
 
 	/* initialize the internal structs */
 	ret = nhlt_ssp_init_params(&nhlt);
@@ -475,8 +475,15 @@ SND_TOPOLOGY_PLUGIN_DEFINE_FUNC(nhlt)
 				ret = nhlt_ssp_set_params(&nhlt, n2, input);
 				if (ret < 0)
 					return ret;
+				count++;
 			}
 		}
+	}
+
+	if (count) {
+		ret = nhlt_ssp_calculate(&nhlt);
+		if (ret < 0)
+			return ret;
 	}
 
 	/* create the nhlt blob from internal structs */
