@@ -342,6 +342,27 @@ static int set_aux_params(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd
 	return ret;
 }
 
+static int set_ssp_freq(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
+{
+	long xtal_freq = 0;
+	long cardinal_freq = 0;
+	long pll_freq = 0;
+	long ret;
+
+	struct dai_values ssp_freq_data[] = {
+		{ "xtal_freq",  SND_CONFIG_TYPE_INTEGER, NULL, &xtal_freq, NULL},
+		{ "cardinal_freq",  SND_CONFIG_TYPE_INTEGER, NULL, &cardinal_freq, NULL},
+		{ "pll_freq",  SND_CONFIG_TYPE_INTEGER, NULL, &pll_freq, NULL},
+	};
+
+	ret = find_set_values(&ssp_freq_data[0], ARRAY_SIZE(ssp_freq_data), cfg, top,
+			      "Class.Base.ssp_freq");
+	if (ret < 0)
+		return ret;
+
+	return ssp_freq_set_params(nhlt, xtal_freq, cardinal_freq, pll_freq);
+}
+
 static int set_hw_config(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
 {
 	const char *format = NULL;
@@ -609,6 +630,12 @@ int nhlt_ssp_get_ep(struct intel_nhlt_params *nhlt, struct endpoint_descriptor *
  *			tx_slots	3
  *			rx_slots	3
  *		}
+ *
+ *		Object.Base.ssp_freq."1" {
+ *			xtal_freq	38400000
+ *			cardinal_freq	24576000
+ *			pll_freq	96000000
+ *		}
  *	}
  */
 int nhlt_ssp_set_params(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_config_t *top)
@@ -642,24 +669,116 @@ int nhlt_ssp_set_params(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd_c
 			return ret;
 	}
 
+	ret = snd_config_search(cfg, "Object.Base.ssp_freq", &items);
+	if (ret < 0) {
+		ret = 0; /* optional data */
+		goto _exit;
+	}
+
+	snd_config_for_each(i, next, items) {
+		n = snd_config_iterator_entry(i);
+
+		if (snd_config_get_id(n, &id) < 0)
+			continue;
+
+		ret = set_ssp_freq(nhlt, n, top);
+		if (ret < 0)
+			return ret;
+	}
+
+_exit:
 	ssp->ssp_count++;
 
 	return ret;
 }
 
+#ifdef NHLT_DEBUG
+static void print_divider_source_clock(struct intel_ssp_params *ssp)
+{
+	fprintf(stdout,	"print mclk and m/n divider source clock:\n");
+	fprintf(stdout,	"0: xtal freq %d\n", ssp->ssp_freq[SSP_CLOCK_XTAL_OSCILLATOR]);
+	fprintf(stdout,	"1: cardinal freq %d\n", ssp->ssp_freq[SSP_CLOCK_AUDIO_CARDINAL]);
+	fprintf(stdout,	"2: pll freq %d\n", ssp->ssp_freq[SSP_CLOCK_PLL_FIXED]);
+	fprintf(stdout,	"mclk_source_clock %d\n", ssp->mclk_source_clock);
+	fprintf(stdout, "\n");
+
+	return;
+}
+#endif
+
 int nhlt_ssp_calculate(struct intel_nhlt_params *nhlt)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
-	int i, ret;
+	uint16_t mclk_id;
+	uint32_t mclk_rate, ssp_mclk_rate[SSP_MAX_MCLKS];
+	int i, j, k, invalid_freq = 0, ret = 0;
 
 	if (!ssp)
 		return -EINVAL;
 
+	/* Multiple ssp ports could share same mclk. To simplify the design, we
+	 * assume that all hw_configs need to use same rate and source clock for
+	 * same mclk_id.
+	 */
+	for (i = 0; i < SSP_MAX_CLOCK_SOURCES; i++) {
+		if (ssp->ssp_freq[i] == 0) {
+			invalid_freq++;
+			continue;
+		}
+
+		for (j = 0; j < SSP_MAX_MCLKS; j++)
+			ssp_mclk_rate[j] = 0;
+
+		for (j = 0; j < ssp->ssp_count; j++) {
+			mclk_id = ssp->ssp_prm[j].mclk_id;
+			if (mclk_id >= SSP_MAX_MCLKS)
+				continue;
+
+			for (k = 0; k < ssp->ssp_hw_config_count[j]; k++) {
+				mclk_rate = ssp->ssp_prm[j].hw_cfg[k].mclk_rate;
+				if (!mclk_rate)
+					continue;
+
+				if (ssp->ssp_freq[i] % mclk_rate)
+					goto _next_source;
+
+				if (ssp_mclk_rate[mclk_id] == 0)
+					ssp_mclk_rate[mclk_id] = mclk_rate;
+				else if (ssp_mclk_rate[mclk_id] != mclk_rate)
+					/* a hw_config wants to use different rate */
+					goto _next_source;
+			}
+		}
+
+		for (j = 0; j < SSP_MAX_MCLKS; j++) {
+			if (ssp_mclk_rate[j]) {
+				ssp->mclk_source_clock = i;
+				break;
+			}
+		}
+
+		break;
+_next_source:
+	}
+
+	if ((invalid_freq != SSP_MAX_CLOCK_SOURCES) &&
+	    (ssp->mclk_source_clock == SSP_MAX_CLOCK_SOURCES)) {
+		fprintf(stdout, "nhlt_ssp_calculate: fail to find mclk source\n");
+		return -EINVAL;
+	}
+
 	for (i = 0; i < ssp->ssp_count; i++) {
+		if (ssp->mclk_source_clock != SSP_MAX_CLOCK_SOURCES)
+			ssp->ssp_prm[i].io_clk = ssp->ssp_freq[ssp->mclk_source_clock];
+
 		ret = ssp_calculate(nhlt, i);
 		if (ret < 0)
 			return ret;
 	}
+
+#ifdef NHLT_DEBUG
+	print_divider_source_clock(ssp);
+#endif
 
 	return ret;
 }

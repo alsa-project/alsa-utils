@@ -20,6 +20,8 @@ int ssp_set_params(struct intel_nhlt_params *nhlt, const char *dir, int dai_inde
 		   int bclk_delay, int sample_bits, int mclk_id, int clks_control,
 		   int frame_pulse_width, const char *tdm_padding_per_slot, const char *quirks,
 		   int version);
+int ssp_freq_set_params(struct intel_nhlt_params *nhlt, int xtal_freq, int cardinal_freq,
+			int pll_freq);
 int ssp_hw_set_params(struct intel_nhlt_params *nhlt, const char *format, const char *mclk,
 		      const char *bclk, const char *bclk_invert, const char *fsync,
 		      const char *fsync_invert, int mclk_freq, int bclk_freq, int fsync_freq,

@@ -16,6 +16,9 @@
 #define SSP_MAX_HW_CONFIG 8
 #define SSP_TDM_MAX_SLOT_MAP_COUNT 8
 
+#define SSP_MAX_CLOCK_SOURCES 3
+#define SSP_MAX_MCLKS 2
+
 struct ssp_aux_config_mn {
 	uint32_t m_div;
 	uint32_t n_div;
@@ -143,6 +146,9 @@ struct intel_ssp_params {
 	uint32_t ssp_dai_index[SSP_MAX_DAIS];
 	uint32_t ssp_hw_config_count[SSP_MAX_DAIS];
 	int ssp_count;
+
+	uint32_t ssp_freq[SSP_MAX_CLOCK_SOURCES];
+	uint32_t mclk_source_clock;
 
 	/* ssp vendor blob structs */
 	struct ssp_intel_config_data ssp_blob[SSP_MAX_DAIS][SSP_MAX_HW_CONFIG];

@@ -535,10 +535,14 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int di, int hwi)
 	ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_ECS;
 	/* enable divider for this clock id */
 	ssp->ssp_blob[di][hwi].mdivc |= BIT(ssp->ssp_prm[di].mclk_id);
-	/* set mclk source always for audio cardinal clock */
-	ssp->ssp_blob[di][hwi].mdivc |= MCDSS(SSP_CLOCK_AUDIO_CARDINAL);
-	/* set bclk source for audio cardinal clock */
-	ssp->ssp_blob[di][hwi].mdivc |= MNDSS(SSP_CLOCK_AUDIO_CARDINAL);
+	if (ssp->mclk_source_clock == SSP_MAX_CLOCK_SOURCES) {
+		/* backward compatible */
+		ssp->ssp_blob[di][hwi].mdivc |= MCDSS(SSP_CLOCK_AUDIO_CARDINAL);
+		ssp->ssp_blob[di][hwi].mdivc |= MNDSS(SSP_CLOCK_AUDIO_CARDINAL);
+	} else {
+		ssp->ssp_blob[di][hwi].mdivc |= MCDSS(ssp->mclk_source_clock);
+		ssp->ssp_blob[di][hwi].mdivc |= MNDSS(ssp->mclk_source_clock);
+	}
 
 	return 0;
 }
@@ -907,6 +911,21 @@ int ssp_set_params(struct intel_nhlt_params *nhlt, const char *dir, int dai_inde
 	return 0;
 }
 
+int ssp_freq_set_params(struct intel_nhlt_params *nhlt, int xtal_freq,
+			int cardinal_freq, int pll_freq)
+{
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+
+	if (!ssp)
+		return -EINVAL;
+
+	ssp->ssp_freq[SSP_CLOCK_XTAL_OSCILLATOR] = xtal_freq;
+	ssp->ssp_freq[SSP_CLOCK_AUDIO_CARDINAL] = cardinal_freq;
+	ssp->ssp_freq[SSP_CLOCK_PLL_FIXED] = pll_freq;
+
+	return 0;
+}
+
 int ssp_hw_set_params(struct intel_nhlt_params *nhlt, const char *format, const char *mclk,
 		      const char *bclk, const char *bclk_invert, const char *fsync,
 		      const char *fsync_invert, int mclk_freq, int bclk_freq, int fsync_freq,
@@ -1204,6 +1223,10 @@ int ssp_init_params(struct intel_nhlt_params *nhlt)
 
 	nhlt->ssp_params = ssp;
 	ssp->ssp_count = 0;
+
+	for (i = 0; i < SSP_MAX_CLOCK_SOURCES; i++)
+		ssp->ssp_freq[i] = 0;
+	ssp->mclk_source_clock = SSP_MAX_CLOCK_SOURCES;
 
 	for (i = 0; i < SSP_MAX_DAIS; i++) {
 		ssp->ssp_hw_config_count[i] = 0;
