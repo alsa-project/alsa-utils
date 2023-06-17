@@ -700,6 +700,7 @@ static void print_divider_source_clock(struct intel_ssp_params *ssp)
 	fprintf(stdout,	"1: cardinal freq %d\n", ssp->ssp_freq[SSP_CLOCK_AUDIO_CARDINAL]);
 	fprintf(stdout,	"2: pll freq %d\n", ssp->ssp_freq[SSP_CLOCK_PLL_FIXED]);
 	fprintf(stdout,	"mclk_source_clock %d\n", ssp->mclk_source_clock);
+	fprintf(stdout,	"bclk_source_mn_clock %d\n", ssp->bclk_source_mn_clock);
 	fprintf(stdout, "\n");
 
 	return;

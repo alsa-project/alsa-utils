@@ -36,6 +36,94 @@ static int popcount(uint32_t value)
 	return bits_set;
 }
 
+static int gcd(uint32_t n1, uint32_t n2)
+{
+	while (n1 != n2) {
+		if (n1 > n2)
+			n1 -= n2;
+		else
+			n2 -= n1;
+	}
+
+	return n1;
+}
+
+static int find_mn(uint32_t freq, uint32_t bclk,
+		   uint32_t *out_scr_div, uint32_t *out_m, uint32_t *out_n)
+{
+	uint32_t m, n, mn_div;
+	uint32_t scr_div = freq / bclk;
+
+	/* check if just SCR is enough */
+	if (freq % bclk == 0 && scr_div < (SSCR0_SCR_MASK >> 8) + 1) {
+		*out_scr_div = scr_div;
+		*out_m = 1;
+		*out_n = 1;
+
+		return 0;
+	}
+
+	/* M/(N * scr_div) has to be less than 1/2 */
+	if ((bclk * 2) >= freq)
+		return -EINVAL;;
+
+	/* odd SCR gives lower duty cycle */
+	if (scr_div > 1 && scr_div % 2 != 0)
+		--scr_div;
+
+	/* clamp to valid SCR range */
+	scr_div = MIN(scr_div, (SSCR0_SCR_MASK >> 8) + 1);
+
+	/* find highest even divisor */
+	while (scr_div > 1 && freq % scr_div != 0)
+		scr_div -= 2;
+
+	/* compute M/N with smallest dividend and divisor */
+	mn_div = gcd(bclk, freq / scr_div);
+
+	m = bclk / mn_div;
+	n = freq / scr_div / mn_div;
+
+	/* M/N values can be up to 24 bits */
+	if (n & (~0xffffff))
+		return -EINVAL;;
+
+	*out_scr_div = scr_div;
+	*out_m = m;
+	*out_n = n;
+
+	return 0;
+}
+
+static int find_bclk_source(struct intel_ssp_params *ssp, uint32_t bclk,
+			    uint32_t *scr_div, uint32_t *m, uint32_t *n)
+{
+	int i;
+
+	/* check if we can use MCLK source clock */
+	if (ssp->mclk_source_clock != SSP_MAX_CLOCK_SOURCES) {
+		if (!find_mn(ssp->ssp_freq[ssp->mclk_source_clock], bclk, scr_div, m, n))
+			return ssp->mclk_source_clock;
+
+		fprintf(stderr, "BCLK %d warning: cannot use MCLK source %d\n",
+			bclk, ssp->ssp_freq[ssp->mclk_source_clock]);
+	}
+
+	/* searching the smallest possible bclk source */
+	for (i = 0; i <= SSP_MAX_CLOCK_SOURCES; i++)
+		if (ssp->ssp_freq[i] % bclk == 0) {
+			*scr_div = ssp->ssp_freq[i] / bclk;
+			return i;
+		}
+
+	/* check if we can get target BCLK with M/N */
+	for (i = 0; i <= SSP_MAX_CLOCK_SOURCES; i++)
+		if (!find_mn(ssp->ssp_freq[i], bclk, scr_div, m, n))
+			return i;
+
+	return -EINVAL;
+}
+
 static void ssp_calculate_intern_v15(struct intel_nhlt_params *nhlt, int di, int hwi)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
@@ -92,6 +180,8 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int di, int hwi)
 	uint32_t bdiv;
 	uint32_t tft;
 	uint32_t rft;
+	uint32_t m, n;
+	int clk_index;
 	int i, j;
 
 	if (!ssp)
@@ -474,25 +564,28 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int di, int hwi)
 	else
 		ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_DSIZE(data_size);
 
-	end_padding = 0;
-	total_sample_size = ssp->ssp_prm[di].hw_cfg[hwi].tdm_slot_width *
-		ssp->ssp_prm[di].hw_cfg[hwi].tdm_slots;
-	while (ssp->ssp_prm[di].io_clk % ((total_sample_size + end_padding) *
-				      ssp->ssp_prm[di].hw_cfg[hwi].fsync_rate)) {
-		if (++end_padding >= 256)
-			break;
+	if (ssp->mclk_source_clock == SSP_MAX_CLOCK_SOURCES) {
+		/* backward compatible */
+		end_padding = 0;
+		total_sample_size = ssp->ssp_prm[di].hw_cfg[hwi].tdm_slot_width *
+			ssp->ssp_prm[di].hw_cfg[hwi].tdm_slots;
+		while (ssp->ssp_prm[di].io_clk % ((total_sample_size + end_padding) *
+					      ssp->ssp_prm[di].hw_cfg[hwi].fsync_rate)) {
+			if (++end_padding >= 256)
+				break;
+		}
+
+		if (end_padding >= 256)
+			return -EINVAL;
+
+		/* calc scr divisor */
+		clk_div = ssp->ssp_prm[di].io_clk / ((total_sample_size + end_padding) *
+						 ssp->ssp_prm[di].hw_cfg[hwi].fsync_rate);
+		if (clk_div >= 4095)
+			return -EINVAL;
+
+		ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_SCR(clk_div - 1);
 	}
-
-	if (end_padding >= 256)
-		return -EINVAL;
-
-	/* calc scr divisor */
-	clk_div = ssp->ssp_prm[di].io_clk / ((total_sample_size + end_padding) *
-					 ssp->ssp_prm[di].hw_cfg[hwi].fsync_rate);
-	if (clk_div >= 4095)
-		return -EINVAL;
-
-	ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_SCR(clk_div - 1);
 
 	/* setting TFT and RFT */
 	switch (ssp->ssp_prm[di].sample_valid_bits) {
@@ -541,7 +634,40 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int di, int hwi)
 		ssp->ssp_blob[di][hwi].mdivc |= MNDSS(SSP_CLOCK_AUDIO_CARDINAL);
 	} else {
 		ssp->ssp_blob[di][hwi].mdivc |= MCDSS(ssp->mclk_source_clock);
-		ssp->ssp_blob[di][hwi].mdivc |= MNDSS(ssp->mclk_source_clock);
+
+		if (ssp->bclk_source_mn_clock == SSP_MAX_CLOCK_SOURCES) {
+			clk_index = find_bclk_source(ssp,
+						     ssp->ssp_prm[di].hw_cfg[hwi].bclk_rate,
+						     &clk_div, &m, &n);
+
+			if (clk_index < 0) {
+				fprintf(stderr, "BCLK %d, no valid source\n",
+					ssp->ssp_prm[di].hw_cfg[hwi].bclk_rate);
+				return -EINVAL;
+			}
+
+			ssp->bclk_source_mn_clock = clk_index;
+			ssp->ssp_blob[di][hwi].mdivc |= MNDSS(ssp->bclk_source_mn_clock);
+		} else {
+			/* source for M/N is already set, no need to do it */
+			if (find_mn(ssp->ssp_freq[ssp->bclk_source_mn_clock],
+				    ssp->ssp_prm[di].hw_cfg[hwi].bclk_rate,
+				    &clk_div, &m, &n)) {
+				fprintf(stderr, "BCLK %d, no valid configuration for already selected source = %d\n",
+					ssp->ssp_prm[di].hw_cfg[hwi].bclk_rate,
+					ssp->bclk_source_mn_clock);
+				return -EINVAL;
+			}
+		}
+
+		if (clk_div >= 4095)
+			return -EINVAL;
+
+		ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_SCR(clk_div - 1);
+
+		ssp->ssp_prm[di].aux_cfg[hwi].enabled |= BIT(SSP_MN_DIVIDER_CONTROLS);
+		ssp->ssp_prm[di].aux_cfg[hwi].mn.m_div = m;
+		ssp->ssp_prm[di].aux_cfg[hwi].mn.n_div = n;
 	}
 
 	return 0;
@@ -1227,6 +1353,7 @@ int ssp_init_params(struct intel_nhlt_params *nhlt)
 	for (i = 0; i < SSP_MAX_CLOCK_SOURCES; i++)
 		ssp->ssp_freq[i] = 0;
 	ssp->mclk_source_clock = SSP_MAX_CLOCK_SOURCES;
+	ssp->bclk_source_mn_clock = SSP_MAX_CLOCK_SOURCES;
 
 	for (i = 0; i < SSP_MAX_DAIS; i++) {
 		ssp->ssp_hw_config_count[i] = 0;

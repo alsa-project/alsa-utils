@@ -149,6 +149,7 @@ struct intel_ssp_params {
 
 	uint32_t ssp_freq[SSP_MAX_CLOCK_SOURCES];
 	uint32_t mclk_source_clock;
+	uint32_t bclk_source_mn_clock;
 
 	/* ssp vendor blob structs */
 	struct ssp_intel_config_data ssp_blob[SSP_MAX_DAIS][SSP_MAX_HW_CONFIG];
