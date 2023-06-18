@@ -66,12 +66,12 @@ static int allocate_paths(struct xfer_context *xfer, char *const *paths,
 	xfer->path_count = count;
 
 	if (stdio) {
-		xfer->paths[0] = strndup("-", PATH_MAX);
+		xfer->paths[0] = strndup("-", strlen("-"));
 		if (xfer->paths[0] == NULL)
 			return -ENOMEM;
 	} else {
 		for (i = 0; i < count; ++i) {
-			xfer->paths[i] = strndup(paths[i], PATH_MAX);
+			xfer->paths[i] = strndup(paths[i], strlen(paths[i]));
 			if (xfer->paths[i] == NULL)
 				return -ENOMEM;
 		}
