@@ -8,7 +8,8 @@ man_MANS = \
 
 # To include headers for gettext and version.
 AM_CPPFLAGS = \
-	-I$(top_srcdir)/include
+	-I$(top_srcdir)/include \
+	-D_FILE_OFFSET_BITS=64
 
 # Unit tests.
 SUBDIRS = \

@@ -1,4 +1,5 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include \
+              -D_FILE_OFFSET_BITS=64
 EXTRA_DIST = aplaymidi.1 arecordmidi.1
 
 bin_PROGRAMS = aplaymidi arecordmidi

@@ -10,7 +10,8 @@ alsaucm_SOURCES = usecase.c dump.c
 noinst_HEADERS = usecase.h
 
 AM_CPPFLAGS = \
-         -Wall -I$(top_srcdir)/include
+         -Wall -I$(top_srcdir)/include \
+         -D_FILE_OFFSET_BITS=64
 
 %.1: %.rst
 	rst2man $< > $@

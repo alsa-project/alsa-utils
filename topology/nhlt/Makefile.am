@@ -2,7 +2,8 @@ alsatplg_module_nhlt_LTLIBRARIES = libalsatplg_module_nhlt.la
 
 alsatplg_module_nhltdir = @ALSA_TOPOLOGY_PLUGIN_DIR@
 
-AM_CFLAGS = -Wall -fvisibility=hidden -I$(top_srcdir)/include -I$(top_srcdir)/topology
+AM_CFLAGS = -Wall -fvisibility=hidden -I$(top_srcdir)/include -I$(top_srcdir)/topology \
+            -D_FILE_OFFSET_BITS=64
 AM_LDFLAGS = -module -avoid-version -export-dynamic -no-undefined $(LDFLAGS_NOUNDEFINED)
 
 libalsatplg_module_nhlt_la_SOURCES = nhlt-processor.c \

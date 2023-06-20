@@ -1,4 +1,5 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include \
+              -D_FILE_OFFSET_BITS=64
 SUBDIRS= samples
 LDADD = $(LIBINTL) -lm
 
