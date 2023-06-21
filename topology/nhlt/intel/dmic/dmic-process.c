@@ -830,8 +830,11 @@ static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_
 			CIC_CONTROL_CIC_START_A(1) |
 			CIC_CONTROL_MIC_B_POLARITY(dmic->dmic_prm[di].pdm[i].polarity_mic_b) |
 			CIC_CONTROL_MIC_A_POLARITY(dmic->dmic_prm[di].pdm[i].polarity_mic_a) |
-			CIC_CONTROL_MIC_MUTE(cic_mute) |
-			CIC_CONTROL_STEREO_MODE(stereo[i]);
+			CIC_CONTROL_MIC_MUTE(cic_mute);
+
+		if (dmic->dmic_prm[di].driver_version == 1)
+			val |= CIC_CONTROL_STEREO_MODE(stereo[i]);
+
 		dmic->dmic_blob_pdm[i].cic_control = val;
 
 		val = CIC_CONFIG_CIC_SHIFT(cfg->cic_shift + 8) |
