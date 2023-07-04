@@ -368,29 +368,29 @@ static void dump_ump_midi2_event(const unsigned int *ump)
 	printf("Group %2d, ", group);
 	switch (status) {
 	case SND_UMP_MSG_PER_NOTE_RCC:
-		printf("Per-note RCC           %2u, note %u, index %u, value 0x%x",
+		printf("Per-note RCC           %2d, note %u, index %u, value 0x%x",
 		       channel, m->per_note_rcc.note,
 		       m->per_note_rcc.index, m->per_note_rcc.data);
 		break;
 	case SND_UMP_MSG_PER_NOTE_ACC:
-		printf("Per-note ACC           %2u, note %u, index %u, value 0x%x",
+		printf("Per-note ACC           %2d, note %u, index %u, value 0x%x",
 		       channel, m->per_note_acc.note,
 		       m->per_note_acc.index, m->per_note_acc.data);
 		break;
 	case SND_UMP_MSG_RPN:
-		printf("RPN                    %2u, bank %u:%u, value 0x%x",
+		printf("RPN                    %2d, bank %u:%u, value 0x%x",
 		       channel, m->rpn.bank, m->rpn.index, m->rpn.data);
 		break;
 	case SND_UMP_MSG_NRPN:
-		printf("NRPN                   %2u, bank %u:%u, value 0x%x",
+		printf("NRPN                   %2d, bank %u:%u, value 0x%x",
 		       channel, m->rpn.bank, m->rpn.index, m->rpn.data);
 		break;
 	case SND_UMP_MSG_RELATIVE_RPN:
-		printf("relative RPN           %2u, bank %u:%u, value 0x%x",
+		printf("relative RPN           %2d, bank %u:%u, value 0x%x",
 		       channel, m->rpn.bank, m->rpn.index, m->rpn.data);
 		break;
 	case SND_UMP_MSG_RELATIVE_NRPN:
-		printf("relative NRP           %2u, bank %u:%u, value 0x%x",
+		printf("relative NRP           %2d, bank %u:%u, value 0x%x",
 		       channel, m->rpn.bank, m->rpn.index, m->rpn.data);
 		break;
 	case SND_UMP_MSG_PER_NOTE_PITCHBEND:
@@ -437,8 +437,8 @@ static void dump_ump_midi2_event(const unsigned int *ump)
 		       channel, m->per_note_mgmt.flags);
 		break;
 	default:
-		printf("UMP MIDI2 event: status = %d, channel = %x, 0x%08x",
-		       status, status, *ump);
+		printf("UMP MIDI2 event: status = %d, channel = %d, 0x%08x",
+		       status, channel, *ump);
 		break;
 	}
 	printf("\n");
