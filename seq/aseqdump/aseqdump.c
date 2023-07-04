@@ -306,6 +306,12 @@ static void dump_event(const snd_seq_event_t *ev)
 }
 
 #ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
+static int pitchbend_value(u8 msb, u8 lsb)
+{
+	int pb = (msb << 7) | lsb;
+	return pb - 8192;
+}
+
 static void dump_ump_midi1_event(const unsigned int *ump)
 {
 	const snd_ump_msg_midi1_t *m = (const snd_ump_msg_midi1_t *)ump;
@@ -316,31 +322,32 @@ static void dump_ump_midi1_event(const unsigned int *ump)
 	printf("Group %2d, ", group);
 	switch (status) {
 	case SND_UMP_MSG_NOTE_OFF:
-		printf("Note off               %2d, note %d, velocity 0x%x",
+		printf("Note off               %2d, note %d, velocity %d",
 		       channel, m->note_off.note, m->note_off.velocity);
 		break;
 	case SND_UMP_MSG_NOTE_ON:
-		printf("Note on                %2d, note %d, velocity 0x%x",
+		printf("Note on                %2d, note %d, velocity %d",
 		       channel, m->note_off.note, m->note_off.velocity);
 		break;
 	case SND_UMP_MSG_POLY_PRESSURE:
-		printf("Poly pressure          %2d, note %d, value 0x%x",
+		printf("Poly pressure          %2d, note %d, value %d",
 		       channel, m->poly_pressure.note, m->poly_pressure.data);
 		break;
 	case SND_UMP_MSG_CONTROL_CHANGE:
-		printf("Control change         %2d, controller %d, value 0x%x",
+		printf("Control change         %2d, controller %d, value %d",
 		       channel, m->control_change.index, m->control_change.data);
 		break;
 	case SND_UMP_MSG_PROGRAM_CHANGE:
 		printf("Program change         %2d, program %d",
 		       channel, m->program_change.program);
 	case SND_UMP_MSG_CHANNEL_PRESSURE:
-		printf("Channel pressure       %2d, value 0x%x",
+		printf("Channel pressure       %2d, value %d",
 		       channel, m->channel_pressure.data);
 		break;
 	case SND_UMP_MSG_PITCHBEND:
-		printf("Pitchbend              %2d, value 0x%x",
-		       channel, (m->pitchbend.data_msb << 7) | m->pitchbend.data_lsb);
+		printf("Pitchbend              %2d, value %d",
+		       channel, pitchbend_value(m->pitchbend.data_msb,
+						m->pitchbend.data_lsb));
 		break;
 	default:
 		printf("UMP MIDI1 event: status = %d, channel = %d, 0x%08x",
