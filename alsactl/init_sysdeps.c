@@ -18,6 +18,7 @@
  */
 
 #if defined(__GLIBC__) && !(defined(__UCLIBC__) && defined(__USE_BSD))
+#if !(__GLIBC_PREREQ(2, 38))
 static size_t strlcpy(char *dst, const char *src, size_t size)
 {
 	size_t bytes = 0;
@@ -60,4 +61,5 @@ static size_t strlcat(char *dst, const char *src, size_t size)
 	*q = '\0';
 	return bytes;
 }
+#endif /* !(__GLIBC_PREREQ(2, 38)) */
 #endif /* __GLIBC__ */
