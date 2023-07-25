@@ -768,7 +768,7 @@ int ssp_get_dir(struct intel_nhlt_params *nhlt, int dai_index, uint8_t *dir)
 }
 
 int ssp_get_params(struct intel_nhlt_params *nhlt, int dai_index, uint32_t *virtualbus_id,
-		   uint32_t *formats_count)
+		   uint32_t *formats_count, uint32_t *device_type, uint32_t *direction)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
 
@@ -777,6 +777,16 @@ int ssp_get_params(struct intel_nhlt_params *nhlt, int dai_index, uint32_t *virt
 
 	*virtualbus_id = ssp->ssp_dai_index[dai_index];
 	*formats_count = ssp->ssp_hw_config_count[dai_index];
+	if (ssp->ssp_prm[dai_index].quirks & SSP_INTEL_QUIRK_BT_SIDEBAND)
+		*device_type = NHLT_DEVICE_TYPE_SSP_BT_SIDEBAND;
+	else
+		*device_type = NHLT_DEVICE_TYPE_SSP_ANALOG;
+	if (ssp->ssp_prm[dai_index].quirks & SSP_INTEL_QUIRK_RENDER_FEEDBACK) {
+		if (*direction == NHLT_ENDPOINT_DIRECTION_RENDER)
+			*direction = NHLT_ENDPOINT_DIRECTION_RENDER_WITH_LOOPBACK;
+		else if (*direction == NHLT_ENDPOINT_DIRECTION_CAPTURE)
+			*direction = NHLT_ENDPOINT_DIRECTION_FEEDBACK_FOR_RENDER;
+	}
 
 	return 0;
 }
@@ -874,6 +884,8 @@ int ssp_set_params(struct intel_nhlt_params *nhlt, const char *dir, int dai_inde
 		   int version)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	char delim[] = ",";
+	char *buf, *token = NULL;
 
 	if (!ssp)
 		return -EINVAL;
@@ -903,10 +915,34 @@ int ssp_set_params(struct intel_nhlt_params *nhlt, const char *dir, int dai_inde
 		ssp->ssp_prm[ssp->ssp_count].tdm_per_slot_padding_flag = 1;
 	else
 		ssp->ssp_prm[ssp->ssp_count].tdm_per_slot_padding_flag = 0;
-	if (quirks && !strcmp(quirks, "lbm_mode"))
-		ssp->ssp_prm[ssp->ssp_count].quirks = 64; /* 1 << 6 */
-	else
-		ssp->ssp_prm[ssp->ssp_count].quirks = 0;
+
+	ssp->ssp_prm[ssp->ssp_count].quirks = 0;
+
+	if (quirks) {
+		buf = strdup(quirks);
+		if (!buf)
+			return -ENOMEM;
+
+		token = strtok(buf, delim);
+
+		while (token) {
+			if (!strcmp(token, "lbm_mode"))
+				ssp->ssp_prm[ssp->ssp_count].quirks |= SSP_INTEL_QUIRK_LBM;
+			else if (!strcmp(token, "bt_sideband"))
+				ssp->ssp_prm[ssp->ssp_count].quirks |= SSP_INTEL_QUIRK_BT_SIDEBAND;
+			else if (!strcmp(token, "render_feedback")) {
+				if (!strcmp(dir, "duplex"))
+					ssp->ssp_prm[ssp->ssp_count].quirks |= SSP_INTEL_QUIRK_RENDER_FEEDBACK;
+			} else {
+				fprintf(stderr, "ssp_set_params(): unknown quirk %s\n", token);
+				return -EINVAL;
+			}
+
+			token = strtok(NULL, delim);
+		}
+
+		free(buf);
+	}
 
 	/* reset hw config count for this ssp instance */
 	ssp->ssp_hw_config_count[ssp->ssp_count] = 0;
