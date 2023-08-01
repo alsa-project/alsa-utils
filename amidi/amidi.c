@@ -728,9 +728,18 @@ int main(int argc, char *argv[])
 			if (length == 0)
 				continue;
 			read += length;
+			
+			ssize_t bytes_written;
+			
+			if (receive_file != -1) {
+			    bytes_written = write(receive_file, buf, length);
+			    if (bytes_written != length) {
+			        // handle the error, e.g., print an error message or break the loop
+			        error("write() failed: %s", strerror(errno));
+			        break;
+			    }
+			}
 
-			if (receive_file != -1)
-				write(receive_file, buf, length);
 			if (dump) {
 				for (i = 0; i < length; ++i)
 					print_byte(buf[i], &ts);

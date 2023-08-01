@@ -84,19 +84,45 @@ void initfailed(int cardnumber, const char *reason, int exitcode)
 	int fp;
 	char *str;
 	char sexitcode[16];
-
+	ssize_t bytes_written;
+	
 	if (statefile == NULL)
-		return;
+	return;
 	if (snd_card_get_name(cardnumber, &str) < 0)
-		return;
+	return;
 	sprintf(sexitcode, "%i", exitcode);
 	fp = open(statefile, O_WRONLY|O_CREAT|O_APPEND, 0644);
-	(void)write(fp, str, strlen(str));
-	(void)write(fp, ":", 1);
-	(void)write(fp, reason, strlen(reason));
-	(void)write(fp, ":", 1);
-	(void)write(fp, sexitcode, strlen(sexitcode));
-	(void)write(fp, "\n", 1);
+	
+	bytes_written = write(fp, str, strlen(str));
+	if (bytes_written != strlen(str)) {
+	// Handle error
+	}
+	
+	bytes_written = write(fp, ":", 1);
+	if (bytes_written != 1) {
+	// Handle error
+	}
+	
+	bytes_written = write(fp, reason, strlen(reason));
+	if (bytes_written != strlen(reason)) {
+	// Handle error
+	}
+	
+	bytes_written = write(fp, ":", 1);
+	if (bytes_written != 1) {
+	// Handle error
+	}
+	
+	bytes_written = write(fp, sexitcode, strlen(sexitcode));
+	if (bytes_written != strlen(sexitcode)) {
+	// Handle error
+	}
+	
+	bytes_written = write(fp, "\n", 1);
+	if (bytes_written != 1) {
+	// Handle error
+	}
+	
 	close(fp);
 	free(str);
 }
