@@ -101,6 +101,7 @@ static char *command;
 static snd_pcm_t *handle;
 static struct {
 	snd_pcm_format_t format;
+	snd_pcm_subformat_t subformat;
 	unsigned int channels;
 	unsigned int rate;
 } hwparams, rhwparams;
@@ -216,6 +217,7 @@ _("Usage: %s [OPTION]... [FILE]...\n"
 "-t, --file-type TYPE    file type (voc, wav, raw or au)\n"
 "-c, --channels=#        channels\n"
 "-f, --format=FORMAT     sample format (case insensitive)\n"
+"    --subformat=SUBFORMAT  sample subformat (case insensitive)\n"
 "-r, --rate=#            sample rate\n"
 "-d, --duration=#        interrupt after # seconds\n"
 "-s, --samples=#         interrupt after # samples per channel\n"
@@ -434,6 +436,7 @@ enum {
 	OPT_USE_STRFTIME,
 	OPT_DUMP_HWPARAMS,
 	OPT_FATAL_ERRORS,
+	OPT_SUBFORMAT,
 };
 
 /*
@@ -491,6 +494,7 @@ int main(int argc, char *argv[])
 		{"file-type", 1, 0, 't'},
 		{"channels", 1, 0, 'c'},
 		{"format", 1, 0, 'f'},
+		{"subformat", 1, 0, OPT_SUBFORMAT},
 		{"rate", 1, 0, 'r'},
 		{"duration", 1, 0 ,'d'},
 		{"samples", 1, 0, 's'},
@@ -566,6 +570,7 @@ int main(int argc, char *argv[])
 
 	chunk_size = -1;
 	rhwparams.format = DEFAULT_FORMAT;
+	rhwparams.subformat = SND_PCM_SUBFORMAT_STD;
 	rhwparams.rate = DEFAULT_SPEED;
 	rhwparams.channels = 1;
 
@@ -633,6 +638,13 @@ int main(int argc, char *argv[])
 					error(_("wrong extended format '%s'"), optarg);
 					prg_exit(EXIT_FAILURE);
 				}
+			}
+			break;
+		case OPT_SUBFORMAT:
+			rhwparams.subformat = snd_pcm_subformat_value(optarg);
+			if (rhwparams.subformat == SND_PCM_SUBFORMAT_UNKNOWN) {
+				error(_("wrong extended subformat '%s'"), optarg);
+				prg_exit(EXIT_FAILURE);
 			}
 			break;
 		case 'r':
@@ -1370,6 +1382,11 @@ static void set_params(void)
 	if (err < 0) {
 		error(_("Sample format non available"));
 		show_available_sample_formats(params);
+		prg_exit(EXIT_FAILURE);
+	}
+	err = snd_pcm_hw_params_set_subformat(handle, params, hwparams.subformat);
+	if (err < 0) {
+		error(_("Sample subformat not available"));
 		prg_exit(EXIT_FAILURE);
 	}
 	err = snd_pcm_hw_params_set_channels(handle, params, hwparams.channels);
@@ -2404,6 +2421,7 @@ static void voc_play(int fd, int ofs, char *name)
 		}
 	}
 	hwparams.format = DEFAULT_FORMAT;
+	hwparams.subformat = SND_PCM_SUBFORMAT_STD;
 	hwparams.channels = 1;
 	hwparams.rate = DEFAULT_SPEED;
 	set_params();
