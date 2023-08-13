@@ -1063,11 +1063,11 @@ int main(int argc, char *argv[]) {
       break;
     case 'b':
       buffer_time = atoi(optarg);
-      buffer_time = buffer_time > 1000000 ? 1000000 : buffer_time;
+      buffer_time = buffer_time > 100000000 ? 100000000 : buffer_time;
       break;
     case 'p':
       period_time = atoi(optarg);
-      period_time = period_time > 1000000 ? 1000000 : period_time;
+      period_time = period_time > 100000000 ? 100000000 : period_time;
       break;
     case 'P':
       nperiods = atoi(optarg);
