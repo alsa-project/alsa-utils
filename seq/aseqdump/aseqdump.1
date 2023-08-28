@@ -37,6 +37,31 @@ Sets the client MIDI version.
 Suppress the automatic conversion of events among UMP and legacy clients.
 
 .TP
+.I \-R,\-\-raw-view
+Shows the raw values as is.
+The channel numbers and UMP group numbers are 0-based in this mode.
+This is the default behavior.
+
+.TP
+.I \-N,\-\-normalized-view
+Shows the normalized values to be aligned with MIDI 1.0.
+The channel numbers and UMP group numbers are shown as 1-based values,
+i.e. 1 is the lowest number.
+The velocity and data values are normalized between 0 and 127.
+The values for MIDI 2.0 are shown with two digits decimal points (from
+0.00 to 127.00).
+The pitch wheel is normalized between -8192 to 8192, too.
+
+.TP
+.I \-P,\-\-percent-view
+Shows the values in percentage.
+The channel numbers and UMP group numbers are shown as 1-based values
+in this mode, too.
+The velocity and data values are normalized between 0 and 100%, shown
+with two digits decimal points.
+The pitch wheel is normalized between -100% to 100%, too.
+
+.TP
 .I \-p,\-\-port=client:port,...
 Sets the sequencer port(s) from which events are received.
 

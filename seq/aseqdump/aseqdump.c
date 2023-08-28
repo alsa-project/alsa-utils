@@ -33,6 +33,10 @@
 #include <alsa/ump_msg.h>
 #endif
 
+enum {
+	VIEW_RAW, VIEW_NORMALIZED, VIEW_PERCENT
+};
+
 static snd_seq_t *seq;
 static int port_count;
 static snd_seq_addr_t *ports;
@@ -42,6 +46,7 @@ static int ump_version;
 #else
 #define ump_version	0
 #endif
+static int view_mode = VIEW_RAW;
 
 /* prints an error message to stderr, and dies */
 static void fatal(const char *msg, ...)
@@ -135,6 +140,50 @@ static void connect_ports(void)
 	}
 }
 
+static int channel_number(unsigned char c)
+{
+	if (view_mode != VIEW_RAW)
+		return c + 1;
+	else
+		return c;
+}
+
+static const char *midi1_data(unsigned int v)
+{
+	static char tmp[32];
+
+	if (view_mode == VIEW_PERCENT) {
+		if (v <= 64)
+			snprintf(tmp, sizeof(tmp), "%.2f%%",
+				 ((double)v * 50.0) / 64);
+		else
+			snprintf(tmp, sizeof(tmp), "%.2f%%",
+				 ((double)(v - 64) * 50.0) / 63 + 50.0);
+		return tmp;
+	}
+
+	sprintf(tmp, "%d", v);
+	return tmp;
+}
+
+static const char *midi1_pitchbend(int v)
+{
+	static char tmp[32];
+
+	if (view_mode == VIEW_PERCENT) {
+		if (v < 0)
+			snprintf(tmp, sizeof(tmp), "%.2f%%",
+				 ((double)v * 100.0) / 8192);
+		else
+			snprintf(tmp, sizeof(tmp), "%.2f%%",
+				 ((double)v * 100.0) / 8191);
+		return tmp;
+	}
+
+	sprintf(tmp, "%d", v);
+	return tmp;
+}
+
 static void dump_event(const snd_seq_event_t *ev)
 {
 	printf("%3d:%-3d ", ev->source.client, ev->source.port);
@@ -142,47 +191,61 @@ static void dump_event(const snd_seq_event_t *ev)
 	switch (ev->type) {
 	case SND_SEQ_EVENT_NOTEON:
 		if (ev->data.note.velocity)
-			printf("Note on                %2d, note %d, velocity %d\n",
-			       ev->data.note.channel, ev->data.note.note, ev->data.note.velocity);
+			printf("Note on                %2d, note %d, velocity %s\n",
+			       channel_number(ev->data.note.channel),
+			       ev->data.note.note,
+			       midi1_data(ev->data.note.velocity));
 		else
 			printf("Note off               %2d, note %d\n",
-			       ev->data.note.channel, ev->data.note.note);
+			       channel_number(ev->data.note.channel),
+			       ev->data.note.note);
 		break;
 	case SND_SEQ_EVENT_NOTEOFF:
-		printf("Note off               %2d, note %d, velocity %d\n",
-		       ev->data.note.channel, ev->data.note.note, ev->data.note.velocity);
+		printf("Note off               %2d, note %d, velocity %s\n",
+		       channel_number(ev->data.note.channel),
+		       ev->data.note.note,
+		       midi1_data(ev->data.note.velocity));
 		break;
 	case SND_SEQ_EVENT_KEYPRESS:
-		printf("Polyphonic aftertouch  %2d, note %d, value %d\n",
-		       ev->data.note.channel, ev->data.note.note, ev->data.note.velocity);
+		printf("Polyphonic aftertouch  %2d, note %d, value %s\n",
+		       channel_number(ev->data.note.channel),
+		       ev->data.note.note,
+		       midi1_data(ev->data.note.velocity));
 		break;
 	case SND_SEQ_EVENT_CONTROLLER:
 		printf("Control change         %2d, controller %d, value %d\n",
-		       ev->data.control.channel, ev->data.control.param, ev->data.control.value);
+		       channel_number(ev->data.control.channel),
+		       ev->data.control.param, ev->data.control.value);
 		break;
 	case SND_SEQ_EVENT_PGMCHANGE:
 		printf("Program change         %2d, program %d\n",
-		       ev->data.control.channel, ev->data.control.value);
+		       channel_number(ev->data.control.channel),
+		       ev->data.control.value);
 		break;
 	case SND_SEQ_EVENT_CHANPRESS:
-		printf("Channel aftertouch     %2d, value %d\n",
-		       ev->data.control.channel, ev->data.control.value);
+		printf("Channel aftertouch     %2d, value %s\n",
+		       channel_number(ev->data.control.channel),
+		       midi1_data(ev->data.control.value));
 		break;
 	case SND_SEQ_EVENT_PITCHBEND:
-		printf("Pitch bend             %2d, value %d\n",
-		       ev->data.control.channel, ev->data.control.value);
+		printf("Pitch bend             %2d, value %s\n",
+		       channel_number(ev->data.control.channel),
+		       midi1_pitchbend(ev->data.control.value));
 		break;
 	case SND_SEQ_EVENT_CONTROL14:
 		printf("Control change         %2d, controller %d, value %5d\n",
-		       ev->data.control.channel, ev->data.control.param, ev->data.control.value);
+		       channel_number(ev->data.control.channel),
+		       ev->data.control.param, ev->data.control.value);
 		break;
 	case SND_SEQ_EVENT_NONREGPARAM:
 		printf("Non-reg. parameter     %2d, parameter %d, value %d\n",
-		       ev->data.control.channel, ev->data.control.param, ev->data.control.value);
+		       channel_number(ev->data.control.channel),
+		       ev->data.control.param, ev->data.control.value);
 		break;
 	case SND_SEQ_EVENT_REGPARAM:
 		printf("Reg. parameter         %2d, parameter %d, value %d\n",
-		       ev->data.control.channel, ev->data.control.param, ev->data.control.value);
+		       channel_number(ev->data.control.channel),
+		       ev->data.control.param, ev->data.control.value);
 		break;
 	case SND_SEQ_EVENT_SONGPOS:
 		printf("Song position pointer      value %d\n",
@@ -306,32 +369,44 @@ static void dump_event(const snd_seq_event_t *ev)
 }
 
 #ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
-static int pitchbend_value(u8 msb, u8 lsb)
+static int group_number(unsigned char c)
+{
+	if (view_mode != VIEW_RAW)
+		return c + 1;
+	else
+		return c;
+}
+
+static const char *pitchbend_value(u8 msb, u8 lsb)
 {
 	int pb = (msb << 7) | lsb;
-	return pb - 8192;
+
+	return midi1_pitchbend(pb - 8192);
 }
 
 static void dump_ump_midi1_event(const unsigned int *ump)
 {
 	const snd_ump_msg_midi1_t *m = (const snd_ump_msg_midi1_t *)ump;
-	unsigned char group = m->hdr.group;
+	unsigned char group = group_number(m->hdr.group);
 	unsigned char status = m->hdr.status;
-	unsigned char channel = m->hdr.channel;
+	unsigned char channel = channel_number(m->hdr.channel);
 
 	printf("Group %2d, ", group);
 	switch (status) {
 	case SND_UMP_MSG_NOTE_OFF:
-		printf("Note off               %2d, note %d, velocity %d",
-		       channel, m->note_off.note, m->note_off.velocity);
+		printf("Note off               %2d, note %d, velocity %s",
+		       channel, m->note_off.note,
+		       midi1_data(m->note_off.velocity));
 		break;
 	case SND_UMP_MSG_NOTE_ON:
-		printf("Note on                %2d, note %d, velocity %d",
-		       channel, m->note_off.note, m->note_off.velocity);
+		printf("Note on                %2d, note %d, velocity %s",
+		       channel, m->note_off.note,
+		       midi1_data(m->note_off.velocity));
 		break;
 	case SND_UMP_MSG_POLY_PRESSURE:
-		printf("Poly pressure          %2d, note %d, value %d",
-		       channel, m->poly_pressure.note, m->poly_pressure.data);
+		printf("Poly pressure          %2d, note %d, value %s",
+		       channel, m->poly_pressure.note,
+		       midi1_data(m->poly_pressure.data));
 		break;
 	case SND_UMP_MSG_CONTROL_CHANGE:
 		printf("Control change         %2d, controller %d, value %d",
@@ -342,10 +417,10 @@ static void dump_ump_midi1_event(const unsigned int *ump)
 		       channel, m->program_change.program);
 	case SND_UMP_MSG_CHANNEL_PRESSURE:
 		printf("Channel pressure       %2d, value %d",
-		       channel, m->channel_pressure.data);
+		       channel, midi1_data(m->channel_pressure.data));
 		break;
 	case SND_UMP_MSG_PITCHBEND:
-		printf("Pitchbend              %2d, value %d",
+		printf("Pitchbend              %2d, value %s",
 		       channel, pitchbend_value(m->pitchbend.data_msb,
 						m->pitchbend.data_lsb));
 		break;
@@ -357,12 +432,83 @@ static void dump_ump_midi1_event(const unsigned int *ump)
 	printf("\n");
 }
 
+static const char *midi2_velocity(unsigned int v)
+{
+	static char tmp[32];
+
+	if (view_mode == VIEW_NORMALIZED) {
+		if (v <= 0x8000)
+			snprintf(tmp, sizeof(tmp), "%.2f",
+				 ((double)v * 64.0) / 0x8000);
+		else
+			snprintf(tmp, sizeof(tmp), ".2%f",
+				 ((double)(v - 0x8000) * 63.0) / 0x7fff + 64.0);
+		return tmp;
+	} else if (view_mode == VIEW_PERCENT) {
+		snprintf(tmp, sizeof(tmp), "%.2f%%", (double)v * 100.0) / 0xffff);
+		return tmp;
+	}
+
+	sprintf(tmp, "0x%x", v);
+	return tmp;
+}
+
+static const char *midi2_data(unsigned int v)
+{
+	static char tmp[32];
+
+	if (view_mode == VIEW_NORMALIZED) {
+		if (!v)
+			return "0";
+		else if (v == 0xffffffffU)
+			return "127";
+		if (v <= 0x80000000)
+			snprintf(tmp, sizeof(tmp), "%.2f",
+				 ((double)v * 64.0) / 0x80000000U);
+		else
+			snprintf(tmp, sizeof(tmp), "%.2f",
+				 ((double)(v - 0x80000000U) * 63.0) / 0x7fffffffU + 64.0);
+		return tmp;
+	} else if (view_mode == VIEW_PERCENT) {
+		snprintf(tmp, sizeof(tmp), "%.2f%%", (double)v * 100.0) / 0xffffffffU);
+		return tmp;
+	}
+
+	sprintf(tmp, "0x%x", v);
+	return tmp;
+}
+
+static const char *midi2_pitchbend(unsigned int v)
+{
+	static char tmp[32];
+
+	if (view_mode == VIEW_NORMALIZED) {
+		if (!v)
+			return "-8192";
+		else if (v == 0xffffffffU)
+			return "8191";
+		if (v <= 0x80000000)
+			snprintf(tmp, sizeof(tmp), "%.2f",
+				 ((int)(v ^ 0x80000000U) * 8192.0) / 0x80000000U);
+		else
+			snprintf(tmp, sizeof(tmp), "%.2f",
+				 ((double)(v - 0x80000000U) * 8191.0) / 0x7fffffffU + 8192.0);
+		return tmp;
+	} else if (view_mode == VIEW_PERCENT) {
+		snprintf(tmp, sizeof(tmp), "%.2f%%", ((int)(v ^ 0x80000000U) * 100.0) / 0xffffffffU);
+		return tmp;
+	}
+
+	sprintf(tmp, "0x%x", v);
+	return tmp;
+}
+
 static void dump_ump_midi2_event(const unsigned int *ump)
 {
 	const snd_ump_msg_midi2_t *m = (const snd_ump_msg_midi2_t *)ump;
-	unsigned char group = m->hdr.group;
+	unsigned char group = group_number(m->hdr.group);
 	unsigned char status = m->hdr.status;
-	unsigned char channel = m->hdr.channel;
+	unsigned char channel = channel_number(m->hdr.channel);
 	unsigned int bank;
 
 	printf("Group %2d, ", group);
@@ -394,23 +540,26 @@ static void dump_ump_midi2_event(const unsigned int *ump)
 		       channel, m->rpn.bank, m->rpn.index, m->rpn.data);
 		break;
 	case SND_UMP_MSG_PER_NOTE_PITCHBEND:
-		printf("Per-note pitchbend     %2d, note %d, value 0x%x",
+		printf("Per-note pitchbend     %2d, note %d, value %s",
 		       channel, m->per_note_pitchbend.note,
-		       m->per_note_pitchbend.data);
+		       midi2_pitchbend(m->per_note_pitchbend.data));
 		break;
 	case SND_UMP_MSG_NOTE_OFF:
-		printf("Note off               %2d, note %d, velocity 0x%x, attr type = %d, data = 0x%x",
-		       channel, m->note_off.note, m->note_off.velocity,
+		printf("Note off               %2d, note %d, velocity %s, attr type = %d, data = 0x%x",
+		       channel, m->note_off.note,
+		       midi2_velocity(m->note_off.velocity),
 		       m->note_off.attr_type, m->note_off.attr_data);
 		break;
 	case SND_UMP_MSG_NOTE_ON:
-		printf("Note on                %2d, note %d, velocity 0x%x, attr type = %d, data = 0x%x",
-		       channel, m->note_off.note, m->note_off.velocity,
+		printf("Note on                %2d, note %d, velocity %s, attr type = %d, data = 0x%x",
+		       channel, m->note_off.note,
+		       midi2_velocity(m->note_off.velocity),
 		       m->note_off.attr_type, m->note_off.attr_data);
 		break;
 	case SND_UMP_MSG_POLY_PRESSURE:
-		printf("Poly pressure          %2d, note %d, value 0x%x",
-		       channel, m->poly_pressure.note, m->poly_pressure.data);
+		printf("Poly pressure          %2d, note %d, value %s",
+		       channel, m->poly_pressure.note,
+		       midi2_data(m->poly_pressure.data));
 		break;
 	case SND_UMP_MSG_CONTROL_CHANGE:
 		printf("Control change         %2d, controller %d, value 0x%x",
@@ -425,12 +574,14 @@ static void dump_ump_midi2_event(const unsigned int *ump)
 			       m->program_change.bank_lsb);
 		break;
 	case SND_UMP_MSG_CHANNEL_PRESSURE:
-		printf("Channel pressure       %2d, value 0x%x",
-		       channel, m->channel_pressure.data);
+		printf("Channel pressure       %2d, value %s",
+		       channel,
+		       midi2_data(m->channel_pressure.data));
 		break;
 	case SND_UMP_MSG_PITCHBEND:
-		printf("Channel pressure       %2d, value 0x%x",
-		       channel, m->channel_pressure.data);
+		printf("Channel pressure       %2d, value %s",
+		       channel,
+		       midi2_pitchbend(m->channel_pressure.data));
 		break;
 	case SND_UMP_MSG_PER_NOTE_MGMT:
 		printf("Per-note management    %2d, value 0x%x",
@@ -509,6 +660,9 @@ static void help(const char *argv0)
 		"  -h,--help                  this help\n"
 		"  -V,--version               show version\n"
 		"  -l,--list                  list input ports\n"
+		"  -N,--normalized-view       show normalized values\n"
+		"  -P,--percent-view          show percent values\n"
+		"  -R,--raw-view              show raw values (default)\n"
 #ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 		"  -u,--ump=version           set client MIDI version (0=legacy, 1= UMP MIDI 1.0, 2=UMP MIDI2.0)\n"
 		"  -r,--raw                   do not convert UMP and legacy events\n"
@@ -529,7 +683,7 @@ static void sighandler(int sig)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hVlp:"
+	static const char short_options[] = "hVlp:NPR"
 #ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 		"u:r"
 #endif
@@ -539,6 +693,9 @@ int main(int argc, char *argv[])
 		{"version", 0, NULL, 'V'},
 		{"list", 0, NULL, 'l'},
 		{"port", 1, NULL, 'p'},
+		{"normalized-view", 0, NULL, 'N'},
+		{"percent-view", 0, NULL, 'P'},
+		{"raw-view", 0, NULL, 'R'},
 #ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 		{"ump", 1, NULL, 'u'},
 		{"raw", 0, NULL, 'r'},
@@ -567,6 +724,15 @@ int main(int argc, char *argv[])
 			break;
 		case 'p':
 			parse_ports(optarg);
+			break;
+		case 'R':
+			view_mode = VIEW_RAW;
+			break;
+		case 'P':
+			view_mode = VIEW_PERCENT;
+			break;
+		case 'N':
+			view_mode = VIEW_NORMALIZED;
 			break;
 #ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 		case 'u':
