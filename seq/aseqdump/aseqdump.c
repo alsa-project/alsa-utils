@@ -676,7 +676,7 @@ static void version(void)
 	puts("aseqdump version " SND_UTIL_VERSION_STR);
 }
 
-static void sighandler(int sig)
+static void sighandler(int)
 {
 	stop = 1;
 }
