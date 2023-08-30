@@ -193,7 +193,7 @@ static void do_search_port(snd_seq_t *seq, int perm, action_func_t do_action)
 }
 
 
-static void print_port(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
+static void print_port(snd_seq_t *, snd_seq_client_info_t *cinfo,
 		       snd_seq_port_info_t *pinfo, int count)
 {
 	if (! count) {
@@ -247,8 +247,8 @@ static void print_port_and_subs(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
 /*
  * remove all (exported) connections
  */
-static void remove_connection(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
-			      snd_seq_port_info_t *pinfo, int count)
+static void remove_connection(snd_seq_t *seq, snd_seq_client_info_t *,
+			      snd_seq_port_info_t *pinfo, int)
 {
 	snd_seq_query_subscribe_t *query;
 	snd_seq_port_info_t *port;
