@@ -379,7 +379,7 @@ int main(int argc, char **argv)
 	for (cidx = 0; cidx < controls; cidx++) {
 		if (!strcmp(snd_ctl_elem_list_get_name(clist, cidx), spdif_str))
 			if (spdif_index < 0 ||
-			    snd_ctl_elem_list_get_index(clist, cidx) == spdif_index)
+			    (int)snd_ctl_elem_list_get_index(clist, cidx) == spdif_index)
 				break;
 	}
 	if (cidx >= controls) {
