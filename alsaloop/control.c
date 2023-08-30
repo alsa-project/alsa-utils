@@ -187,8 +187,7 @@ static int copy_value(struct loopback_control *dst,
 		      struct loopback_control *src)
 {
 	snd_ctl_elem_type_t type;
-	unsigned int count;
-	int i;
+	unsigned int i, count;
 
 	type = snd_ctl_elem_info_get_type(dst->info);
 	count = snd_ctl_elem_info_get_count(dst->info);
@@ -229,7 +228,7 @@ static int oss_set(struct loopback *loop,
 	if (verbose)
 		snd_output_printf(loop->output, "%s: Initialize OSS volume %s: %s", loop->id, file, buf);
 	fd = open(file, O_WRONLY);
-	if (fd >= 0 && write(fd, buf, strlen(buf)) == strlen(buf)) {
+	if (fd >= 0 && write(fd, buf, strlen(buf)) == (ssize_t)strlen(buf)) {
 		close(fd);
 		return 0;
 	}

@@ -152,7 +152,7 @@ static int setparams_stream(struct loopback_handle *lhandle,
 #ifdef USE_SAMPLERATE
 	    !lhandle->loopback->src_enable &&
 #endif
-	    (int)rrate != lhandle->rate) {
+	    rrate != lhandle->rate) {
 		logit(LOG_CRIT, "Rate does not match (requested %uHz, got %uHz, resample %u)\n", lhandle->rate, rrate, lhandle->resample);
 		return -EINVAL;
 	}
@@ -624,7 +624,7 @@ static void buf_add_src(struct loopback *loop)
 	}
 }
 #else
-static void buf_add_src(struct loopback *loop)
+static void buf_add_src(struct loopback *)
 {
 }
 #endif
@@ -685,7 +685,7 @@ static int readit(struct loopback_handle *lhandle)
 		if ((err = suspend(lhandle)) < 0)
 			return err;
 	}
-	if (avail > buf_avail(lhandle)) {
+	if ((snd_pcm_uframes_t)avail > buf_avail(lhandle)) {
 		lhandle->buf_over += avail - buf_avail(lhandle);
 		avail = buf_avail(lhandle);
 	} else if (avail == 0) {
@@ -724,7 +724,7 @@ static int readit(struct loopback_handle *lhandle)
 			       r, lhandle->frame_size, lhandle->loopback->cfile);
 #endif
 		res += r;
-		if (lhandle->max < res)
+		if (lhandle->max < (snd_pcm_uframes_t)res)
 			lhandle->max = res;
 		lhandle->counter += r;
 		lhandle->buf_count += r;
@@ -803,9 +803,9 @@ static snd_pcm_sframes_t remove_samples(struct loopback *loop,
 	struct loopback_handle *capt = loop->capt;
 
 	if (loop->play->buf == loop->capt->buf) {
-		if (count > loop->play->buf_count)
+		if ((snd_pcm_uframes_t)count > loop->play->buf_count)
 			count = loop->play->buf_count;
-		if (count > loop->capt->buf_count)
+		if ((snd_pcm_uframes_t)count > loop->capt->buf_count)
 			count = loop->capt->buf_count;
 		capt->buf_count -= count;
 		play->buf_pos += count;
@@ -814,11 +814,11 @@ static snd_pcm_sframes_t remove_samples(struct loopback *loop,
 		return count;
 	}
 	if (capture_preferred) {
-		if (count > capt->buf_count)
+		if ((snd_pcm_uframes_t)count > capt->buf_count)
 			count = capt->buf_count;
 		capt->buf_count -= count;
 	} else {
-		if (count > play->buf_count)
+		if ((snd_pcm_uframes_t)count > play->buf_count)
 			count = play->buf_count;
 		play->buf_count -= count;
 	}
@@ -829,7 +829,7 @@ static int xrun_sync(struct loopback *loop)
 {
 	struct loopback_handle *play = loop->play;
 	struct loopback_handle *capt = loop->capt;
-	snd_pcm_uframes_t fill = get_whole_latency(loop);
+	snd_pcm_sframes_t fill = get_whole_latency(loop);
 	snd_pcm_sframes_t pdelay, cdelay, delay1, pdelay1, cdelay1, diff;
 	int err;
 
@@ -929,7 +929,7 @@ static int xrun_sync(struct loopback *loop)
 	}
 	if (delay1 > fill) {
 		diff = (delay1 - fill) / play->pitch;
-		if (diff > play->buf_count)
+		if ((snd_pcm_uframes_t)diff > play->buf_count)
 			diff = play->buf_count;
 		if (verbose > 6)
 			snd_output_printf(loop->output,
@@ -944,7 +944,7 @@ static int xrun_sync(struct loopback *loop)
 	}
 	if (delay1 > fill) {
 		diff = (delay1 - fill) / capt->pitch;
-		if (diff > capt->buf_count)
+		if ((snd_pcm_uframes_t)diff > capt->buf_count)
 			diff = capt->buf_count;
 		if (verbose > 6)
 			snd_output_printf(loop->output,
@@ -963,7 +963,7 @@ static int xrun_sync(struct loopback *loop)
 		if (verbose > 6)
 			snd_output_printf(loop->output,
 				"sync: xrun_pending, silence filling %li / buf_count=%li\n", (long)diff, play->buf_count);
-		if (fill > delay1 && play->buf_count < diff) {
+		if (fill > delay1 && play->buf_count < (snd_pcm_uframes_t)diff) {
 			diff = diff - play->buf_count;
 			if (verbose > 6)
 				snd_output_printf(loop->output,
@@ -994,7 +994,7 @@ static int xrun_sync(struct loopback *loop)
 			logit(LOG_CRIT, "%s start failed: %s\n", play->id, snd_strerror(err));
 			return err;
 		}
-	} else if (delay1 < fill) {
+	} else if (delay1 < (snd_pcm_sframes_t)fill) {
 		diff = (fill - delay1) / play->pitch;
 		while (diff > 0) {
 			delay1 = play->buf_size - play->buf_pos;
@@ -1672,7 +1672,7 @@ __again:
 		snd_output_printf(loop->output, "%s: silence queued %i samples\n", loop->id, err);
 	if (count > loop->play->buffer_size)
 		count = loop->play->buffer_size;
-	if (err != count) {
+	if (err != (int)count) {
 		logit(LOG_CRIT, "%s: initial playback fill error (%i/%i/%u)\n", loop->id, err, (int)count, loop->play->buffer_size);
 		err = -EIO;
 		goto __error;
@@ -1793,7 +1793,7 @@ static int ctl_event_check(snd_ctl_elem_value_t *val, snd_ctl_event_t *ev)
 }
 
 static int handle_ctl_events(struct loopback_handle *lhandle,
-			     unsigned short events)
+			     unsigned short)
 {
 	struct loopback *loop = lhandle->loopback;
 	snd_ctl_event_t *ev;
@@ -1818,12 +1818,12 @@ static int handle_ctl_events(struct loopback_handle *lhandle,
 			continue;
 		} else if (ctl_event_check(lhandle->ctl_rate, ev)) {
 			err = get_rate(lhandle);
-			if (lhandle->rate != err)
+			if ((int)lhandle->rate != err)
 				restart = 1;
 			continue;
 		} else if (ctl_event_check(lhandle->ctl_channels, ev)) {
 			err = get_channels(lhandle);
-			if (lhandle->channels != err)
+			if ((int)lhandle->channels != err)
 				restart = 1;
 			continue;
 		}
