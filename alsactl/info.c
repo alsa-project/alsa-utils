@@ -236,9 +236,9 @@ int general_card_info(int cardno)
 
 	first = true;
 	if (err >= 0)
-		err = rawmidi_device_list(ctl, SND_PCM_STREAM_PLAYBACK, &first);
+		err = rawmidi_device_list(ctl, SND_RAWMIDI_STREAM_INPUT, &first);
 	if (err >= 0)
-		err = rawmidi_device_list(ctl, SND_PCM_STREAM_CAPTURE, &first);
+		err = rawmidi_device_list(ctl, SND_RAWMIDI_STREAM_OUTPUT, &first);
 
 	if (err >= 0)
 		err = hwdep_device_list(ctl);
