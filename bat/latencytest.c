@@ -131,7 +131,7 @@ static void play_and_listen(struct bat *bat, void *buffer, int frames)
 
 		/* Do not listen to more than a second
 		   Maybe too much background noise */
-		if (bat->latency.samples > bat->rate) {
+		if ((unsigned int)bat->latency.samples > bat->rate) {
 			bat->latency.error++;
 
 			if (bat->latency.error > LATENCY_TEST_NUMBER) {
@@ -191,7 +191,7 @@ int handleinput(struct bat *bat, void *buffer, int frames)
 		bat->latency.samples += frames;
 
 		/* 1 second elapsed */
-		if (bat->latency.samples >= bat->rate) {
+		if ((unsigned int)bat->latency.samples >= bat->rate) {
 			calculate_threshold(bat);
 			bat->latency.state = LATENCY_STATE_PLAY_AND_LISTEN;
 			bat->latency.samples = 0;
@@ -208,7 +208,7 @@ int handleinput(struct bat *bat, void *buffer, int frames)
 	case LATENCY_STATE_WAITING:
 		bat->latency.samples += frames;
 
-		if (bat->latency.samples > bat->rate) {
+		if ((unsigned int)bat->latency.samples > bat->rate) {
 			/* 1 second elapsed, start over */
 			bat->latency.samples = 0;
 			bat->latency.state = LATENCY_STATE_MEASURE_FOR_1_SECOND;

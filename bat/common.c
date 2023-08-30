@@ -46,8 +46,7 @@ static int update_fmt_to_bat(struct bat *bat, struct chunk_fmt *fmt)
 }
 
 /* calculate frames and update to bat */
-static int update_frames_to_bat(struct bat *bat,
-		struct wav_chunk_header *header, FILE *fp)
+static int update_frames_to_bat(struct bat *bat, struct wav_chunk_header *header, FILE *)
 {
 	/* The number of analyzed captured frames is arbitrarily set to half of
 	   the number of frames of the wav file or the number of frames of the
@@ -63,7 +62,7 @@ static int read_chunk_fmt(struct bat *bat, char *file, FILE *fp, bool skip,
 		struct wav_chunk_header *header)
 {
 	size_t err;
-	int header_skip;
+	int ret, header_skip;
 	struct chunk_fmt chunk_fmt;
 
 	err = fread(&chunk_fmt, sizeof(chunk_fmt), 1, fp);
@@ -75,10 +74,10 @@ static int read_chunk_fmt(struct bat *bat, char *file, FILE *fp, bool skip,
 	/* If the format header is larger, skip the rest */
 	header_skip = header->length - sizeof(chunk_fmt);
 	if (header_skip > 0) {
-		err = fseek(fp, header_skip, SEEK_CUR);
-		if (err == -1) {
-			fprintf(bat->err, _("Seek fmt header error: %s:%zd\n"),
-					file, err);
+		ret = fseek(fp, header_skip, SEEK_CUR);
+		if (ret == -1) {
+			fprintf(bat->err, _("Seek fmt header error: %s:%d\n"),
+					file, ret);
 			return -EINVAL;
 		}
 	}
@@ -99,6 +98,7 @@ int read_wav_header(struct bat *bat, char *file, FILE *fp, bool skip)
 	struct wav_chunk_header chunk_header;
 	int more_chunks = 1;
 	size_t err;
+	int ret;
 
 	/* Read header of RIFF wav file */
 	err = fread(&riff_wave_header, sizeof(riff_wave_header), 1, fp);
@@ -144,11 +144,11 @@ int read_wav_header(struct bat *bat, char *file, FILE *fp, bool skip)
 			break;
 		default:
 			/* Unknown chunk, skip bytes */
-			err = fseek(fp, chunk_header.length, SEEK_CUR);
-			if (err == -1) {
+			ret = fseek(fp, chunk_header.length, SEEK_CUR);
+			if (ret == -1) {
 				fprintf(bat->err, _("Fail to skip unknown"));
-				fprintf(bat->err, _(" chunk of %s:%zd\n"),
-						file, err);
+				fprintf(bat->err, _(" chunk of %s:%d\n"),
+						file, ret);
 				return -EINVAL;
 			}
 		}
