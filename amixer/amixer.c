@@ -241,14 +241,14 @@ static int set_capture_dB(snd_mixer_elem_t *elem,
 
 static int set_playback_raw_volume(snd_mixer_elem_t *elem,
 				   snd_mixer_selem_channel_id_t c,
-				   long value, int dir)
+				   long value, int dir ATTRIBUTE_UNUSED)
 {
 	return snd_mixer_selem_set_playback_volume(elem, c, value);
 }
 
 static int set_capture_raw_volume(snd_mixer_elem_t *elem,
 				  snd_mixer_selem_channel_id_t c,
-				  long value, int dir)
+				  long value, int dir ATTRIBUTE_UNUSED)
 {
 	return snd_mixer_selem_set_capture_volume(elem, c, value);
 }
@@ -256,7 +256,7 @@ static int set_capture_raw_volume(snd_mixer_elem_t *elem,
 /* FIXME: normalize to int32 space to be compatible with other types */
 #define MAP_VOL_RES	(INT32_MAX / 100)
 
-static int get_mapped_volume_range(snd_mixer_elem_t *elem,
+static int get_mapped_volume_range(snd_mixer_elem_t *elem ATTRIBUTE_UNUSED,
 				   long *pmin, long *pmax)
 {
 	*pmin = 0;
@@ -1573,8 +1573,8 @@ static void events_add(snd_hctl_elem_t *helem)
 	snd_hctl_elem_set_callback(helem, element_callback);
 }
 
-static int ctl_callback(snd_hctl_t *ctl, unsigned int mask,
-		 snd_hctl_elem_t *elem)
+static int ctl_callback(snd_hctl_t *ctl ATTRIBUTE_UNUSED, unsigned int mask,
+			snd_hctl_elem_t *elem)
 {
 	if (mask & SND_CTL_EVENT_MASK_ADD)
 		events_add(elem);
@@ -1653,8 +1653,8 @@ static void sevents_add(snd_mixer_elem_t *elem)
 	snd_mixer_elem_set_callback(elem, melem_event);
 }
 
-static int mixer_event(snd_mixer_t *mixer, unsigned int mask,
-		snd_mixer_elem_t *elem)
+static int mixer_event(snd_mixer_t *mixer ATTRIBUTE_UNUSED, unsigned int mask,
+		       snd_mixer_elem_t *elem)
 {
 	if (mask & SND_CTL_EVENT_MASK_ADD)
 		sevents_add(elem);
