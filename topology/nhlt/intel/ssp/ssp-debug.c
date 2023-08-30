@@ -251,6 +251,6 @@ void ssp_print_internal(struct intel_ssp_params *ssp)
 }
 
 #else /* NHLT_DEBUG */
-void ssp_print_internal(struct intel_ssp_params *ssp) {}
-void ssp_print_calculated(struct intel_ssp_params *ssp) {}
+void ssp_print_internal(struct intel_ssp_params *) {}
+void ssp_print_calculated(struct intel_ssp_params *) {}
 #endif

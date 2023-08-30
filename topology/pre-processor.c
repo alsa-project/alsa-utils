@@ -230,8 +230,8 @@ void tplg_pp_config_debug(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg)
 	snd_config_save(cfg, tplg_pp->dbg_output);
 }
 #else
-void tplg_pp_debug(char *fmt, ...) {}
-void tplg_pp_config_debug(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg){}
+void tplg_pp_debug(char *, ...) {}
+void tplg_pp_config_debug(struct tplg_pre_processor *, snd_config_t *){}
 #endif
 
 static int pre_process_config(struct tplg_pre_processor *tplg_pp, snd_config_t *cfg)
@@ -639,7 +639,7 @@ static int pre_process_includes_all(struct tplg_pre_processor *tplg_pp, snd_conf
 }
 
 /* duplicate the existing objects in src into dest and update with new attribute */
-static int pre_process_add_objects(struct tplg_pre_processor *tplg_pp, int *object_count,
+static int pre_process_add_objects(struct tplg_pre_processor *, int *object_count,
 				   snd_config_t *src, snd_config_t *dest, snd_config_t *attr_cfg)
 {
 	snd_config_iterator_t i, next;

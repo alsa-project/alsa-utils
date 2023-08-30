@@ -94,7 +94,7 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	uint32_t tft;
 	uint32_t rft;
 	int di;
-	int i, j;
+	unsigned int i, j;
 
 	if (!ssp)
 		return -EINVAL;
@@ -515,9 +515,9 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 		return -EINVAL;
 	}
 
-	tft = MIN(SSP_FIFO_DEPTH - SSP_FIFO_WATERMARK,
+	tft = MIN((uint32_t)(SSP_FIFO_DEPTH - SSP_FIFO_WATERMARK),
 		  sample_width * active_tx_slots);
-	rft = MIN(SSP_FIFO_DEPTH - SSP_FIFO_WATERMARK,
+	rft = MIN((uint32_t)(SSP_FIFO_DEPTH - SSP_FIFO_WATERMARK),
 		  sample_width * active_rx_slots);
 
 	ssp->ssp_blob[di][hwi].ssc3 |= SSCR3_TX(tft) | SSCR3_RX(rft);
@@ -564,7 +564,8 @@ static int ssp_calculate_intern_ext(struct intel_nhlt_params *nhlt, int hwi)
 	struct ssp_intel_link_ctl *link;
 	uint8_t *aux_blob;
 	uint32_t enabled;
-	int di, i;
+	unsigned int i;
+	int di;
 
 	aux_size = sizeof(struct ssp_intel_aux_tlv);
 	mn_size = sizeof(struct ssp_intel_mn_ctl);
@@ -732,7 +733,7 @@ static int ssp_calculate_intern_ext(struct intel_nhlt_params *nhlt, int hwi)
 int ssp_calculate(struct intel_nhlt_params *nhlt)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
-	int i;
+	unsigned int i;
 
 	if (!ssp)
 		return -EINVAL;
@@ -950,7 +951,7 @@ int ssp_set_params(struct intel_nhlt_params *nhlt, const char *dir, int dai_inde
 	return 0;
 }
 
-int ssp_hw_set_params(struct intel_nhlt_params *nhlt, const char *format, const char *mclk,
+int ssp_hw_set_params(struct intel_nhlt_params *nhlt, const char *format, const char *,
 		      const char *bclk, const char *bclk_invert, const char *fsync,
 		      const char *fsync_invert, int mclk_freq, int bclk_freq, int fsync_freq,
 		      int tdm_slots, int tdm_slot_width, int tx_slots, int rx_slots)

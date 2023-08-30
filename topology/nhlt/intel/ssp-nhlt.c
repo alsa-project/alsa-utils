@@ -290,7 +290,8 @@ static int set_aux_params(struct intel_nhlt_params *nhlt, snd_config_t *cfg, snd
 	snd_config_iterator_t iter, next;
 	snd_config_t *items, *n;
 	const char *id;
-	int i, ret = 0;
+	unsigned int i;
+	int ret = 0;
 
 	for (i = 0; i < ARRAY_SIZE(aux_maps); i++) {
 		if (snd_config_search(cfg, aux_maps[i].name, &items) < 0)

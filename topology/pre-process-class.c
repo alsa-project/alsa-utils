@@ -126,7 +126,7 @@ snd_config_t *tplg_class_lookup(struct tplg_pre_processor *tplg_pp, snd_config_t
 }
 
 /* find the attribute config by name in the class definition */
-snd_config_t *tplg_class_find_attribute_by_name(struct tplg_pre_processor *tplg_pp,
+snd_config_t *tplg_class_find_attribute_by_name(struct tplg_pre_processor *,
 						snd_config_t *class, const char *name)
 {
 	snd_config_t *attr = NULL;
@@ -151,7 +151,7 @@ snd_config_t *tplg_class_find_attribute_by_name(struct tplg_pre_processor *tplg_
 }
 
 /* get the name of the attribute that must have a unique value in the object instance */
-const char *tplg_class_get_unique_attribute_name(struct tplg_pre_processor *tplg_pp,
+const char *tplg_class_get_unique_attribute_name(struct tplg_pre_processor *,
 						 snd_config_t *class)
 {
 	snd_config_t *unique;
@@ -176,7 +176,7 @@ const char *tplg_class_get_unique_attribute_name(struct tplg_pre_processor *tplg
 }
 
 /* get attribute type from the definition */
-snd_config_type_t tplg_class_get_attribute_type(struct tplg_pre_processor *tplg_pp,
+snd_config_type_t tplg_class_get_attribute_type(struct tplg_pre_processor *,
 						snd_config_t *attr)
 {
 	snd_config_t *type;
@@ -207,7 +207,7 @@ snd_config_type_t tplg_class_get_attribute_type(struct tplg_pre_processor *tplg_
 }
 
 /* get token_ref for attribute with name attr_name in the class */
-const char *tplg_class_get_attribute_token_ref(struct tplg_pre_processor *tplg_pp,
+const char *tplg_class_get_attribute_token_ref(struct tplg_pre_processor *,
 					       snd_config_t *class, const char *attr_name)
 {
 	snd_config_t *attributes, *attr, *token_ref;
@@ -234,7 +234,7 @@ const char *tplg_class_get_attribute_token_ref(struct tplg_pre_processor *tplg_p
 }
 
 /* convert a valid attribute string value to the corresponding tuple value */
-long tplg_class_attribute_valid_tuple_value(struct tplg_pre_processor *tplg_pp,
+long tplg_class_attribute_valid_tuple_value(struct tplg_pre_processor *,
 					    snd_config_t *class, snd_config_t *attr)
 {
 

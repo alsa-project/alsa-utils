@@ -134,7 +134,7 @@ static void find_modes(struct intel_dmic_params *dmic, struct dmic_calc_decim_mo
 	int osr;
 	int mfir;
 	int mcic;
-	int ioclk_test;
+	unsigned int ioclk_test;
 	int osr_min = DMIC_MIN_OSR;
 	int j;
 	int i = 0;
@@ -327,7 +327,7 @@ static struct pdm_decim *get_fir(struct intel_dmic_params *dmic,
 	 * sets HW overrun status and overwrite of other register.
 	 */
 	fir_max_length = MIN(DMIC_HW_FIR_LENGTH_MAX,
-			     dmic->dmic_prm[di].io_clk / fs / 2 -
+			     (int)dmic->dmic_prm[di].io_clk / fs / 2 -
 			     DMIC_FIR_PIPELINE_OVERHEAD);
 
 	/* Loop until NULL */
@@ -661,7 +661,7 @@ static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_
 	int soft_reset;
 	int cic_mute;
 	int fir_mute;
-	int i;
+	unsigned int i;
 	int j;
 	int ret;
 	int mic;

@@ -30,7 +30,7 @@
 
 /* Parse VendorToken object, create the "SectionVendorToken" and save it */
 int tplg_build_vendor_token_object(struct tplg_pre_processor *tplg_pp,
-				   snd_config_t *obj_cfg, snd_config_t *parent)
+				   snd_config_t *obj_cfg, snd_config_t *)
 {
 	snd_config_iterator_t i, next;
 	snd_config_t *vtop, *n, *obj;
@@ -195,7 +195,7 @@ int tplg_build_data_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj
 	return tplg_parent_update(tplg_pp, parent, "data", name);
 }
 
-static int tplg_create_config_template(struct tplg_pre_processor *tplg_pp,
+static int tplg_create_config_template(struct tplg_pre_processor *,
 				       snd_config_t **template,
 				       const struct config_template_items *items)
 {
@@ -498,7 +498,7 @@ min_max_check:
 }
 
 /* get object's name attribute value */
-const char *tplg_object_get_name(struct tplg_pre_processor *tplg_pp,
+const char *tplg_object_get_name(struct tplg_pre_processor *,
 				 snd_config_t *object)
 {
 	snd_config_t *cfg;
@@ -517,7 +517,7 @@ const char *tplg_object_get_name(struct tplg_pre_processor *tplg_pp,
 }
 
 /* look up the instance of object in a config */
-static snd_config_t *tplg_object_lookup_in_config(struct tplg_pre_processor *tplg_pp,
+static snd_config_t *tplg_object_lookup_in_config(struct tplg_pre_processor *,
 						  snd_config_t *class, const char *type,
 						  const char *class_name, const char *id)
 {
@@ -976,7 +976,7 @@ template:
 }
 
 static int tplg_build_generic_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
-				     snd_config_t *parent)
+				     snd_config_t *)
 {
 	snd_config_t *wtop;
 	const char *name;
@@ -1089,7 +1089,7 @@ const struct build_function_map object_build_map[] = {
 	 NULL, &pcm_caps_config},
 };
 
-static const struct build_function_map *tplg_object_get_map(struct tplg_pre_processor *tplg_pp,
+static const struct build_function_map *tplg_object_get_map(struct tplg_pre_processor *,
 							    snd_config_t *obj)
 {
 	snd_config_iterator_t first;
@@ -1144,7 +1144,7 @@ snd_config_t *tplg_object_get_section(struct tplg_pre_processor *tplg_pp, snd_co
 }
 
 /* return 1 if attribute not found in search_config, 0 on success and negative value on error */
-static int tplg_object_copy_and_add_param(struct tplg_pre_processor *tplg_pp,
+static int tplg_object_copy_and_add_param(struct tplg_pre_processor *,
 					  snd_config_t *obj,
 					  snd_config_t *attr_cfg,
 					  snd_config_t *search_config)
@@ -1350,7 +1350,7 @@ static int tplg_object_pre_process_children(struct tplg_pre_processor *tplg_pp,
 	return 0;
 }
 
-static int tplg_construct_object_name(struct tplg_pre_processor *tplg_pp, snd_config_t *obj,
+static int tplg_construct_object_name(struct tplg_pre_processor *, snd_config_t *obj,
 				      snd_config_t *class_cfg)
 {
 	snd_config_iterator_t i, next;
@@ -1546,7 +1546,7 @@ static int tplg_object_set_unique_attribute(struct tplg_pre_processor *tplg_pp,
  * Helper function to get object instance config which is 2 nodes down from class_type config.
  * ex: Get the pointer to the config node with ID "0" from the input config Widget.pga.0 {}
  */
-snd_config_t *tplg_object_get_instance_config(struct tplg_pre_processor *tplg_pp,
+snd_config_t *tplg_object_get_instance_config(struct tplg_pre_processor *,
 					snd_config_t *class_type)
 {
 	snd_config_iterator_t first;

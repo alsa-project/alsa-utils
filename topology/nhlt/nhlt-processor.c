@@ -86,7 +86,7 @@ static void debug_print_nhlt(struct nhlt *blob, struct endpoint_descriptor **eps
 	fprintf(stdout, "\n");
 }
 #else
-static void debug_print_nhlt(struct nhlt *blob, struct endpoint_descriptor **eps) {}
+static void debug_print_nhlt(struct nhlt *, struct endpoint_descriptor **) {}
 #endif
 
 static int print_as_hex_bytes(uint8_t *manifest_buffer, uint32_t manifest_size,
@@ -94,7 +94,7 @@ static int print_as_hex_bytes(uint8_t *manifest_buffer, uint32_t manifest_size,
 {
 	char *bytes_string_buffer;
 	char *dst;
-	int i;
+	unsigned int i;
 
 	bytes_string_buffer = calloc((manifest_size + nhlt_size) * ALSA_BYTE_CHARS + 1,
 				     sizeof(uint8_t));
@@ -219,7 +219,7 @@ static int manifest_create(snd_config_t *input, uint8_t **manifest_buffer, uint3
 	uint8_t *top_p;
 	uint8_t *dst;
 	int ret;
-	int i;
+	unsigned int i;
 
 	ret = snd_config_search(input, "SectionData", &data_section);
 	if (ret < 0)
@@ -280,7 +280,7 @@ static int nhlt_get_flat_buffer(struct nhlt *blob, struct endpoint_descriptor **
 	uint32_t nhlt_size;
 	uint8_t *ep_p;
 	uint8_t *dst;
-	int i, j;
+	unsigned int i, j;
 
 	/* get blob total size */
 	nhlt_size = sizeof(struct nhlt);
@@ -312,7 +312,7 @@ static int nhlt_get_flat_buffer(struct nhlt *blob, struct endpoint_descriptor **
 }
 
 /* called at the end of topology pre-processing, create flat buffer from variable size nhlt */
-static int nhlt_create(struct intel_nhlt_params *nhlt, snd_config_t *input, snd_config_t *output,
+static int nhlt_create(struct intel_nhlt_params *nhlt, snd_config_t *input, snd_config_t *,
 		       uint8_t **nhlt_buffer, uint32_t *nhlt_size)
 {
 	struct endpoint_descriptor *eps[MAX_ENDPOINT_COUNT];

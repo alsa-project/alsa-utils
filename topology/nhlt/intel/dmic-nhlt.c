@@ -154,7 +154,7 @@ static int set_vendor_mic_data(struct intel_nhlt_params *nhlt, snd_config_t *cfg
 				   horizontal_angle_end);
 }
 
-static int set_bytes_data(struct intel_nhlt_params *nhlt, snd_config_t *cfg)
+static int set_bytes_data(struct intel_nhlt_params *, snd_config_t *cfg)
 {
 	snd_config_iterator_t i, next;
 	snd_config_t *n;
