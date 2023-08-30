@@ -34,9 +34,11 @@
 
 static WINDOW *curses_initialized;
 
-static void black_hole_error_handler(const char *file, int line,
-				     const char *function, int err,
-				     const char *fmt, ...)
+static void black_hole_error_handler(const char *file ATTRIBUTE_UNUSED,
+				     int line ATTRIBUTE_UNUSED,
+				     const char *function ATTRIBUTE_UNUSED,
+				     int err ATTRIBUTE_UNUSED,
+				     const char *fmt ATTRIBUTE_UNUSED, ...)
 {
 }
 

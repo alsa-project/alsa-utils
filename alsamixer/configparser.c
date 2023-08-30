@@ -160,7 +160,7 @@ static unsigned int parse_words(const char *name, const char* wordlist, unsigned
 	char *endptr;
 
 	while (*name) {
-		for (i = 0; i < sizeof(buf) - 1; ++i) {
+		for (i = 0; i < (int)sizeof(buf) - 1; ++i) {
 			if (*name == '\0')
 				break;
 			if (*name == '_') {
@@ -342,7 +342,7 @@ static int cfg_bind(char **argv, unsigned int argc) {
 	}
 
 	keys[0] = curskey_parse(argv[0]);
-	if (keys[0] < 0 || keys[0] >= ARRAY_SIZE(mixer_bindings)) {
+	if (keys[0] < 0 || keys[0] >= (int)ARRAY_SIZE(mixer_bindings)) {
 		error_message = _("invalid key");
 		error_cause = argv[0];
 		return ERROR_CONFIG;

@@ -216,7 +216,7 @@ static void move_y(int delta)
 
 static void on_handle_key(int key)
 {
-	if (key >= ARRAY_SIZE(textbox_bindings))
+	if (key >= (int)ARRAY_SIZE(textbox_bindings))
 		return;
 
 	switch (textbox_bindings[key]) {

@@ -107,8 +107,8 @@ void init_mixer_layout(void)
 		_("F6:  Select sound card"),
 		_("Esc: Exit"),
 	};
-	unsigned int label_width_left, label_width_right;
-	unsigned int right_x, i;
+	int label_width_left, label_width_right;
+	int right_x, i;
 
 	clickable_clear(0, 0, -1, -1);
 	screen_too_small = screen_lines < 14 || screen_cols < 12;
@@ -198,7 +198,7 @@ void display_view_mode(void)
 		_("Capture"),
 		_("All"),
 	};
-	unsigned int widths[3];
+	int widths[3];
 	bool has_view_mode;
 	int i;
 
@@ -585,7 +585,7 @@ static void display_control(unsigned int control_index)
 				CMD_MIXER_MOUSE_CLICK_CONTROL_ENUM, control_index);
 	}
 
-	if (control_index == focus_control_index) {
+	if ((int)control_index == focus_control_index) {
 		i = first_control_x + col * (control_width + 1) + (control_width - control_name_width) / 2;
 		wattrset(mixer_widget.window, attrs.ctl_mark_focus);
 		mvwaddch(mixer_widget.window, name_y, i - 1, '<');
@@ -642,7 +642,7 @@ static void display_scroll_indicators(void)
 	y0 = screen_lines * 3 / 8;
 	y1 = screen_lines * 5 / 8;
 	left = first_visible_control_index > 0 ? ACS_LARROW : ACS_VLINE;
-	right = first_visible_control_index + visible_controls < controls_count
+	right = first_visible_control_index + visible_controls < (int)controls_count
 		? ACS_RARROW : ACS_VLINE;
 	wattrset(mixer_widget.window, attrs.mixer_frame);
 	mvwvline(mixer_widget.window, y0, 0, left, y1 - y0 + 1);
@@ -655,9 +655,9 @@ static void display_scroll_indicators(void)
 
 void display_controls(void)
 {
-	unsigned int i;
+	int i;
 
-	if (first_visible_control_index > controls_count - visible_controls)
+	if (first_visible_control_index > (int)controls_count - visible_controls)
 		first_visible_control_index = controls_count - visible_controls;
 	if (first_visible_control_index > focus_control_index)
 		first_visible_control_index = focus_control_index;
@@ -724,7 +724,7 @@ void compute_controls_layout(void)
 		control_width = screen_cols - 4;
 
 	visible_controls = (screen_cols - 3) / (control_width + 1);
-	if (visible_controls > controls_count)
+	if (visible_controls > (int)controls_count)
 		visible_controls = controls_count;
 
 	first_control_x = 2 + (screen_cols - 3 - visible_controls * (control_width + 1)) / 2;

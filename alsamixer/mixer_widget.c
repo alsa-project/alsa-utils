@@ -58,7 +58,7 @@ bool controls_changed;
 unsigned int mouse_wheel_step = 1;
 bool mouse_wheel_focuses_control = 1;
 
-static int elem_callback(snd_mixer_elem_t *elem, unsigned int mask)
+static int elem_callback(snd_mixer_elem_t *elem ATTRIBUTE_UNUSED, unsigned int mask)
 {
 	if (mask == SND_CTL_EVENT_MASK_REMOVE) {
 		controls_changed = TRUE;
@@ -73,7 +73,7 @@ static int elem_callback(snd_mixer_elem_t *elem, unsigned int mask)
 	return 0;
 }
 
-static int mixer_callback(snd_mixer_t *mixer, unsigned int mask, snd_mixer_elem_t *elem)
+static int mixer_callback(snd_mixer_t *mixer ATTRIBUTE_UNUSED, unsigned int mask, snd_mixer_elem_t *elem)
 {
 	if (mask & SND_CTL_EVENT_MASK_ADD) {
 		snd_mixer_elem_set_callback(elem, elem_callback);
@@ -228,7 +228,8 @@ static void show_help(void)
 
 void refocus_control(void)
 {
-	if (focus_control_index < controls_count) {
+	if (focus_control_index >= 0 &&
+	    focus_control_index < (int)controls_count) {
 		snd_mixer_selem_get_id(controls[focus_control_index].elem, current_selem_id);
 		current_control_flags = controls[focus_control_index].flags;
 	}
@@ -239,7 +240,7 @@ void refocus_control(void)
 static struct control *get_focus_control(unsigned int type)
 {
 	if (focus_control_index >= 0 &&
-	    focus_control_index < controls_count &&
+	    focus_control_index < (int)controls_count &&
 	    (controls[focus_control_index].flags & IS_ACTIVE) &&
 	    (controls[focus_control_index].flags & type))
 		return &controls[focus_control_index];
@@ -294,7 +295,7 @@ static void change_enum_relative(struct control *control, int delta)
 		new_index = 0;
 	else if (new_index >= items)
 		new_index = items - 1;
-	if (new_index == index)
+	if (new_index == (int)index)
 		return;
 	for (i = 0; i <= SND_MIXER_SCHN_LAST; ++i)
 		if (control->enum_channel_bits & (1 << i))
@@ -330,7 +331,7 @@ static void change_volume_relative(struct control *control, int delta, unsigned 
 {
 	double (*get_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t);
 	int (*set_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t, double, int);
-	double left, right;
+	double left = 0, right = 0;
 	int dir;
 
 	if (!(control->flags & HAS_VOLUME_1))
@@ -501,6 +502,7 @@ static int on_mouse_key() {
 			case CMD_MIXER_MOUSE_CLICK_VOLUME_BAR:
 				if (mouse_wheel_focuses_control)
 					focus_control_index = rect->arg1;
+				/* fall through */
 
 			default:
 				return CMD_WITH_ARG((
@@ -554,7 +556,7 @@ static void on_handle_key(int key)
 
 	if (key == KEY_MOUSE)
 		cmd = on_mouse_key();
-	else if (key < ARRAY_SIZE(mixer_bindings))
+	else if (key < (int)ARRAY_SIZE(mixer_bindings))
 		cmd = mixer_bindings[key];
 	else
 		return;
@@ -567,6 +569,7 @@ static void on_handle_key(int key)
 	case CMD_MIXER_CONTROL_DOWN_RIGHT:
 	case CMD_MIXER_CONTROL_DOWN:
 		arg = (-arg);
+		/* fall through */
 	case CMD_MIXER_CONTROL_UP_LEFT:
 	case CMD_MIXER_CONTROL_UP_RIGHT:
 	case CMD_MIXER_CONTROL_UP:
@@ -588,6 +591,7 @@ static void on_handle_key(int key)
 		break;
 	case CMD_MIXER_TOGGLE_VIEW_MODE:
 		arg = (view_mode + 1) % VIEW_MODE_COUNT;
+		/* fall through */
 	case CMD_MIXER_SET_VIEW_MODE:
 		set_view_mode((enum view_mode)(arg));
 		break;
@@ -600,13 +604,15 @@ static void on_handle_key(int key)
 		break;
 	case CMD_MIXER_PREVIOUS:
 		arg = (-arg);
+		/* fall through */
 	case CMD_MIXER_NEXT:
 		arg = focus_control_index + arg;
+		/* fall through */
 	case CMD_MIXER_FOCUS_CONTROL:
 		focus_control_index = arg;
 		if (focus_control_index < 0)
 			focus_control_index = 0;
-		else if (focus_control_index >= controls_count)
+		else if (focus_control_index >= (int)controls_count)
 			focus_control_index = controls_count - 1;
 		refocus_control();
 		break;
@@ -628,7 +634,7 @@ static void create(void)
 
 	widget_init(&mixer_widget, screen_lines, screen_cols, 0, 0,
 		    attrs.mixer_frame, WIDGET_BORDER);
-	if (screen_cols >= (sizeof(title) - 1) + 2) {
+	if (screen_cols >= (int)(sizeof(title) - 1) + 2) {
 		wattrset(mixer_widget.window, attrs.mixer_active);
 		mvwaddstr(mixer_widget.window, 0, (screen_cols - (sizeof(title) - 1)) / 2, title);
 	}

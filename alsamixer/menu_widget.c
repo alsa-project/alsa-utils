@@ -51,7 +51,7 @@ int menu_widget_handle_key(MENU *menu, int key)
 		return -1;
 
 	default:
-		if (key < ARRAY_SIZE(textbox_bindings)) {
+		if (key < (int)ARRAY_SIZE(textbox_bindings)) {
 			key = textbox_bindings[key];
 			if (key >= CMD_TEXTBOX___MIN_MENU_COMMAND &&
 					key <= CMD_TEXTBOX___MAX_MENU_COMMAND)
