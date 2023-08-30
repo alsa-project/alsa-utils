@@ -93,7 +93,7 @@ static char *tesc(const char *s, char *buf, size_t buf_len)
 
 #define ESC(s, esc) tesc((s), (esc), sizeof(esc))
 
-static int text_verb_start(struct renderer *r, const char *verb, const char *comment)
+static int text_verb_start(struct renderer *, const char *verb, const char *comment)
 {
 	char buf1[128], buf2[128];
 	printf("Verb.%s {\n", ESC(verb, buf1));
@@ -102,13 +102,13 @@ static int text_verb_start(struct renderer *r, const char *verb, const char *com
 	return 0;
 }
 
-static int text_verb_end(struct renderer *r)
+static int text_verb_end(struct renderer *)
 {
 	printf("}\n");
 	return 0;
 }
 
-static int text_2nd_level_begin(struct renderer *r,
+static int text_2nd_level_begin(struct renderer *,
 				const char *key,
 				const char *val,
 				const char *comment)
@@ -120,19 +120,19 @@ static int text_2nd_level_begin(struct renderer *r,
 	return 0;
 }
 
-static int text_2nd_level_end(struct renderer *r)
+static int text_2nd_level_end(struct renderer *)
 {
 	printf("\t}\n");
 	return 0;
 }
 
-static int text_2nd_level(struct renderer *r, const char *txt)
+static int text_2nd_level(struct renderer *, const char *txt)
 {
 	printf("\t\t%s", txt);
 	return 0;
 }
 
-static int text_3rd_level(struct renderer *r, const char *txt)
+static int text_3rd_level(struct renderer *, const char *txt)
 {
 	printf("\t\t\t%s", txt);
 	return 0;
@@ -266,7 +266,7 @@ static void json_block(struct renderer *r, int level, int last)
 	j->block[level] = last ? 0 : 1;
 }
 
-static int json_init(struct renderer *r)
+static int json_init(struct renderer *)
 {
 	printf("{\n  \"Verbs\": {");
 	return 0;
@@ -325,13 +325,13 @@ static int json_2nd_level_end(struct renderer *r)
 	return 0;
 }
 
-static int json_2nd_level(struct renderer *r, const char *txt)
+static int json_2nd_level(struct renderer *, const char *txt)
 {
 	printf("          %s", txt);
 	return 0;
 }
 
-static int json_3rd_level(struct renderer *r, const char *txt)
+static int json_3rd_level(struct renderer *, const char *txt)
 {
 	printf("            %s", txt);
 	return 0;
@@ -360,7 +360,7 @@ static int json_supcon_start(struct renderer *r, const char *key)
 	return 0;
 }
 
-static int json_supcon_value(struct renderer *r, const char *value, int last)
+static int json_supcon_value(struct renderer *r, const char *value, int)
 {
 	char buf[256];
 	JESC(value, buf);
