@@ -139,7 +139,7 @@ static snd_output_t *log;
 static long long max_file_size = 0;
 static int max_file_time = 0;
 static int use_strftime = 0;
-volatile static int recycle_capture_file = 0;
+static volatile int recycle_capture_file = 0;
 static long term_c_lflag = -1;
 static int dump_hw_params = 0;
 
@@ -412,7 +412,7 @@ static void signal_handler(int sig)
 }
 
 /* call on SIGUSR1 signal. */
-static void signal_handler_recycle (int sig)
+static void signal_handler_recycle(int sig ATTRIBUTE_UNUSED)
 {
 	/* flag the capture loop to start a new output file */
 	recycle_capture_file = 1;
@@ -1512,7 +1512,7 @@ static void set_params(void)
 			error(_("snd_pcm_mmap_begin problem: %s"), snd_strerror(err));
 			prg_exit(EXIT_FAILURE);
 		}
-		for (i = 0; i < hwparams.channels; i++)
+		for (i = 0; i < (int)hwparams.channels; i++)
 			fprintf(stderr, "mmap_area[%i] = %p,%u,%u (%u)\n", i, areas[i].addr, areas[i].first, areas[i].step, snd_pcm_format_physical_width(hwparams.format));
 		/* not required, but for sure */
 		snd_pcm_mmap_commit(handle, offset, 0);
@@ -1895,7 +1895,7 @@ static void compute_max_peak(u_char *data, size_t samples)
 			else
 				val = be32toh(*valp);
 			val ^= mask;
-			if (val == 0x80000000U)
+			if ((unsigned int)val == 0x80000000U)
 				val = 0x7fffffff;
 			else
 				val = abs(val);
@@ -2090,7 +2090,7 @@ static u_char *remap_data(u_char *data, size_t count)
 	return tmp;
 }
 
-static u_char **remap_datav(u_char **data, size_t count)
+static u_char **remap_datav(u_char **data, size_t count ATTRIBUTE_UNUSED)
 {
 	static u_char **tmp;
 	unsigned int ch;
@@ -2869,7 +2869,7 @@ static void playback_go(int fd, size_t loaded, off_t count, int rtype, char *nam
 	while (written < count && !in_aborting) {
 		do {
 			c = count - written;
-			if (c > chunk_bytes)
+			if (c > (off_t)chunk_bytes)
 				c = chunk_bytes;
 
 			/* c < l, there is more data loaded
@@ -3300,7 +3300,7 @@ static void capture(char *orig_name)
 			if (read != f)
 				in_aborting = 1;
 			save = read * bits_per_frame / 8;
-			if (xwrite(fd, audiobuf, save) != save) {
+			if (xwrite(fd, audiobuf, save) != (ssize_t)save) {
 				perror(name);
 				in_aborting = 1;
 				break;
