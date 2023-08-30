@@ -34,7 +34,7 @@ struct select_state {
 	fd_set rfds_ex;
 };
 
-static int select_prepare(struct waiter_context *waiter)
+static int select_prepare(struct waiter_context *)
 {
 	return 0;
 }
@@ -53,7 +53,7 @@ static int select_wait_event(struct waiter_context *waiter, int timeout_msec)
 	FD_ZERO(&state->rfds_ex);
 
 	fd_max = 0;
-	for (i = 0; i < waiter->pfd_count; ++i) {
+	for (i = 0; i < (int)waiter->pfd_count; ++i) {
 		pfd = &waiter->pfds[i];
 
 		if (pfd->events & POLLIN_SET)
@@ -79,7 +79,7 @@ static int select_wait_event(struct waiter_context *waiter, int timeout_msec)
 	if (err < 0)
 		return -errno;
 
-	for (i = 0; i < waiter->pfd_count; ++i) {
+	for (i = 0; i < (int)waiter->pfd_count; ++i) {
 		pfd = &waiter->pfds[i];
 
 		pfd->revents = 0;
@@ -94,7 +94,7 @@ static int select_wait_event(struct waiter_context *waiter, int timeout_msec)
 	return err;
 }
 
-static void select_release(struct waiter_context *waiter)
+static void select_release(struct waiter_context *)
 {
 	return;
 }

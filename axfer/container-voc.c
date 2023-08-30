@@ -221,7 +221,7 @@ static int build_time_constant(unsigned int frames_per_second,
 			       unsigned int samples_per_frame, uint16_t *code,
 			       bool extended)
 {
-	int i;
+	unsigned int i;
 
 	// 16 bits are available for this purpose.
 	if (extended) {
@@ -264,7 +264,7 @@ static unsigned int parse_time_constant(uint16_t code,
 					unsigned int *frames_per_second,
 					bool extended)
 {
-	int i;
+	unsigned int i;
 
 	if (extended) {
 		if (samples_per_frame > 2)
@@ -344,7 +344,7 @@ static int parse_container_header(struct parser_state *state,
 
 static bool check_code_id(uint8_t code_id, unsigned int version)
 {
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(format_maps); ++i) {
 		if (code_id != format_maps[i].code_id)
@@ -560,7 +560,7 @@ static int voc_parser_pre_process(struct container_context *cntr,
 				  uint64_t *byte_count)
 {
 	struct parser_state *state = cntr->private_data;
-	int i;
+	unsigned int i;
 	int err;
 
 	err = detect_container_version(cntr);
@@ -719,7 +719,7 @@ static int voc_builder_pre_process(struct container_context *cntr,
 				   uint64_t *byte_count)
 {
 	struct builder_state *state = cntr->private_data;
-	int i;
+	unsigned int i;
 
 	// Validate parameters.
 	for (i = 0; i < ARRAY_SIZE(format_maps); ++i) {

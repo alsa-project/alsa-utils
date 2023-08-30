@@ -76,7 +76,7 @@ static int au_parser_pre_process(struct container_context *cntr,
 	struct parser_state *state = cntr->private_data;
 	struct container_header header;
 	enum code_id code_id;
-	int i;
+	unsigned int i;
 	int err;
 
 	// Parse header. 4 bytes are enough to detect supported containers.
@@ -153,7 +153,7 @@ static int au_builder_pre_process(struct container_context *cntr,
 				  uint64_t *byte_count)
 {
 	struct builder_state *status = cntr->private_data;
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(format_maps); ++i) {
 		if (format_maps[i].format == *format)

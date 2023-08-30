@@ -107,7 +107,7 @@ static bool decide_subcmd(int argc, char *const *argv, enum subcmds *subcmd)
 		return false;
 
 	// Original command system. For long options.
-	for (i = 0; i < ARRAY_SIZE(long_opts); ++i) {
+	for (i = 0; i < (int)ARRAY_SIZE(long_opts); ++i) {
 		for (j = 0; j < argc; ++j) {
 			if (!strcmp(long_opts[i].name, argv[j])) {
 				*subcmd = long_opts[i].subcmd;
@@ -123,7 +123,7 @@ static bool decide_subcmd(int argc, char *const *argv, enum subcmds *subcmd)
 		    argv[i][1] == '-' || argv[i][1] == '\0')
 			continue;
 		for (pos = argv[i]; *pos != '\0'; ++pos) {
-			for (j = 0; j < ARRAY_SIZE(short_opts); ++j) {
+			for (j = 0; j < (int)ARRAY_SIZE(short_opts); ++j) {
 				if (*pos == short_opts[j].c) {
 					*subcmd = short_opts[j].subcmd;
 					return true;
@@ -161,7 +161,7 @@ static bool decide_direction(int argc, char *const *argv,
 	char *pos;
 
 	// Original command system. For long options.
-	for (i = 0; i < ARRAY_SIZE(long_opts); ++i) {
+	for (i = 0; i < (int)ARRAY_SIZE(long_opts); ++i) {
 		for (j = 0; j < argc; ++j) {
 			if (!strcmp(long_opts[i].name, argv[j])) {
 				*direction = long_opts[i].direction;
@@ -177,7 +177,7 @@ static bool decide_direction(int argc, char *const *argv,
 		    argv[i][1] == '-' || argv[i][1] == '\0')
 			continue;
 		for (pos = argv[i]; *pos != '\0'; ++pos) {
-			for (j = 0; j < ARRAY_SIZE(short_opts); ++j) {
+			for (j = 0; j < (int)ARRAY_SIZE(short_opts); ++j) {
 				if (*pos == short_opts[j].c) {
 					*direction = short_opts[j].direction;
 					return true;
@@ -187,7 +187,7 @@ static bool decide_direction(int argc, char *const *argv,
 	}
 
 	// If not decided yet, judge according to command name.
-	for (i = 0; i < ARRAY_SIZE(aliases); ++i) {
+	for (i = 0; i < (int)ARRAY_SIZE(aliases); ++i) {
 		for (pos = argv[0] + strlen(argv[0]); pos != argv[0]; --pos) {
 			if (strstr(pos, aliases[i]) != NULL) {
 				*direction = i;
@@ -212,7 +212,7 @@ static bool detect_subcmd(int argc, char *const *argv, enum subcmds *subcmd)
 	if (argc < 2)
 		return false;
 
-	for (i = 0; i < ARRAY_SIZE(subcmds); ++i) {
+	for (i = 0; i < (int)ARRAY_SIZE(subcmds); ++i) {
 		if (!strcmp(argv[1], subcmds[i])) {
 			*subcmd = i;
 			return true;

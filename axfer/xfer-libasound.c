@@ -60,7 +60,7 @@ static const struct option l_opts[] = {
 };
 
 static int xfer_libasound_init(struct xfer_context *xfer,
-			       snd_pcm_stream_t direction)
+			       snd_pcm_stream_t)
 {
 	struct libasound_state *state = xfer->private_data;
 	int err;
@@ -887,7 +887,7 @@ static void xfer_libasound_destroy(struct xfer_context *xfer)
 	state->log = NULL;
 }
 
-static void xfer_libasound_help(struct xfer_context *xfer)
+static void xfer_libasound_help(struct xfer_context *)
 {
 	printf(
 "      [BASICS]\n"

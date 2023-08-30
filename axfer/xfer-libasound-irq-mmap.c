@@ -53,7 +53,7 @@ static int irq_mmap_pre_process(struct libasound_state *state)
 			return err;
 
 		logging(state, "attributes for mapped page frame:\n");
-		for (i = 0; i < layout->samples_per_frame; ++i) {
+		for (i = 0; i < (int)layout->samples_per_frame; ++i) {
 			const snd_pcm_channel_area_t *area = areas + i;
 
 			logging(state, "  sample number: %d\n", i);
@@ -152,7 +152,7 @@ static int irq_mmap_process_frames(struct libasound_state *state,
 		frame_buf = buf;
 	} else {
 		int i;
-		for (i = 0; i < layout->samples_per_frame; ++i) {
+		for (i = 0; i < (int)layout->samples_per_frame; ++i) {
 			layout->vector[i] = areas[i].addr;
 			layout->vector[i] += snd_pcm_samples_to_bytes(
 						state->handle, frame_offset);

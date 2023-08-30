@@ -24,7 +24,7 @@ static void align_to_vector(void *frame_buf, unsigned int frame_count,
 	char *dst;
 	unsigned int src_pos;
 	unsigned int dst_pos;
-	int i, j;
+	unsigned int i, j;
 
 	// src: interleaved => dst: a set of interleaved buffers.
 	for (i = 0; i < samples_per_frame; ++i) {
@@ -46,7 +46,7 @@ static void align_from_vector(void *frame_buf, unsigned int frame_count,
 	char *src;
 	unsigned int dst_pos;
 	unsigned int src_pos;
-	int i, j;
+	unsigned int i, j;
 
 	// src: a set of interleaved buffers => dst:interleaved.
 	for (i = 0; i < samples_per_frame; ++i) {
@@ -62,7 +62,7 @@ static void align_from_vector(void *frame_buf, unsigned int frame_count,
 
 static int single_pre_process(struct mapper_context *mapper,
 			      struct container_context *cntrs,
-			      unsigned int cntr_count)
+			      unsigned int)
 {
 	struct single_state *state = mapper->private_data;
 	unsigned int bytes_per_buffer;
@@ -110,7 +110,7 @@ static int single_muxer_process_frames(struct mapper_context *mapper,
 				       void *frame_buf,
 				       unsigned int *frame_count,
 				       struct container_context *cntrs,
-				       unsigned int cntr_count)
+				       unsigned int)
 {
 	struct single_state *state = mapper->private_data;
 	void *src;
@@ -141,7 +141,7 @@ static int single_demuxer_process_frames(struct mapper_context *mapper,
 					 void *frame_buf,
 					 unsigned int *frame_count,
 					 struct container_context *cntrs,
-					 unsigned int cntr_count)
+					 unsigned int)
 {
 	struct single_state *state = mapper->private_data;
 	void *dst;

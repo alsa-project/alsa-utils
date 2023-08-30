@@ -53,7 +53,7 @@ static int allocate_paths(struct xfer_context *xfer, char *const *paths,
 			   unsigned int count)
 {
 	bool stdio = false;
-	int i;
+	unsigned int i;
 
 	if (count == 0) {
 		stdio = true;
@@ -66,7 +66,7 @@ static int allocate_paths(struct xfer_context *xfer, char *const *paths,
 	xfer->path_count = count;
 
 	if (stdio) {
-		xfer->paths[0] = strndup("-", PATH_MAX);
+		xfer->paths[0] = strdup("-");
 		if (xfer->paths[0] == NULL)
 			return -ENOMEM;
 	} else {
@@ -94,7 +94,7 @@ static int verify_cntr_format(struct xfer_context *xfer)
 	};
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(entries); ++i) {
+	for (i = 0; i < (int)ARRAY_SIZE(entries); ++i) {
 		entry = &entries[i];
 		if (strcasecmp(xfer->cntr_format_literal, entry->literal))
 			continue;
@@ -123,7 +123,7 @@ static int verify_sample_format(struct xfer_context *xfer)
 		{"cdr",	44100, 2, SND_PCM_FORMAT_S16_LE, SND_PCM_FORMAT_S16_BE},
 		{"dat",	48000, 2, SND_PCM_FORMAT_S16_LE, SND_PCM_FORMAT_S16_BE},
 	};
-	int i;
+	unsigned int i;
 
 	xfer->sample_format = snd_pcm_format_value(xfer->sample_format_literal);
 	if (xfer->sample_format != SND_PCM_FORMAT_UNKNOWN)
@@ -447,7 +447,7 @@ static int generate_path_with_suffix(struct xfer_context *xfer,
 
 static int generate_path_without_suffix(struct xfer_context *xfer,
 				        const char *template,
-					unsigned int index, const char *suffix)
+					unsigned int index, const char *)
 {
 	static const char *const single_format = "%s";
 	static const char *const multiple_format = "%s-%i";
@@ -498,7 +498,7 @@ static int create_paths(struct xfer_context *xfer, unsigned int path_count)
 {
 	char *template;
 	const char *suffix;
-	int i, j;
+	unsigned int i, j;
 	int err = 0;
 
 	// Can cause memory leak.
@@ -545,7 +545,7 @@ static int fixup_paths(struct xfer_context *xfer)
 {
 	const char *suffix;
 	char *template;
-	int i, j;
+	unsigned int i, j;
 	int err = 0;
 
 	suffix = container_suffix_from_format(xfer->cntr_format);
@@ -572,7 +572,7 @@ static int fixup_paths(struct xfer_context *xfer)
 
 int xfer_options_fixup_paths(struct xfer_context *xfer)
 {
-	int i, j;
+	unsigned int i, j;
 	int err;
 
 	if (xfer->path_count == 1) {

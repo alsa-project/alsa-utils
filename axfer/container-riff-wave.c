@@ -349,7 +349,7 @@ static int wave_parser_pre_process(struct container_context *cntr,
 	struct parser_state *state = cntr->private_data;
 	int phys_width;
 	const struct format_map *map;
-	int i;
+	unsigned int i;
 	int err;
 
 	err = parse_riff_wave_format(cntr);
@@ -363,7 +363,7 @@ static int wave_parser_pre_process(struct container_context *cntr,
 		map = &format_maps[i];
 		if (state->format != map->wformat)
 			continue;
-		if (state->avail_bits_in_sample !=
+		if ((int)state->avail_bits_in_sample !=
 					snd_pcm_format_width(map->format))
 			continue;
 		if (phys_width != snd_pcm_format_physical_width(map->format))
@@ -514,7 +514,7 @@ static int wave_builder_pre_process(struct container_context *cntr,
 				    uint64_t *byte_count)
 {
 	struct builder_state *state = cntr->private_data;
-	int i;
+	unsigned int i;
 
 	// Validate parameters.
 	for (i = 0; i < ARRAY_SIZE(format_maps); ++i) {

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+
 //
 // xfer.c - receiver/transmiter of data frames.
 //
@@ -20,7 +20,7 @@ static const char *const xfer_type_labels[] = {
 
 enum xfer_type xfer_type_from_label(const char *label)
 {
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(xfer_type_labels); ++i) {
 		if (!strcmp(xfer_type_labels[i], label))
@@ -47,7 +47,7 @@ int xfer_context_init(struct xfer_context *xfer, enum xfer_type type,
 		{XFER_TYPE_LIBFFADO, &xfer_libffado},
 #endif
 	};
-	int i;
+	unsigned int i;
 	int err;
 
 	assert(xfer);
@@ -84,7 +84,7 @@ int xfer_context_init(struct xfer_context *xfer, enum xfer_type type,
 
 void xfer_context_destroy(struct xfer_context *xfer)
 {
-	int i;
+	unsigned int i;
 
 	assert(xfer);
 

@@ -13,10 +13,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static int raw_builder_pre_process(struct container_context *cntr,
-				   snd_pcm_format_t *sample_format,
-				   unsigned int *samples_per_frame,
-				   unsigned int *frames_per_second,
+static int raw_builder_pre_process(struct container_context *,
+				   snd_pcm_format_t *,
+				   unsigned int *,
+				   unsigned int *,
 				   uint64_t *byte_count)
 {
 	*byte_count = UINT64_MAX;
@@ -25,9 +25,9 @@ static int raw_builder_pre_process(struct container_context *cntr,
 }
 
 static int raw_parser_pre_process(struct container_context *cntr,
-				  snd_pcm_format_t *sample_format,
-				  unsigned int *samples_per_frame,
-				  unsigned int *frames_per_second,
+				  snd_pcm_format_t *,
+				  unsigned int *,
+				  unsigned int *,
 				  uint64_t *byte_count)
 {
 	struct stat buf = {0};

@@ -34,7 +34,7 @@ static const char *const suffixes[] = {
 	[CONTAINER_FORMAT_RAW]		= "",
 };
 
-const char *const container_suffix_from_format(enum container_format format)
+const char * container_suffix_from_format(enum container_format format)
 {
 	return suffixes[format];
 }
@@ -100,7 +100,7 @@ enum container_format container_format_from_path(const char *path)
 	const char *pos;
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(suffixes); ++i) {
+	for (i = 0; i < (int)ARRAY_SIZE(suffixes); ++i) {
 		suffix = suffixes[i];
 
 		// Check last part of the string.
@@ -186,7 +186,7 @@ int container_parser_init(struct container_context *cntr, int fd,
 	err = container_recursive_read(cntr, cntr->magic, sizeof(cntr->magic));
 	if (err < 0)
 		return err;
-	for (i = 0; i < ARRAY_SIZE(parsers); ++i) {
+	for (i = 0; i < (int)ARRAY_SIZE(parsers); ++i) {
 		parser = parsers[i];
 		size = strlen(parser->magic);
 		if (size > 4)

@@ -25,7 +25,7 @@ enum waiter_type waiter_type_from_label(const char *label)
 {
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(waiter_type_labels); ++i) {
+	for (i = 0; i < (int)ARRAY_SIZE(waiter_type_labels); ++i) {
 		if (!strcmp(waiter_type_labels[i], label))
 			return i;
 	}
@@ -54,7 +54,7 @@ int waiter_context_init(struct waiter_context *waiter,
 	if (pfd_count == 0)
 		return -EINVAL;
 
-	for (i = 0; i < ARRAY_SIZE(entries); ++i) {
+	for (i = 0; i < (int)ARRAY_SIZE(entries); ++i) {
 		if (entries[i].type == type)
 			break;
 	}

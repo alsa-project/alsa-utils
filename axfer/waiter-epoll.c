@@ -36,7 +36,7 @@ static int epoll_prepare(struct waiter_context *waiter)
 	if (state->epfd < 0)
 		return -errno;
 
-	for (i = 0; i < waiter->pfd_count; ++i) {
+	for (i = 0; i < (int)waiter->pfd_count; ++i) {
 		struct epoll_event ev = {
 			.data.fd = waiter->pfds[i].fd,
 			.events = waiter->pfds[i].events,
@@ -64,9 +64,9 @@ static int epoll_wait_event(struct waiter_context *waiter, int timeout_msec)
 
 	if (ev_count > 0) {
 		// Reconstruct data of pollfd structure.
-		for (i = 0; i < ev_count; ++i) {
+		for (i = 0; i < (int)ev_count; ++i) {
 			struct epoll_event *ev = &state->events[i];
-			for (j = 0; j < waiter->pfd_count; ++j) {
+			for (j = 0; j < (int)waiter->pfd_count; ++j) {
 				if (waiter->pfds[i].fd == ev->data.fd) {
 					waiter->pfds[i].revents = ev->events;
 					break;
@@ -83,7 +83,7 @@ static void epoll_release(struct waiter_context *waiter)
 	struct epoll_state *state = waiter->private_data;
 	int i;
 
-	for (i = 0; i < waiter->pfd_count; ++i) {
+	for (i = 0; i < (int)waiter->pfd_count; ++i) {
 		int fd = waiter->pfds[i].fd;
 		epoll_ctl(state->epfd, EPOLL_CTL_DEL, fd, NULL);
 	}

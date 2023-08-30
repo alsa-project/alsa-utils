@@ -31,7 +31,7 @@ static struct context *ctx_ptr;
 
 static void handle_unix_signal_for_finish(int sig)
 {
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < ctx_ptr->cntr_count; ++i)
 		ctx_ptr->cntrs[i].interrupted = true;
@@ -40,7 +40,7 @@ static void handle_unix_signal_for_finish(int sig)
 	ctx_ptr->interrupted = true;
 }
 
-static void handle_unix_signal_for_suspend(int sig)
+static void handle_unix_signal_for_suspend(int)
 {
 	sigset_t curr, prev;
 	struct sigaction sa = {0};
@@ -170,7 +170,7 @@ static int capture_pre_process(struct context *ctx, snd_pcm_access_t *access,
 	unsigned int samples_per_frame = 0;
 	unsigned int frames_per_second = 0;
 	unsigned int channels;
-	int i;
+	unsigned int i;
 	int err;
 
 	err = xfer_context_pre_process(&ctx->xfer, &sample_format,
@@ -233,7 +233,7 @@ static int playback_pre_process(struct context *ctx, snd_pcm_access_t *access,
 	snd_pcm_format_t sample_format = SND_PCM_FORMAT_UNKNOWN;
 	unsigned int samples_per_frame = 0;
 	unsigned int frames_per_second = 0;
-	int i;
+	unsigned int i;
 	int err;
 
 	// Prepare for containers.
@@ -374,7 +374,7 @@ static int context_process_frames(struct context *ctx,
 {
 	bool verbose = ctx->xfer.verbose > 2;
 	unsigned int frame_count;
-	int i;
+	unsigned int i;
 	int err = 0;
 
 	if (!ctx->xfer.quiet) {
@@ -439,10 +439,10 @@ static int context_process_frames(struct context *ctx,
 }
 
 static void context_post_process(struct context *ctx,
-				 uint64_t accumulated_frame_count)
+				 uint64_t)
 {
 	uint64_t total_frame_count;
-	int i;
+	unsigned int i;
 
 	xfer_context_post_process(&ctx->xfer);
 
@@ -472,7 +472,7 @@ static void context_destroy(struct context *ctx)
 
 int subcmd_transfer(int argc, char *const *argv, snd_pcm_stream_t direction)
 {
-	struct context ctx = {0};
+	static struct context ctx = {0};
 	uint64_t expected_frame_count = 0;
 	uint64_t actual_frame_count = 0;
 	int err = 0;

@@ -19,10 +19,9 @@ enum list_op {
 };
 
 static int dump_device(snd_ctl_t *handle, const char *id, const char *name,
-		       snd_pcm_stream_t direction, snd_pcm_info_t *info)
+		       snd_pcm_stream_t, snd_pcm_info_t *info)
 {
-	unsigned int count;
-	int i;
+	unsigned int i, count;
 	int err;
 
 	printf("card %i: %s [%s], device %i: %s [%s]\n",
@@ -44,7 +43,7 @@ static int dump_device(snd_ctl_t *handle, const char *id, const char *name,
 			continue;
 		}
 
-		printf("  Subdevice #%i: %s\n",
+		printf("  Subdevice #%u: %s\n",
 		       i, snd_pcm_info_get_subdevice_name(info));
 	}
 
@@ -242,7 +241,7 @@ static int detect_operation(int argc, char *const *argv, enum list_op *op)
 	if (argc < 2)
 		return false;
 
-	for (i = 0; i < ARRAY_SIZE(ops); ++i) {
+	for (i = 0; i < (int)ARRAY_SIZE(ops); ++i) {
 		if (!strcmp(argv[1], ops[i])) {
 			*op = i;
 			return true;

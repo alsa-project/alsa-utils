@@ -33,7 +33,7 @@ static void align_frames_in_n(struct frame_cache *cache,
 	char **buf_ptrs = cache->buf_ptr;
 	unsigned int offset;
 	unsigned int size;
-	int i;
+	unsigned int i;
 
 	cache->remained_count -= consumed_count;
 
@@ -75,7 +75,7 @@ int frame_cache_init(struct frame_cache *cache, snd_pcm_access_t access,
 	} else {
 		char **bufs = calloc(samples_per_frame, sizeof(*bufs));
 		char **buf_ptrs = calloc(samples_per_frame, sizeof(*buf_ptrs));
-		int i;
+		unsigned int i;
 
 		cache->buf = bufs;
 		cache->buf_ptr = buf_ptrs;
@@ -102,7 +102,7 @@ void frame_cache_destroy(struct frame_cache *cache)
 	if (cache->access == SND_PCM_ACCESS_RW_NONINTERLEAVED) {
 		char **bufs = cache->buf;
 		if (bufs) {
-			int i;
+			unsigned int i;
 			for (i = 0; i < cache->samples_per_frame; ++i)
 				free(bufs[i]);
 		}

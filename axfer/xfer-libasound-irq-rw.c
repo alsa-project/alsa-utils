@@ -313,7 +313,7 @@ error:
 }
 
 static int w_process_frames_nonblocking(struct libasound_state *state,
-					snd_pcm_state_t status,
+					snd_pcm_state_t,
 					unsigned int *frame_count,
 					struct mapper_context *mapper,
 					struct container_context *cntrs)

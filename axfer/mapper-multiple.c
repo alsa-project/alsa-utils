@@ -27,7 +27,7 @@ static void align_to_i(void *frame_buf, unsigned int frame_count,
 	unsigned int dst_pos;
 	unsigned int src_pos;
 	struct container_context *cntr;
-	int i, j;
+	unsigned int i, j;
 
 	// src: first channel in each of interleaved buffers in containers =>
 	// dst:interleaved.
@@ -55,7 +55,7 @@ static void align_from_i(void *frame_buf, unsigned int frame_count,
 	unsigned int src_pos;
 	unsigned int dst_pos;
 	struct container_context *cntr;
-	int i, j;
+	unsigned int i, j;
 
 	for (i = 0; i < cntr_count; ++i) {
 		dst = dst_bufs[i];
@@ -77,7 +77,7 @@ static int multiple_pre_process(struct mapper_context *mapper,
 {
 	struct multiple_state *state = mapper->private_data;
 	struct container_context *cntr;
-	int i;
+	unsigned int i;
 
 	// Additionally, format of samples in the containers should be the same
 	// as the format in PCM substream.
@@ -151,7 +151,7 @@ static int process_containers(char **src_bufs, unsigned int *frame_count,
 {
 	struct container_context *cntr;
 	char *src;
-	int i;
+	unsigned int i;
 	int err = 0;
 
 	// TODO: arrangement for *frame_count.
@@ -226,7 +226,7 @@ static int multiple_demuxer_process_frames(struct mapper_context *mapper,
 static void multiple_post_process(struct mapper_context *mapper)
 {
 	struct multiple_state *state = mapper->private_data;
-	int i;
+	unsigned int i;
 
 	if (state->bufs) {
 		for (i = 0; i < state->cntr_count; ++i) {

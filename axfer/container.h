@@ -60,7 +60,7 @@ struct container_context {
 	uint64_t handled_byte_count;
 };
 
-const char *const container_suffix_from_format(enum container_format format);
+const char *container_suffix_from_format(enum container_format format);
 enum container_format container_format_from_path(const char *path);
 int container_parser_init(struct container_context *cntr, int fd,
 			  unsigned int verbose);
