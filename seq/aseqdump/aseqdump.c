@@ -377,7 +377,7 @@ static int group_number(unsigned char c)
 		return c;
 }
 
-static const char *pitchbend_value(u8 msb, u8 lsb)
+static const char *pitchbend_value(uint8_t msb, uint8_t lsb)
 {
 	int pb = (msb << 7) | lsb;
 
@@ -415,8 +415,9 @@ static void dump_ump_midi1_event(const unsigned int *ump)
 	case SND_UMP_MSG_PROGRAM_CHANGE:
 		printf("Program change         %2d, program %d",
 		       channel, m->program_change.program);
+		break;
 	case SND_UMP_MSG_CHANNEL_PRESSURE:
-		printf("Channel pressure       %2d, value %d",
+		printf("Channel pressure       %2d, value %s",
 		       channel, midi1_data(m->channel_pressure.data));
 		break;
 	case SND_UMP_MSG_PITCHBEND:
@@ -445,7 +446,7 @@ static const char *midi2_velocity(unsigned int v)
 				 ((double)(v - 0x8000) * 63.0) / 0x7fff + 64.0);
 		return tmp;
 	} else if (view_mode == VIEW_PERCENT) {
-		snprintf(tmp, sizeof(tmp), "%.2f%%", (double)v * 100.0) / 0xffff);
+		snprintf(tmp, sizeof(tmp), "%.2f%%", ((double)v * 100.0) / 0xffff);
 		return tmp;
 	}
 
@@ -470,7 +471,7 @@ static const char *midi2_data(unsigned int v)
 				 ((double)(v - 0x80000000U) * 63.0) / 0x7fffffffU + 64.0);
 		return tmp;
 	} else if (view_mode == VIEW_PERCENT) {
-		snprintf(tmp, sizeof(tmp), "%.2f%%", (double)v * 100.0) / 0xffffffffU);
+		snprintf(tmp, sizeof(tmp), "%.2f%%", ((double)v * 100.0) / 0xffffffffU);
 		return tmp;
 	}
 
@@ -509,7 +510,6 @@ static void dump_ump_midi2_event(const unsigned int *ump)
 	unsigned char group = group_number(m->hdr.group);
 	unsigned char status = m->hdr.status;
 	unsigned char channel = channel_number(m->hdr.channel);
-	unsigned int bank;
 
 	printf("Group %2d, ", group);
 	switch (status) {
