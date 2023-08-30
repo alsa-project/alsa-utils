@@ -374,7 +374,7 @@ static int set_ctl_value(struct space *space, const char *value, int all)
 			if (pos)
 				*(char *)pos = '\0';
 			remove_trailing_chars((char *)value, ' ');
-			items = pos ? pos - value : strlen(value);
+			items = pos ? (unsigned)(pos - value) : (unsigned)strlen(value);
 			if (items > 1 && value[items-1] == '%') {
 				val = convert_prange1(strtol(value, NULL, 0), snd_ctl_elem_info_get_min(space->ctl_info), snd_ctl_elem_info_get_max(space->ctl_info));
 				snd_ctl_elem_value_set_integer(space->ctl_value, idx, val);
@@ -507,16 +507,16 @@ static int do_match(const char *key, enum key_op op,
 
 static int ctl_match(snd_ctl_elem_id_t *pattern, snd_ctl_elem_id_t *id)
 {
-	if (snd_ctl_elem_id_get_interface(pattern) != -1 &&
+	if ((int)snd_ctl_elem_id_get_interface(pattern) != -1 &&
 	    snd_ctl_elem_id_get_interface(pattern) != snd_ctl_elem_id_get_interface(id))
 	    	return 0;
-	if (snd_ctl_elem_id_get_device(pattern) != -1 &&
+	if ((int)snd_ctl_elem_id_get_device(pattern) != -1 &&
 	    snd_ctl_elem_id_get_device(pattern) != snd_ctl_elem_id_get_device(id))
 		return 0;
-	if (snd_ctl_elem_id_get_subdevice(pattern) != -1 &&
+	if ((int)snd_ctl_elem_id_get_subdevice(pattern) != -1 &&
 	    snd_ctl_elem_id_get_subdevice(pattern) != snd_ctl_elem_id_get_subdevice(id))
 	    	return 0;
-	if (snd_ctl_elem_id_get_index(pattern) != -1 &&
+	if ((int)snd_ctl_elem_id_get_index(pattern) != -1 &&
 	    snd_ctl_elem_id_get_index(pattern) != snd_ctl_elem_id_get_index(id))
 	    	return 0;
 	if (fnmatch(snd_ctl_elem_id_get_name(pattern), snd_ctl_elem_id_get_name(id), 0) != 0)
@@ -655,7 +655,7 @@ static const char *elemid_get(struct space *space, const char *attr)
 			goto empty;
 		val = min;
 dbvalue:
-		sprintf(res, "%li.%02idB", (long)(val / 100), (int)abs(val % 100));
+		sprintf(res, "%li.%02lidB", (long)(val / 100), labs(val % 100));
 		return res;
 	}
 	if (strncasecmp(attr, "dBmax", 5) == 0) {
@@ -1242,7 +1242,8 @@ found:
 static
 int run_program1(struct space *space,
 		 const char *command0, char *result,
-		 size_t ressize, size_t *reslen, int log)
+		 size_t ressize, size_t *reslen ATTRIBUTE_UNUSED,
+		 int log ATTRIBUTE_UNUSED)
 {
 	if (strncmp(command0, "__ctl_search", 12) == 0) {
 		const char *res = elemid_get(space, "do_search");
@@ -1284,7 +1285,7 @@ static int conf_name_filter(const struct dirent *d)
 	return ext && !strcmp(ext, ".conf");
 }
 
-static int parse_line(struct space *space, char *line, size_t linesize)
+static int parse_line(struct space *space, char *line, size_t linesize ATTRIBUTE_UNUSED)
 {
 	char *linepos;
 	char *key, *value, *attr, *temp;

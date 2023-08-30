@@ -183,7 +183,7 @@ static int check_control_cdev(int infd, bool *retry)
 		}
 
 		size_t pos = 0;
-		while (pos < len) {
+		while (pos < (size_t)len) {
 			ev = (struct inotify_event *)(buf + pos);
 			if ((ev->mask & IN_CREATE) &&
 			    strstr(ev->name, "controlC") == ev->name)
@@ -256,12 +256,12 @@ static int operate_dispatcher(int epfd, uint32_t op, struct epoll_event *epev,
 		err = count;
 		goto end;
 	}
-	if (count != entry->pfd_count) {
+	if (count != (int)entry->pfd_count) {
 		err = -EIO;
 		goto end;
 	}
 
-	for (i = 0; i < entry->pfd_count; ++i) {
+	for (i = 0; i < (int)entry->pfd_count; ++i) {
 		err = epoll_ctl(epfd, op, pfds[i].fd, epev);
 		if (err < 0)
 			break;

@@ -1126,7 +1126,7 @@ static int check_comment_range(snd_ctl_t *handle, snd_config_t *conf,
 }
 
 static int restore_config_value(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
-				snd_ctl_elem_iface_t type,
+				snd_ctl_elem_type_t type,
 				snd_config_t *value,
 				snd_ctl_elem_value_t *ctl, int idx,
 				int doit)
@@ -1175,7 +1175,7 @@ static int restore_config_value(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
 }
 
 static int restore_config_value2(snd_ctl_t *handle, snd_ctl_elem_info_t *info,
-				 snd_ctl_elem_iface_t type,
+				 snd_ctl_elem_type_t type,
 				 snd_config_t *value,
 				 snd_ctl_elem_value_t *ctl, int idx,
 				 unsigned int numid, int doit)
@@ -1350,7 +1350,7 @@ static int set_control(snd_ctl_t *handle, snd_config_t *control,
 	if (err |= numid != numid1 && !force_restore)
 		cerror(doit, "warning: numid mismatch (%d/%d) for control #%d", 
 		      numid, numid1, numid);
-	if (err |= iface != iface1)
+	if (err |= (int)iface != iface1)
 		cerror(doit, "warning: iface mismatch (%d/%d) for control #%d", iface, iface1, numid);
 	if (err |= device != device1)
 		cerror(doit, "warning: device mismatch (%ld/%ld) for control #%d", device, device1, numid);
