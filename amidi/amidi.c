@@ -446,7 +446,7 @@ static void print_byte(unsigned char byte, struct timespec *ts)
 	printf("%02X", byte);
 }
 
-static void sig_handler(int dummy)
+static void sig_handler(int)
 {
 	stop = 1;
 }
