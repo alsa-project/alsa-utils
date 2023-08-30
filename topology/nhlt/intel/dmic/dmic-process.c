@@ -5,6 +5,7 @@
 // Author: Seppo Ingalsuo <seppo.ingalsuo@linux.intel.com>
 //         Jaska Uimonen <jaska.uimonen@linux.intel.com>
 
+#include "aconfig.h"
 #include <stdint.h>
 #include <errno.h>
 #include <stdio.h>

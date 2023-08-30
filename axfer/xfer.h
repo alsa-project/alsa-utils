@@ -9,11 +9,11 @@
 #ifndef __ALSA_UTILS_AXFER_XFER__H_
 #define __ALSA_UTILS_AXFER_XFER__H_
 
+#include "aconfig.h"
+
 #include "mapper.h"
 
 #include <getopt.h>
-
-#include "aconfig.h"
 
 enum xfer_type {
 	XFER_TYPE_UNSUPPORTED = -1,

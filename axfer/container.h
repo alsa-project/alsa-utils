@@ -9,6 +9,8 @@
 #ifndef __ALSA_UTILS_AXFER_CONTAINER__H_
 #define __ALSA_UTILS_AXFER_CONTAINER__H_
 
+#include "aconfig.h"
+
 #define _LARGEFILE64_SOURCE
 #include <sys/types.h>
 

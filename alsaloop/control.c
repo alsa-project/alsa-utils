@@ -21,6 +21,7 @@
  *
  */
 
+#include "aconfig.h"
 #include <ctype.h>
 #include <syslog.h>
 #include <alsa/asoundlib.h>

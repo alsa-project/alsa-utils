@@ -7,6 +7,7 @@
 //         Rander Wang <rander.wang@linux.intel.com>
 //         Jaska Uimonen <jaska.uimonen@linux.intel.com>
 
+#include "aconfig.h"
 #include <stdint.h>
 #include <errno.h>
 #include <stdio.h>

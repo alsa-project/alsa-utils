@@ -18,6 +18,7 @@
   in the file called LICENSE.GPL.
 */
 
+#include "aconfig.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stddef.h>

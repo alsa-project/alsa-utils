@@ -15,6 +15,7 @@
  *
  */
 
+#include "aconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -28,7 +29,6 @@
 #include <getopt.h>
 #include <signal.h>
 #include <assert.h>
-#include "aconfig.h"
 #include "gettext.h"
 
 /*

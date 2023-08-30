@@ -17,6 +17,7 @@
   The full GNU General Public License is included in this distribution
   in the file called LICENSE.GPL.
 */
+#include "aconfig.h"
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>

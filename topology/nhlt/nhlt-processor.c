@@ -4,6 +4,7 @@
 //
 // Author: Jaska Uimonen <jaska.uimonen@linux.intel.com>
 
+#include "aconfig.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>

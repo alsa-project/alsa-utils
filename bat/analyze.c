@@ -13,6 +13,8 @@
  *
  */
 
+#include "aconfig.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -22,7 +24,6 @@
 #include <math.h>
 #include <fftw3.h>
 
-#include "aconfig.h"
 #include "gettext.h"
 
 #include "common.h"

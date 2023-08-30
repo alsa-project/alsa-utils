@@ -36,6 +36,8 @@
  * $Id: speaker_test.c,v 1.00 2003/11/26 19:43:38 jcdutton Exp $
  */
 
+#include "aconfig.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,7 +55,6 @@
 #include <sys/time.h>
 #include <math.h>
 #include "pink.h"
-#include "aconfig.h"
 #include "gettext.h"
 #include "version.h"
 #include "os_compat.h"

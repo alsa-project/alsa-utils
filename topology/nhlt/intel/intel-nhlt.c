@@ -4,6 +4,7 @@
 //
 // Author: Jaska Uimonen <jaska.uimonen@linux.intel.com>
 
+#include "aconfig.h"
 #include "intel-nhlt.h"
 
 static int get_int_val(snd_config_t *input, long *int_val, snd_config_t *top)

@@ -18,6 +18,7 @@
  *
  */
 
+#include "aconfig.h"
 #include <math.h>
 #include <alsa/asoundlib.h>
 

@@ -15,6 +15,7 @@
  *
  */
 
+#include "aconfig.h"
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -26,7 +27,6 @@
 #include <locale.h>
 #include <sys/ioctl.h>
 #include <alsa/asoundlib.h>
-#include "aconfig.h"
 #include "gettext.h"
 
 #ifdef SND_SEQ_PORT_CAP_INACTIVE

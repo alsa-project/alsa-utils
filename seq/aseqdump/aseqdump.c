@@ -19,6 +19,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "aconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -27,7 +28,6 @@
 #include <getopt.h>
 #include <poll.h>
 #include <alsa/asoundlib.h>
-#include "aconfig.h"
 #include "version.h"
 #ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 #include <alsa/ump_msg.h>

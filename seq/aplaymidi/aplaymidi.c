@@ -21,6 +21,7 @@
 
 /* TODO: sequencer queue timer selection */
 
+#include "aconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -28,7 +29,6 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <alsa/asoundlib.h>
-#include "aconfig.h"
 #include "version.h"
 #ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 #include <alsa/ump_msg.h>

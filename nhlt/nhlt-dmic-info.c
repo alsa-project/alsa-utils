@@ -23,6 +23,7 @@
  *
  */
 
+#include "aconfig.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -271,7 +272,7 @@ static int nhlt_to_json(FILE *out, const char *nhlt_file)
  */
 
 #define PROG "nhlt-dmic-info"
-#define VERSION "1"
+#define PROG_VERSION "1"
 
 #define NHLT_FILE "/sys/firmware/acpi/tables/NHLT"
 
@@ -380,7 +381,7 @@ int main(int argc, char *argv[])
 			debug = 1;
 			break;
 		case 'v':
-			printf(PROG " version " VERSION "\n");
+			printf(PROG " version " PROG_VERSION "\n");
 			res = EXIT_SUCCESS;
 			goto out;
 		case '?':		// error msg already printed

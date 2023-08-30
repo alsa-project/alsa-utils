@@ -17,6 +17,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "aconfig.h"
 #include <stdio.h>
 #include <ctype.h>
 #include <alsa/asoundlib.h>

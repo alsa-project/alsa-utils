@@ -4,6 +4,7 @@
 //
 // Author: Jaska Uimonen <jaska.uimonen@linux.intel.com>
 
+#include "aconfig.h"
 #include <stdio.h>
 #include <stdint.h>
 #include "ssp-debug.h"

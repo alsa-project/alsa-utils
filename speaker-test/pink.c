@@ -24,6 +24,7 @@
   Copyleft 1999 Phil Burk - No rights reserved.
 */
 
+#include "aconfig.h"
 #include <stdio.h>
 #include <math.h>
 #include "pink.h"

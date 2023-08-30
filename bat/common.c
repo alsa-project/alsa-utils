@@ -13,13 +13,14 @@
  *
  */
 
+#include "aconfig.h"
+
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <errno.h>
 
-#include "aconfig.h"
 #include "gettext.h"
 
 #include "common.h"

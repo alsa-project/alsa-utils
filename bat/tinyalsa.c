@@ -13,6 +13,8 @@
  *
  */
 
+#include "aconfig.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -22,7 +24,6 @@
 
 #include <tinyalsa/asoundlib.h>
 
-#include "aconfig.h"
 #include "gettext.h"
 
 #include "common.h"

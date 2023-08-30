@@ -20,6 +20,8 @@
  */
 
 #define _GNU_SOURCE
+#include "aconfig.h"
+#include "version.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -37,8 +39,6 @@
 #include <fcntl.h>
 #include <alsa/asoundlib.h>
 #include <time.h>
-#include "aconfig.h"
-#include "version.h"
 
 #define NSEC_PER_SEC 1000000000L
 
