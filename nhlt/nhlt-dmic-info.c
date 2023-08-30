@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
 		free(long_option);
 		exit(EXIT_FAILURE);
 	}
-	for (i = j = k = 0; i < ARRAY_SIZE(args); i++) {
+	for (i = j = k = 0; i < (int)ARRAY_SIZE(args); i++) {
 		a = &args[i];
 		if ((a->sarg & 0xff) == 0)
 			continue;
