@@ -14,7 +14,7 @@ jobs:
         dnf -y install @development-tools libtool bzip2 gettext-devel ncurses-devel
 
     - name: Checkout alsa-lib
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: alsa-project/alsa-lib
         ref: master
@@ -22,6 +22,7 @@ jobs:
     - name: Configure alsa-lib
       run: |
         cd alsa-lib
+        head -5 configure.ac
         libtoolize --force --copy --automake
         aclocal
         autoheader
@@ -40,7 +41,7 @@ jobs:
         make install
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: alsa-utils
     - name: Checkout all tags
@@ -54,6 +55,7 @@ jobs:
         mv configure.ac configure.ac.old
         version=$(git describe | sed -e 's/v//')
         if test -z "$version"; then version=$(git describe --tags | sed -e 's/v//'); fi
+        if test -z "$version"; then version1=$(cat configure.ac.old | grep "AC_INIT(.*)" | cut -d ' ' -f 2 | sed -e 's/)//'); version2=$(git rev-parse --short HEAD); version="${version1}-g${version2}"; fi
         echo "Version: ${version}"
         sed -r "s/AC_INIT\(alsa-utils,.*\)/AC_INIT(alsa-utils, ${version})/" < configure.ac.old > configure.ac.tmp
         sed -e 's;po/Makefile.in;;' < configure.ac.tmp > configure.ac
@@ -61,6 +63,7 @@ jobs:
     - name: Configure
       run: |
         cd alsa-utils
+        head -5 configure.ac
         aclocal
         gettextize -c -f --no-changelog
         libtoolize --force --copy --automake
@@ -125,7 +128,7 @@ jobs:
         apt-get install -y git build-essential pkg-config m4 autoconf automake libtool gettext ncurses-dev
 
     - name: Checkout alsa-lib
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: alsa-project/alsa-lib
         ref: master
@@ -146,7 +149,7 @@ jobs:
         make install
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Configure
       run: |
         mv configure.ac configure.ac.old
