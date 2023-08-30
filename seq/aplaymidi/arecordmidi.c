@@ -455,7 +455,7 @@ static void record_port_numbers(void)
 
 static void record_event(const snd_seq_event_t *ev)
 {
-	unsigned int i;
+	int i;
 	struct smf_track *track;
 
 	/* ignore events without proper timestamps */
@@ -583,7 +583,7 @@ static void record_event(const snd_seq_event_t *ev)
 		else
 			command(track, 0xf7), i = 0;
 		var_value(track, ev->data.ext.len - i);
-		for (; i < ev->data.ext.len; ++i)
+		for (; i < (int)ev->data.ext.len; ++i)
 			add_byte(track, ((unsigned char*)ev->data.ext.ptr)[i]);
 		break;
 	default:
@@ -719,7 +719,7 @@ static void version(void)
 	fputs("arecordmidi version " SND_UTIL_VERSION_STR "\n", stderr);
 }
 
-static void sighandler(int sig)
+static void sighandler(int)
 {
 	stop = 1;
 }

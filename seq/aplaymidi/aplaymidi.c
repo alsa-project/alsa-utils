@@ -624,7 +624,7 @@ static void handle_big_sysex(snd_seq_event_t *ev)
 	if (length > MIDI_BYTES_PER_SEC)
 		ev->data.ext.len = MIDI_BYTES_PER_SEC;
 	event_size = snd_seq_event_length(ev);
-	if (event_size + 1 > snd_seq_get_output_buffer_size(seq)) {
+	if (event_size + 1 > (ssize_t)snd_seq_get_output_buffer_size(seq)) {
 		err = snd_seq_drain_output(seq);
 		check_snd("drain output", err);
 		err = snd_seq_set_output_buffer_size(seq, event_size + 1);
@@ -803,7 +803,7 @@ static void play_midi(void)
 		for (i = 0; i < num_tracks; ++i) {
 			struct track *track = &tracks[i];
 			struct event *e2 = track->current_event;
-			if (e2 && e2->tick < min_tick) {
+			if (e2 && e2->tick < (unsigned int)min_tick) {
 				min_tick = e2->tick;
 				event = e2;
 				event_track = track;
@@ -988,7 +988,7 @@ int main(int argc, char *argv[])
 		{"delay", 1, NULL, 'd'},
 		{0}
 	};
-	int c, err;
+	int c;
 	int do_list = 0;
 
 	init_seq();
@@ -1029,6 +1029,7 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 	if (ump_mode) {
+		int err;
 		err = snd_seq_set_client_midi_version(seq, SND_SEQ_CLIENT_UMP_MIDI_1_0);
 		check_snd("set midi version", err);
 	}
