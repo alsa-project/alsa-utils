@@ -47,8 +47,8 @@ jobs:
     - name: Checkout all tags
       run: |
         cd alsa-utils
-        git fetch --prune --tags
-        git fetch --prune --unshallow
+        git fetch --prune --tags --force
+        git fetch --prune --unshallow --force
     - name: Modify version
       run: |
         cd alsa-utils
