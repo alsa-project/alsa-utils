@@ -158,7 +158,8 @@ static void get_format(struct bat *bat, char *optarg)
 	}
 }
 
-static inline int thread_wait_completion(struct bat *, pthread_t id, int **val)
+static inline int thread_wait_completion(struct bat *bat ATTRIBUTE_UNUSED,
+					 pthread_t id, int **val)
 {
 	int err;
 

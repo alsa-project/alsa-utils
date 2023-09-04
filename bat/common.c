@@ -47,7 +47,8 @@ static int update_fmt_to_bat(struct bat *bat, struct chunk_fmt *fmt)
 }
 
 /* calculate frames and update to bat */
-static int update_frames_to_bat(struct bat *bat, struct wav_chunk_header *header, FILE *)
+static int update_frames_to_bat(struct bat *bat, struct wav_chunk_header *header,
+				FILE *file ATTRIBUTE_UNUSED)
 {
 	/* The number of analyzed captured frames is arbitrarily set to half of
 	   the number of frames of the wav file or the number of frames of the
