@@ -447,7 +447,8 @@ static int generate_path_with_suffix(struct xfer_context *xfer,
 
 static int generate_path_without_suffix(struct xfer_context *xfer,
 				        const char *template,
-					unsigned int index, const char *)
+					unsigned int index,
+					const char *suffix ATTRIBUTE_UNUSED)
 {
 	static const char *const single_format = "%s";
 	static const char *const multiple_format = "%s-%i";

@@ -9,6 +9,7 @@
 #ifndef __ALSA_UTILS_AXFER_WAITER__H_
 #define __ALSA_UTILS_AXFER_WAITER__H_
 
+#include <alsa/global.h>
 #include <poll.h>
 
 enum waiter_type {

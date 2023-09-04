@@ -34,7 +34,7 @@ struct select_state {
 	fd_set rfds_ex;
 };
 
-static int select_prepare(struct waiter_context *)
+static int select_prepare(struct waiter_context *waiter ATTRIBUTE_UNUSED)
 {
 	return 0;
 }
@@ -94,7 +94,7 @@ static int select_wait_event(struct waiter_context *waiter, int timeout_msec)
 	return err;
 }
 
-static void select_release(struct waiter_context *)
+static void select_release(struct waiter_context *waiter ATTRIBUTE_UNUSED)
 {
 	return;
 }

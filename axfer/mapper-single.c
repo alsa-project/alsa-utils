@@ -62,7 +62,7 @@ static void align_from_vector(void *frame_buf, unsigned int frame_count,
 
 static int single_pre_process(struct mapper_context *mapper,
 			      struct container_context *cntrs,
-			      unsigned int)
+			      unsigned int cntr_count ATTRIBUTE_UNUSED)
 {
 	struct single_state *state = mapper->private_data;
 	unsigned int bytes_per_buffer;
@@ -110,7 +110,7 @@ static int single_muxer_process_frames(struct mapper_context *mapper,
 				       void *frame_buf,
 				       unsigned int *frame_count,
 				       struct container_context *cntrs,
-				       unsigned int)
+				       unsigned int cntr_count ATTRIBUTE_UNUSED)
 {
 	struct single_state *state = mapper->private_data;
 	void *src;
@@ -141,7 +141,7 @@ static int single_demuxer_process_frames(struct mapper_context *mapper,
 					 void *frame_buf,
 					 unsigned int *frame_count,
 					 struct container_context *cntrs,
-					 unsigned int)
+					 unsigned int cntr_count ATTRIBUTE_UNUSED)
 {
 	struct single_state *state = mapper->private_data;
 	void *dst;

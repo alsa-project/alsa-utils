@@ -13,7 +13,7 @@
 #include <errno.h>
 #include <poll.h>
 
-static int poll_prepare(struct waiter_context *)
+static int poll_prepare(struct waiter_context *waiter ATTRIBUTE_UNUSED)
 {
 	// Nothing to do because an instance of waiter has required data.
 	return 0;
@@ -30,7 +30,7 @@ static int poll_wait_event(struct waiter_context *waiter, int timeout_msec)
 	return err;
 }
 
-static void poll_release(struct waiter_context *)
+static void poll_release(struct waiter_context *waiter ATTRIBUTE_UNUSED)
 {
 	// Nothing to do because an instance of waiter has required data.
 	return;

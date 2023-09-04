@@ -40,7 +40,7 @@ static void handle_unix_signal_for_finish(int sig)
 	ctx_ptr->interrupted = true;
 }
 
-static void handle_unix_signal_for_suspend(int)
+static void handle_unix_signal_for_suspend(int sig ATTRIBUTE_UNUSED)
 {
 	sigset_t curr, prev;
 	struct sigaction sa = {0};
@@ -439,7 +439,7 @@ static int context_process_frames(struct context *ctx,
 }
 
 static void context_post_process(struct context *ctx,
-				 uint64_t)
+				 uint64_t accumulated_frame_count ATTRIBUTE_UNUSED)
 {
 	uint64_t total_frame_count;
 	unsigned int i;

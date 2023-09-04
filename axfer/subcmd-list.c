@@ -19,7 +19,7 @@ enum list_op {
 };
 
 static int dump_device(snd_ctl_t *handle, const char *id, const char *name,
-		       snd_pcm_stream_t, snd_pcm_info_t *info)
+		       snd_pcm_stream_t stream ATTRIBUTE_UNUSED, snd_pcm_info_t *info)
 {
 	unsigned int i, count;
 	int err;
