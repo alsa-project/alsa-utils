@@ -7,6 +7,7 @@
 #include "aconfig.h"
 #include <stdio.h>
 #include <stdint.h>
+#include <alsa/global.h>
 #include "ssp-debug.h"
 #include "../intel-nhlt.h"
 
@@ -252,6 +253,6 @@ void ssp_print_internal(struct intel_ssp_params *ssp)
 }
 
 #else /* NHLT_DEBUG */
-void ssp_print_internal(struct intel_ssp_params *) {}
-void ssp_print_calculated(struct intel_ssp_params *) {}
+void ssp_print_internal(struct intel_ssp_params *ssp ATTRIBUTE_UNUSED) {}
+void ssp_print_calculated(struct intel_ssp_params *ssp ATTRIBUTE_UNUSED) {}
 #endif

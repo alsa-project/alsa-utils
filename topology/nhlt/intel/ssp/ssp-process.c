@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <alsa/global.h>
 #include <alsa/input.h>
 #include <alsa/output.h>
 #include <alsa/conf.h>
@@ -952,7 +953,8 @@ int ssp_set_params(struct intel_nhlt_params *nhlt, const char *dir, int dai_inde
 	return 0;
 }
 
-int ssp_hw_set_params(struct intel_nhlt_params *nhlt, const char *format, const char *,
+int ssp_hw_set_params(struct intel_nhlt_params *nhlt, const char *format,
+		      const char *mclk ATTRIBUTE_UNUSED,
 		      const char *bclk, const char *bclk_invert, const char *fsync,
 		      const char *fsync_invert, int mclk_freq, int bclk_freq, int fsync_freq,
 		      int tdm_slots, int tdm_slot_width, int tx_slots, int rx_slots)
