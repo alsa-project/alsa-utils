@@ -334,7 +334,7 @@ static void get_net_addr(struct addrinfo *rp, char *buf, size_t buflen)
 /*
  * signal handler
  */
-static void sigterm_exit(int)
+static void sigterm_exit(int sig ATTRIBUTE_UNUSED)
 {
 	close_files();
 	exit(1);

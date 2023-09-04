@@ -719,7 +719,7 @@ static void version(void)
 	fputs("arecordmidi version " SND_UTIL_VERSION_STR "\n", stderr);
 }
 
-static void sighandler(int)
+static void sighandler(int sig ATTRIBUTE_UNUSED)
 {
 	stop = 1;
 }
