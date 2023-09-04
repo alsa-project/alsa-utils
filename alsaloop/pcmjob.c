@@ -625,7 +625,7 @@ static void buf_add_src(struct loopback *loop)
 	}
 }
 #else
-static void buf_add_src(struct loopback *)
+static void buf_add_src(struct loopback *loop ATTRIBUTE_UNUSED)
 {
 }
 #endif
@@ -1794,7 +1794,7 @@ static int ctl_event_check(snd_ctl_elem_value_t *val, snd_ctl_event_t *ev)
 }
 
 static int handle_ctl_events(struct loopback_handle *lhandle,
-			     unsigned short)
+			     unsigned short events ATTRIBUTE_UNUSED)
 {
 	struct loopback *loop = lhandle->loopback;
 	snd_ctl_event_t *ev;

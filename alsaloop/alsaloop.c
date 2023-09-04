@@ -821,7 +821,7 @@ static void send_to_all(int sig)
 	}
 }
 
-static void signal_handler(int)
+static void signal_handler(int sig ATTRIBUTE_UNUSED)
 {
 	quit = 1;
 	send_to_all(SIGUSR2);
