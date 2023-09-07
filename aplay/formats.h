@@ -17,28 +17,28 @@
                          	((u_long)(bp->datalen_h) << 16) )
 
 typedef struct voc_header {
-	u_char magic[20];	/* must be MAGIC_STRING */
-	u_short headerlen;	/* Headerlength, should be 0x1A */
-	u_short version;	/* VOC-file version */
-	u_short coded_ver;	/* 0x1233-version */
+	unsigned char magic[20];	/* must be MAGIC_STRING */
+	unsigned short headerlen;	/* Headerlength, should be 0x1A */
+	unsigned short version;	/* VOC-file version */
+	unsigned short coded_ver;	/* 0x1233-version */
 } VocHeader;
 
 typedef struct voc_blocktype {
-	u_char type;
-	u_char datalen;		/* low-byte    */
-	u_char datalen_m;	/* medium-byte */
-	u_char datalen_h;	/* high-byte   */
+	unsigned char type;
+	unsigned char datalen;		/* low-byte    */
+	unsigned char datalen_m;	/* medium-byte */
+	unsigned char datalen_h;	/* high-byte   */
 } VocBlockType;
 
 typedef struct voc_voice_data {
-	u_char tc;
-	u_char pack;
+	unsigned char tc;
+	unsigned char pack;
 } VocVoiceData;
 
 typedef struct voc_ext_block {
-	u_short tc;
-	u_char pack;
-	u_char mode;
+	unsigned short tc;
+	unsigned char pack;
+	unsigned char mode;
 } VocExtBlock;
 
 /* Definitions for Microsoft WAVE format */
@@ -85,32 +85,32 @@ typedef struct voc_ext_block {
    it works on all WAVE-file I have
  */
 typedef struct {
-	u_int magic;		/* 'RIFF' */
-	u_int length;		/* filelen */
-	u_int type;		/* 'WAVE' */
+	unsigned int magic;		/* 'RIFF' */
+	unsigned int length;		/* filelen */
+	unsigned int type;		/* 'WAVE' */
 } WaveHeader;
 
 typedef struct {
-	u_short format;		/* see WAV_FMT_* */
-	u_short channels;
-	u_int sample_fq;	/* frequence of sample */
-	u_int byte_p_sec;
-	u_short byte_p_spl;	/* samplesize; 1 or 2 bytes */
-	u_short bit_p_spl;	/* 8, 12 or 16 bit */
+	unsigned short format;		/* see WAV_FMT_* */
+	unsigned short channels;
+	unsigned int sample_fq;	/* frequence of sample */
+	unsigned int byte_p_sec;
+	unsigned short byte_p_spl;	/* samplesize; 1 or 2 bytes */
+	unsigned short bit_p_spl;	/* 8, 12 or 16 bit */
 } WaveFmtBody;
 
 typedef struct {
 	WaveFmtBody format;
-	u_short ext_size;
-	u_short bit_p_spl;
-	u_int channel_mask;
-	u_short guid_format;	/* WAV_FMT_* */
-	u_char guid_tag[14];	/* WAV_GUID_TAG */
+	unsigned short ext_size;
+	unsigned short bit_p_spl;
+	unsigned int channel_mask;
+	unsigned short guid_format;	/* WAV_FMT_* */
+	unsigned char guid_tag[14];	/* WAV_GUID_TAG */
 } WaveFmtExtensibleBody;
 
 typedef struct {
-	u_int type;		/* 'data' */
-	u_int length;		/* samplecount */
+	unsigned int type;		/* 'data' */
+	unsigned int length;		/* samplecount */
 } WaveChunkHeader;
 
 /* Definitions for Sparc .au header */
@@ -122,12 +122,12 @@ typedef struct {
 #define AU_FMT_LIN16		3
 
 typedef struct au_header {
-	u_int magic;		/* '.snd' */
-	u_int hdr_size;		/* size of header (min 24) */
-	u_int data_size;	/* size of data */
-	u_int encoding;		/* see to AU_FMT_XXXX */
-	u_int sample_rate;	/* sample rate */
-	u_int channels;		/* number of channels (voices) */
+	unsigned int magic;		/* '.snd' */
+	unsigned int hdr_size;		/* size of header (min 24) */
+	unsigned int data_size;	/* size of data */
+	unsigned int encoding;		/* see to AU_FMT_XXXX */
+	unsigned int sample_rate;	/* sample rate */
+	unsigned int channels;		/* number of channels (voices) */
 } AuHeader;
 
 #endif				/* FORMATS */
