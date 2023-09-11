@@ -115,7 +115,7 @@ int tplg_parent_update(struct tplg_pre_processor *tplg_pp, snd_config_t *parent,
 		return ret;
 
 	/* get section config */
-	if (!strcmp(section_name, "tlv")) {
+	if (!strcmp(section_name, "tlv") || !strcmp(section_name, "texts")) {
 		/* set tlv name if config exists already */
 		ret = snd_config_search(cfg, section_name, &item_config);
 			if (ret < 0) {
@@ -1036,6 +1036,15 @@ const struct config_template_items bytes_control_config = {
 	.compound_config_ids = {"access"}
 };
 
+const struct config_template_items enum_control_config = {
+	.int_config_ids = {"index"},
+	.compound_config_ids = {"access"}
+};
+
+const struct config_template_items text_config = {
+	.compound_config_ids = {"values"}
+};
+
 const struct config_template_items scale_config = {
 	.int_config_ids = {"min", "step", "mute"},
 };
@@ -1071,6 +1080,7 @@ const struct build_function_map object_build_map[] = {
 	{"Base", "ops", "ops" ,&tplg_build_ops_object, NULL, &ops_config},
 	{"Base", "extops", "extops" ,&tplg_build_ops_object, NULL, &ops_config},
 	{"Base", "channel", "channel", &tplg_build_channel_object, NULL, &channel_config},
+	{"Base", "text", "SectionText", &tplg_build_text_object, NULL, &text_config},
 	{"Base", "VendorToken", "SectionVendorTokens", &tplg_build_vendor_token_object,
 	 NULL, NULL},
 	{"Base", "hw_config", "SectionHWConfig", &tplg_build_hw_cfg_object, NULL,
@@ -1083,6 +1093,8 @@ const struct build_function_map object_build_map[] = {
 	 &mixer_control_config},
 	{"Control", "bytes", "SectionControlBytes", &tplg_build_bytes_control, NULL,
 	 &bytes_control_config},
+	 {"Control", "enum", "SectionControlEnum", &tplg_build_enum_control, NULL,
+	 &enum_control_config},
 	{"Dai", "", "SectionBE", &tplg_build_generic_object, NULL, &be_dai_config},
 	{"PCM", "pcm", "SectionPCM", &tplg_build_generic_object, NULL, &pcm_config},
 	{"PCM", "pcm_caps", "SectionPCMCapabilities", &tplg_build_pcm_caps_object,

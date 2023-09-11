@@ -70,6 +70,26 @@ int tplg_build_channel_object(struct tplg_pre_processor *tplg_pp, snd_config_t *
 	return tplg_build_base_object(tplg_pp, obj_cfg, parent, false);
 }
 
+int tplg_build_text_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+			   snd_config_t *parent)
+{
+	snd_config_t *cfg;
+	const char *name;
+	int ret;
+
+	cfg = tplg_object_get_instance_config(tplg_pp, obj_cfg);
+
+	name = tplg_object_get_name(tplg_pp, cfg);
+	if (!name)
+		return -EINVAL;
+
+	ret = tplg_build_object_from_template(tplg_pp, obj_cfg, &cfg, NULL, false);
+	if (ret < 0)
+		return ret;
+
+	return tplg_parent_update(tplg_pp, parent, "texts", name);
+}
+
 int tplg_build_tlv_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
 			      snd_config_t *parent)
 {
@@ -129,6 +149,12 @@ int tplg_build_bytes_control(struct tplg_pre_processor *tplg_pp, snd_config_t *o
 			      snd_config_t *parent)
 {
 	return tplg_build_control(tplg_pp, obj_cfg, parent, "bytes");
+}
+
+int tplg_build_enum_control(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+			     snd_config_t *parent)
+{
+	return tplg_build_control(tplg_pp, obj_cfg, parent, "enum");
 }
 
 /*
