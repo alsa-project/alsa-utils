@@ -70,6 +70,10 @@ int tplg_build_mixer_control(struct tplg_pre_processor *tplg_pp, snd_config_t *o
 			      snd_config_t *parent);
 int tplg_build_bytes_control(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
 			      snd_config_t *parent);
+int tplg_build_enum_control(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+			     snd_config_t *parent);
+int tplg_build_text_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
+			   snd_config_t *parent);
 int tplg_build_dapm_route_object(struct tplg_pre_processor *tplg_pp, snd_config_t *obj_cfg,
 			      snd_config_t *parent);
 int tplg_build_hw_cfg_object(struct tplg_pre_processor *tplg_pp,
