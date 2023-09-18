@@ -299,7 +299,7 @@ static int calculate_noise(struct bat *bat, float *src, int channel)
 	/* each section has 2 sine periods, the first one for locating
 	 * and the second one for noise calculating */
 	int nsamples_per_section = nsamples * 2;
-	/* all sine periods will be calculated except the first one */
+	/* all sine periods will be calculated except the first and last one */
 	int nsection = bat->frames / nsamples - 1;
 
 	fprintf(bat->log, _("samples per period: %d\n"), nsamples);
@@ -331,7 +331,7 @@ static int calculate_noise(struct bat *bat, float *src, int channel)
 	/* calculate average noise level */
 	sum_snr_pc = 0.0;
 	cnt_clean = cnt_noise = 0;
-	for (i = 0, offset = 0; i < nsection; i++) {
+	for (i = 1, offset = nsamples; i < nsection; i++) {
 		na.snr_db = SNR_DB_INVALID;
 
 		err = calculate_noise_one_period(bat, &na, src + offset,
