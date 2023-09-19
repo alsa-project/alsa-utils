@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include <getopt.h>
 #include <assert.h>
+#include <locale.h>
 
 #include <alsa/asoundlib.h>
 #include <alsa/topology.h>
