@@ -33,7 +33,6 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <arpa/inet.h>
 
 int debug = 0;
