@@ -29,6 +29,7 @@
 #define _GNU_SOURCE
 #include "aconfig.h"
 #include <stdio.h>
+#include <stdint.h>
 #if HAVE_MALLOC_H
 #include <malloc.h>
 #endif
@@ -50,7 +51,6 @@
 #include <sys/uio.h>
 #include <sys/time.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <endian.h>
 #include "gettext.h"
 #include "formats.h"
@@ -114,7 +114,7 @@ static int mmap_flag = 0;
 static int interleaved = 1;
 static int nonblock = 0;
 static volatile sig_atomic_t in_aborting = 0;
-static u_char *audiobuf = NULL;
+static uint8_t *audiobuf = NULL;
 static snd_pcm_uframes_t chunk_size = 0;
 static unsigned period_time = 0;
 static unsigned buffer_time = 0;
@@ -859,7 +859,7 @@ int main(int argc, char *argv[])
 	chunk_size = 1024;
 	hwparams = rhwparams;
 
-	audiobuf = (u_char *)malloc(1024);
+	audiobuf = (uint8_t *)malloc(1024);
 	if (audiobuf == NULL) {
 		error(_("not enough memory"));
 		return 1;
@@ -970,7 +970,7 @@ static int test_vocfile(void *buffer)
  * helper for test_wavefile
  */
 
-static size_t test_wavefile_read(int fd, u_char *buffer, size_t *size, size_t reqsize, int line)
+static size_t test_wavefile_read(int fd, uint8_t *buffer, size_t *size, size_t reqsize, int line)
 {
 	if (*size >= reqsize)
 		return *size;
@@ -995,17 +995,17 @@ static size_t test_wavefile_read(int fd, u_char *buffer, size_t *size, size_t re
  *                            == 0 if not
  * Value returned is bytes to be discarded.
  */
-static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
+static ssize_t test_wavefile(int fd, uint8_t *_buffer, size_t size)
 {
 	WaveHeader *h = (WaveHeader *)_buffer;
-	u_char *buffer = NULL;
+	uint8_t *buffer = NULL;
 	size_t blimit = 0;
 	WaveFmtBody *f;
 	WaveChunkHeader *c;
-	u_int type, len;
+	uint32_t type, len;
 	unsigned short format, channels;
 	int big_endian, native_format;
-	u_char vbps = 0;
+	uint8_t vbps = 0;
 
 	if (size < sizeof(WaveHeader))
 		return -1;
@@ -1044,7 +1044,7 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 
 	if (len < sizeof(WaveFmtBody)) {
 		error(_("unknown length of 'fmt ' chunk (read %u, should be %u at least)"),
-		      len, (u_int)sizeof(WaveFmtBody));
+		      len, (uint32_t)sizeof(WaveFmtBody));
 		prg_exit(EXIT_FAILURE);
 	}
 	check_wavefile_space(buffer, len, blimit);
@@ -1055,7 +1055,7 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 		WaveFmtExtensibleBody *fe = (WaveFmtExtensibleBody*)buffer;
 		if (len < sizeof(WaveFmtExtensibleBody)) {
 			error(_("unknown length of extensible 'fmt ' chunk (read %u, should be %u at least)"),
-					len, (u_int)sizeof(WaveFmtExtensibleBody));
+					len, (unsigned int)sizeof(WaveFmtExtensibleBody));
 			prg_exit(EXIT_FAILURE);
 		}
 		if (memcmp(fe->guid_tag, WAV_GUID_TAG, 14) != 0) {
@@ -1167,7 +1167,7 @@ static ssize_t test_wavefile(int fd, u_char *_buffer, size_t size)
 	size -= len;
 	
 	while (1) {
-		u_int type, len;
+		uint32_t type, len;
 
 		check_wavefile_space(buffer, sizeof(WaveChunkHeader), blimit);
 		test_wavefile_read(fd, buffer, &size, sizeof(WaveChunkHeader), __LINE__);
@@ -1809,7 +1809,7 @@ static void print_vu_meter(signed int *perc, signed int *maxperc)
 }
 
 /* peak handler */
-static void compute_max_peak(u_char *data, size_t samples)
+static void compute_max_peak(uint8_t *data, size_t samples)
 {
 	signed int val, max, perc[2], max_peak[2];
 	static int run = 0;
@@ -2054,9 +2054,9 @@ static void do_test_position(void)
 /*
  */
 #ifdef CONFIG_SUPPORT_CHMAP
-static u_char *remap_data(u_char *data, size_t count)
+static uint8_t *remap_data(uint8_t *data, size_t count)
 {
-	static u_char *tmp, *src, *dst;
+	static uint8_t *tmp, *src, *dst;
 	static size_t tmp_size;
 	size_t sample_bytes = bits_per_sample / 8;
 	size_t step = bits_per_frame / 8;
@@ -2090,9 +2090,9 @@ static u_char *remap_data(u_char *data, size_t count)
 	return tmp;
 }
 
-static u_char **remap_datav(u_char **data, size_t count ATTRIBUTE_UNUSED)
+static uint8_t **remap_datav(uint8_t **data, size_t count ATTRIBUTE_UNUSED)
 {
-	static u_char **tmp;
+	static uint8_t **tmp;
 	unsigned int ch;
 
 	if (!hw_map)
@@ -2118,7 +2118,7 @@ static u_char **remap_datav(u_char **data, size_t count ATTRIBUTE_UNUSED)
  *  write function
  */
 
-static ssize_t pcm_write(u_char *data, size_t count)
+static ssize_t pcm_write(uint8_t *data, size_t count)
 {
 	ssize_t r;
 	ssize_t result = 0;
@@ -2157,7 +2157,7 @@ static ssize_t pcm_write(u_char *data, size_t count)
 	return result;
 }
 
-static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
+static ssize_t pcm_writev(uint8_t **data, unsigned int channels, size_t count)
 {
 	ssize_t r;
 	size_t result = 0;
@@ -2210,7 +2210,7 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
  *  read function
  */
 
-static ssize_t pcm_read(u_char *data, size_t rcount)
+static ssize_t pcm_read(uint8_t *data, size_t rcount)
 {
 	ssize_t r;
 	size_t result = 0;
@@ -2252,7 +2252,7 @@ abort:
 	return result > rcount ? rcount : result;
 }
 
-static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
+static ssize_t pcm_readv(uint8_t **data, unsigned int channels, size_t rcount)
 {
 	ssize_t r;
 	size_t result = 0;
@@ -2304,7 +2304,7 @@ abort:
  *  ok, let's play a .voc file
  */
 
-static ssize_t voc_pcm_write(u_char *data, size_t count)
+static ssize_t voc_pcm_write(uint8_t *data, size_t count)
 {
 	ssize_t result = count, r;
 	size_t size;
@@ -2329,9 +2329,9 @@ static ssize_t voc_pcm_write(u_char *data, size_t count)
 static void voc_write_silence(unsigned x)
 {
 	unsigned l;
-	u_char *buf;
+	uint8_t *buf;
 
-	buf = (u_char *) malloc(chunk_bytes);
+	buf = (uint8_t *) malloc(chunk_bytes);
 	if (buf == NULL) {
 		error(_("can't allocate buffer for silence"));
 		return;		/* not fatal error */
@@ -2372,15 +2372,15 @@ static void voc_play(int fd, int ofs, char *name)
 	VocVoiceData *vd;
 	VocExtBlock *eb;
 	size_t nextblock, in_buffer;
-	u_char *data, *buf;
+	uint8_t *data, *buf;
 	char was_extended = 0, output = 0;
-	u_short *sp, repeat = 0;
+	uint16_t *sp, repeat = 0;
 	off_t filepos = 0;
 
 #define COUNT(x)	nextblock -= x; in_buffer -= x; data += x
 #define COUNT1(x)	in_buffer -= x; data += x
 
-	data = buf = (u_char *)malloc(64 * 1024);
+	data = buf = (uint8_t *)malloc(64 * 1024);
 	buffer_pos = 0;
 	if (data == NULL) {
 		error(_("malloc error"));
@@ -2472,8 +2472,8 @@ static void voc_play(int fd, int ofs, char *name)
 #endif
 				break;
 			case 3:	/* a silence block, no data, only a count */
-				sp = (u_short *) data;
-				COUNT1(sizeof(u_short));
+				sp = (uint16_t *) data;
+				COUNT1(sizeof(uint16_t));
 				hwparams.rate = (int) (*data);
 				COUNT1(1);
 				hwparams.rate = 1000000 / (256 - hwparams.rate);
@@ -2488,8 +2488,8 @@ static void voc_play(int fd, int ofs, char *name)
 				voc_write_silence(*sp);
 				break;
 			case 4:	/* a marker for syncronisation, no effect */
-				sp = (u_short *) data;
-				COUNT1(sizeof(u_short));
+				sp = (uint16_t *) data;
+				COUNT1(sizeof(uint16_t));
 #if 0
 				d_printf("Marker %d\n", *sp);
 #endif
@@ -2503,8 +2503,8 @@ static void voc_play(int fd, int ofs, char *name)
 			case 6:	/* repeat marker, says repeatcount */
 				/* my specs don't say it: maybe this can be recursive, but
 				   I don't think somebody use it */
-				repeat = *(u_short *) data;
-				COUNT1(sizeof(u_short));
+				repeat = *(uint16_t *) data;
+				COUNT1(sizeof(uint16_t));
 #if 0
 				d_printf("Repeat loop %d times\n", repeat);
 #endif
@@ -2649,14 +2649,14 @@ static void begin_voc(int fd, size_t cnt)
 	}
 	bt.type = 1;
 	cnt += sizeof(VocVoiceData);	/* Channel_data block follows */
-	bt.datalen = (u_char) (cnt & 0xFF);
-	bt.datalen_m = (u_char) ((cnt & 0xFF00) >> 8);
-	bt.datalen_h = (u_char) ((cnt & 0xFF0000) >> 16);
+	bt.datalen = (uint8_t) (cnt & 0xFF);
+	bt.datalen_m = (uint8_t) ((cnt & 0xFF00) >> 8);
+	bt.datalen_h = (uint8_t) ((cnt & 0xFF0000) >> 16);
 	if (xwrite(fd, &bt, sizeof(VocBlockType)) != sizeof(VocBlockType)) {
 		error(_("write error"));
 		prg_exit(EXIT_FAILURE);
 	}
-	vd.tc = (u_char) (256 - (1000000 / hwparams.rate));
+	vd.tc = (uint8_t) (256 - (1000000 / hwparams.rate));
 	vd.pack = 0;
 	if (xwrite(fd, &vd, sizeof(VocVoiceData)) != sizeof(VocVoiceData)) {
 		error(_("write error"));
@@ -2671,8 +2671,8 @@ static void begin_wave(int fd, size_t cnt)
 	WaveFmtBody f;
 	WaveChunkHeader cf, cd;
 	int bits;
-	u_int tmp;
-	u_short tmp2;
+	uint32_t tmp;
+	uint16_t tmp2;
 
 	/* WAVE cannot handle greater than 32bit (signed?) int */
 	if (cnt == (size_t)-2)
@@ -2715,11 +2715,11 @@ static void begin_wave(int fd, size_t cnt)
 #if 0
 	tmp2 = (samplesize == 8) ? 1 : 2;
 	f.byte_p_spl = LE_SHORT(tmp2);
-	tmp = dsp_speed * hwparams.channels * (u_int) tmp2;
+	tmp = dsp_speed * hwparams.channels * (uint32_t) tmp2;
 #else
 	tmp2 = hwparams.channels * snd_pcm_format_physical_width(hwparams.format) / 8;
 	f.byte_p_spl = LE_SHORT(tmp2);
-	tmp = (u_int) tmp2 * hwparams.rate;
+	tmp = (uint32_t) tmp2 * hwparams.rate;
 #endif
 	f.byte_p_sec = LE_INT(tmp);
 	f.bit_p_spl = LE_SHORT(bits);
@@ -2786,9 +2786,9 @@ static void end_voc(int fd)
 	cnt += sizeof(VocVoiceData);	/* Channel_data block follows */
 	if (cnt > 0x00ffffff)
 		cnt = 0x00ffffff;
-	bt.datalen = (u_char) (cnt & 0xFF);
-	bt.datalen_m = (u_char) ((cnt & 0xFF00) >> 8);
-	bt.datalen_h = (u_char) ((cnt & 0xFF0000) >> 16);
+	bt.datalen = (uint8_t) (cnt & 0xFF);
+	bt.datalen_m = (uint8_t) ((cnt & 0xFF00) >> 8);
+	bt.datalen_h = (uint8_t) ((cnt & 0xFF0000) >> 16);
 	if (lseek(fd, length_seek, SEEK_SET) == length_seek)
 		xwrite(fd, &bt, sizeof(VocBlockType));
 }
@@ -2798,7 +2798,7 @@ static void end_wave(int fd)
 	WaveChunkHeader cd;
 	off_t length_seek;
 	off_t filelen;
-	u_int rifflen;
+	uint32_t rifflen;
 	
 	length_seek = sizeof(WaveHeader) +
 		      sizeof(WaveChunkHeader) +
@@ -3339,7 +3339,7 @@ static void playbackv_go(int* fds, unsigned int channels, size_t loaded, off_t c
 	size_t vsize;
 
 	unsigned int channel;
-	u_char *bufs[channels];
+	uint8_t *bufs[channels];
 
 	header(rtype, names[0]);
 	set_params();
@@ -3393,7 +3393,7 @@ static void capturev_go(int* fds, unsigned int channels, off_t count, int rtype,
 	ssize_t r;
 	unsigned int channel;
 	size_t vsize;
-	u_char *bufs[channels];
+	uint8_t *bufs[channels];
 
 	header(rtype, names[0]);
 	set_params();
