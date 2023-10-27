@@ -1656,12 +1656,6 @@ static void xrun(void)
 		prg_exit(EXIT_FAILURE);
 	}
 	if (snd_pcm_status_get_state(status) == SND_PCM_STATE_XRUN) {
-		if (fatal_errors) {
-			error(_("fatal %s: %s"),
-					stream == SND_PCM_STREAM_PLAYBACK ? _("underrun") : _("overrun"),
-					snd_strerror(res));
-			prg_exit(EXIT_FAILURE);
-		}
 		if (monotonic) {
 #ifdef HAVE_CLOCK_GETTIME
 			struct timespec now, diff, tstamp;
@@ -1686,6 +1680,12 @@ static void xrun(void)
 		if (verbose) {
 			fprintf(stderr, _("Status:\n"));
 			snd_pcm_status_dump(status, log);
+		}
+		if (fatal_errors) {
+			error(_("fatal %s: %s"),
+					stream == SND_PCM_STREAM_PLAYBACK ? _("underrun") : _("overrun"),
+					snd_strerror(res));
+			prg_exit(EXIT_FAILURE);
 		}
 		if ((res = snd_pcm_prepare(handle))<0) {
 			error(_("xrun: prepare error: %s"), snd_strerror(res));
