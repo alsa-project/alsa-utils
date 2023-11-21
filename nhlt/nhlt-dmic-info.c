@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
 		output = fopen(output_file, "w+");
 		if (output == NULL) {
 			fprintf(stderr, "Unable to create output file \"%s\": %s\n",
-						output_file, strerror(-errno));
+						output_file, strerror(errno));
 			res = EXIT_FAILURE;
 			goto out;
 		}

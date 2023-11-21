@@ -510,7 +510,7 @@ int main(int argc, char *argv[])
 			in = fopen(context->batch, "r");
 			if (in == NULL) {
 				fprintf(stderr, "%s: error failed to open file '%s': %s\n",
-					command, context->batch, strerror(-errno));
+					command, context->batch, strerror(errno));
 				my_exit(context, EXIT_FAILURE);
 			}
 		}
