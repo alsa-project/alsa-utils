@@ -96,7 +96,7 @@ static int load(const char *source_file, void **dst, size_t *dst_size)
 		fd = open(source_file, O_RDONLY);
 		if (fd < 0) {
 			fprintf(stderr, _("Unable to open input file '%s': %s\n"),
-				source_file, strerror(-errno));
+				source_file, strerror(errno));
 			return 1;
 		}
 	}
@@ -120,7 +120,7 @@ static int load(const char *source_file, void **dst, size_t *dst_size)
 		buf = buf2;
 	}
 	if (r < 0) {
-		fprintf(stderr, _("Read error: %s\n"), strerror(-errno));
+		fprintf(stderr, _("Read error: %s\n"), strerror(errno));
 		goto _err;
 	}
 
@@ -177,7 +177,7 @@ static int save(const char *output_file, void *buf, size_t size)
 		fd = open(fname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 		if (fd < 0) {
 			fprintf(stderr, _("Unable to open output file '%s': %s\n"),
-				fname, strerror(-errno));
+				fname, strerror(errno));
 			return 1;
 		}
 	}
@@ -194,11 +194,11 @@ static int save(const char *output_file, void *buf, size_t size)
 	}
 
 	if (r < 0) {
-		fprintf(stderr, _("Write error: %s\n"), strerror(-errno));
+		fprintf(stderr, _("Write error: %s\n"), strerror(errno));
 		if (fd != fileno(stdout)) {
 			if (fname && remove(fname))
 				fprintf(stderr, _("Unable to remove file %s: %s\n"),
-						fname, strerror(-errno));
+						fname, strerror(errno));
 			close(fd);
 		}
 		return 1;
@@ -209,7 +209,7 @@ static int save(const char *output_file, void *buf, size_t size)
 
 	if (fname && rename(fname, output_file)) {
 		fprintf(stderr, _("Unable to rename file '%s' to '%s': %s\n"),
-			fname, output_file, strerror(-errno));
+			fname, output_file, strerror(errno));
 		return 1;
 	}
 
