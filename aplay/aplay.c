@@ -3436,14 +3436,14 @@ static void playbackv(char **names, unsigned int count)
 
 	if (count == 1 && channels > 1) {
 		size_t len = strlen(names[0]);
-		char format[1024];
-		memcpy(format, names[0], len);
-		strcpy(format + len, ".%d");
-		len += 4;
+		char buf[len + 1];
+		strcpy(buf, names[0]);
+		/* 1 for "." + 3 for channel (<= 256) + 1 for null terminator */
+		len += 5;
 		names = malloc(sizeof(*names) * channels);
 		for (channel = 0; channel < channels; ++channel) {
 			names[channel] = malloc(len);
-			sprintf(names[channel], format, channel);
+			snprintf(names[channel], len, "%s.%d", buf, channel);
 		}
 		alloced = 1;
 	} else if (count != channels) {
@@ -3489,14 +3489,14 @@ static void capturev(char **names, unsigned int count)
 
 	if (count == 1) {
 		size_t len = strlen(names[0]);
-		char format[1024];
-		memcpy(format, names[0], len);
-		strcpy(format + len, ".%d");
-		len += 4;
+		char buf[len + 1];
+		strcpy(buf, names[0]);
+		/* 1 for "." + 3 for channel (<= 256) + 1 for null terminator */
+		len += 5;
 		names = malloc(sizeof(*names) * channels);
 		for (channel = 0; channel < channels; ++channel) {
 			names[channel] = malloc(len);
-			sprintf(names[channel], format, channel);
+			snprintf(names[channel], len, "%s.%d", buf, channel);
 		}
 		alloced = 1;
 	} else if (count != channels) {
