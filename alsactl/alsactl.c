@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
 	char *cfgfile = SYS_ASOUNDRC;
 	char *initfile = DATADIR "/init/00main";
 	char *pidfile = SYS_PIDFILE;
-	char *cardname, ncardname[16];
+	char *cardname, ncardname[21];
 	char *cmd;
 	char *const *extra_args;
 	const char *const *tmp;
