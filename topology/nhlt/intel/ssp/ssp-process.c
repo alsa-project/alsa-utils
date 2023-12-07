@@ -783,7 +783,7 @@ int ssp_get_params(struct intel_nhlt_params *nhlt, int dai_index, uint32_t *virt
 	if (ssp->ssp_prm[dai_index].quirks & SSP_INTEL_QUIRK_BT_SIDEBAND)
 		*device_type = NHLT_DEVICE_TYPE_SSP_BT_SIDEBAND;
 	else
-		*device_type = NHLT_DEVICE_TYPE_SSP_ANALOG;
+		*device_type = 0;
 	if (ssp->ssp_prm[dai_index].quirks & SSP_INTEL_QUIRK_RENDER_FEEDBACK) {
 		if (*direction == NHLT_ENDPOINT_DIRECTION_RENDER)
 			*direction = NHLT_ENDPOINT_DIRECTION_RENDER_WITH_LOOPBACK;
