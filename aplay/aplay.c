@@ -641,8 +641,12 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case OPT_SUBFORMAT:
+#if SND_LIB_VER(1, 2, 10) < SND_LIB_VERSION
 			rhwparams.subformat = snd_pcm_subformat_value(optarg);
 			if (rhwparams.subformat == SND_PCM_SUBFORMAT_UNKNOWN) {
+#else
+			if (strcasecmp(optarg, "std") != 0 && strcasecmp(optarg, "standard") != 0) {
+#endif
 				error(_("wrong extended subformat '%s'"), optarg);
 				prg_exit(EXIT_FAILURE);
 			}
