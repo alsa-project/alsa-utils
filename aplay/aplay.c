@@ -1494,14 +1494,16 @@ static void set_params(void)
 	err = snd_pcm_sw_params_set_stop_threshold(handle, swparams, stop_threshold);
 	assert(err >= 0);
 
-	err = snd_pcm_sw_params_set_tstamp_mode(handle, swparams, SND_PCM_TSTAMP_ENABLE);
-	assert(err >= 0);
+	if (verbose) {
+		err = snd_pcm_sw_params_set_tstamp_mode(handle, swparams, SND_PCM_TSTAMP_ENABLE);
+		assert(err >= 0);
 
-	if (monotonic)
-		err = snd_pcm_sw_params_set_tstamp_type(handle, swparams, SND_PCM_TSTAMP_TYPE_MONOTONIC);
-	else
-		err = snd_pcm_sw_params_set_tstamp_type(handle, swparams, SND_PCM_TSTAMP_TYPE_GETTIMEOFDAY);
-	assert(err >= 0);
+		if (monotonic)
+			err = snd_pcm_sw_params_set_tstamp_type(handle, swparams, SND_PCM_TSTAMP_TYPE_MONOTONIC);
+		else
+			err = snd_pcm_sw_params_set_tstamp_type(handle, swparams, SND_PCM_TSTAMP_TYPE_GETTIMEOFDAY);
+		assert(err >= 0);
+	}
 
 	if (snd_pcm_sw_params(handle, swparams) < 0) {
 		error(_("unable to install sw params:"));
