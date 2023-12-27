@@ -853,8 +853,12 @@ static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_
 			MIC_CONTROL_PDM_EN_A(1);
 		dmic->dmic_blob_pdm[i].mic_control = val;
 
-		/* if cfg->mfir_a */
-		if (di == 0) {
+		/*
+		 * Here we have to check the both FIRs if they are
+		 * configured as the later configured DAI may have changed
+		 * the configuration of the DAI configured earlier.
+		 */
+		if (cfg->mfir_a) {
 			/* FIR A */
 			fir_decim = MAX(cfg->mfir_a - 1, 0);
 			fir_length = MAX(cfg->fir_a_length - 1, 0);
@@ -863,24 +867,24 @@ static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_
 				FIR_CONTROL_A_DCCOMP(dccomp) |
 				FIR_CONTROL_A_MUTE(fir_mute) |
 				FIR_CONTROL_A_STEREO(stereo[i]);
-			dmic->dmic_blob_fir[i][di].fir_control = val;
+			dmic->dmic_blob_fir[i][0].fir_control = val;
 
 			val = FIR_CONFIG_A_FIR_DECIMATION(fir_decim) |
 				FIR_CONFIG_A_FIR_SHIFT(cfg->fir_a_shift) |
 				FIR_CONFIG_A_FIR_LENGTH(fir_length);
-			dmic->dmic_blob_fir[i][di].fir_config = val;
+			dmic->dmic_blob_fir[i][0].fir_config = val;
 
 			val = DC_OFFSET_LEFT_A_DC_OFFS(DCCOMP_TC0);
-			dmic->dmic_blob_fir[i][di].dc_offset_left = val;
+			dmic->dmic_blob_fir[i][0].dc_offset_left = val;
 
 			val = DC_OFFSET_RIGHT_A_DC_OFFS(DCCOMP_TC0);
-			dmic->dmic_blob_fir[i][di].dc_offset_right = val;
+			dmic->dmic_blob_fir[i][0].dc_offset_right = val;
 
 			val = OUT_GAIN_LEFT_A_GAIN(0);
-			dmic->dmic_blob_fir[i][di].out_gain_left = val;
+			dmic->dmic_blob_fir[i][0].out_gain_left = val;
 
 			val = OUT_GAIN_RIGHT_A_GAIN(0);
-			dmic->dmic_blob_fir[i][di].out_gain_right = val;
+			dmic->dmic_blob_fir[i][0].out_gain_right = val;
 
 			/* Write coef RAM A with scaled coefficient in reverse order */
 			length = cfg->fir_a_length;
@@ -889,14 +893,15 @@ static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_
 							     cfg->fir_a_scale, 31,
 							     DMIC_FIR_SCALE_Q, DMIC_HW_FIR_COEF_Q);
 				cu = FIR_COEF_A(ci);
-				/* blob_pdm[i].fir_coeffs[di][j] = cu; */
-				dmic->dmic_fir_array.fir_coeffs[i][di][j] = cu;
+				/* blob_pdm[i].fir_coeffs[0][j] = cu; */
+				dmic->dmic_fir_array.fir_coeffs[i][0][j] = cu;
 			}
 			dmic->dmic_fir_array.fir_len[0] = length;
-			dmic->dmic_fir_array.fir_len[1] = 0;
+		} else {
+			dmic->dmic_fir_array.fir_len[0] = 0;
 		}
 
-		if (di == 1) {
+		if (cfg->mfir_b) {
 			/* FIR B */
 			fir_decim = MAX(cfg->mfir_b - 1, 0);
 			fir_length = MAX(cfg->fir_b_length - 1, 0);
@@ -905,23 +910,23 @@ static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_
 				FIR_CONTROL_B_DCCOMP(dccomp) |
 				FIR_CONTROL_B_MUTE(fir_mute) |
 				FIR_CONTROL_B_STEREO(stereo[i]);
-			dmic->dmic_blob_fir[i][di].fir_control = val;
+			dmic->dmic_blob_fir[i][1].fir_control = val;
 
 			val = FIR_CONFIG_B_FIR_DECIMATION(fir_decim) |
 				FIR_CONFIG_B_FIR_SHIFT(cfg->fir_b_shift) |
 				FIR_CONFIG_B_FIR_LENGTH(fir_length);
-			dmic->dmic_blob_fir[i][di].fir_config = val;
+			dmic->dmic_blob_fir[i][1].fir_config = val;
 			val = DC_OFFSET_LEFT_B_DC_OFFS(DCCOMP_TC0);
-			dmic->dmic_blob_fir[i][di].dc_offset_left = val;
+			dmic->dmic_blob_fir[i][1].dc_offset_left = val;
 
 			val = DC_OFFSET_RIGHT_B_DC_OFFS(DCCOMP_TC0);
-			dmic->dmic_blob_fir[i][di].dc_offset_right = val;
+			dmic->dmic_blob_fir[i][1].dc_offset_right = val;
 
 			val = OUT_GAIN_LEFT_B_GAIN(0);
-			dmic->dmic_blob_fir[i][di].out_gain_left = val;
+			dmic->dmic_blob_fir[i][1].out_gain_left = val;
 
 			val = OUT_GAIN_RIGHT_B_GAIN(0);
-			dmic->dmic_blob_fir[i][di].out_gain_right = val;
+			dmic->dmic_blob_fir[i][1].out_gain_right = val;
 
 			/* Write coef RAM B with scaled coefficient in reverse order */
 			length = cfg->fir_b_length;
@@ -930,10 +935,12 @@ static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_
 							     cfg->fir_b_scale, 31,
 							     DMIC_FIR_SCALE_Q, DMIC_HW_FIR_COEF_Q);
 				cu = FIR_COEF_B(ci);
-				/* blob_pdm[i].fir_coeffs[di][j] = cu; */
-				dmic->dmic_fir_array.fir_coeffs[i][di][j] = cu;
+				/* blob_pdm[i].fir_coeffs[1][j] = cu; */
+				dmic->dmic_fir_array.fir_coeffs[i][1][j] = cu;
 			}
 			dmic->dmic_fir_array.fir_len[1] = length;
+		} else {
+			dmic->dmic_fir_array.fir_len[1] = 0;
 		}
 	}
 
