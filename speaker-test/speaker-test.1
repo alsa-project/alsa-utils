@@ -94,10 +94,16 @@ Use number of periods.  The default value is 4.
 stream of \fIRATE\fP Hz
 
 .TP
-\fB\-t\fP | \fB\-\-test\fP \fBpink\fP|\fBsine\fP|\fBwav\fP
+\fB\-t\fP | \fB\-\-test\fP \fBpink\fP|\fBst2095\fP|\fBsine\fP|\fBwav\fP
 \fB\-t pink\fP means use pink noise (default).
 
 Pink noise is perceptually uniform noise -- that is, it sounds like every frequency at once.  If you can hear any tone it may indicate resonances in your speaker system or room.
+
+\fB\-t st2095\fP means use bandlimited pink noise at -18.5dB AES FS, generated according to SMPTE ST-2095:1-2015.
+In addition to speaker localization it may be used for system calibration, for example 85dB for thater drivers, with an extra +10dB for subwoofers.
+Per the spec, it is intended "to be used in calibrating the sound pressure level and
+electroacoustic response of a cinema B-chain system."
+Note that sampling rates less than 48KHz are outside the scope of the spec, and an attempt will be made to construct a reduced rate filter.
 
 \fB\-t sine\fP means to use sine wave.
 
@@ -180,3 +186,4 @@ Play in the order of front\-right and front-left from the front PCM
 The speaker\-test program was written by James Courtier-Dutton.
 Pink noise support was added by Nathan Hurst.
 Further extensions by Takashi Iwai.
+SMPTE ST-2095:1 band-limited pink noise added by Rick Sayre.
