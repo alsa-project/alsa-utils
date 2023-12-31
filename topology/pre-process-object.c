@@ -1603,6 +1603,7 @@ pre_process_object_variables_expand_fcn(snd_config_t **dst, const char *str, voi
 	snd_config_t *object_cfg = tplg_pp->current_obj_cfg;
 	snd_config_t *conf_defines;
 	const char *object_id;
+	const char *val;
 	int ret;
 
 	ret = snd_config_search(tplg_pp->input_cfg, "Define", &conf_defines);
@@ -1614,14 +1615,30 @@ pre_process_object_variables_expand_fcn(snd_config_t **dst, const char *str, voi
 	if (ret >= 0)
 		return ret;
 
+	/* No global define found, proceeed to object attribute search */
 	if (snd_config_get_id(object_cfg, &object_id) < 0)
 		return -EINVAL;
 
 	/* find variable from object attribute values if not found in global definitions */
 	ret = pre_process_find_variable(dst, str, object_cfg);
-	if (ret < 0)
+	if (ret < 0) {
 		SNDERR("Failed to find definition for attribute %s in '%s' object\n",
 		       str, object_id);
+		return ret;
+	}
+
+	/* the extracted value may contain a nested $-expression */
+	if (snd_config_get_string(*dst, &val) >= 0) {
+		if (val[0] == '$') {
+			char *var = strdup(val);
+
+			snd_config_delete(*dst);
+			ret = snd_config_evaluate_string(dst, var,
+							 pre_process_object_variables_expand_fcn,
+							 tplg_pp);
+			free(var);
+		}
+	}
 
 	return ret;
 }
