@@ -1641,7 +1641,7 @@ pre_process_object_variables_expand_fcn(snd_config_t **dst, const char *str, voi
  * or '\0'.
  *
  * In '$[<contents>]' case all letters but '[' and ']' are allow in
- * any sequence. Nested '[]' is also allowed if the number if '[' and
+ * any sequence. Nested '[]' is also allowed if the number of '[' and
  * ']' match.
  *
  * The function modifies *stringp, and *prefix - if not NULL - points
