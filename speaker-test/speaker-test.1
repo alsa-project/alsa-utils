@@ -99,8 +99,10 @@ stream of \fIRATE\fP Hz
 
 Pink noise is perceptually uniform noise -- that is, it sounds like every frequency at once.  If you can hear any tone it may indicate resonances in your speaker system or room.
 
-\fB\-t st2095\fP means use bandlimited pink noise at -18.5dB AES FS, generated according to SMPTE 2095-1:2015
+\fB\-t st2095\fP means use bandlimited pink noise at -18.5dB AES FS, generated according to SMPTE ST-2095:1-2015.
 In addition to speaker localization it may be used for system calibration, for example 85dB for thater drivers, with an extra +10dB for subwoofers.
+Per the spec, it is intended "to be used in calibrating the sound pressure level and
+electroacoustic response of a cinema B-chain system."
 
 \fB\-t sine\fP means to use sine wave.
 
