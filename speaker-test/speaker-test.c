@@ -25,7 +25,11 @@
  * Some cleanup from Daniel Caujolle-Bert <segfault@club-internet.fr>
  * Pink noise option added Nathan Hurst, 
  *   based on generator by Phil Burk (pink.c)
+ * ST-2095 noise option added Rick Sayre, 
+ *   based on generator specified by SMPTE ST-2095:1-2015
  *
+ * Changelog:
+ *   0.0.9 Added support for ST-2095 band-limited pink noise output.
  * Changelog:
  *   0.0.8 Added support for pink noise output.
  * Changelog:
@@ -55,6 +59,7 @@
 #include <sys/time.h>
 #include <math.h>
 #include "pink.h"
+#include "st2095.h"
 #include "gettext.h"
 #include "version.h"
 #include "os_compat.h"
@@ -71,6 +76,7 @@ enum {
   TEST_PINK_NOISE = 1,
   TEST_SINE,
   TEST_WAV,
+  TEST_ST2095_NOISE,
   TEST_PATTERN,
 };
 
@@ -409,6 +415,20 @@ static value_t generate_pink_noise(void *arg)
   value_t res;
 
   res.f = generate_pink_noise_sample(pink) * generator_scale;
+  if (format != SND_PCM_FORMAT_FLOAT_LE)
+    res.i = res.f * INT32_MAX;
+  return res;
+}
+
+/* Band-Limited Pink Noise, per SMPTE ST 2095-1
+ * beyond speaker localization, this can be used for setting loudness to standard
+ */
+static value_t generate_st2095_noise(void *arg)
+{
+  st2095_noise_t *st2095 = arg;
+  value_t res;
+
+  res.f = generate_st2095_noise_sample(st2095);
   if (format != SND_PCM_FORMAT_FLOAT_LE)
     res.i = res.f * INT32_MAX;
   return res;
@@ -853,10 +873,14 @@ static int write_buffer(snd_pcm_t *handle, uint8_t *ptr, int cptr)
 static int pattern;
 static sine_t sine;
 static pink_noise_t pink;
+static st2095_noise_t st2095;
 
 static void init_loop(void)
 {
   switch (test_type) {
+  case TEST_ST2095_NOISE:
+    initialize_st2095_noise(&st2095, rate);
+    break;
   case TEST_PINK_NOISE:
     initialize_pink_noise(&pink, 16);
     break;
@@ -901,7 +925,12 @@ static int write_loop(snd_pcm_t *handle, int channel, int periods, uint8_t *fram
       do_generate(frames, channel, period_size, generate_pink_noise, &pink);
     else if (test_type == TEST_PATTERN)
       do_generate(frames, channel, period_size, generate_pattern, &pattern);
-    else
+    else if (test_type == TEST_ST2095_NOISE) {
+      reset_st2095_noise_measurement(&st2095);
+      do_generate(frames, channel, period_size, generate_st2095_noise, &st2095);
+      printf(_("\tSMPTE ST-2095 noise batch was %2.2fdB RMS\n"), 
+          compute_st2095_noise_measurement(&st2095, period_size));
+    } else
       do_generate(frames, channel, period_size, generate_sine, &sine);
 
     if ((err = write_buffer(handle, frames, period_size)) < 0)
@@ -953,7 +982,7 @@ static void help(void)
 	   "-b,--buffer	ring buffer size in us\n"
 	   "-p,--period	period size in us\n"
 	   "-P,--nperiods	number of periods\n"
-	   "-t,--test	pink=use pink noise, sine=use sine wave, wav=WAV file\n"
+	   "-t,--test	pink=use pink noise, sine=use sine wave, st2095=use SMPTE ST-2095 noise, wav=WAV file\n"
 	   "-l,--nloops	specify number of loops to test, 0 = infinite\n"
 	   "-s,--speaker	single speaker test. Values 1=Left, 2=right, etc\n"
 	   "-w,--wavfile	Use the given WAV file as a test sound\n"
@@ -1082,9 +1111,16 @@ int main(int argc, char *argv[]) {
     case 't':
       if (*optarg == 'p')
 	test_type = TEST_PINK_NOISE;
-      else if (*optarg == 's')
-	test_type = TEST_SINE;
-      else if (*optarg == 'w')
+      else if (*optarg == 's') {
+        if (optarg[1] == 'i')
+          test_type = TEST_SINE;
+        else if (optarg[1] == 't')
+          test_type = TEST_ST2095_NOISE;
+        else {
+            fprintf(stderr, _("Invalid test type %s\n"), optarg);
+            exit(1);
+        }
+      } else if (*optarg == 'w')
 	test_type = TEST_WAV;
       else if (*optarg == 't')
 	test_type = TEST_PATTERN;
@@ -1160,6 +1196,9 @@ int main(int argc, char *argv[]) {
   printf(_("Playback device is %s\n"), device);
   printf(_("Stream parameters are %iHz, %s, %i channels\n"), rate, snd_pcm_format_name(format), channels);
   switch (test_type) {
+  case TEST_ST2095_NOISE:
+    printf(_("Using SMPTE ST-2095 -18.5dB AES FS band-limited pink noise\n"));
+    break;
   case TEST_PINK_NOISE:
     printf(_("Using 16 octaves of pink noise\n"));
     break;
