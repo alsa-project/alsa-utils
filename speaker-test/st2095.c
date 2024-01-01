@@ -48,10 +48,13 @@ void initialize_st2095_noise( st2095_noise_t *st2095, int sample_rate) {
     // Calculate omegaT for matched Z transform highpass filters
     st2095->w0t = 2.0 * M_PI * ST2095_HPFC / (float)sample_rate;
 
-    //  Limit LpFc <= Nyquist
+    //  Limit LpFc <= Nyquist (actually lower, based on 48 vs 22.4 KHz spec cutoff)
+    //          The spec says the filter begins at 22.4KHz, if we ask for a Nyquist-impossible
+    //          sampling rate, compute something with the same relationship
     st2095->LpFc = ST2095_LPFC;
-    if (st2095->LpFc > sample_rate/2.0)
-        st2095->LpFc = sample_rate/2.0;
+    float rateratio = 48000. / ST2095_LPFC;
+    if (st2095->LpFc > sample_rate/rateratio)
+        st2095->LpFc = sample_rate/rateratio;
 
     // Calculate k and k^2 for bilinear transform lowpass filters
     st2095->k = tanf(( 2.0 * M_PI * st2095->LpFc / (float)sample_rate ) / 2.0);

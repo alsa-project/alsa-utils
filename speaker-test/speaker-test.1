@@ -103,6 +103,7 @@ Pink noise is perceptually uniform noise -- that is, it sounds like every freque
 In addition to speaker localization it may be used for system calibration, for example 85dB for thater drivers, with an extra +10dB for subwoofers.
 Per the spec, it is intended "to be used in calibrating the sound pressure level and
 electroacoustic response of a cinema B-chain system."
+Note that sampling rates less than 48KHz are outside the scope of the spec, and an attempt will be made to construct a reduced rate filter.
 
 \fB\-t sine\fP means to use sine wave.
 
