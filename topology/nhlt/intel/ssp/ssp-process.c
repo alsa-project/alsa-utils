@@ -938,6 +938,7 @@ int ssp_set_params(struct intel_nhlt_params *nhlt, const char *dir, int dai_inde
 					ssp->ssp_prm[ssp->ssp_count].quirks |= SSP_INTEL_QUIRK_RENDER_FEEDBACK;
 			} else {
 				fprintf(stderr, "ssp_set_params(): unknown quirk %s\n", token);
+				free(buf);
 				return -EINVAL;
 			}
 
