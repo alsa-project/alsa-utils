@@ -248,6 +248,7 @@ static int nhlt_to_json(FILE *out, const char *nhlt_file)
 	if (fd < 0) {
 		_errno = errno;
 		fprintf(stderr, "Unable to open file '%s': %s\n", nhlt_file, strerror(errno));
+		free(buf);
 		return _errno;
 	}
 	pos = 0;
