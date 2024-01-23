@@ -27,9 +27,10 @@
  *   based on generator by Phil Burk (pink.c)
  * ST-2095 noise option added Rick Sayre, 
  *   based on generator specified by SMPTE ST-2095:1-2015
+ *   Also switched to stable harmonic oscillator for sine
  *
  * Changelog:
- *   0.0.9 Added support for ST-2095 band-limited pink noise output.
+ *   0.0.9 Added support for ST-2095 band-limited pink noise output, switched to harmonic oscillator for sine
  * Changelog:
  *   0.0.8 Added support for pink noise output.
  * Changelog:
@@ -379,16 +380,17 @@ static void do_generate(uint8_t *frames, int channel, int count,
  * Sine generator
  */
 typedef struct {
-  double phase;
-  double max_phase;
-  double step;
+  double a;
+  double s;
+  double c;
 } sine_t;
 
 static void init_sine(sine_t *sine)
 {
-  sine->phase = 0;
-  sine->max_phase = 1.0 / freq;
-  sine->step = 1.0 / (double)rate;
+  // symplectic integration for fast, stable harmonic oscillator
+  sine->a = 2.0*M_PI * freq / rate;
+  sine->c = 1.0;
+  sine->s = 0.0;
 }
 
 static value_t generate_sine(void *arg)
@@ -396,13 +398,13 @@ static value_t generate_sine(void *arg)
   sine_t *sine = arg;
   value_t res;
 
-  res.f = sin((sine->phase * 2 * M_PI) / sine->max_phase - M_PI);
-  res.f *= generator_scale;
+  // update the oscillator
+  sine->c -= sine->a * sine->s;
+  sine->s += sine->a * sine->c;
+
+  res.f = sine->s * generator_scale;
   if (format != SND_PCM_FORMAT_FLOAT_LE)
     res.i = res.f * INT32_MAX;
-  sine->phase += sine->step;
-  if (sine->phase >= sine->max_phase)
-    sine->phase -= sine->max_phase;
   return res;
 }
 
