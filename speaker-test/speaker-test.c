@@ -51,6 +51,7 @@
 #include <getopt.h>
 #include <inttypes.h>
 #include <ctype.h>
+#include <limits.h>
 #include "bswap.h"
 #include <signal.h>
 
@@ -105,7 +106,7 @@ static unsigned int       rate        = 48000;	            /* stream rate */
 static unsigned int       channels    = 1;	            /* count of channels */
 static unsigned int       speaker     = 0;	            /* count of channels */
 static unsigned int       buffer_time = 0;	            /* ring buffer length in us */
-static unsigned int       period_time = 0;	            /* period time in us */
+static unsigned int	  period_time = UINT_MAX;	            /* period time in us */
 static unsigned int       nperiods    = 4;                  /* number of periods */
 static double             freq        = 440.0;              /* sinusoidal wave frequency in Hz */
 static int                test_type   = TEST_PINK_NOISE;    /* Test type. 1 = noise, 2 = sine wave */
@@ -508,11 +509,15 @@ static int set_hwparams(snd_pcm_t *handle, snd_pcm_hw_params_t *params, snd_pcm_
   printf(_("Buffer size range from %lu to %lu\n"),buffer_size_min, buffer_size_max);
   printf(_("Period size range from %lu to %lu\n"),period_size_min, period_size_max);
   if (period_time > 0) {
-    printf(_("Requested period time %u us\n"), period_time);
-    err = snd_pcm_hw_params_set_period_time_near(handle, params, &period_time, NULL);
+    unsigned int tmp = period_time;
+    if (period_time > 0 && period_time < UINT_MAX)
+      printf(_("Requested period time %u us\n"), period_time);
+    else
+      tmp = 250000; /* 0.25 second */
+    err = snd_pcm_hw_params_set_period_time_near(handle, params, &tmp, NULL);
     if (err < 0) {
       fprintf(stderr, _("Unable to set period time %u us for playback: %s\n"),
-	     period_time, snd_strerror(err));
+	     tmp, snd_strerror(err));
       return err;
     }
   }
