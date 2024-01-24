@@ -398,13 +398,13 @@ static value_t generate_sine(void *arg)
   sine_t *sine = arg;
   value_t res;
 
-  // update the oscillator
-  sine->c -= sine->a * sine->s;
-  sine->s += sine->a * sine->c;
-
   res.f = sine->s * generator_scale;
   if (format != SND_PCM_FORMAT_FLOAT_LE)
     res.i = res.f * INT32_MAX;
+
+  // update the oscillator
+  sine->c -= sine->a * sine->s;
+  sine->s += sine->a * sine->c;
   return res;
 }
 
