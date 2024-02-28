@@ -781,7 +781,10 @@ static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_
 		}
 	}
 
-	if (dmic->dmic_prm[di].driver_version == 2 || dmic->dmic_prm[di].driver_version == 3) {
+	if (dmic->dmic_prm[di].driver_version >= 2) {
+		if (dmic->dmic_prm[di].driver_version >= 4)
+			bfth = 0;
+
 		if (di == 0) {
 			ipm_helper2(dmic, source, &ipm);
 			val = OUTCONTROL0_TIE(0) |
