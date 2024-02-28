@@ -1232,7 +1232,12 @@ int dmic_set_params(struct intel_nhlt_params *nhlt, int dai_index, int driver_ve
 		return -EINVAL;
 
 	if (dai_index >= DMIC_HW_FIFOS) {
-		fprintf(stderr, "set_dmic_data illegal dai index\n");
+		fprintf(stderr, "%s: illegal dai index %d \n", __func__, dai_index);
+		return -EINVAL;
+	}
+
+	if (driver_version < 1 || driver_version > 5) {
+		fprintf(stderr, "%s: illegal driver version %d\n", __func__, driver_version);
 		return -EINVAL;
 	}
 
