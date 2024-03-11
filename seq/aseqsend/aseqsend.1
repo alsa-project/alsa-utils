@@ -1,0 +1,37 @@
+.TH ASEQSEND 1 "11 Mar 2024"
+
+.SH NAME
+aseqsend \- send hex encoded MIDI messages to selected ALSA MIDI seqencer port
+
+.SH SYNOPSIS
+.B aseqsend
+\fI\-p client:port\fP\fI\ "hex encoded bytestring" \fP
+
+.SH DESCRIPTION
+.B aseqsend
+is a command-line utility that converts string of hexadecimal characters into one or a several MIDI messages and sends it to selected ALSA MIDI seqencer port
+
+.SH OPTIONS
+
+.TP
+.I \-h
+Prints a list of options.
+
+.TP
+.I \-V
+Prints the current version.
+
+.TP
+.I \-l
+Prints a list of possible output ports.
+
+.TP
+.I \-v
+Prints number of bytes actually sent
+
+A client can be specified by its number, its name, or a prefix of its
+name.  A port is specified by its number; for port 0 of a client, the
+":0" part of the port specification can be omitted.
+
+.SH AUTHOR
+Miroslav Kovac <mixxoo@gmail.com>
