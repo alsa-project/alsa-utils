@@ -14,7 +14,7 @@ jobs:
         dnf -y install @development-tools libtool bzip2 gettext-devel ncurses-devel
 
     - name: Checkout alsa-lib
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: alsa-project/alsa-lib
         ref: master
@@ -41,7 +41,7 @@ jobs:
         make install
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: alsa-utils
     - name: Checkout all tags
@@ -128,7 +128,7 @@ jobs:
         apt-get install -y git build-essential pkg-config m4 autoconf automake libtool gettext ncurses-dev
 
     - name: Checkout alsa-lib
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: alsa-project/alsa-lib
         ref: master
@@ -149,7 +149,7 @@ jobs:
         make install
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Configure
       run: |
         mv configure.ac configure.ac.old
