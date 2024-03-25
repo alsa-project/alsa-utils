@@ -2719,11 +2719,11 @@ static void begin_wave(int fd, size_t cnt)
 	case SND_PCM_FORMAT_S16_LE:
 		bits = 16;
 		break;
+	case SND_PCM_FORMAT_S24_LE: /* S24_LE is 24 bits stored in 32 bit width with 8 bit padding */
 	case SND_PCM_FORMAT_S32_LE:
-        case SND_PCM_FORMAT_FLOAT_LE:
+	case SND_PCM_FORMAT_FLOAT_LE:
 		bits = 32;
 		break;
-	case SND_PCM_FORMAT_S24_LE:
 	case SND_PCM_FORMAT_S24_3LE:
 		bits = 24;
 		break;
