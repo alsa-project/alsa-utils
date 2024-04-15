@@ -461,6 +461,20 @@ if [ -d /sys/bus/acpi/devices ]; then
     done
 fi
 
+# Check for SoundWire ACPI _adr device status
+if [ -d /sys/bus/acpi/devices ]; then
+	for f in /sys/bus/acpi/devices/*/adr; do
+		ACPI_ADR=$(cat $f 2>/dev/null);
+		if [[ "$ACPI_ADR" -ne 0 ]]; then
+			case $ACPI_ADR in
+				0x??????025d*) echo "Realtek $ACPI_ADR" >>$TEMPDIR/sdwstatus.tmp;;
+				0x??????01fa*) echo "Cirrus Logic $ACPI_ADR" >>$TEMPDIR/sdwstatus.tmp;;
+				0x??????0102*) echo "TI $ACPI_ADR" >>$TEMPDIR/sdwstatus.tmp;;
+			esac
+		fi
+	done
+fi
+
 awk '{ print $2 " (card " $1 ")" }' < /proc/asound/modules > $TEMPDIR/alsamodules.tmp 2> /dev/null
 cat /proc/asound/cards > $TEMPDIR/alsacards.tmp
 if [[ ! -z "$LSPCI" ]]; then
@@ -526,6 +540,12 @@ echo "!!ACPI Device Status Information" >> $FILE
 echo "!!---------------" >> $FILE
 echo "" >> $FILE
 cat $TEMPDIR/acpidevicestatus.tmp >> $FILE
+echo "" >> $FILE
+echo "" >> $FILE
+echo "!!ACPI SoundWire Device Status Information" >> $FILE
+echo "!!---------------" >> $FILE
+echo "" >> $FILE
+cat $TEMPDIR/sdwstatus.tmp >> $FILE
 echo "" >> $FILE
 echo "" >> $FILE
 echo "!!Kernel Information" >> $FILE
