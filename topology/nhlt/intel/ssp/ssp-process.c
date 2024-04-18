@@ -156,7 +156,7 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 
 	/* reset SSP settings */
 	/* sscr0 dynamic settings are DSS, EDSS, SCR, FRDC, ECS */
-	ssp->ssp_blob[di][hwi].ssc0 = SSCR0_PSP | SSCR0_RIM | SSCR0_TIM;
+	ssp->ssp_blob[di][hwi].ssc0 = SSCR0_MOD | SSCR0_PSP | SSCR0_RIM | SSCR0_TIM;
 
 	/* sscr1 dynamic settings are SFRMDIR, SCLKDIR, SCFR */
 	ssp->ssp_blob[di][hwi].ssc1 = SSCR1_TTE | SSCR1_TTELP | SSCR1_TRAIL | SSCR1_RSRE |
