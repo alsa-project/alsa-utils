@@ -332,7 +332,7 @@ static void change_volume_relative(struct control *control, int delta, unsigned 
 	double (*get_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t);
 	int (*set_func)(snd_mixer_elem_t *, snd_mixer_selem_channel_id_t, double, int);
 	double left = 0, right = 0;
-	int dir;
+	int dir = delta > 0 ? 1 : -1;
 
 	if (!(control->flags & HAS_VOLUME_1))
 		channels = LEFT;
@@ -343,16 +343,15 @@ static void change_volume_relative(struct control *control, int delta, unsigned 
 		get_func = get_normalized_capture_volume;
 		set_func = set_normalized_capture_volume;
 	}
-	if (channels & LEFT)
-		left = get_func(control->elem, control->volume_channels[0]);
-	if (channels & RIGHT)
-		right = get_func(control->elem, control->volume_channels[1]);
-	dir = delta > 0 ? 1 : -1;
 	if (channels & LEFT) {
+		left = get_func(control->elem, control->volume_channels[0]);
+		if (left == 0 && dir == -1) return;
 		left = clamp_volume(left + delta / 100.0);
 		set_func(control->elem, control->volume_channels[0], left, dir);
 	}
 	if (channels & RIGHT) {
+		right = get_func(control->elem, control->volume_channels[1]);
+		if (right == 0 && dir == -1) return;
 		right = clamp_volume(right + delta / 100.0);
 		set_func(control->elem, control->volume_channels[1], right, dir);
 	}
