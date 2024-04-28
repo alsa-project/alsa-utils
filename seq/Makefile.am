@@ -1,1 +1,1 @@
-SUBDIRS=aconnect aplaymidi aseqdump aseqnet
+SUBDIRS=aconnect aplaymidi aseqdump aseqnet aseqsend
