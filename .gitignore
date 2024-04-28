@@ -49,6 +49,7 @@ seq/aconnect/aconnect
 seq/aplaymidi/aplaymidi
 seq/aplaymidi/arecordmidi
 seq/aseqdump/aseqdump
+seq/aseqsend/aseqsend
 seq/aseqnet/aseqnet
 speaker-test/speaker-test
 topology/alsatplg.1
