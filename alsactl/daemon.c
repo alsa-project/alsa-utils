@@ -79,6 +79,8 @@ static void card_free(struct card **card)
 {
 	struct card *c = *card;
 
+	if (c == NULL)
+		return;
 	free_list(&c->blacklist);
 	free_list(&c->whitelist);
 	if (c->handle)
