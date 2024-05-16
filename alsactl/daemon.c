@@ -451,8 +451,11 @@ out:
 	free(pfd);
 	remove(pidfile);
 	if (cards) {
-		for (i = 0; i < count; i++)
+		for (i = 0; i < count; i++) {
+			if (cards[i] == NULL)
+				continue;
 			card_free(&cards[i]);
+		}
 		free(cards);
 	}
 	return 0;
