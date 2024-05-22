@@ -921,6 +921,172 @@ static int pre_process_arrays(struct tplg_pre_processor *tplg_pp, snd_config_t *
 	return 0;
 }
 
+static int pre_process_subtree_copy(struct tplg_pre_processor *tplg_pp, snd_config_t *curr,
+				    snd_config_t *top)
+{
+	snd_config_iterator_t i, next;
+	snd_config_t *subtrees;
+	int ret;
+
+	ret = snd_config_search(curr, "SubTreeCopy", &subtrees);
+	if (ret < 0)
+		return 0;
+
+	snd_config_for_each(i, next, subtrees) {
+		snd_config_t *n, *source_cfg, *target_cfg, *type_cfg;
+		snd_config_t *source_tree, *target_tree, *tmp, *subtree_cfg;
+		const char *id, *source_id;
+		const char *type = NULL;
+		const char *target_id = NULL;
+		bool override = false;
+
+		n = snd_config_iterator_entry(i);
+		ret = snd_config_get_id(n, &id);
+		if (ret < 0) {
+			SNDERR("Failed to get ID for subtree copy\n");
+			return ret;
+		}
+
+		/* get the type of copy ex: override/extend if set, by default override is false */
+		ret = snd_config_search(n, "type", &type_cfg);
+		if (ret >= 0) {
+			ret = snd_config_get_string(type_cfg, &type);
+			if (ret >= 0) {
+				if (strcmp(type, "override") && strcmp(type, "extend")) {
+					SNDERR("Invalid value for sub tree copy type %s\n", type);
+					return ret;
+				}
+
+				if (!strcmp(type, "override"))
+					override = true;
+			}
+		}
+
+		ret = snd_config_search(n, "source", &source_cfg);
+		if (ret < 0) {
+			SNDERR("failed to get source config for subtree %s\n", id);
+			return ret;
+		}
+
+		/* if the target node is not set, the subtree will be copied to current node */
+		ret = snd_config_search(n, "target", &target_cfg);
+		if (ret >= 0) {
+			snd_config_t *temp_target;
+			char *s;
+
+			ret = snd_config_get_string(target_cfg, &target_id);
+			if (ret < 0) {
+				SNDERR("Invalid target id for subtree %s\n", id);
+				return ret;
+			}
+
+			/*
+			 * create a temporary node with target_id and merge with top to avoid
+			 * failure in case the target node ID doesn't exist already
+			 */
+			s = tplg_snprintf("%s {}", target_id);
+			if (!s)
+				return -ENOMEM;
+
+			ret = snd_config_load_string(&temp_target, s, 0);
+			free(s);
+			if (ret < 0) {
+				SNDERR("Cannot create temp node with target id %s\n", target_id);
+				return ret;
+			}
+
+			ret = snd_config_merge(top, temp_target, false);
+			if (ret < 0) {
+				SNDERR("Cannot merge temp node with target id %s\n", target_id);
+				return ret;
+			}
+
+			ret = snd_config_search(top, target_id, &target_tree);
+			if (ret < 0) {
+				SNDERR("failed to get target tree %s\n", target_id);
+				return ret;
+			}
+		} else {
+			target_tree = curr;
+		}
+
+		/* get the source tree node */
+		ret = snd_config_get_string(source_cfg, &source_id);
+		if (ret < 0) {
+			SNDERR("Invalid source node id for subtree %s\n", id);
+			return ret;
+		}
+
+		ret = snd_config_search(top, source_id, &source_tree);
+		if (ret < 0) {
+			SNDERR("failed to get source tree %s\n", source_id);
+			return ret;
+		}
+
+		/* get the subtree to be merged */
+		ret = snd_config_search(n, "tree", &subtree_cfg);
+		if (ret < 0)
+			subtree_cfg = NULL;
+
+		/* make a temp copy of the source tree */
+		ret = snd_config_copy(&tmp, source_tree);
+		if (ret < 0) {
+			SNDERR("failed to copy source tree for subtreecopy %s\n", id);
+			return ret;
+		}
+
+		/* merge the current block with the source tree */
+		ret = snd_config_merge(tmp, subtree_cfg, override);
+		if (ret < 0) {
+			snd_config_delete(tmp);
+			SNDERR("Failed to merge source tree w/ subtree %s\n", id);
+			return ret;
+		}
+
+		/* merge the merged block to the target tree */
+		ret = snd_config_merge(target_tree, tmp, override);
+		if (ret < 0) {
+			snd_config_delete(tmp);
+			SNDERR("Failed to merge subtree %s w/ target\n", id);
+			return ret;
+		}
+	}
+
+	/* all subtree copies have been processed, remove the node */
+	snd_config_delete(subtrees);
+
+	return 0;
+}
+
+static int pre_process_subtree_copies(struct tplg_pre_processor *tplg_pp, snd_config_t *top,
+				      snd_config_t *curr)
+{
+	snd_config_iterator_t i, next;
+	int ret;
+
+	if (snd_config_get_type(curr) != SND_CONFIG_TYPE_COMPOUND)
+		return 0;
+
+	/* process subtreecopies at this node */
+	ret = pre_process_subtree_copy(tplg_pp, curr, top);
+	if (ret < 0)
+		return ret;
+
+	/* process subtreecopies at all child nodes */
+	snd_config_for_each(i, next, curr) {
+		snd_config_t *n;
+
+		n = snd_config_iterator_entry(i);
+
+		/* process subtreecopies at this node */
+		ret = pre_process_subtree_copies(tplg_pp, top, n);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
 #endif /* version < 1.2.6 */
 
 int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_size,
@@ -978,6 +1144,12 @@ int pre_process(struct tplg_pre_processor *tplg_pp, char *config, size_t config_
 	err = pre_process_arrays(tplg_pp, tplg_pp->input_cfg);
 	if (err < 0) {
 		fprintf(stderr, "Failed to process object arrays in input config\n");
+		goto err;
+	}
+
+	err = pre_process_subtree_copies(tplg_pp, tplg_pp->input_cfg, tplg_pp->input_cfg);
+	if (err < 0) {
+		SNDERR("Failed to process subtree copies in input config\n");
 		goto err;
 	}
 #endif
