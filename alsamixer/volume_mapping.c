@@ -146,6 +146,8 @@ static int set_normalized_volume(snd_mixer_elem_t *elem,
 		min_norm = pow(10, (min - max) / 6000.0);
 		volume = volume * (1 - min_norm) + min_norm;
 	}
+	if (volume <= 0)
+		volume = 1e-36;
 	value = lrint_dir(6000.0 * log10(volume), dir) + max;
 	return set_dB[ctl_dir](elem, channel, value, dir);
 }
