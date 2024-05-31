@@ -595,6 +595,79 @@ static void dump_ump_midi2_event(const unsigned int *ump)
 	printf("\n");
 }
 
+static void dump_ump_utility_event(const unsigned int *ump)
+{
+	unsigned char status = snd_ump_msg_status(ump);
+	unsigned int val = *ump & 0xfffff;
+
+	printf("          ");
+	switch (status) {
+	case SND_UMP_UTILITY_MSG_STATUS_NOOP:
+		printf("Noop\n");
+		break;
+	case SND_UMP_UTILITY_MSG_STATUS_JR_CLOCK:
+		printf("JR Clock               value %d\n", val);
+		break;
+	case SND_UMP_UTILITY_MSG_STATUS_JR_TSTAMP:
+		printf("JR Timestamp           value %d\n", val);
+		break;
+	case SND_UMP_UTILITY_MSG_STATUS_DCTPQ:
+		printf("DCTPQ                  value %d\n", val);
+		break;
+	case SND_UMP_UTILITY_MSG_STATUS_DC:
+		printf("DC Ticks               value %d\n", val);
+		break;
+	default:
+		printf("UMP Utility event: status = %d, 0x%08x\n",
+		       status, *ump);
+		break;
+	}
+}
+
+static void dump_ump_system_event(const unsigned int *ump)
+{
+	const snd_ump_msg_system_t *m = (const snd_ump_msg_system_t *)ump;
+
+	printf("Group %2d, ", group_number(m->group));
+	switch (m->status) {
+	case SND_UMP_MSG_MIDI_TIME_CODE:
+		printf("MIDI Time Code         value %d\n", m->parm1);
+		break;
+	case SND_UMP_MSG_SONG_POSITION:
+		printf("Song position pointer  value %d\n",
+		       ((unsigned int)m->parm2 << 7) | m->parm1);
+		break;
+	case SND_UMP_MSG_SONG_SELECT:
+		printf("Song select            value %d\n", m->parm1);
+		break;
+	case SND_UMP_MSG_TUNE_REQUEST:
+		printf("Tune request\n");
+		break;
+	case SND_UMP_MSG_TIMING_CLOCK:
+		printf("Timing clock\n");
+		break;
+	case SND_UMP_MSG_START:
+		printf("Start\n");
+		break;
+	case SND_UMP_MSG_CONTINUE:
+		printf("Continue\n");
+		break;
+	case SND_UMP_MSG_STOP:
+		printf("Stop\n");
+		break;
+	case SND_UMP_MSG_ACTIVE_SENSING:
+		printf("Active sensing\n");
+		break;
+	case SND_UMP_MSG_RESET:
+		printf("Reset\n");
+		break;
+	default:
+		printf("UMP System event: status = %d, 0x%08x\n",
+		       m->status, *ump);
+		break;
+	}
+}
+
 static void dump_ump_event(const snd_seq_ump_event_t *ev)
 {
 	if (!snd_seq_ev_is_ump(ev)) {
@@ -605,6 +678,12 @@ static void dump_ump_event(const snd_seq_ump_event_t *ev)
 	printf("%3d:%-3d ", ev->source.client, ev->source.port);
 
 	switch (snd_ump_msg_type(ev->ump)) {
+	case SND_UMP_MSG_TYPE_UTILITY:
+		dump_ump_utility_event(ev->ump);
+		break;
+	case SND_UMP_MSG_TYPE_SYSTEM:
+		dump_ump_system_event(ev->ump);
+		break;
 	case SND_UMP_MSG_TYPE_MIDI1_CHANNEL_VOICE:
 		dump_ump_midi1_event(ev->ump);
 		break;
