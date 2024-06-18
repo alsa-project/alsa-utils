@@ -495,7 +495,7 @@ static int select_mode(struct intel_dmic_params *dmic, struct dmic_calc_configur
 	g_cic = mcic * mcic * mcic * mcic * mcic;
 	if (g_cic < 0) {
 		/* Erroneous decimation factor and CIC gain */
-		fprintf(stderr, "%s: erroneous decimation factor and CIC gain\n");
+		fprintf(stderr, "%s: erroneous decimation factor and CIC gain\n", __func__);
 		return -EINVAL;
 	}
 
@@ -520,7 +520,7 @@ static int select_mode(struct intel_dmic_params *dmic, struct dmic_calc_configur
 				     cfg->fir_a->length, gain_to_fir);
 		if (ret < 0) {
 			/* Invalid coefficient set found, should not happen. */
-			fprintf(stderr, "%s: invalid coefficient set found\n");
+			fprintf(stderr, "%s: invalid coefficient set found\n", __func__);
 			return -EINVAL;
 		}
 	} else {
