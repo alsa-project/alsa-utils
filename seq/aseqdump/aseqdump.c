@@ -668,6 +668,46 @@ static void dump_ump_system_event(const unsigned int *ump)
 	}
 }
 
+static void dump_ump_sysex_event(const unsigned int *ump)
+{
+	int i, offset, length;
+
+	printf("Group %2d, ", group_number(snd_ump_msg_group(ump)));
+	switch (snd_ump_sysex_msg_status(ump)) {
+	case SND_UMP_SYSEX_STATUS_SINGLE:
+		printf("Single  ");
+		break;
+	case SND_UMP_SYSEX_STATUS_START:
+		printf("Start   ");
+		break;
+	case SND_UMP_SYSEX_STATUS_CONTINUE:
+		printf("Continue");
+		break;
+	case SND_UMP_SYSEX_STATUS_END:
+		printf("End     ");
+		break;
+	default:
+		printf("Unknown(0x%x)", snd_ump_sysex_msg_status(ump));
+		break;
+	}
+
+	length = snd_ump_sysex_msg_length(ump);
+	printf(" length %d ", length);
+	offset = 24;
+	for (i = 0; i < length; i++) {
+		if (i)
+			printf(":");
+		printf("%02x", (*ump >> (32 - offset)) & 0x7f);
+		if (offset < 32) {
+			offset += 8;
+		} else {
+			ump++;
+			offset = 8;
+		}
+	}
+	printf("\n");
+}
+
 static void dump_ump_event(const snd_seq_ump_event_t *ev)
 {
 	if (!snd_seq_ev_is_ump(ev)) {
@@ -689,6 +729,9 @@ static void dump_ump_event(const snd_seq_ump_event_t *ev)
 		break;
 	case SND_UMP_MSG_TYPE_MIDI2_CHANNEL_VOICE:
 		dump_ump_midi2_event(ev->ump);
+		break;
+	case SND_UMP_MSG_TYPE_DATA:
+		dump_ump_sysex_event(ev->ump);
 		break;
 	default:
 		printf("UMP event: type = %d, group = %d, status = %d, 0x%08x\n",
