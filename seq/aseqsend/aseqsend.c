@@ -290,6 +290,27 @@ static void send_midi_msg(snd_seq_event_type_t type, mbyte_t *data, int len)
 		case SND_SEQ_EVENT_CHANPRESS:
 			snd_seq_ev_set_chanpress(&ev, ch, data[1]);
 			break;
+		case SND_SEQ_EVENT_QFRAME:
+		case SND_SEQ_EVENT_SONGSEL:
+			ev.type = type;
+			ev.data.control.channel = ch;
+			ev.data.control.value = data[1];
+			break;
+		case SND_SEQ_EVENT_SONGPOS:
+			ev.type = type;
+			ev.data.control.channel = ch;
+			ev.data.control.value = data[1] | (data[2] << 7);
+			break;
+		case SND_SEQ_EVENT_TUNE_REQUEST:
+		case SND_SEQ_EVENT_CLOCK:
+		case SND_SEQ_EVENT_START:
+		case SND_SEQ_EVENT_CONTINUE:
+		case SND_SEQ_EVENT_STOP:
+		case SND_SEQ_EVENT_SENSING:
+		case SND_SEQ_EVENT_RESET:
+			ev.type = type;
+			ev.data.control.channel = ch;
+			break;
 		default:
 			ev.type = SND_SEQ_EVENT_NONE;
 		}
@@ -460,8 +481,69 @@ int main(int argc, char *argv[])
 					sent_data_c += 3;
 				}
 				k += 3;
-			} else
-				k++;
+			} else {
+				switch (send_data[k]) {
+				case 0xF1:
+					if (msg_byte_in_range(send_data + k + 1, 1)) {
+						send_midi_msg(SND_SEQ_EVENT_QFRAME, send_data+k, 2);
+						sent_data_c += 2;
+					}
+					k += 2;
+					break;
+				case 0xF2:
+					if (msg_byte_in_range(send_data + k + 1, 2)) {
+						send_midi_msg(SND_SEQ_EVENT_SONGPOS, send_data+k, 3);
+						sent_data_c += 3;
+					}
+					k += 3;
+					break;
+				case 0xF3:
+					if (msg_byte_in_range(send_data + k + 1, 1)) {
+						send_midi_msg(SND_SEQ_EVENT_SONGSEL, send_data+k, 2);
+						sent_data_c += 2;
+					}
+					k += 2;
+					break;
+				case 0xF6:
+					send_midi_msg(SND_SEQ_EVENT_TUNE_REQUEST, send_data+k, 1);
+					sent_data_c++;
+					k++;
+					break;
+				case 0xF8:
+					send_midi_msg(SND_SEQ_EVENT_CLOCK, send_data+k, 1);
+					sent_data_c++;
+					k++;
+					break;
+				case 0xFA:
+					send_midi_msg(SND_SEQ_EVENT_START, send_data+k, 1);
+					sent_data_c++;
+					k++;
+					break;
+				case 0xFB:
+					send_midi_msg(SND_SEQ_EVENT_CONTINUE, send_data+k, 1);
+					sent_data_c++;
+					k++;
+					break;
+				case 0xFC:
+					send_midi_msg(SND_SEQ_EVENT_STOP, send_data+k, 1);
+					sent_data_c++;
+					k++;
+					break;
+				case 0xFE:
+					send_midi_msg(SND_SEQ_EVENT_SENSING, send_data+k, 1);
+					sent_data_c++;
+					k++;
+					break;
+				case 0xFF:
+					send_midi_msg(SND_SEQ_EVENT_RESET, send_data+k, 1);
+					sent_data_c++;
+					k++;
+					break;
+				default:
+					k++;
+					break;
+				}
+			}
 		}
 	}
 
