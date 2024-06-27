@@ -254,58 +254,54 @@ static void list_ports(void)
 	}
 }
 
-void send_midi_msg(snd_seq_event_type_t type, mbyte_t *data, int len)
+static void send_midi_msg(snd_seq_event_type_t type, mbyte_t *data, int len)
 {
-		snd_seq_event_t ev;
+	snd_seq_event_t ev;
 
-		snd_seq_ev_clear(&ev);
-		snd_seq_ev_set_source(&ev, 0);
-		snd_seq_ev_set_dest(&ev,addr.client,addr.port);
-		snd_seq_ev_set_direct(&ev);
+	snd_seq_ev_clear(&ev);
+	snd_seq_ev_set_source(&ev, 0);
+	snd_seq_ev_set_dest(&ev, addr.client, addr.port);
+	snd_seq_ev_set_direct(&ev);
 
-		if (type == SND_SEQ_EVENT_SYSEX) {
+	if (type == SND_SEQ_EVENT_SYSEX) {
+		snd_seq_ev_set_sysex(&ev, len, data);
+	} else {
+		mbyte_t ch = data[0] & 0xF;
 
-			snd_seq_ev_set_sysex(&ev,len,data);
-
-		} else {
-
-			mbyte_t ch = data[0] & 0xF;
-
-			switch (type) {
-				case SND_SEQ_EVENT_NOTEON:
-					snd_seq_ev_set_noteon(&ev,ch,data[1],data[2]);
-					break;
-				case SND_SEQ_EVENT_NOTEOFF:
-					snd_seq_ev_set_noteoff(&ev,ch,data[1],data[2]);
-					break;
-				case SND_SEQ_EVENT_KEYPRESS:
-					snd_seq_ev_set_keypress(&ev,ch,data[1],data[2]);
-					break;
-				case SND_SEQ_EVENT_CONTROLLER:
-					snd_seq_ev_set_controller(&ev,ch,data[1],data[2]);
-					break;
-				case SND_SEQ_EVENT_PITCHBEND:
-					snd_seq_ev_set_pitchbend(&ev,ch,(data[1]<<7|data[2])-8192);
-					break;
-				case SND_SEQ_EVENT_PGMCHANGE:
-					snd_seq_ev_set_pgmchange(&ev,ch,data[1]);
-					break;
-				case SND_SEQ_EVENT_CHANPRESS:
-					snd_seq_ev_set_chanpress(&ev,ch,data[1]);
-					break;
-				default:
-					ev.type = SND_SEQ_EVENT_NONE;
-			}
+		switch (type) {
+		case SND_SEQ_EVENT_NOTEON:
+			snd_seq_ev_set_noteon(&ev, ch, data[1], data[2]);
+			break;
+		case SND_SEQ_EVENT_NOTEOFF:
+			snd_seq_ev_set_noteoff(&ev, ch, data[1], data[2]);
+			break;
+		case SND_SEQ_EVENT_KEYPRESS:
+			snd_seq_ev_set_keypress(&ev, ch, data[1], data[2]);
+			break;
+		case SND_SEQ_EVENT_CONTROLLER:
+			snd_seq_ev_set_controller(&ev, ch, data[1], data[2]);
+			break;
+		case SND_SEQ_EVENT_PITCHBEND:
+			snd_seq_ev_set_pitchbend(&ev, ch, (data[1]<<7|data[2])-8192);
+			break;
+		case SND_SEQ_EVENT_PGMCHANGE:
+			snd_seq_ev_set_pgmchange(&ev, ch, data[1]);
+			break;
+		case SND_SEQ_EVENT_CHANPRESS:
+			snd_seq_ev_set_chanpress(&ev, ch, data[1]);
+			break;
+		default:
+			ev.type = SND_SEQ_EVENT_NONE;
 		}
+	}
 
-		snd_seq_event_output(seq, &ev);
-		snd_seq_drain_output(seq);
-
+	snd_seq_event_output(seq, &ev);
+	snd_seq_drain_output(seq);
 }
 
 static int msg_byte_in_range(mbyte_t *data, mbyte_t len)
 {
-	for (int i=0;i<len;i++) {
+	for (int i = 0; i < len; i++) {
 		if (data[i] > 0x7F) {
 			error("msg byte value out of range 0-127");
 			return 0;
@@ -322,6 +318,8 @@ int main(int argc, char *argv[])
 	char do_port_list = 0;
 	char verbose = 0;
 	int sysex_interval = 1000; //us
+	int sent_data_c;
+	int k;
 
 	while ((c = getopt(argc, argv, "hi:Vvlp:s:")) != -1) {
 		switch (c) {
@@ -375,104 +373,101 @@ int main(int argc, char *argv[])
 		for (; argv[optind]; ++optind) {
 			add_send_hex_data(argv[optind]);
 		}
-		if (send_hex) parse_data();
+		if (send_hex)
+			parse_data();
 	}
 
-	if (send_data) {
+	if (!send_data)
+		exit(EXIT_SUCCESS);
 
-		init_seq();
-		create_port();
+	init_seq();
+	create_port();
 
-		if (snd_seq_parse_address(seq,&addr,port_name) == 0) {
+	if (snd_seq_parse_address(seq, &addr, port_name) < 0) {
+		error("Unable to parse port name!");
+		exit(EXIT_FAILURE);
+	}
 
-			int sent_data_c = 0;//counter of actually sent bytes
+	sent_data_c = 0; //counter of actually sent bytes
+	k = 0;
 
-			int k = 0;
+	while (k < send_data_length) {
 
-			while (k < send_data_length) {
+		if (send_data[k] == 0xF0) {
 
-				if (send_data[k] == 0xF0) {
-
-					int c1 = k;
-					while (c1 < send_data_length)
-					{
-						if (send_data[c1] == 0xF7) break;
-						c1++;
-					}
-
-					if (c1 == send_data_length)
-						fatal("SysEx is missing terminating byte (0xF7)");
-
-					int sl = c1-k+1;
-					sent_data_c += sl;
-
-					send_midi_msg(SND_SEQ_EVENT_SYSEX, send_data+k,sl);
-
-					usleep(sysex_interval);
-
-					k = c1+1;
-
-				} else {
-
-					mbyte_t tp = send_data[k] >> 4;
-
-					if (tp == 0x8) {
-						if (msg_byte_in_range(send_data + k + 1, 2)) {
-							send_midi_msg(SND_SEQ_EVENT_NOTEOFF, send_data+k,3);
-							sent_data_c += 3;
-						}
-						k = k+3;
-					} else if (tp == 0x9) {
-						if (msg_byte_in_range(send_data + k + 1, 2)) {
-							send_midi_msg(SND_SEQ_EVENT_NOTEON, send_data+k,3);
-							sent_data_c += 3;
-						}
-						k = k+3;
-					} else if (tp == 0xA) {
-						if (msg_byte_in_range(send_data + k + 1, 2)) {
-							send_midi_msg(SND_SEQ_EVENT_KEYPRESS, send_data+k,3);
-							sent_data_c += 3;
-						}
-						k = k+3;
-					} else if (tp == 0xB) {
-						if (msg_byte_in_range(send_data + k + 1, 2)) {
-							send_midi_msg(SND_SEQ_EVENT_CONTROLLER, send_data+k,3);
-							sent_data_c += 3;
-						}
-						k = k+3;
-					} else if (tp == 0xC) {
-						if (msg_byte_in_range(send_data + k + 1, 1)) {
-							send_midi_msg(SND_SEQ_EVENT_PGMCHANGE, send_data+k,2);
-							sent_data_c += 2;
-						}
-						k = k+2;
-					} else if (tp == 0xD) {
-						if (msg_byte_in_range(send_data + k + 1, 1)) {
-							send_midi_msg(SND_SEQ_EVENT_CHANPRESS, send_data+k,2);
-							sent_data_c += 2;
-						}
-						k = k+2;
-					} else if (tp == 0xE) {
-						if (msg_byte_in_range(send_data + k + 1, 2)) {
-							send_midi_msg(SND_SEQ_EVENT_PITCHBEND, send_data+k,3);
-							sent_data_c += 3;
-						}
-						k = k+3;
-					} else k++;
-				}
+			int c1 = k;
+			while (c1 < send_data_length) {
+				if (send_data[c1] == 0xF7)
+					break;
+				c1++;
 			}
 
-			if (verbose)
-				printf("Sent : %u bytes\n",sent_data_c);
+			if (c1 == send_data_length)
+				fatal("SysEx is missing terminating byte (0xF7)");
+
+			int sl = c1-k+1;
+			sent_data_c += sl;
+
+			send_midi_msg(SND_SEQ_EVENT_SYSEX, send_data+k, sl);
+
+			usleep(sysex_interval);
+
+			k = c1+1;
 
 		} else {
 
-			error("Unable to parse port name!");
-			exit(EXIT_FAILURE);
+			mbyte_t tp = send_data[k] >> 4;
 
+			if (tp == 0x8) {
+				if (msg_byte_in_range(send_data + k + 1, 2)) {
+					send_midi_msg(SND_SEQ_EVENT_NOTEOFF, send_data+k, 3);
+					sent_data_c += 3;
+				}
+				k += 3;
+			} else if (tp == 0x9) {
+				if (msg_byte_in_range(send_data + k + 1, 2)) {
+					send_midi_msg(SND_SEQ_EVENT_NOTEON, send_data+k, 3);
+					sent_data_c += 3;
+				}
+				k += 3;
+			} else if (tp == 0xA) {
+				if (msg_byte_in_range(send_data + k + 1, 2)) {
+					send_midi_msg(SND_SEQ_EVENT_KEYPRESS, send_data+k, 3);
+					sent_data_c += 3;
+				}
+				k += 3;
+			} else if (tp == 0xB) {
+				if (msg_byte_in_range(send_data + k + 1, 2)) {
+					send_midi_msg(SND_SEQ_EVENT_CONTROLLER, send_data+k, 3);
+					sent_data_c += 3;
+				}
+				k += 3;
+			} else if (tp == 0xC) {
+				if (msg_byte_in_range(send_data + k + 1, 1)) {
+					send_midi_msg(SND_SEQ_EVENT_PGMCHANGE, send_data+k, 2);
+					sent_data_c += 2;
+				}
+				k += 2;
+			} else if (tp == 0xD) {
+				if (msg_byte_in_range(send_data + k + 1, 1)) {
+					send_midi_msg(SND_SEQ_EVENT_CHANPRESS, send_data+k, 2);
+					sent_data_c += 2;
+				}
+				k += 2;
+			} else if (tp == 0xE) {
+				if (msg_byte_in_range(send_data + k + 1, 2)) {
+					send_midi_msg(SND_SEQ_EVENT_PITCHBEND, send_data+k, 3);
+					sent_data_c += 3;
+				}
+				k += 3;
+			} else
+				k++;
 		}
-		snd_seq_close(seq);
 	}
 
+	if (verbose)
+		printf("Sent : %u bytes\n", sent_data_c);
+
+	snd_seq_close(seq);
 	exit(EXIT_SUCCESS);
 }
