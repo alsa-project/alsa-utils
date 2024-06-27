@@ -668,9 +668,16 @@ static void dump_ump_system_event(const unsigned int *ump)
 	}
 }
 
+static unsigned char ump_sysex7_data(const unsigned int *ump,
+				     unsigned int offset)
+{
+	offset += 2;
+	return (ump[offset / 4] >> ((3 - (offset & 3)) * 8)) & 0xff;
+}
+
 static void dump_ump_sysex_event(const unsigned int *ump)
 {
-	int i, offset, length;
+	int i, length;
 
 	printf("Group %2d, ", group_number(snd_ump_msg_group(ump)));
 	switch (snd_ump_sysex_msg_status(ump)) {
@@ -693,18 +700,8 @@ static void dump_ump_sysex_event(const unsigned int *ump)
 
 	length = snd_ump_sysex_msg_length(ump);
 	printf(" length %d ", length);
-	offset = 24;
-	for (i = 0; i < length; i++) {
-		if (i)
-			printf(":");
-		printf("%02x", (*ump >> (32 - offset)) & 0x7f);
-		if (offset < 32) {
-			offset += 8;
-		} else {
-			ump++;
-			offset = 8;
-		}
-	}
+	for (i = 0; i < length; i++)
+		printf("%s%02x", i ? ":" : "", ump_sysex7_data(ump, i));
 	printf("\n");
 }
 
