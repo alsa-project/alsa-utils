@@ -48,6 +48,8 @@ iecset/iecset
 seq/aconnect/aconnect
 seq/aplaymidi/aplaymidi
 seq/aplaymidi/arecordmidi
+seq/aplaymidi2/aplaymidi2
+seq/aplaymidi2/arecordmidi2
 seq/aseqdump/aseqdump
 seq/aseqsend/aseqsend
 seq/aseqnet/aseqnet
