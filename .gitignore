@@ -29,6 +29,8 @@ ABOUT-NLS
 *.o
 *~
 .deps
+.libs
+.dirstamp
 
 alsactl/alsactl
 alsactl/alsactl_init.7
