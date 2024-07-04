@@ -1,0 +1,73 @@
+.TH ARECORDMIDI2 1 "4 July 2024"
+
+.SH NAME
+arecordmidi2 \- record a MIDI Clip file
+
+.SH SYNOPSIS
+.B arecordmidi2
+\-p client:port[,...] [options] midi2file
+
+.SH DESCRIPTION
+.B arecordmidi2
+is a command-line utility that records a MIDI Clip file from one or
+more ALSA sequencer ports.
+
+To stop recording, press Ctrl+C.
+
+.SH OPTIONS
+
+.TP
+.I \-h,\-\-help
+Prints a list of options.
+
+.TP
+.I \-V,\-\-version
+Prints the current version.
+
+.TP
+.I \-p,\-\-port=client:port,...
+Sets the sequencer port(s) from which events are recorded.
+
+A client can be specified by its number, its name, or a prefix of its
+name. A port is specified by its number; for port 0 of a client, the
+":0" part of the port specification can be omitted.
+
+.TP
+.I \-b,\-\-bpm=beats
+Sets the musical tempo of the MIDI file, in beats per minute.
+The default value is 120 BPM.
+
+.TP
+.I \-t,\-\-ticks=ticks
+Sets the resolution of timestamps (ticks) in the MIDI file,
+in ticks per beat.
+The default value is 384 ticks/beat.
+
+.TP
+.I \-i,\-\-timesig=numerator:denominator
+Sets the time signature for the MIDI file.
+
+The time signature is specified as usual with two numbers, representing
+the numerator and denominator of the time signature as it would be
+notated. The denominator must be a power of two. Both numbers should be
+separated by a colon. The time signature is 4:4 by default.
+
+.TP
+.I \-n,\-\-num-events=events
+Stops the recording after receiving the given number of events.
+
+.TP
+.I \-u,\-\-ump=version
+Sets the UMP MIDI protocol version. Either 1 or 2 has to be given for
+MIDI 1.0 and MIDI 2.0 protocol, respectively.
+Default is 1.
+
+.SH SEE ALSO
+arecordmidi(1)
+.br
+aplaymidi2(1)
+
+.SH AUTHOR
+Takashi Iwai <tiwai@suse.de>
+
+
