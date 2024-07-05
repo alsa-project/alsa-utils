@@ -93,7 +93,14 @@ static void create_ump_client(void)
 	snd_ump_endpoint_info_t *ep;
 	snd_ump_block_info_t *blk;
 	snd_seq_port_info_t *pinfo;
+	int num_groups;
 	int i, err;
+
+	/* in passive mode, create full 16 groups */
+	if (port_count)
+		num_groups = port_count;
+	else
+		num_groups = 16;
 
 	/* create a UMP Endpoint */
 	snd_ump_endpoint_info_alloca(&ep);
@@ -105,14 +112,14 @@ static void create_ump_client(void)
 		snd_ump_endpoint_info_set_protocol_caps(ep, SND_UMP_EP_INFO_PROTO_MIDI2);
 		snd_ump_endpoint_info_set_protocol(ep, SND_UMP_EP_INFO_PROTO_MIDI2);
 	}
-	snd_ump_endpoint_info_set_num_blocks(ep, port_count);
+	snd_ump_endpoint_info_set_num_blocks(ep, num_groups);
 
-	err = snd_seq_create_ump_endpoint(seq, ep, port_count);
+	err = snd_seq_create_ump_endpoint(seq, ep, num_groups);
 	check_snd("create UMP endpoint", err);
 
 	/* create UMP Function Blocks */
 	snd_ump_block_info_alloca(&blk);
-	for (i = 0; i < port_count; i++) {
+	for (i = 0; i < num_groups; i++) {
 		char blkname[32];
 
 		sprintf(blkname, "Group %d", i + 1);
@@ -128,7 +135,7 @@ static void create_ump_client(void)
 
 	/* toggle timestamping for all input ports */
 	snd_seq_port_info_alloca(&pinfo);
-	for (i = 0; i <= port_count; i++) {
+	for (i = 0; i <= num_groups; i++) {
 		err = snd_seq_get_port_info(seq, i, pinfo);
 		check_snd("get port info", err);
 		snd_seq_port_info_set_timestamping(pinfo, 1);
@@ -343,8 +350,11 @@ static void write_file_header(FILE *file)
 	/* first DCS */
 	write_dcs(file, 0);
 	write_dctpq(file);
+}
 
-	/* start bar */
+/* write start bar */
+static void start_bar(FILE *file)
+{
 	write_start_clip(file);
 	write_tempo(file);
 	write_time_sig(file);
@@ -361,7 +371,8 @@ static void help(const char *argv0)
 		"  -t,--ticks=ticks           resolution in ticks per beat or frame\n"
 		"  -i,--timesig=nn:dd         time signature\n"
 		"  -n,--num-events=events     fixed number of events to record, then exit\n"
-		"  -u,--ump=version           UMP MIDI version (1 or 2)\n",
+		"  -u,--ump=version           UMP MIDI version (1 or 2)\n"
+		"  -r,--interactive           Interactive mode\n",
 		argv0);
 }
 
@@ -377,7 +388,7 @@ static void sighandler(int sig ATTRIBUTE_UNUSED)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hVp:b:t:n:u:";
+	static const char short_options[] = "hVp:b:t:n:u:r";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
@@ -387,6 +398,7 @@ int main(int argc, char *argv[])
 		{"timesig", 1, NULL, 'i'},
 		{"num-events", 1, NULL, 'n'},
 		{"ump", 1, NULL, 'u'},
+		{"interactive", 0, NULL, 'r'},
 		{0}
 	};
 
@@ -398,6 +410,8 @@ int main(int argc, char *argv[])
 	/* If |num_events| isn't specified, leave it at 0. */
 	long num_events = 0;
 	long events_received = 0;
+	int start = 0;
+	int interactive = 0;
 
 	init_seq();
 
@@ -441,15 +455,13 @@ int main(int argc, char *argv[])
 			if (midi_version != 1 && midi_version != 2)
 				fatal("Invalid MIDI version %d\n", midi_version);
 			break;
+		case 'r':
+			interactive = 1;
+			break;
 		default:
 			help(argv[0]);
 			return 1;
 		}
-	}
-
-	if (port_count < 1) {
-		fputs("Pleast specify a source port with --port.\n", stderr);
-		return 1;
 	}
 
 	if (optind >= argc) {
@@ -459,7 +471,8 @@ int main(int argc, char *argv[])
 
 	create_queue();
 	create_ump_client();
-	connect_ports();
+	if (port_count)
+		connect_ports();
 
 	filename = argv[optind];
 
@@ -468,6 +481,13 @@ int main(int argc, char *argv[])
 		fatal("Cannot open %s - %s", filename, strerror(errno));
 
 	write_file_header(file);
+	if (interactive) {
+		printf("Press RETURN to start recording:");
+		fflush(stdout);
+	} else {
+		start_bar(file);
+		start = 1;
+	}
 
 	err = snd_seq_start_queue(seq, queue, NULL);
 	check_snd("start queue", err);
@@ -480,18 +500,39 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, sighandler);
 
 	npfds = snd_seq_poll_descriptors_count(seq, POLLIN);
-	pfds = alloca(sizeof(*pfds) * npfds);
+	pfds = alloca(sizeof(*pfds) * (npfds + 1));
 	for (;;) {
 		snd_seq_poll_descriptors(seq, pfds, npfds, POLLIN);
-		if (poll(pfds, npfds, -1) < 0)
-			break;
+		if (interactive) {
+			pfds[npfds].fd = STDIN_FILENO;
+			pfds[npfds].events = POLLIN | POLLERR | POLLNVAL;
+			if (poll(pfds, npfds + 1, -1) < 0)
+				break;
+			if (pfds[npfds].revents & POLLIN) {
+				while (!feof(stdin) && getchar() != '\n')
+					;
+				if (!start) {
+					start_bar(file);
+					start = 1;
+					printf("Press RETURN to stop recording:");
+					fflush(stdout);
+					continue;
+				} else {
+					stop = 1;
+				}
+			}
+		} else {
+			if (poll(pfds, npfds, -1) < 0)
+				break;
+		}
+
 		do {
 			snd_seq_ump_event_t *event;
 
 			err = snd_seq_ump_event_input(seq, &event);
 			if (err < 0)
 				break;
-			if (event) {
+			if (start && event) {
 				record_event(file, event);
 				events_received++;
 			}

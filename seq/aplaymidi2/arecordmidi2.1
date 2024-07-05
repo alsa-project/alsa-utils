@@ -5,7 +5,7 @@ arecordmidi2 \- record a MIDI Clip file
 
 .SH SYNOPSIS
 .B arecordmidi2
-\-p client:port[,...] [options] midi2file
+[options] midi2file
 
 .SH DESCRIPTION
 .B arecordmidi2
@@ -31,6 +31,16 @@ Sets the sequencer port(s) from which events are recorded.
 A client can be specified by its number, its name, or a prefix of its
 name. A port is specified by its number; for port 0 of a client, the
 ":0" part of the port specification can be omitted.
+
+\fBarecordmidi2\fP creates a UMP Endpoint containing the same number
+of Function Blocks as specified by this option, each of which is
+connected to the specified port as a source.
+
+When no source ports are specified with \fI\-p\fP option,
+\fBarecordmidi2\fP creates a UMP Endpoint with full 16 Function Blocks
+and records from those inputs.  User can connect the sequencer ports
+freely via \fBaconnect\fP, for example.  This mode can be used
+together with the interactive mode via \fI\-r\fP option.
 
 .TP
 .I \-b,\-\-bpm=beats
@@ -61,6 +71,14 @@ Stops the recording after receiving the given number of events.
 Sets the UMP MIDI protocol version. Either 1 or 2 has to be given for
 MIDI 1.0 and MIDI 2.0 protocol, respectively.
 Default is 1.
+
+.TP
+.I \-r,\-\-interactive
+Run in the interactive mode.  \fBarecordmidi2\fP waits for a RETURN
+key input from the terminal to start the recording.  After starting,
+the recording ends when another RETURN key is input from the
+terminal.  The received events before the start of recording are
+discarded.
 
 .SH SEE ALSO
 arecordmidi(1)
