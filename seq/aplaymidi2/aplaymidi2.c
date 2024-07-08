@@ -288,6 +288,117 @@ static void send_ump(const uint32_t *ump, int len)
 	snd_seq_ump_event_output(seq, &ev);
 }
 
+struct flexdata_text_prefix {
+	unsigned char status_bank;
+	unsigned char status;
+	const char *prefix;
+};
+
+static struct flexdata_text_prefix text_prefix[] = {
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_PROJECT_NAME,
+	  .prefix = "Project" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_SONG_NAME,
+	  .prefix = "Song" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_MIDI_CLIP_NAME,
+	  .prefix = "MIDI Clip" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_COPYRIGHT_NOTICE,
+	  .prefix = "Copyright" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_COMPOSER_NAME,
+	  .prefix = "Composer" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_LYRICIST_NAME,
+	  .prefix = "Lyricist" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_ARRANGER_NAME,
+	  .prefix = "Arranger" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_PUBLISHER_NAME,
+	  .prefix = "Publisher" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_PRIMARY_PERFORMER,
+	  .prefix = "Performer" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_ACCOMPANY_PERFORMAER,
+	  .prefix = "Accompany Performer" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_RECORDING_DATE,
+	  .prefix = "Recording Date" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_RECORDING_LOCATION,
+	  .prefix = "Recording Location" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_PERF_TEXT,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_LYRICS,
+	  .prefix = "Lyrics" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_PERF_TEXT,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_LYRICS_LANGUAGE,
+	  .prefix = "Lyrics Language" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_PERF_TEXT,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_RUBY,
+	  .prefix = "Ruby" },
+	{ .status_bank = SND_UMP_FLEX_DATA_MSG_BANK_PERF_TEXT,
+	  .status = SND_UMP_FLEX_DATA_MSG_STATUS_RUBY_LANGUAGE,
+	  .prefix = "Ruby Language" },
+	{}
+};
+
+static void show_text(const uint32_t *ump)
+{
+	static unsigned char textbuf[256];
+	static int len;
+	const snd_ump_msg_flex_data_t *fh =
+		(const snd_ump_msg_flex_data_t *)ump;
+	const char *prefix;
+	int i;
+
+	if (fh->meta.format == SND_UMP_FLEX_DATA_MSG_FORMAT_SINGLE ||
+	    fh->meta.format == SND_UMP_FLEX_DATA_MSG_FORMAT_START)
+		len = 0;
+
+	for (i = 0; i < 12 && len < (int)sizeof(textbuf); i++) {
+		textbuf[len] = fh->meta.data[i / 4] >> ((3 - (i % 4)) * 8);
+		if (!textbuf[len])
+			break;
+		switch (textbuf[len]) {
+		case 0x0a: /* end of paragraph */
+		case 0x0d: /* end of line */
+			textbuf[len] = '\n';
+			break;
+		}
+		len++;
+	}
+
+	if (fh->meta.format != SND_UMP_FLEX_DATA_MSG_FORMAT_SINGLE &&
+	    fh->meta.format != SND_UMP_FLEX_DATA_MSG_FORMAT_END)
+		return;
+
+	if (len >= (int)sizeof(textbuf))
+		len = sizeof(textbuf) - 1;
+	textbuf[len] = 0;
+
+	prefix = NULL;
+	for (i = 0; text_prefix[i].status_bank; i++) {
+		if (text_prefix[i].status_bank == fh->meta.status_bank &&
+		    text_prefix[i].status == fh->meta.status) {
+			prefix = text_prefix[i].prefix;
+			break;
+		}
+	}
+
+	if (prefix) {
+		printf("%s: %s\n", prefix, textbuf);
+	} else {
+		printf("(%d:%d): %s\n", fh->meta.status_bank, fh->meta.status,
+		       textbuf);
+	}
+
+	len = 0;
+}
+
 /* play the given MIDI Clip File content */
 static void play_midi(FILE *file)
 {
@@ -316,6 +427,12 @@ static void play_midi(FILE *file)
 			if (fh->meta.status_bank == SND_UMP_FLEX_DATA_MSG_BANK_SETUP &&
 			    fh->meta.status == SND_UMP_FLEX_DATA_MSG_STATUS_SET_TEMPO) {
 				set_tempo(fh->set_tempo.tempo);
+				continue;
+			}
+
+			if (fh->meta.status_bank == SND_UMP_FLEX_DATA_MSG_BANK_METADATA ||
+			    fh->meta.status_bank == SND_UMP_FLEX_DATA_MSG_BANK_PERF_TEXT) {
+				show_text(ump);
 				continue;
 			}
 		} else if (h->type == SND_UMP_MSG_TYPE_STREAM) {
