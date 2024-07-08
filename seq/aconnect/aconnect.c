@@ -215,10 +215,6 @@ static void print_port(snd_seq_t *seq ATTRIBUTE_UNUSED,
 			break;
 		}
 #endif
-#ifdef HANDLE_SHOW_ALL
-		if (snd_seq_port_info_get_capability(pinfo) & SND_SEQ_PORT_CAP_INACTIVE)
-			printf(",INACTIVE");
-#endif
 #ifdef HAVE_SEQ_CLIENT_INFO_GET_CARD
 		card = snd_seq_client_info_get_card(cinfo);
 #endif
@@ -232,9 +228,14 @@ static void print_port(snd_seq_t *seq ATTRIBUTE_UNUSED,
 			printf(",pid=%d", pid);
 		printf("]\n");
 	}
-	printf("  %3d '%-16s'\n",
+	printf("  %3d '%-16s'",
 	       snd_seq_port_info_get_port(pinfo),
 	       snd_seq_port_info_get_name(pinfo));
+#ifdef HANDLE_SHOW_ALL
+	if (snd_seq_port_info_get_capability(pinfo) & SND_SEQ_PORT_CAP_INACTIVE)
+		printf(" [INACTIVE]");
+#endif
+	printf("\n");
 }
 
 static void print_port_and_subs(snd_seq_t *seq, snd_seq_client_info_t *cinfo,
