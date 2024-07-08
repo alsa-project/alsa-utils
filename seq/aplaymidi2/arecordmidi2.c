@@ -355,6 +355,13 @@ static void write_file_header(FILE *file)
 /* write start bar */
 static void start_bar(FILE *file)
 {
+	int err;
+
+	/* start the queue */
+	err = snd_seq_start_queue(seq, queue, NULL);
+	check_snd("start queue", err);
+	snd_seq_drain_output(seq);
+
 	write_start_clip(file);
 	write_tempo(file);
 	write_time_sig(file);
@@ -488,10 +495,6 @@ int main(int argc, char *argv[])
 		start_bar(file);
 		start = 1;
 	}
-
-	err = snd_seq_start_queue(seq, queue, NULL);
-	check_snd("start queue", err);
-	snd_seq_drain_output(seq);
 
 	err = snd_seq_nonblock(seq, 1);
 	check_snd("set nonblock mode", err);
