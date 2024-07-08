@@ -321,8 +321,6 @@ static void delta_time(FILE *file, const snd_seq_ump_event_t *ev)
 
 	if (diff <= 0)
 		return;
-	if (tempo_base == 1000)
-		diff *= 100;
 	write_dcs(file, diff);
 	last_tick = ev->time.tick;
 }
