@@ -44,8 +44,9 @@ environment variable if none is given on the command line.
 .B aplaymidi2
 supports only basic UMP events: in addition to the standard MIDI1 and
 MIDI2 CVMs and 7bit SysEx, only the following are supported:
-DCTPQ, DC, Set Tempo, Start Clip and End Clip.
-Lyrics and other meta data in Flex Data are skipped, so far.
+DCTPQ, DC, Set Tempo, Start Clip, End Clip.
+Lyrics and other meta data in Flex Data are printed, too, unless
+\fI\-s\fP option is given.
 
 The multiple output ports are useful when the given MIDI Clip file
 contains the UMP packets for multiple Groups.
@@ -61,6 +62,10 @@ default.
 Specifies how long to wait after the end of each MIDI Clip file,
 to allow the last notes to die away.
 Default is 2 seconds.
+
+.TP
+.I \-s, \-\-silent
+Don't show message texts.
 
 .SH SEE ALSO
 pmidi(1)

@@ -20,6 +20,7 @@ static int port_count;
 static snd_seq_addr_t ports[16];
 static int queue;
 static int end_delay = 2;
+static int silent;
 
 static unsigned int _current_tempo  = 50000000; /* default 120 bpm */
 static unsigned int tempo_base = 10;
@@ -432,7 +433,8 @@ static void play_midi(FILE *file)
 
 			if (fh->meta.status_bank == SND_UMP_FLEX_DATA_MSG_BANK_METADATA ||
 			    fh->meta.status_bank == SND_UMP_FLEX_DATA_MSG_BANK_PERF_TEXT) {
-				show_text(ump);
+				if (!silent)
+					show_text(ump);
 				continue;
 			}
 		} else if (h->type == SND_UMP_MSG_TYPE_STREAM) {
@@ -493,7 +495,8 @@ static void usage(const char *argv0)
 		"-h, --help                  this help\n"
 		"-V, --version               print current version\n"
 		"-p, --port=client:port,...  set port(s) to play to\n"
-		"-d, --delay=seconds         delay after song ends\n",
+		"-d, --delay=seconds         delay after song ends\n"
+		"-s, --silent                don't show texts\n",
 		argv0);
 }
 
@@ -509,13 +512,14 @@ int main(int argc, char *argv[])
 		{"version", 0, NULL, 'V'},
 		{"port", 1, NULL, 'p'},
 		{"delay", 1, NULL, 'd'},
+		{"silent", 1, NULL, 's'},
 		{0}
 	};
 	int c;
 
 	init_seq();
 
-	while ((c = getopt_long(argc, argv, "hVp:d:",
+	while ((c = getopt_long(argc, argv, "hVp:d:s",
 				long_options, NULL)) != -1) {
 		switch (c) {
 		case 'h':
@@ -529,6 +533,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'd':
 			end_delay = atoi(optarg);
+			break;
+		case 's':
+			silent = 1;
 			break;
 		default:
 			usage(argv[0]);
