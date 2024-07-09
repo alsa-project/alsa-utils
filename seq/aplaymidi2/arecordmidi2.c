@@ -29,6 +29,11 @@ static int last_tick;
 static int silent;
 static const char *profile_ump_file;
 
+#define MAX_METADATA	16
+static int metadata_num;
+static unsigned int metadata_types[MAX_METADATA];
+static const char *metadata_texts[MAX_METADATA];
+
 /* Parse a decimal number from a command line argument. */
 static long arg_parse_decimal_num(const char *str, int *err)
 {
@@ -379,14 +384,55 @@ static void write_profiles(FILE *file)
 	fclose(fp);
 }
 
+/* write Flex Data metadata text given by command lines */
+static void write_metadata(FILE *file, unsigned int type, const char *text)
+{
+	int len = strlen(text), size;
+	unsigned int format = SND_UMP_FLEX_DATA_MSG_FORMAT_START;
+
+	while (len > 0) {
+		snd_ump_msg_flex_data_t d = {};
+
+		if (len <= 12) {
+			if (format == SND_UMP_FLEX_DATA_MSG_FORMAT_CONTINUE)
+				format = SND_UMP_FLEX_DATA_MSG_FORMAT_END;
+			else
+				format = SND_UMP_FLEX_DATA_MSG_FORMAT_SINGLE;
+			size = len;
+		} else {
+			size = 12;
+		}
+
+		d.meta.type = SND_UMP_MSG_TYPE_FLEX_DATA;
+		d.meta.addrs = SND_UMP_FLEX_DATA_MSG_ADDR_GROUP;
+		d.meta.status_bank = SND_UMP_FLEX_DATA_MSG_BANK_METADATA;
+		d.meta.status = type;
+		d.meta.format = format;
+
+		/* keep the data in big endian */
+		d.raw[0] = htobe32(d.raw[0]);
+		/* strings are copied as-is in big-endian */
+		memcpy(d.meta.data, text, size);
+
+		fwrite(d.raw, 4, 4, file);
+		len -= size;
+		format = SND_UMP_FLEX_DATA_MSG_FORMAT_CONTINUE;
+	}
+}
+
 /* write MIDI Clip file header and the configuration packets */
 static void write_file_header(FILE *file)
 {
+	int i;
+
 	/* header id */
 	fwrite("SMF2CLIP", 1, 8, file);
 
 	/* clip configuration header */
 	write_profiles(file);
+
+	for (i = 0; i < metadata_num; i++)
+		write_metadata(file, metadata_types[i], metadata_texts[i]);
 
 	/* first DCS */
 	write_dcs(file, 0);
@@ -422,7 +468,21 @@ static void help(const char *argv0)
 		"  -u,--ump=version           UMP MIDI version (1 or 2)\n"
 		"  -r,--interactive           Interactive mode\n"
 		"  -s,--silent                don't print messages\n"
-		"  -P,--profile=file          configuration profile UMP\n",
+		"  -P,--profile=file          configuration profile UMP\n"
+		"  --project=text             put project name meta data text\n"
+		"  --song=text                put song name meta data text\n"
+		"  --clip=text                put MIDI clip name meta data text\n"
+		"  --copyright=text           put copyright notice meta data text\n"
+		"  --composer=text            put composer name meta data text\n"
+		"  --lyricist=text            put lyricist name meta data text\n"
+		"  --arranger=text            put arranger name meta data text\n"
+		"  --publisher=text           put publisher name meta data text\n"
+		"  --publisher=text           put publisher name meta data text\n"
+		"  --publisher=text           put publisher name meta data text\n"
+		"  --performer=text           put performer name meta data text\n"
+		"  --accompany=text           put accompany performer name meta data text\n"
+		"  --date=text                put recording date meta data text\n"
+		"  --location=text            put recording location meta data text\n",
 		argv0);
 }
 
@@ -435,6 +495,22 @@ static void sighandler(int sig ATTRIBUTE_UNUSED)
 {
 	stop = 1;
 }
+
+#define OPT_META_BIT		0x1000
+enum {
+	OPT_META_PROJECT	= 0x1001,
+	OPT_META_SONG		= 0x1002,
+	OPT_META_CLIP		= 0x1003,
+	OPT_META_COPYRIGHT	= 0x1004,
+	OPT_META_COMPOSER	= 0x1005,
+	OPT_META_LYRICIST	= 0x1006,
+	OPT_META_ARRANGER	= 0x1007,
+	OPT_META_PUBLISHER	= 0x1008,
+	OPT_META_PERFORMER	= 0x1009,
+	OPT_META_ACCOMPANY	= 0x100a,
+	OPT_META_DATE		= 0x100b,
+	OPT_META_LOCATION	= 0x100c,
+};
 
 int main(int argc, char *argv[])
 {
@@ -451,6 +527,19 @@ int main(int argc, char *argv[])
 		{"interactive", 0, NULL, 'r'},
 		{"silent", 0, NULL, 's'},
 		{"profile", 1, NULL, 'P'},
+		/* meta data texts */
+		{"project", 1, NULL, OPT_META_PROJECT},
+		{"song", 1, NULL, OPT_META_SONG},
+		{"clip", 1, NULL, OPT_META_CLIP},
+		{"copyright", 1, NULL, OPT_META_COPYRIGHT},
+		{"composer", 1, NULL, OPT_META_COMPOSER},
+		{"lyricist", 1, NULL, OPT_META_LYRICIST},
+		{"arranger", 1, NULL, OPT_META_ARRANGER},
+		{"publisher", 1, NULL, OPT_META_PUBLISHER},
+		{"performer", 1, NULL, OPT_META_PERFORMER},
+		{"accompany", 1, NULL, OPT_META_ACCOMPANY},
+		{"date", 1, NULL, OPT_META_DATE},
+		{"location", 1, NULL, OPT_META_LOCATION},
 		{0}
 	};
 
@@ -517,6 +606,14 @@ int main(int argc, char *argv[])
 			profile_ump_file = optarg;
 			break;
 		default:
+			if (c & OPT_META_BIT) {
+				if (metadata_num >= MAX_METADATA)
+					fatal("Too many metadata given");
+				metadata_types[metadata_num] = c & 0x0f;
+				metadata_texts[metadata_num] = optarg;
+				metadata_num++;
+				break;
+			}
 			help(argv[0]);
 			return 1;
 		}
