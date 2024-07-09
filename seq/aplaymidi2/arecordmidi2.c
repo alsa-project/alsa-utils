@@ -124,7 +124,7 @@ static void create_ump_client(void)
 
 		sprintf(blkname, "Group %d", i + 1);
 		snd_ump_block_info_set_name(blk, blkname);
-		snd_ump_block_info_set_direction(blk, SND_UMP_DIR_OUTPUT);
+		snd_ump_block_info_set_direction(blk, SND_UMP_DIR_INPUT);
 		snd_ump_block_info_set_first_group(blk, i);
 		snd_ump_block_info_set_num_groups(blk, 1);
 		snd_ump_block_info_set_ui_hint(blk, SND_UMP_BLOCK_UI_HINT_RECEIVER);
