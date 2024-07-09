@@ -87,6 +87,12 @@ discarded.
 .I \-s,\-\-silent
 Don't print messages to stdout.
 
+.TP
+.I \-P,\-\-profile=file
+Read the UMP data from the given file and put them into the
+configuration section of the recorded output.
+The file must contain only valid UMP data encoded in big-endian.
+
 .SH SEE ALSO
 arecordmidi(1)
 .br

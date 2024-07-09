@@ -27,6 +27,7 @@ static int ts_num = 4; /* time signature: numerator */
 static int ts_div = 4; /* time signature: denominator */
 static int last_tick;
 static int silent;
+static const char *profile_ump_file;
 
 /* Parse a decimal number from a command line argument. */
 static long arg_parse_decimal_num(const char *str, int *err)
@@ -337,6 +338,47 @@ static void record_event(FILE *file, const snd_seq_ump_event_t *ev)
 	write_ump(file, ev->ump);
 }
 
+/* read a UMP raw (big-endian) packet, return the packet length in words */
+static int read_ump_raw(FILE *file, uint32_t *buf)
+{
+	uint32_t v;
+	int i, num;
+
+	if (fread(buf, 4, 1, file) != 1)
+		return 0;
+	v = be32toh(v);
+	num = snd_ump_packet_length(snd_ump_msg_hdr_type(v));
+	for (i = 1; i < num; i++) {
+		if (fread(buf + i, 4, 1, file) != 1)
+			return 0;
+	}
+	return num;
+}
+
+/* read the profile UMP data and write to the configuration */
+static void write_profiles(FILE *file)
+{
+	FILE *fp;
+	uint32_t ump[4];
+	int len;
+
+	if (!profile_ump_file)
+		return;
+
+	fp = fopen(profile_ump_file, "rb");
+	if (!fp)
+		fatal("cannot open the profile '%s'", profile_ump_file);
+
+	while (!feof(fp)) {
+		len = read_ump_raw(fp, ump);
+		if (!len)
+			break;
+		fwrite(ump, 4, len, file);
+	}
+
+	fclose(fp);
+}
+
 /* write MIDI Clip file header and the configuration packets */
 static void write_file_header(FILE *file)
 {
@@ -344,7 +386,7 @@ static void write_file_header(FILE *file)
 	fwrite("SMF2CLIP", 1, 8, file);
 
 	/* clip configuration header */
-	/* FIXME: add profiles */
+	write_profiles(file);
 
 	/* first DCS */
 	write_dcs(file, 0);
@@ -379,7 +421,8 @@ static void help(const char *argv0)
 		"  -n,--num-events=events     fixed number of events to record, then exit\n"
 		"  -u,--ump=version           UMP MIDI version (1 or 2)\n"
 		"  -r,--interactive           Interactive mode\n"
-		"  -s,--silent                don't print messages\n",
+		"  -s,--silent                don't print messages\n"
+		"  -P,--profile=file          configuration profile UMP\n",
 		argv0);
 }
 
@@ -395,7 +438,7 @@ static void sighandler(int sig ATTRIBUTE_UNUSED)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hVp:b:t:n:u:rs";
+	static const char short_options[] = "hVp:b:t:n:u:rsP:";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
@@ -407,6 +450,7 @@ int main(int argc, char *argv[])
 		{"ump", 1, NULL, 'u'},
 		{"interactive", 0, NULL, 'r'},
 		{"silent", 0, NULL, 's'},
+		{"profile", 1, NULL, 'P'},
 		{0}
 	};
 
@@ -468,6 +512,9 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			silent = 1;
+			break;
+		case 'P':
+			profile_ump_file = optarg;
 			break;
 		default:
 			help(argv[0]);
