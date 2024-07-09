@@ -26,6 +26,7 @@ static volatile sig_atomic_t stop;
 static int ts_num = 4; /* time signature: numerator */
 static int ts_div = 4; /* time signature: denominator */
 static int last_tick;
+static int silent;
 
 /* Parse a decimal number from a command line argument. */
 static long arg_parse_decimal_num(const char *str, int *err)
@@ -377,7 +378,8 @@ static void help(const char *argv0)
 		"  -i,--timesig=nn:dd         time signature\n"
 		"  -n,--num-events=events     fixed number of events to record, then exit\n"
 		"  -u,--ump=version           UMP MIDI version (1 or 2)\n"
-		"  -r,--interactive           Interactive mode\n",
+		"  -r,--interactive           Interactive mode\n"
+		"  -s,--silent                don't print messages\n",
 		argv0);
 }
 
@@ -393,7 +395,7 @@ static void sighandler(int sig ATTRIBUTE_UNUSED)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hVp:b:t:n:u:r";
+	static const char short_options[] = "hVp:b:t:n:u:rs";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
@@ -404,6 +406,7 @@ int main(int argc, char *argv[])
 		{"num-events", 1, NULL, 'n'},
 		{"ump", 1, NULL, 'u'},
 		{"interactive", 0, NULL, 'r'},
+		{"silent", 0, NULL, 's'},
 		{0}
 	};
 
@@ -463,6 +466,9 @@ int main(int argc, char *argv[])
 		case 'r':
 			interactive = 1;
 			break;
+		case 's':
+			silent = 1;
+			break;
 		default:
 			help(argv[0]);
 			return 1;
@@ -481,14 +487,21 @@ int main(int argc, char *argv[])
 
 	filename = argv[optind];
 
-	file = fopen(filename, "wb");
-	if (!file)
-		fatal("Cannot open %s - %s", filename, strerror(errno));
+	if (!strcmp(filename, "-")) {
+		file = stdout;
+		silent = 1; // imply silent mode
+	} else {
+		file = fopen(filename, "wb");
+		if (!file)
+			fatal("Cannot open %s - %s", filename, strerror(errno));
+	}
 
 	write_file_header(file);
 	if (interactive) {
-		printf("Press RETURN to start recording:");
-		fflush(stdout);
+		if (!silent) {
+			printf("Press RETURN to start recording:");
+			fflush(stdout);
+		}
 	} else {
 		start_bar(file);
 		start = 1;
@@ -515,8 +528,10 @@ int main(int argc, char *argv[])
 				if (!start) {
 					start_bar(file);
 					start = 1;
-					printf("Press RETURN to stop recording:");
-					fflush(stdout);
+					if (!silent) {
+						printf("Press RETURN to stop recording:");
+						fflush(stdout);
+					}
 					continue;
 				} else {
 					stop = 1;
@@ -544,11 +559,14 @@ int main(int argc, char *argv[])
 			break;
 	}
 
-	if (num_events && events_received < num_events)
-		fputs("Warning: Received signal before num_events\n", stdout);
+	if (num_events && events_received < num_events) {
+		if (!silent)
+			fputs("Warning: Received signal before num_events\n", stdout);
+	}
 
 	write_end_clip(file);
-	fclose(file);
+	if (file != stdout)
+		fclose(file);
 	snd_seq_close(seq);
 	return 0;
 }

@@ -14,6 +14,9 @@ more ALSA sequencer ports.
 
 To stop recording, press Ctrl+C.
 
+When \fB\-\fP is passed to the MIDI Clip file argument,
+it's recorded to stdout.  It implies \fI\-s\fP option, too.
+
 .SH OPTIONS
 
 .TP
@@ -79,6 +82,10 @@ key input from the terminal to start the recording.  After starting,
 the recording ends when another RETURN key is input from the
 terminal.  The received events before the start of recording are
 discarded.
+
+.TP
+.I \-s,\-\-silent
+Don't print messages to stdout.
 
 .SH SEE ALSO
 arecordmidi(1)
