@@ -416,6 +416,7 @@ static void write_metadata(FILE *file, unsigned int type, const char *text)
 
 		fwrite(d.raw, 4, 4, file);
 		len -= size;
+		text += size;
 		format = SND_UMP_FLEX_DATA_MSG_FORMAT_CONTINUE;
 	}
 }
