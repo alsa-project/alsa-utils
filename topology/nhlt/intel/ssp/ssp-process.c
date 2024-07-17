@@ -159,8 +159,14 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 	ssp->ssp_blob[di][hwi].ssc0 = SSCR0_MOD | SSCR0_PSP | SSCR0_RIM | SSCR0_TIM;
 
 	/* sscr1 dynamic settings are SFRMDIR, SCLKDIR, SCFR */
-	ssp->ssp_blob[di][hwi].ssc1 = SSCR1_TTE | SSCR1_TTELP | SSCR1_TRAIL | SSCR1_RSRE |
-		SSCR1_TSRE;
+	if (ssp->ssp_prm[di].version == SSP_BLOB_VER_3_0)
+		/* bits 21 and 20, TSRE and RSRE do not exist in ACE3.x
+		 *  Note: Assuming SSP_BLOB_VER_3_0 is ACE3.x
+		 */
+		ssp->ssp_blob[di][hwi].ssc1 = SSCR1_TTE | SSCR1_TTELP | SSCR1_TRAIL;
+	else
+		ssp->ssp_blob[di][hwi].ssc1 = SSCR1_TTE | SSCR1_TTELP | SSCR1_TRAIL |
+			SSCR1_RSRE | SSCR1_TSRE;
 
 	/* sscr2 dynamic setting is LJDFD */
 	ssp->ssp_blob[di][hwi].ssc2 = SSCR2_SDFD | SSCR2_TURM1;
@@ -238,7 +244,13 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 		ssp->ssp_blob[di][hwi].sspsp |= SSPSP_SCMODE(inverted_bclk);
 	}
 
-	ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_MOD | SSCR0_ACS;
+	/* Note: ACS as SSCR0(30) does not exist in any ACE version, or cAVS2.x. This disables
+	 * it for ACE3.x. It might be good to fix later for other platforms. In cAVS this is 30:29
+	 * reserved, in ACE1.x this is DLE as 30:29, in ACE2.x this is RSVD30 as 30:29, in ACE3.x this
+	 * is DLE as 30:29.
+	 */
+	if (ssp->ssp_prm[di].version != SSP_BLOB_VER_3_0)
+		ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_ACS;
 
 	/* Additional hardware settings */
 
@@ -579,13 +591,23 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 
 	ssp->ssp_blob[di][hwi].mdivr = clk_div;
 	/* clock will always go through the divider */
+
+	/* Note: There is no SSC0(6) ECS in ACE3.x but RSVD6 in same bit position
+	 * that must be set to one.
+	 */
 	ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_ECS;
+
 	/* enable divider for this clock id */
 	ssp->ssp_blob[di][hwi].mdivc |= BIT(ssp->ssp_prm[di].mclk_id);
 	/* set mclk source always for audio cardinal clock */
 	ssp->ssp_blob[di][hwi].mdivc |= MCDSS(SSP_CLOCK_AUDIO_CARDINAL);
-	/* set bclk source for audio cardinal clock */
-	ssp->ssp_blob[di][hwi].mdivc |= MNDSS(SSP_CLOCK_AUDIO_CARDINAL);
+	/* set bclk source for audio cardinal clock
+	 * Note: There is no MDIVXCTRL(21:20) MNDSS in any ACE version 1.x - 3.x. MNDSS
+	 * exists in cAVS2.x. This removes the set for ACE3.x. May need to address other
+	 * ACE platforms later.
+	 */
+	if (ssp->ssp_prm[di].version != SSP_BLOB_VER_3_0)
+		ssp->ssp_blob[di][hwi].mdivc |= MNDSS(SSP_CLOCK_AUDIO_CARDINAL);
 
 	return 0;
 }
