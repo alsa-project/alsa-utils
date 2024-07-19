@@ -67,6 +67,14 @@ Default is 2 seconds.
 .I \-s, \-\-silent
 Don't show message texts.
 
+.TP
+.I \-a, \-\-passall
+Pass all UMP packets as is.
+
+As default, \fBaplaymidi2\fP passes only MIDI1 and MIDI2 channel voice
+messages and process other UMP packets internally.
+With this option, it passes all UMP packets to the target.
+
 .SH SEE ALSO
 pmidi(1)
 .br

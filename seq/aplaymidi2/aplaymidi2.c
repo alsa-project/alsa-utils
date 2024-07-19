@@ -21,6 +21,7 @@ static snd_seq_addr_t ports[16];
 static int queue;
 static int end_delay = 2;
 static int silent;
+static int passall;
 
 static unsigned int _current_tempo  = 50000000; /* default 120 bpm */
 static unsigned int tempo_base = 10;
@@ -411,6 +412,9 @@ static void play_midi(FILE *file)
 	while ((len = read_ump_packet(file, ump)) > 0) {
 		const snd_ump_msg_hdr_t *h = (snd_ump_msg_hdr_t *)ump;
 
+		if (passall)
+			send_ump(ump, len);
+
 		if (h->type == SND_UMP_MSG_TYPE_UTILITY) {
 			const snd_ump_msg_utility_t *uh =
 				(const snd_ump_msg_utility_t *)ump;
@@ -448,9 +452,10 @@ static void play_midi(FILE *file)
 				end_clip();
 				continue;
 			}
-		} else if (h->type == SND_UMP_MSG_TYPE_MIDI1_CHANNEL_VOICE ||
-			   h->type == SND_UMP_MSG_TYPE_DATA ||
-			   h->type == SND_UMP_MSG_TYPE_MIDI2_CHANNEL_VOICE) {
+		} else if (!passall &&
+			   (h->type == SND_UMP_MSG_TYPE_MIDI1_CHANNEL_VOICE ||
+			    h->type == SND_UMP_MSG_TYPE_DATA ||
+			    h->type == SND_UMP_MSG_TYPE_MIDI2_CHANNEL_VOICE)) {
 			send_ump(ump, len);
 		}
 	}
@@ -496,7 +501,8 @@ static void usage(const char *argv0)
 		"-V, --version               print current version\n"
 		"-p, --port=client:port,...  set port(s) to play to\n"
 		"-d, --delay=seconds         delay after song ends\n"
-		"-s, --silent                don't show texts\n",
+		"-s, --silent                don't show texts\n"
+		"-a, --passall               pass all UMP packets as-is\n",
 		argv0);
 }
 
@@ -513,13 +519,14 @@ int main(int argc, char *argv[])
 		{"port", 1, NULL, 'p'},
 		{"delay", 1, NULL, 'd'},
 		{"silent", 0, NULL, 's'},
+		{"passall", 0, NULL, 'a'},
 		{0}
 	};
 	int c;
 
 	init_seq();
 
-	while ((c = getopt_long(argc, argv, "hVp:d:s",
+	while ((c = getopt_long(argc, argv, "hVp:d:sa",
 				long_options, NULL)) != -1) {
 		switch (c) {
 		case 'h':
@@ -536,6 +543,9 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			silent = 1;
+			break;
+		case 'a':
+			passall = 1;
 			break;
 		default:
 			usage(argv[0]);
