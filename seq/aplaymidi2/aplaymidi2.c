@@ -512,7 +512,7 @@ int main(int argc, char *argv[])
 		{"version", 0, NULL, 'V'},
 		{"port", 1, NULL, 'p'},
 		{"delay", 1, NULL, 'd'},
-		{"silent", 1, NULL, 's'},
+		{"silent", 0, NULL, 's'},
 		{0}
 	};
 	int c;
