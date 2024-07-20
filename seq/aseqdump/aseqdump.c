@@ -442,7 +442,7 @@ static const char *midi2_velocity(unsigned int v)
 			snprintf(tmp, sizeof(tmp), "%.2f",
 				 ((double)v * 64.0) / 0x8000);
 		else
-			snprintf(tmp, sizeof(tmp), ".2%f",
+			snprintf(tmp, sizeof(tmp), "%.2f",
 				 ((double)(v - 0x8000) * 63.0) / 0x7fff + 64.0);
 		return tmp;
 	} else if (view_mode == VIEW_PERCENT) {
