@@ -362,6 +362,17 @@ static int msg_byte_in_range(mbyte_t *data, mbyte_t len)
 
 int main(int argc, char *argv[])
 {
+	static const struct option long_options[] = {
+		{"help", 0, NULL, 'h'},
+		{"version", 0, NULL, 'V'},
+		{"verbose", 0, NULL, 'v'},
+		{"list", 0, NULL, 'l'},
+		{"port", 1, NULL, 'p'},
+		{"file", 1, NULL, 's'},
+		{"interval", 1, NULL, 'i'},
+		{"ump", 1, NULL, 'u'},
+		{0}
+	};
 	char c = 0;
 	char do_send_file = 0;
 	char do_port_list = 0;
@@ -370,7 +381,7 @@ int main(int argc, char *argv[])
 	int sent_data_c;
 	int k;
 
-	while ((c = getopt(argc, argv, "hi:Vvlp:s:u:")) != -1) {
+	while ((c = getopt_long(argc, argv, "hi:Vvlp:s:u:", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
