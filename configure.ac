@@ -21,7 +21,7 @@ AC_PROG_SED
 AC_DISABLE_STATIC
 AM_PROG_LIBTOOL
 PKG_PROG_PKG_CONFIG
-AM_PATH_ALSA(1.2.5)
+AM_PATH_ALSA(1.2.12)
 if test "x$enable_alsatest" = "xyes"; then
 AC_CHECK_FUNC([snd_ctl_elem_add_enumerated],
 	      , [AC_ERROR([No user enum control support in alsa-lib])])
