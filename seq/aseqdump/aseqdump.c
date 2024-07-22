@@ -29,9 +29,7 @@
 #include <poll.h>
 #include <alsa/asoundlib.h>
 #include "version.h"
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 #include <alsa/ump_msg.h>
-#endif
 
 enum {
 	VIEW_RAW, VIEW_NORMALIZED, VIEW_PERCENT
@@ -41,11 +39,7 @@ static snd_seq_t *seq;
 static int port_count;
 static snd_seq_addr_t *ports;
 static volatile sig_atomic_t stop = 0;
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 static int ump_version;
-#else
-#define ump_version	0
-#endif
 static int view_mode = VIEW_RAW;
 
 /* prints an error message to stderr, and dies */
@@ -368,7 +362,6 @@ static void dump_event(const snd_seq_event_t *ev)
 	}
 }
 
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 static int group_number(unsigned char c)
 {
 	if (view_mode != VIEW_RAW)
@@ -986,7 +979,6 @@ static void dump_ump_event(const snd_seq_ump_event_t *ev)
 		break;
 	}
 }
-#endif /* HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION */
 
 static void list_ports(void)
 {
@@ -1029,10 +1021,8 @@ static void help(const char *argv0)
 		"  -N,--normalized-view       show normalized values\n"
 		"  -P,--percent-view          show percent values\n"
 		"  -R,--raw-view              show raw values (default)\n"
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 		"  -u,--ump=version           set client MIDI version (0=legacy, 1= UMP MIDI 1.0, 2=UMP MIDI2.0)\n"
 		"  -r,--raw                   do not convert UMP and legacy events\n"
-#endif
 		"  -p,--port=client:port,...  source port(s)\n",
 		argv0);
 }
@@ -1049,11 +1039,7 @@ static void sighandler(int sig ATTRIBUTE_UNUSED)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hVlp:NPR"
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
-		"u:r"
-#endif
-		;
+	static const char short_options[] = "hVlp:NPRu:r";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
@@ -1062,10 +1048,8 @@ int main(int argc, char *argv[])
 		{"normalized-view", 0, NULL, 'N'},
 		{"percent-view", 0, NULL, 'P'},
 		{"raw-view", 0, NULL, 'R'},
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 		{"ump", 1, NULL, 'u'},
 		{"raw", 0, NULL, 'r'},
-#endif
 		{0}
 	};
 
@@ -1100,7 +1084,6 @@ int main(int argc, char *argv[])
 		case 'N':
 			view_mode = VIEW_NORMALIZED;
 			break;
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 		case 'u':
 			ump_version = atoi(optarg);
 			snd_seq_set_client_midi_version(seq, ump_version);
@@ -1108,7 +1091,6 @@ int main(int argc, char *argv[])
 		case 'r':
 			snd_seq_set_client_ump_conversion(seq, 0);
 			break;
-#endif
 		default:
 			help(argv[0]);
 			return 1;
@@ -1150,7 +1132,6 @@ int main(int argc, char *argv[])
 			break;
 		for (;;) {
 			snd_seq_event_t *event;
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 			snd_seq_ump_event_t *ump_ev;
 			if (ump_version > 0) {
 				err = snd_seq_ump_event_input(seq, &ump_ev);
@@ -1160,7 +1141,6 @@ int main(int argc, char *argv[])
 					dump_ump_event(ump_ev);
 				continue;
 			}
-#endif
 
 			err = snd_seq_event_input(seq, &event);
 			if (err < 0)
