@@ -1618,6 +1618,8 @@ static void do_pause(void)
 		error(_("pause push error: %s"), snd_strerror(err));
 		return;
 	}
+	fprintf(stderr, _("\r=== PAUSE ===                                                            "));
+	fflush(stderr);
 	while (1) {
 		b = wait_for_input();
 		if (b == ' ' || b == '\r') {
@@ -1642,8 +1644,6 @@ static void check_stdin(void)
 		while (read(fileno(stdin), &b, 1) == 1) {
 			if (b == ' ' || b == '\r') {
 				while (read(fileno(stdin), &b, 1) == 1);
-				fprintf(stderr, _("\r=== PAUSE ===                                                            "));
-				fflush(stderr);
 				do_pause();
 				fprintf(stderr, "                                                                          \r");
 				fflush(stderr);
