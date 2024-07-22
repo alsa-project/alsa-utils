@@ -33,6 +33,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <alsa/asoundlib.h>
+#include <alsa/ump_msg.h>
 
 typedef unsigned char mbyte_t;
 
@@ -43,6 +44,7 @@ static char *send_hex;
 static mbyte_t *send_data;
 static snd_seq_addr_t addr;
 static int send_data_length;
+static int ump_version;
 
 static void error(const char *format, ...)
 {
@@ -320,6 +322,32 @@ static void send_midi_msg(snd_seq_event_type_t type, mbyte_t *data, int len)
 	snd_seq_drain_output(seq);
 }
 
+static int send_ump(const unsigned char *data)
+{
+	static int ump_len = 0, offset = 0;
+	unsigned int ump[4];
+	snd_seq_ump_event_t ev;
+
+	ump[offset] = (data[0] << 24) | (data[1] << 16) |
+		(data[2] << 8) | data[3];
+	if (!offset)
+		ump_len = snd_ump_packet_length(snd_ump_msg_type(ump));
+
+	offset++;
+	if (offset < ump_len)
+		return 0;
+
+	snd_seq_ump_ev_clear(&ev);
+	snd_seq_ev_set_source(&ev, 0);
+	snd_seq_ev_set_dest(&ev, addr.client, addr.port);
+	snd_seq_ev_set_direct(&ev);
+	snd_seq_ev_set_ump_data(&ev, ump, ump_len * 4);
+	snd_seq_ump_event_output(seq, &ev);
+	snd_seq_drain_output(seq);
+	offset = 0;
+	return ump_len * 4;
+}
+
 static int msg_byte_in_range(mbyte_t *data, mbyte_t len)
 {
 	for (int i = 0; i < len; i++) {
@@ -342,7 +370,7 @@ int main(int argc, char *argv[])
 	int sent_data_c;
 	int k;
 
-	while ((c = getopt(argc, argv, "hi:Vvlp:s:")) != -1) {
+	while ((c = getopt(argc, argv, "hi:Vvlp:s:u:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
@@ -365,6 +393,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'i':
 			sysex_interval = atoi(optarg) * 1000; //ms--->us
+			break;
+		case 'u':
+			ump_version = atoi(optarg);
 			break;
 		default:
 			error("Try 'aseqsend -h' for more information.");
@@ -401,7 +432,11 @@ int main(int argc, char *argv[])
 	if (!send_data)
 		exit(EXIT_SUCCESS);
 
+	if (ump_version && (send_data_length % 4) != 0)
+		fatal("UMP data must be aligned to 4 bytes");
+
 	init_seq();
+	snd_seq_set_client_midi_version(seq, ump_version);
 	create_port();
 
 	if (snd_seq_parse_address(seq, &addr, port_name) < 0) {
@@ -413,6 +448,12 @@ int main(int argc, char *argv[])
 	k = 0;
 
 	while (k < send_data_length) {
+
+		if (ump_version) {
+			sent_data_c += send_ump(send_data + k);
+			k += 4;
+			continue;
+		}
 
 		if (send_data[k] == 0xF0) {
 

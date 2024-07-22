@@ -14,6 +14,10 @@ It can also send any other MIDI commands.
 Messages to be send can be given in the last argument as hex encoded byte string or can be read from raw binary file.
 When sending several SysEx messages at once there is a delay of 1ms after each message as deafult and can be set to different value with option \-i.
 
+A client can be specified by its number, its name, or a prefix of its
+name.  A port is specified by its number; for port 0 of a client, the
+":0" part of the port specification can be omitted.
+
 .SH OPTIONS
 
 .TP
@@ -44,10 +48,13 @@ Send raw binary data from given file name
 \-i
 Interval between SysEx messages in miliseconds
 
+.TP
+\-u
+Specify the MIDI version. 0 for the legacy MIDI 1.0 (default),
+1 for UMP MIDI 1.0 protocol and 2 for UMP MIDI 2.0 protocol.
 
-A client can be specified by its number, its name, or a prefix of its
-name.  A port is specified by its number; for port 0 of a client, the
-":0" part of the port specification can be omitted.
+When UMP MIDI 1.0 or MIDI 2.0 protocol is specified, \fBaseqsend\fP
+reads the input as raw UMP packets, 4 each byte in big endian.
 
 .SH EXAMPLES
 
