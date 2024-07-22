@@ -30,9 +30,7 @@
 #include <unistd.h>
 #include <alsa/asoundlib.h>
 #include "version.h"
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 #include <alsa/ump_msg.h>
-#endif
 
 /*
  * 31.25 kbaud, one start bit, eight data bits, two stop bits.
@@ -78,9 +76,7 @@ static int file_offset;		/* current offset in input file */
 static int num_tracks;
 static struct track *tracks;
 static int smpte_timing;
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 static int ump_mode;
-#endif
 
 /* prints an error message to stderr */
 static void errormsg(const char *msg, ...)
@@ -685,7 +681,6 @@ static int fill_legacy_event(struct event* event, snd_seq_event_t *ev)
 	return 0;
 }
 
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 static unsigned char to_ump_status(unsigned char ev_type)
 {
 	switch (ev_type) {
@@ -762,13 +757,10 @@ static int fill_ump_event(struct event* event, snd_seq_ump_event_t *ump_ev,
 	snd_seq_ev_set_ump_data(ump_ev, &ump, sizeof(ump));
 	return 0;
 }
-#endif /* HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION */
 
 static void play_midi(void)
 {
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 	snd_seq_ump_event_t ump_ev;
-#endif
 	snd_seq_event_t ev;
 	int i, max_tick, err;
 
@@ -830,7 +822,7 @@ static void play_midi(void)
 			if (err < 0)
 				continue;
 		}
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
+
 		if (ump_mode) {
 			err = fill_ump_event(event, &ump_ev, &ev);
 			if (err < 0)
@@ -839,7 +831,6 @@ static void play_midi(void)
 			check_snd("output event", err);
 			continue;
 		}
-#endif
 
 		/* this blocks when the output pool has been filled */
 		err = snd_seq_event_output(seq, &ev);
@@ -957,9 +948,7 @@ static void usage(const char *argv0)
 		"-V, --version               print current version\n"
 		"-l, --list                  list all possible output ports\n"
 		"-p, --port=client:port,...  set port(s) to play to\n"
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 		"-u, --ump=version           UMP output (only version=1 is supported)\n"
-#endif
 		"-d, --delay=seconds         delay after song ends\n",
 		argv0);
 }
@@ -969,12 +958,7 @@ static void version(void)
 	puts("aplaymidi version " SND_UTIL_VERSION_STR);
 }
 
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 #define OPTIONS	"hVlp:d:u:"
-#else
-#define OPTIONS	"hVlp:d:"
-#endif
-
 
 int main(int argc, char *argv[])
 {
@@ -984,9 +968,7 @@ int main(int argc, char *argv[])
 		{"version", 0, NULL, 'V'},
 		{"list", 0, NULL, 'l'},
 		{"port", 1, NULL, 'p'},
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 		{"ump", 1, NULL, 'u'},
-#endif
 		{"delay", 1, NULL, 'd'},
 		{0}
 	};
@@ -1013,7 +995,6 @@ int main(int argc, char *argv[])
 		case 'd':
 			end_delay = atoi(optarg);
 			break;
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 		case 'u':
 			if (strcmp(optarg, "1")) {
 				errormsg("Only MIDI 1.0 is supported");
@@ -1021,7 +1002,6 @@ int main(int argc, char *argv[])
 			}
 			ump_mode = 1;
 			break;
-#endif
 		default:
 			usage(argv[0]);
 			return 1;
@@ -1029,13 +1009,11 @@ int main(int argc, char *argv[])
 	}
 
 
-#ifdef HAVE_SEQ_CLIENT_INFO_GET_MIDI_VERSION
 	if (ump_mode) {
 		int err;
 		err = snd_seq_set_client_midi_version(seq, SND_SEQ_CLIENT_UMP_MIDI_1_0);
 		check_snd("set midi version", err);
 	}
-#endif
 
 	if (do_list) {
 		list_ports();
