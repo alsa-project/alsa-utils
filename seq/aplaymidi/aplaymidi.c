@@ -996,11 +996,9 @@ int main(int argc, char *argv[])
 			end_delay = atoi(optarg);
 			break;
 		case 'u':
-			if (strcmp(optarg, "1")) {
-				errormsg("Only MIDI 1.0 is supported");
-				return 1;
-			}
-			ump_mode = 1;
+			ump_mode = atoi(optarg);
+			if (ump_mode < 0 || ump_mode > 1)
+				fatal("Only MIDI 1.0 is supported");
 			break;
 		default:
 			usage(argv[0]);
