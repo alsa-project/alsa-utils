@@ -1086,6 +1086,8 @@ int main(int argc, char *argv[])
 			break;
 		case 'u':
 			ump_version = atoi(optarg);
+			if (ump_version < 0 || ump_version > 2)
+				fatal("Invalid UMP version %d", ump_version);
 			snd_seq_set_client_midi_version(seq, ump_version);
 			break;
 		case 'r':
