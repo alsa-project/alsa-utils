@@ -673,6 +673,7 @@ static void dump_ump_sysex_event(const unsigned int *ump)
 	int i, length;
 
 	printf("Group %2d, ", group_number(snd_ump_msg_group(ump)));
+	printf("SysEx ");
 	switch (snd_ump_sysex_msg_status(ump)) {
 	case SND_UMP_SYSEX_STATUS_SINGLE:
 		printf("Single  ");
