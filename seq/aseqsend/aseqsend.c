@@ -212,6 +212,9 @@ static void init_seq(void)
 	/* set our client's name */
 	err = snd_seq_set_client_name(seq, "aseqsend");
 	check_snd("set client name", err);
+
+	err = snd_seq_set_client_midi_version(seq, ump_version);
+	check_snd("set client midi version", err);
 }
 
 static void create_port(void)
@@ -448,7 +451,6 @@ int main(int argc, char *argv[])
 		fatal("UMP data must be aligned to 4 bytes");
 
 	init_seq();
-	snd_seq_set_client_midi_version(seq, ump_version);
 	create_port();
 
 	if (snd_seq_parse_address(seq, &addr, port_name) < 0) {
