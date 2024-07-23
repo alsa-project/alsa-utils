@@ -72,13 +72,14 @@ static void usage(void)
 {
 	printf(
 		"\nUsage: aseqsend -p target-port -s file-name|\"hex encoded bytes\"\n\n"
-		"         -h  this help\n"
-		"         -V  print current version\n"
-		"         -v  verbose\n"
-		"         -l  list all sequencer ports\n"
-		"         -p  target port by number or name\n"
-		"         -s  send binary data from given file name\n"
-		"         -i  interval between SysEx messages in miliseconds\n\n");
+		"  -h,--help         this help\n"
+		"  -V,--version      print current version\n"
+		"  -v,--verbose      verbose mode\n"
+		"  -l,--list         list all sequencer ports\n"
+		"  -p,--port=c:p     target port by number or name\n"
+		"  -s,--file=name    send binary data from given file name\n"
+		"  -i,--interval=v   interval between SysEx messages in miliseconds\n"
+		"  -u,--ump=version  MIDI version: 0=legacy (default), 1=MIDI1, 2=MIDI2\n\n");
 }
 
 static void version(void)
