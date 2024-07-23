@@ -44,7 +44,10 @@ static char *send_hex;
 static mbyte_t *send_data;
 static snd_seq_addr_t addr;
 static int send_data_length;
+static int sent_data_c;
 static int ump_version;
+static int sysex_interval = 1000; //us
+static snd_midi_event_t *edev;
 
 static void error(const char *format, ...)
 {
@@ -228,6 +231,13 @@ static void create_port(void)
 	check_snd("create port", err);
 }
 
+static void init_midi_event_encoder(void)
+{
+	int err;
+
+	err = snd_midi_event_new(256, &edev);
+	check_snd("create midi event encoder", err);
+}
 
 static void list_ports(void)
 {
@@ -260,109 +270,81 @@ static void list_ports(void)
 	}
 }
 
-static void send_midi_msg(snd_seq_event_type_t type, mbyte_t *data, int len)
+/* compose a UMP event, submit it, return the next data position */
+static int send_ump(int pos)
 {
+	int ump_len = 0, offset = 0;
+	unsigned int ump[4];
+	snd_seq_ump_event_t ev;
+
+	snd_seq_ump_ev_clear(&ev);
+	snd_seq_ev_set_source(&ev, 0);
+	snd_seq_ev_set_dest(&ev, addr.client, addr.port);
+	snd_seq_ev_set_direct(&ev);
+
+	do {
+		const mbyte_t *data = send_data + pos;
+
+		if (pos >= send_data_length)
+			return pos;
+		ump[offset] = (data[0] << 24) | (data[1] << 16) |
+			(data[2] << 8) | data[3];
+		if (!offset)
+			ump_len = snd_ump_packet_length(snd_ump_msg_type(ump));
+		offset++;
+		pos += 4;
+	} while (offset < ump_len);
+
+	snd_seq_ev_set_ump_data(&ev, ump, ump_len * 4);
+	snd_seq_ump_event_output(seq, &ev);
+	snd_seq_drain_output(seq);
+
+	sent_data_c += ump_len * 4;
+	return pos;
+}
+
+/* compose an event, submit it, return the next data position */
+static int send_midi_bytes(int pos)
+{
+	const mbyte_t *data = send_data + pos;
 	snd_seq_event_t ev;
+	int is_sysex = 0;
+	int end;
 
 	snd_seq_ev_clear(&ev);
 	snd_seq_ev_set_source(&ev, 0);
 	snd_seq_ev_set_dest(&ev, addr.client, addr.port);
 	snd_seq_ev_set_direct(&ev);
 
-	if (type == SND_SEQ_EVENT_SYSEX) {
-		snd_seq_ev_set_sysex(&ev, len, data);
-	} else {
-		mbyte_t ch = data[0] & 0xF;
-
-		switch (type) {
-		case SND_SEQ_EVENT_NOTEON:
-			snd_seq_ev_set_noteon(&ev, ch, data[1], data[2]);
-			break;
-		case SND_SEQ_EVENT_NOTEOFF:
-			snd_seq_ev_set_noteoff(&ev, ch, data[1], data[2]);
-			break;
-		case SND_SEQ_EVENT_KEYPRESS:
-			snd_seq_ev_set_keypress(&ev, ch, data[1], data[2]);
-			break;
-		case SND_SEQ_EVENT_CONTROLLER:
-			snd_seq_ev_set_controller(&ev, ch, data[1], data[2]);
-			break;
-		case SND_SEQ_EVENT_PITCHBEND:
-			snd_seq_ev_set_pitchbend(&ev, ch, (data[1]<<7|data[2])-8192);
-			break;
-		case SND_SEQ_EVENT_PGMCHANGE:
-			snd_seq_ev_set_pgmchange(&ev, ch, data[1]);
-			break;
-		case SND_SEQ_EVENT_CHANPRESS:
-			snd_seq_ev_set_chanpress(&ev, ch, data[1]);
-			break;
-		case SND_SEQ_EVENT_QFRAME:
-		case SND_SEQ_EVENT_SONGSEL:
-			ev.type = type;
-			ev.data.control.channel = ch;
-			ev.data.control.value = data[1];
-			break;
-		case SND_SEQ_EVENT_SONGPOS:
-			ev.type = type;
-			ev.data.control.channel = ch;
-			ev.data.control.value = data[1] | (data[2] << 7);
-			break;
-		case SND_SEQ_EVENT_TUNE_REQUEST:
-		case SND_SEQ_EVENT_CLOCK:
-		case SND_SEQ_EVENT_START:
-		case SND_SEQ_EVENT_CONTINUE:
-		case SND_SEQ_EVENT_STOP:
-		case SND_SEQ_EVENT_SENSING:
-		case SND_SEQ_EVENT_RESET:
-			ev.type = type;
-			ev.data.control.channel = ch;
-			break;
-		default:
-			ev.type = SND_SEQ_EVENT_NONE;
+	if (send_data[pos] == 0xf0) {
+		is_sysex = 1;
+		for (end = pos + 1; end < send_data_length; end++) {
+			if (send_data[end] == 0xf7)
+				break;
 		}
+
+		if (end == send_data_length)
+			fatal("SysEx is missing terminating byte (0xF7)");
+		end++;
+		snd_seq_ev_set_sysex(&ev, end - pos, send_data + pos);
+	} else {
+		end = pos;
+		while (!snd_midi_event_encode_byte(edev, *data++, &ev)) {
+			if (++end >= send_data_length)
+				return end;
+		}
+
+		end++;
 	}
 
 	snd_seq_event_output(seq, &ev);
 	snd_seq_drain_output(seq);
+	if (is_sysex)
+		usleep(sysex_interval);
+
+	sent_data_c += end - pos;
+	return end;
 }
-
-static int send_ump(const unsigned char *data)
-{
-	static int ump_len = 0, offset = 0;
-	unsigned int ump[4];
-	snd_seq_ump_event_t ev;
-
-	ump[offset] = (data[0] << 24) | (data[1] << 16) |
-		(data[2] << 8) | data[3];
-	if (!offset)
-		ump_len = snd_ump_packet_length(snd_ump_msg_type(ump));
-
-	offset++;
-	if (offset < ump_len)
-		return 0;
-
-	snd_seq_ump_ev_clear(&ev);
-	snd_seq_ev_set_source(&ev, 0);
-	snd_seq_ev_set_dest(&ev, addr.client, addr.port);
-	snd_seq_ev_set_direct(&ev);
-	snd_seq_ev_set_ump_data(&ev, ump, ump_len * 4);
-	snd_seq_ump_event_output(seq, &ev);
-	snd_seq_drain_output(seq);
-	offset = 0;
-	return ump_len * 4;
-}
-
-static int msg_byte_in_range(mbyte_t *data, mbyte_t len)
-{
-	for (int i = 0; i < len; i++) {
-		if (data[i] > 0x7F) {
-			error("msg byte value out of range 0-127");
-			return 0;
-		}
-	}
-	return 1;
-}
-
 
 int main(int argc, char *argv[])
 {
@@ -381,8 +363,6 @@ int main(int argc, char *argv[])
 	char do_send_file = 0;
 	char do_port_list = 0;
 	char verbose = 0;
-	int sysex_interval = 1000; //us
-	int sent_data_c;
 	int k;
 
 	while ((c = getopt_long(argc, argv, "hi:Vvlp:s:u:", long_options, NULL)) != -1) {
@@ -452,6 +432,8 @@ int main(int argc, char *argv[])
 
 	init_seq();
 	create_port();
+	if (!ump_version)
+		init_midi_event_encoder();
 
 	if (snd_seq_parse_address(seq, &addr, port_name) < 0) {
 		error("Unable to parse port name!");
@@ -459,147 +441,13 @@ int main(int argc, char *argv[])
 	}
 
 	sent_data_c = 0; //counter of actually sent bytes
+
 	k = 0;
-
 	while (k < send_data_length) {
-
-		if (ump_version) {
-			sent_data_c += send_ump(send_data + k);
-			k += 4;
-			continue;
-		}
-
-		if (send_data[k] == 0xF0) {
-
-			int c1 = k;
-			while (c1 < send_data_length) {
-				if (send_data[c1] == 0xF7)
-					break;
-				c1++;
-			}
-
-			if (c1 == send_data_length)
-				fatal("SysEx is missing terminating byte (0xF7)");
-
-			int sl = c1-k+1;
-			sent_data_c += sl;
-
-			send_midi_msg(SND_SEQ_EVENT_SYSEX, send_data+k, sl);
-
-			usleep(sysex_interval);
-
-			k = c1+1;
-
-		} else {
-
-			mbyte_t tp = send_data[k] >> 4;
-
-			if (tp == 0x8) {
-				if (msg_byte_in_range(send_data + k + 1, 2)) {
-					send_midi_msg(SND_SEQ_EVENT_NOTEOFF, send_data+k, 3);
-					sent_data_c += 3;
-				}
-				k += 3;
-			} else if (tp == 0x9) {
-				if (msg_byte_in_range(send_data + k + 1, 2)) {
-					send_midi_msg(SND_SEQ_EVENT_NOTEON, send_data+k, 3);
-					sent_data_c += 3;
-				}
-				k += 3;
-			} else if (tp == 0xA) {
-				if (msg_byte_in_range(send_data + k + 1, 2)) {
-					send_midi_msg(SND_SEQ_EVENT_KEYPRESS, send_data+k, 3);
-					sent_data_c += 3;
-				}
-				k += 3;
-			} else if (tp == 0xB) {
-				if (msg_byte_in_range(send_data + k + 1, 2)) {
-					send_midi_msg(SND_SEQ_EVENT_CONTROLLER, send_data+k, 3);
-					sent_data_c += 3;
-				}
-				k += 3;
-			} else if (tp == 0xC) {
-				if (msg_byte_in_range(send_data + k + 1, 1)) {
-					send_midi_msg(SND_SEQ_EVENT_PGMCHANGE, send_data+k, 2);
-					sent_data_c += 2;
-				}
-				k += 2;
-			} else if (tp == 0xD) {
-				if (msg_byte_in_range(send_data + k + 1, 1)) {
-					send_midi_msg(SND_SEQ_EVENT_CHANPRESS, send_data+k, 2);
-					sent_data_c += 2;
-				}
-				k += 2;
-			} else if (tp == 0xE) {
-				if (msg_byte_in_range(send_data + k + 1, 2)) {
-					send_midi_msg(SND_SEQ_EVENT_PITCHBEND, send_data+k, 3);
-					sent_data_c += 3;
-				}
-				k += 3;
-			} else {
-				switch (send_data[k]) {
-				case 0xF1:
-					if (msg_byte_in_range(send_data + k + 1, 1)) {
-						send_midi_msg(SND_SEQ_EVENT_QFRAME, send_data+k, 2);
-						sent_data_c += 2;
-					}
-					k += 2;
-					break;
-				case 0xF2:
-					if (msg_byte_in_range(send_data + k + 1, 2)) {
-						send_midi_msg(SND_SEQ_EVENT_SONGPOS, send_data+k, 3);
-						sent_data_c += 3;
-					}
-					k += 3;
-					break;
-				case 0xF3:
-					if (msg_byte_in_range(send_data + k + 1, 1)) {
-						send_midi_msg(SND_SEQ_EVENT_SONGSEL, send_data+k, 2);
-						sent_data_c += 2;
-					}
-					k += 2;
-					break;
-				case 0xF6:
-					send_midi_msg(SND_SEQ_EVENT_TUNE_REQUEST, send_data+k, 1);
-					sent_data_c++;
-					k++;
-					break;
-				case 0xF8:
-					send_midi_msg(SND_SEQ_EVENT_CLOCK, send_data+k, 1);
-					sent_data_c++;
-					k++;
-					break;
-				case 0xFA:
-					send_midi_msg(SND_SEQ_EVENT_START, send_data+k, 1);
-					sent_data_c++;
-					k++;
-					break;
-				case 0xFB:
-					send_midi_msg(SND_SEQ_EVENT_CONTINUE, send_data+k, 1);
-					sent_data_c++;
-					k++;
-					break;
-				case 0xFC:
-					send_midi_msg(SND_SEQ_EVENT_STOP, send_data+k, 1);
-					sent_data_c++;
-					k++;
-					break;
-				case 0xFE:
-					send_midi_msg(SND_SEQ_EVENT_SENSING, send_data+k, 1);
-					sent_data_c++;
-					k++;
-					break;
-				case 0xFF:
-					send_midi_msg(SND_SEQ_EVENT_RESET, send_data+k, 1);
-					sent_data_c++;
-					k++;
-					break;
-				default:
-					k++;
-					break;
-				}
-			}
-		}
+		if (ump_version)
+			k = send_ump(k);
+		else
+			k = send_midi_bytes(k);
 	}
 
 	if (verbose)
