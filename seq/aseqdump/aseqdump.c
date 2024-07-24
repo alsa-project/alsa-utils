@@ -668,13 +668,10 @@ static unsigned char ump_sysex7_data(const unsigned int *ump,
 	return (ump[offset / 4] >> ((3 - (offset & 3)) * 8)) & 0xff;
 }
 
-static void dump_ump_sysex_event(const unsigned int *ump)
+static void dump_ump_sysex_status(const char *prefix, unsigned int status)
 {
-	int i, length;
-
-	printf("Group %2d, ", group_number(snd_ump_msg_group(ump)));
-	printf("SysEx ");
-	switch (snd_ump_sysex_msg_status(ump)) {
+	printf("%s ", prefix);
+	switch (status) {
 	case SND_UMP_SYSEX_STATUS_SINGLE:
 		printf("Single  ");
 		break;
@@ -688,14 +685,42 @@ static void dump_ump_sysex_event(const unsigned int *ump)
 		printf("End     ");
 		break;
 	default:
-		printf("Unknown(0x%x)", snd_ump_sysex_msg_status(ump));
+		printf("(0x%04x)", status);
 		break;
 	}
+}
 
+static void dump_ump_sysex_event(const unsigned int *ump)
+{
+	int i, length;
+
+	printf("Group %2d, ", group_number(snd_ump_msg_group(ump)));
+	dump_ump_sysex_status("SysEx", snd_ump_sysex_msg_status(ump));
 	length = snd_ump_sysex_msg_length(ump);
 	printf(" length %d ", length);
 	for (i = 0; i < length; i++)
 		printf("%s%02x", i ? ":" : "", ump_sysex7_data(ump, i));
+	printf("\n");
+}
+
+static unsigned char ump_sysex8_data(const unsigned int *ump,
+				     unsigned int offset)
+{
+	offset += 3;
+	return (ump[offset / 4] >> ((3 - (offset & 3)) * 8)) & 0xff;
+}
+
+static void dump_ump_sysex8_event(const unsigned int *ump)
+{
+	int i, length;
+
+	printf("Group %2d, ", group_number(snd_ump_msg_group(ump)));
+	dump_ump_sysex_status("SysEx8", snd_ump_sysex_msg_status(ump));
+	length = snd_ump_sysex_msg_length(ump);
+	printf(" length %d ", length);
+	printf(" stream %d ", (ump[0] >> 8) & 0xff);
+	for (i = 0; i < length; i++)
+		printf("%s%02x", i ? ":" : "", ump_sysex8_data(ump, i));
 	printf("\n");
 }
 
@@ -964,6 +989,9 @@ static void dump_ump_event(const snd_seq_ump_event_t *ev)
 		break;
 	case SND_UMP_MSG_TYPE_DATA:
 		dump_ump_sysex_event(ev->ump);
+		break;
+	case SND_UMP_MSG_TYPE_EXTENDED_DATA:
+		dump_ump_sysex8_event(ev->ump);
 		break;
 	case SND_UMP_MSG_TYPE_FLEX_DATA:
 		dump_ump_flex_data_event(ev->ump);
