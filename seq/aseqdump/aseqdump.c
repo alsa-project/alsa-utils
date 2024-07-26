@@ -698,8 +698,8 @@ static void dump_ump_sysex_event(const unsigned int *ump)
 	dump_ump_sysex_status("SysEx", snd_ump_sysex_msg_status(ump));
 	length = snd_ump_sysex_msg_length(ump);
 	printf(" length %d ", length);
-	if (length > 14)
-		length = 14;
+	if (length > 6)
+		length = 6;
 	for (i = 0; i < length; i++)
 		printf("%s%02x", i ? ":" : "", ump_sysex7_data(ump, i));
 	printf("\n");
