@@ -664,8 +664,7 @@ static void dump_ump_system_event(const unsigned int *ump)
 static unsigned char ump_sysex7_data(const unsigned int *ump,
 				     unsigned int offset)
 {
-	offset += 2;
-	return (ump[offset / 4] >> ((3 - (offset & 3)) * 8)) & 0xff;
+	return snd_ump_get_byte(ump, offset + 2);
 }
 
 static void dump_ump_sysex_status(const char *prefix, unsigned int status)
@@ -708,8 +707,7 @@ static void dump_ump_sysex_event(const unsigned int *ump)
 static unsigned char ump_sysex8_data(const unsigned int *ump,
 				     unsigned int offset)
 {
-	offset += 3;
-	return (ump[offset / 4] >> ((3 - (offset & 3)) * 8)) & 0xff;
+	return snd_ump_get_byte(ump, offset + 3);
 }
 
 static void dump_ump_sysex8_event(const unsigned int *ump)
@@ -736,17 +734,12 @@ static void print_ump_string(const unsigned int *ump, unsigned int fmt,
 	int i = 0;
 
 	do {
-		buf[i] = (*ump >> (24 - offset)) & 0xff;
+		buf[i] = snd_ump_get_byte(ump, offset);
 		if (!buf[i])
 			break;
 		if (buf[i] < 0x20)
 			buf[i] = '.';
-		if (offset == 24) {
-			offset = 0;
-			ump++;
-		} else {
-			offset += 8;
-		}
+		offset++;
 	} while (++i < maxlen);
 	buf[i] = 0;
 
@@ -780,12 +773,12 @@ static void dump_ump_stream_event(const unsigned int *ump)
 		break;
 	case SND_UMP_STREAM_MSG_STATUS_EP_NAME:
 		printf("EP Name        ");
-		print_ump_string(ump, (ump[0] >> 26) & 3, 16, 14);
+		print_ump_string(ump, (ump[0] >> 26) & 3, 2, 14);
 		printf("\n");
 		break;
 	case SND_UMP_STREAM_MSG_STATUS_PRODUCT_ID:
 		printf("Product Id     ");
-		print_ump_string(ump, (ump[0] >> 26) & 3, 16, 14);
+		print_ump_string(ump, (ump[0] >> 26) & 3, 2, 14);
 		printf("\n");
 		break;
 	case SND_UMP_STREAM_MSG_STATUS_STREAM_CFG_REQUEST:
@@ -810,7 +803,7 @@ static void dump_ump_stream_event(const unsigned int *ump)
 	case SND_UMP_STREAM_MSG_STATUS_FB_NAME:
 		printf("Product Id     ");
 		printf("FB Name #%02d    ", (ump[0] >> 8) & 0xff);
-		print_ump_string(ump, (ump[0] >> 26) & 3, 24, 13);
+		print_ump_string(ump, (ump[0] >> 26) & 3, 3, 13);
 		printf("\n");
 		break;
 	case SND_UMP_STREAM_MSG_STATUS_START_CLIP:
@@ -959,7 +952,7 @@ static void dump_ump_flex_data_event(const unsigned int *ump)
 	if (fh->meta.status_bank == SND_UMP_FLEX_DATA_MSG_BANK_METADATA ||
 	    fh->meta.status_bank == SND_UMP_FLEX_DATA_MSG_BANK_PERF_TEXT) {
 		printf("Meta (%s) ", ump_meta_prefix(fh));
-		print_ump_string(ump + 1, fh->meta.format, 0, 12);
+		print_ump_string(ump, fh->meta.format, 4, 12);
 		printf("\n");
 		return;
 	}
