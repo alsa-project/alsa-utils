@@ -726,6 +726,45 @@ static void dump_ump_sysex8_event(const unsigned int *ump)
 	printf("\n");
 }
 
+static void dump_ump_mixed_data_event(const unsigned int *ump)
+{
+	const snd_ump_msg_mixed_data_t *m =
+		(const snd_ump_msg_mixed_data_t *)ump;
+	int i;
+
+	printf("Group %2d, ", group_number(snd_ump_msg_group(ump)));
+	switch (snd_ump_sysex_msg_status(ump)) {
+	case SND_UMP_MIXED_DATA_SET_STATUS_HEADER:
+		printf("MDS Header id=0x%x, bytes=%d, chunk=%d/%d, manufacturer=0x%04x, device=0x%04x, sub_id=0x%04x 0x%04x\n",
+		       m->header.mds_id, m->header.bytes,
+		       m->header.chunk, m->header.chunks,
+		       m->header.manufacturer, m->header.device,
+		       m->header.sub_id_1, m->header.sub_id_2);
+		break;
+	case SND_UMP_MIXED_DATA_SET_STATUS_PAYLOAD:
+		printf("MDS Payload id=0x%x, ", m->payload.mds_id);
+		for (i = 0; i < 14; i++)
+			printf("%s%02x", i ? ":" : "",
+			       snd_ump_get_byte(ump, i + 2));
+		printf("\n");
+		break;
+	default:
+		printf("Extended Data (status 0x%x)\n",
+		       snd_ump_sysex_msg_status(ump));
+		break;
+	}
+}
+
+static void dump_ump_extended_data_event(const unsigned int *ump)
+{
+	unsigned char status = snd_ump_sysex_msg_status(ump);
+
+	if (status < 4)
+		dump_ump_sysex8_event(ump);
+	else
+		dump_ump_mixed_data_event(ump);
+}
+
 static void print_ump_string(const unsigned int *ump, unsigned int fmt,
 			     unsigned int offset, int maxlen)
 {
@@ -988,7 +1027,7 @@ static void dump_ump_event(const snd_seq_ump_event_t *ev)
 		dump_ump_sysex_event(ev->ump);
 		break;
 	case SND_UMP_MSG_TYPE_EXTENDED_DATA:
-		dump_ump_sysex8_event(ev->ump);
+		dump_ump_extended_data_event(ev->ump);
 		break;
 	case SND_UMP_MSG_TYPE_FLEX_DATA:
 		dump_ump_flex_data_event(ev->ump);
