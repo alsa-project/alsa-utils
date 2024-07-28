@@ -362,7 +362,7 @@ static void show_text(const uint32_t *ump)
 		len = 0;
 
 	for (i = 0; i < 12 && len < (int)sizeof(textbuf); i++) {
-		textbuf[len] = fh->meta.data[i / 4] >> ((3 - (i % 4)) * 8);
+		textbuf[len] = snd_ump_get_byte(ump, 4 + i);
 		if (!textbuf[len])
 			break;
 		switch (textbuf[len]) {
