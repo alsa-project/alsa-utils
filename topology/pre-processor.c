@@ -697,13 +697,11 @@ static int pre_process_create_items(struct tplg_pre_processor *tplg_pp,
 	snd_config_iterator_t i, next;
 	snd_config_type_t type;
 	const char *class_id;
-	char *class_id_local;
 	int attr_count = 0;
 	int object_count = *object_count_offset;
 	int ret;
 
 	snd_config_get_id(top, &class_id);
-	class_id_local = strdup(class_id);
 
 	snd_config_for_each(i, next, cfg) {
 		snd_config_iterator_t i2, next2;
@@ -719,7 +717,7 @@ static int pre_process_create_items(struct tplg_pre_processor *tplg_pp,
 		if (snd_config_get_id(n, &attribute) < 0)
 			continue;
 
-		ret = snd_config_make(&local_top, class_id_local, SND_CONFIG_TYPE_COMPOUND);
+		ret = snd_config_make(&local_top, class_id, SND_CONFIG_TYPE_COMPOUND);
 
 		snd_config_for_each(i2, next2, n) {
 			snd_config_t *n2, *new, *new_obj;
@@ -787,7 +785,7 @@ static int pre_process_create_items(struct tplg_pre_processor *tplg_pp,
 			ret = pre_process_add_objects(tplg_pp, &object_count, top,
 						      local_top, new);
 			if (ret < 0) {
-				SNDERR("failed to add objects of type %s\n", class_id_local);
+				SNDERR("failed to add objects of type %s\n", class_id);
 				goto err;
 			}
 
