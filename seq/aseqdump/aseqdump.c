@@ -965,6 +965,14 @@ static void dump_ump_flex_data_event(const unsigned int *ump)
 	}
 
 	if (fh->meta.status_bank == SND_UMP_FLEX_DATA_MSG_BANK_SETUP &&
+	    fh->meta.status == SND_UMP_FLEX_DATA_MSG_STATUS_SET_KEY_SIGNATURE) {
+		printf("UMP Set Key Signature     sharps/flats %d, tonic %d\n",
+		       fh->set_key_sig.sharps_flats,
+		       fh->set_key_sig.tonic_note);
+		return;
+	}
+
+	if (fh->meta.status_bank == SND_UMP_FLEX_DATA_MSG_BANK_SETUP &&
 	    fh->meta.status == SND_UMP_FLEX_DATA_MSG_STATUS_SET_CHORD_NAME) {
 		printf("UMP Set Chord Name     tonic %d %d %d, alt1 %d/%d, alt2 %d/%d, alt3 %d/%d, alt4 %d/%d, bass %d %d %d, alt1 %d/%d alt2 %d/%d\n",
 		       fh->set_chord_name.tonic_sharp,
