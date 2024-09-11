@@ -359,7 +359,7 @@ int main(int argc, char *argv[])
 		{"ump", 1, NULL, 'u'},
 		{0}
 	};
-	char c = 0;
+	int c = 0;
 	char do_send_file = 0;
 	char do_port_list = 0;
 	char verbose = 0;
