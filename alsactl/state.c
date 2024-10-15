@@ -1511,7 +1511,7 @@ static int set_controls(int card, snd_config_t *top, int doit)
 	snd_ctl_elem_id_t *elem_id;
 	snd_config_t *control;
 	snd_config_iterator_t i, next;
-	int err, maxnumid = -1, maxnumid2 = -1;
+	int err, controls1 = -1, controls2 = -1;
 	unsigned int idx, count = 0;
 	char name[32], tmpid[16];
 	const char *id;
@@ -1551,11 +1551,13 @@ static int set_controls(int card, snd_config_t *top, int doit)
 		cerror(doit, "state.%s.control is not a compound\n", id);
 		return -EINVAL;
 	}
+	controls1 = 0;
 	snd_config_for_each(i, next, control) {
 		snd_config_t *n = snd_config_iterator_entry(i);
 		err = set_control(handle, n, doit);
 		if (err < 0 && (!force_restore || !doit))
 			goto _close;
+		controls1++;
 	}
 
 	if (doit)
@@ -1579,7 +1581,7 @@ static int set_controls(int card, snd_config_t *top, int doit)
 		error("Cannot determine controls (2): %s", snd_strerror(err));
 		goto _free;
 	}
-	maxnumid2 = 0;
+	controls2 = 0;
 	/* skip non-readable elements */
 	for (idx = 0; idx < count; ++idx) {
 		snd_ctl_elem_info_clear(elem_info);
@@ -1588,19 +1590,19 @@ static int set_controls(int card, snd_config_t *top, int doit)
 		if (snd_ctl_elem_info(handle, elem_info) == 0) {
 			if (!snd_ctl_elem_info_is_readable(elem_info))
 				continue;
-			maxnumid2++;
+			controls2++;
 		}
 	}
 
 	/* check if we have additional controls in driver */
 	/* in this case we should go through init procedure */
  _check:
-	dbg("maxnumid=%i maxnumid2=%i", maxnumid, maxnumid2);
-	if (maxnumid >= 0 && maxnumid != maxnumid2) {
+	dbg("controls1=%i controls2=%i", controls1, controls2);
+	if (controls1 >= 0 && controls1 != controls2) {
 		/* not very informative */
 		/* but value is used for check only */
 		err = -EAGAIN;
-		dbg("more controls than maxnumid?");
+		dbg("config controls mismatch with hardware?");
 	}
 
  _free:
