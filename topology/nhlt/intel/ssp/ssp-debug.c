@@ -13,14 +13,104 @@
 
 #ifdef NHLT_DEBUG
 
-void ssp_print_calculated(struct intel_ssp_params *ssp)
+static void ssp_print_blob10(struct intel_ssp_params *ssp, int i)
 {
 	struct ssp_intel_config_data *blob;
+	int ssp_index = ssp->ssp_count;
+	int j;
+
+	blob = &ssp->ssp_blob[ssp_index][i];
+	fprintf(stdout, "gateway_attributes %u\n", blob->gateway_attributes);
+	for (j = 0; j < SSP_TS_GROUP_SIZE; j++)
+		fprintf(stdout, "ts_group[%d] 0x%08x\n", j, blob->ts_group[j]);
+
+	fprintf(stdout, "ssc0 0x%08x\n", blob->ssc0);
+	fprintf(stdout, "ssc1 0x%08x\n", blob->ssc1);
+	fprintf(stdout, "sscto 0x%08x\n", blob->sscto);
+	fprintf(stdout, "sspsp 0x%08x\n", blob->sspsp);
+	fprintf(stdout, "sstsa 0x%08x\n", blob->sstsa);
+	fprintf(stdout, "ssrsa 0x%08x\n", blob->ssrsa);
+	fprintf(stdout, "ssc2 0x%08x\n", blob->ssc2);
+	fprintf(stdout, "sspsp2 0x%08x\n", blob->sspsp2);
+	fprintf(stdout, "ssc3 0x%08x\n", blob->ssc3);
+	fprintf(stdout, "ssioc 0x%08x\n", blob->ssioc);
+	fprintf(stdout, "mdivc 0x%08x\n", blob->mdivc);
+	fprintf(stdout, "mdivr 0x%08x\n", blob->mdivr);
+}
+
+static void ssp_print_blob15(struct intel_ssp_params *ssp, int i)
+{
 	struct ssp_intel_config_data_1_5 *blob15;
+	int ssp_index = ssp->ssp_count;
+	uint32_t j;
+
+	blob15 = &ssp->ssp_blob_1_5[ssp_index][i];
+	fprintf(stdout, "gateway_attributes %u\n", blob15->gateway_attributes);
+	fprintf(stdout, "version %u\n", blob15->version);
+	fprintf(stdout, "size %u\n", blob15->size);
+	for (j = 0; j < SSP_TS_GROUP_SIZE; j++)
+		fprintf(stdout, "ts_group[%d] 0x%08x\n", j, blob15->ts_group[j]);
+
+	fprintf(stdout, "ssc0 0x%08x\n", blob15->ssc0);
+	fprintf(stdout, "ssc1 0x%08x\n", blob15->ssc1);
+	fprintf(stdout, "sscto 0x%08x\n", blob15->sscto);
+	fprintf(stdout, "sspsp 0x%08x\n", blob15->sspsp);
+	fprintf(stdout, "sstsa 0x%08x\n", blob15->sstsa);
+	fprintf(stdout, "ssrsa 0x%08x\n", blob15->ssrsa);
+	fprintf(stdout, "ssc2 0x%08x\n", blob15->ssc2);
+	fprintf(stdout, "sspsp2 0x%08x\n", blob15->sspsp2);
+	fprintf(stdout, "ssc3 0x%08x\n", blob15->ssc3);
+	fprintf(stdout, "ssioc 0x%08x\n", blob15->ssioc);
+	fprintf(stdout, "mdivc 0x%08x\n", blob15->mdivctlr);
+	fprintf(stdout, "mdivr count 0x%08x\n", blob15->mdivrcnt);
+	for (j = 0; j < blob15->mdivrcnt; j++)
+		fprintf(stdout, "mdivr 0x%08x\n",
+			ssp->ssp_prm[ssp_index].mdivr[i].mdivrs[j]);
+}
+
+static void ssp_print_blob30(struct intel_ssp_params *ssp, int i)
+{
+	struct ssp_intel_config_data_3_0 *blob30;
+	int ssp_index = ssp->ssp_count;
+	uint32_t j;
+
+	blob30 = &ssp->ssp_blob_3_0[ssp_index][i];
+	fprintf(stdout, "gateway_attributes %u\n", blob30->gateway_attributes);
+	fprintf(stdout, "version %u\n", blob30->version);
+	fprintf(stdout, "size %u\n", blob30->size);
+	for (j = 0; j < SSP_TS_GROUP_SIZE; j++)
+		fprintf(stdout, "ts_group[%d] 0x%08x\n", j, blob30->ts_group[j]);
+
+	fprintf(stdout, "ssc0 0x%08x\n", blob30->ssc0);
+	fprintf(stdout, "ssc1 0x%08x\n", blob30->ssc1);
+	fprintf(stdout, "sscto 0x%08x\n", blob30->sscto);
+	fprintf(stdout, "sspsp 0x%08x\n", blob30->sspsp);
+	fprintf(stdout, "ssc2 0x%08x\n", blob30->ssc2);
+	fprintf(stdout, "sspsp2 0x%08x\n", blob30->sspsp2);
+	fprintf(stdout, "rsvd2 0x%08x\n", blob30->rsvd2);
+	fprintf(stdout, "ssioc 0x%08x\n", blob30->ssioc);
+	for (j = 0; j < I2SIPCMC; j++) {
+		fprintf(stdout, "rx_dir[%d] 0x%08x\n", j * 2, (uint32_t)(blob30->rx_dir[j].ssmidytsa & 0xffffffff));
+		fprintf(stdout, "rx_dir[%d] 0x%08x\n", j * 2 + 1, (uint32_t)(blob30->rx_dir[j].ssmidytsa >> 32));
+	}
+	for (j = 0; j < I2SOPCMC; j++) {
+		fprintf(stdout, "tx_dir[%d] 0x%08x\n", j * 2, (uint32_t)(blob30->tx_dir[j].ssmodytsa & 0xffffffff));
+		fprintf(stdout, "tx_dir[%d] 0x%08x\n", j * 2 + 1, (uint32_t)(blob30->tx_dir[j].ssmodytsa >> 32));
+	}
+
+	fprintf(stdout, "mdivc 0x%08x\n", blob30->mdivctlr);
+	fprintf(stdout, "mdivr count 0x%08x\n", blob30->mdivrcnt);
+	for (j = 0; j < blob30->mdivrcnt; j++)
+		fprintf(stdout, "mdivr 0x%08x\n",
+			ssp->ssp_prm[ssp_index].mdivr[i].mdivrs[j]);
+}
+
+void ssp_print_calculated(struct intel_ssp_params *ssp)
+{
 	struct ssp_aux_blob *blob_aux;
 	int ssp_index = ssp->ssp_count;
 	uint32_t *ptr;
-	int i, j;
+	uint32_t i, j;
 
 	fprintf(stdout, "printing ssp nhlt calculated data:\n");
 
@@ -38,58 +128,17 @@ void ssp_print_calculated(struct intel_ssp_params *ssp)
 
 	for (i = 0; i < ssp->ssp_hw_config_count[ssp_index]; i++) {
 		fprintf(stdout, "ssp blob %d hw_config %d\n", ssp->ssp_count, i);
-		if (ssp->ssp_prm[ssp_index].version == SSP_BLOB_VER_1_5) {
-			blob15 = &ssp->ssp_blob_1_5[ssp_index][i];
-			fprintf(stdout, "gateway_attributes %u\n", blob15->gateway_attributes);
-			fprintf(stdout, "version %u\n", blob15->version);
-			fprintf(stdout, "size %u\n", blob15->size);
-			fprintf(stdout, "ts_group[0] 0x%08x\n", blob15->ts_group[0]);
-			fprintf(stdout, "ts_group[1] 0x%08x\n", blob15->ts_group[1]);
-			fprintf(stdout, "ts_group[2] 0x%08x\n", blob15->ts_group[2]);
-			fprintf(stdout, "ts_group[3] 0x%08x\n", blob15->ts_group[3]);
-			fprintf(stdout, "ts_group[4] 0x%08x\n", blob15->ts_group[4]);
-			fprintf(stdout, "ts_group[5] 0x%08x\n", blob15->ts_group[5]);
-			fprintf(stdout, "ts_group[6] 0x%08x\n", blob15->ts_group[6]);
-			fprintf(stdout, "ts_group[7] 0x%08x\n", blob15->ts_group[7]);
-			fprintf(stdout, "ssc0 0x%08x\n", blob15->ssc0);
-			fprintf(stdout, "ssc1 0x%08x\n", blob15->ssc1);
-			fprintf(stdout, "sscto 0x%08x\n", blob15->sscto);
-			fprintf(stdout, "sspsp 0x%08x\n", blob15->sspsp);
-			fprintf(stdout, "sstsa 0x%08x\n", blob15->sstsa);
-			fprintf(stdout, "ssrsa 0x%08x\n", blob15->ssrsa);
-			fprintf(stdout, "ssc2 0x%08x\n", blob15->ssc2);
-			fprintf(stdout, "sspsp2 0x%08x\n", blob15->sspsp2);
-			fprintf(stdout, "ssc3 0x%08x\n", blob15->ssc3);
-			fprintf(stdout, "ssioc 0x%08x\n", blob15->ssioc);
-			fprintf(stdout, "mdivc 0x%08x\n", blob15->mdivctlr);
-			fprintf(stdout, "mdivr count 0x%08x\n", blob15->mdivrcnt);
-			for (j = 0; j < blob15->mdivrcnt; j++)
-				fprintf(stdout, "mdivr 0x%08x\n",
-					ssp->ssp_prm[ssp_index].mdivr[i].mdivrs[j]);
-		} else {
-			blob = &ssp->ssp_blob[ssp_index][i];
-			fprintf(stdout, "gateway_attributes %u\n", blob->gateway_attributes);
-			fprintf(stdout, "ts_group[0] 0x%08x\n", blob->ts_group[0]);
-			fprintf(stdout, "ts_group[1] 0x%08x\n", blob->ts_group[1]);
-			fprintf(stdout, "ts_group[2] 0x%08x\n", blob->ts_group[2]);
-			fprintf(stdout, "ts_group[3] 0x%08x\n", blob->ts_group[3]);
-			fprintf(stdout, "ts_group[4] 0x%08x\n", blob->ts_group[4]);
-			fprintf(stdout, "ts_group[5] 0x%08x\n", blob->ts_group[5]);
-			fprintf(stdout, "ts_group[6] 0x%08x\n", blob->ts_group[6]);
-			fprintf(stdout, "ts_group[7] 0x%08x\n", blob->ts_group[7]);
-			fprintf(stdout, "ssc0 0x%08x\n", blob->ssc0);
-			fprintf(stdout, "ssc1 0x%08x\n", blob->ssc1);
-			fprintf(stdout, "sscto 0x%08x\n", blob->sscto);
-			fprintf(stdout, "sspsp 0x%08x\n", blob->sspsp);
-			fprintf(stdout, "sstsa 0x%08x\n", blob->sstsa);
-			fprintf(stdout, "ssrsa 0x%08x\n", blob->ssrsa);
-			fprintf(stdout, "ssc2 0x%08x\n", blob->ssc2);
-			fprintf(stdout, "sspsp2 0x%08x\n", blob->sspsp2);
-			fprintf(stdout, "ssc3 0x%08x\n", blob->ssc3);
-			fprintf(stdout, "ssioc 0x%08x\n", blob->ssioc);
-			fprintf(stdout, "mdivc 0x%08x\n", blob->mdivc);
-			fprintf(stdout, "mdivr 0x%08x\n", blob->mdivr);
+		switch (ssp->ssp_prm[ssp_index].version) {
+		case SSP_BLOB_VER_1_5:
+			ssp_print_blob15(ssp, i);
+			break;
+		case SSP_BLOB_VER_3_0:
+			ssp_print_blob30(ssp, i);
+			break;
+		default:
+			ssp_print_blob10(ssp, i);
 		}
+
 		blob_aux = (struct ssp_aux_blob *)&(ssp->ssp_blob_ext[ssp_index][i]);
 		fprintf(stdout, "aux_blob size  %u\n", blob_aux->size);
 		for (j = 0; j < blob_aux->size; j += 4) {
@@ -115,7 +164,7 @@ void ssp_print_internal(struct intel_ssp_params *ssp)
 	struct ssp_config_dai *dai;
 	struct ssp_config_hw *hw_conf;
 	uint32_t enabled;
-	int i, j;
+	uint32_t i, j;
 
 	dai = &ssp->ssp_prm[ssp->ssp_count];
 

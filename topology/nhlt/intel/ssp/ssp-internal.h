@@ -147,6 +147,7 @@ struct intel_ssp_params {
 	/* ssp vendor blob structs */
 	struct ssp_intel_config_data ssp_blob[SSP_MAX_DAIS][SSP_MAX_HW_CONFIG];
 	struct ssp_intel_config_data_1_5 ssp_blob_1_5[SSP_MAX_DAIS][SSP_MAX_HW_CONFIG];
+	struct ssp_intel_config_data_3_0 ssp_blob_3_0[SSP_MAX_DAIS][SSP_MAX_HW_CONFIG];
 	struct ssp_aux_blob ssp_blob_ext[SSP_MAX_DAIS][SSP_MAX_HW_CONFIG];
 };
 

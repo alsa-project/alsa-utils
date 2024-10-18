@@ -38,10 +38,51 @@ static int popcount(uint32_t value)
 	return bits_set;
 }
 
+static void ssp_calculate_intern_v30(struct intel_nhlt_params *nhlt, int hwi)
+{
+	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
+	int di = ssp->ssp_count;
+	struct ssp_intel_config_data_3_0 *blob30 = &ssp->ssp_blob_3_0[di][hwi];
+	struct ssp_intel_config_data *blob = &ssp->ssp_blob[di][hwi];
+	int i;
+
+	blob30->gateway_attributes = blob->gateway_attributes;
+	blob30->version = SSP_BLOB_VER_3_0;
+	for (i = 0; i < SSP_TS_GROUP_SIZE; i++)
+		blob30->ts_group[i] = blob->ts_group[i];
+
+	blob30->ssc0 = blob->ssc0;
+	blob30->ssc1 = blob->ssc1;
+	blob30->sscto = blob->sscto;
+	blob30->sspsp = blob->sspsp;
+	blob30->ssc2 = blob->ssc2;
+	blob30->sspsp2 = blob->sspsp2;
+	blob30->rsvd2 = 0;
+	blob30->ssioc = blob->ssioc;
+
+	blob30->rx_dir[0].ssmidytsa = 3;
+	for (i = 1; i < I2SIPCMC; i++)
+		blob30->rx_dir[i].ssmidytsa = 0;
+
+	blob30->tx_dir[0].ssmodytsa = 3;
+	for (i = 1; i < I2SOPCMC; i++)
+		blob30->tx_dir[i].ssmodytsa = 0;
+
+	/* mdivr count is always 1 */
+	blob30->mdivctlr = blob->mdivc;
+	ssp->ssp_prm[di].mdivr[hwi].count = 1;
+	blob30->mdivrcnt = ssp->ssp_prm[di].mdivr[hwi].count;
+	ssp->ssp_prm[di].mdivr[hwi].mdivrs[0] = blob->mdivr;
+
+	blob30->size = sizeof(struct ssp_intel_config_data_3_0) +
+		blob30->mdivrcnt * sizeof(uint32_t) +
+		ssp->ssp_blob_ext[di][hwi].size;
+}
+
 static void ssp_calculate_intern_v15(struct intel_nhlt_params *nhlt, int hwi)
 {
 	struct intel_ssp_params *ssp = (struct intel_ssp_params *)nhlt->ssp_params;
-	int di = ssp->ssp_count;;
+	int di = ssp->ssp_count;
 	struct ssp_intel_config_data_1_5 *blob15 = &ssp->ssp_blob_1_5[di][hwi];
 	struct ssp_intel_config_data *blob = &ssp->ssp_blob[di][hwi];
 	int i;
@@ -49,7 +90,7 @@ static void ssp_calculate_intern_v15(struct intel_nhlt_params *nhlt, int hwi)
 	blob15->gateway_attributes = ssp->ssp_blob[di][hwi].gateway_attributes;
 	blob15->version = SSP_BLOB_VER_1_5;
 
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < SSP_TS_GROUP_SIZE; i++)
 		blob15->ts_group[i] = blob->ts_group[i];
 
 	blob15->ssc0 = blob->ssc0;
@@ -115,11 +156,17 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 
 	/* reset SSP settings */
 	/* sscr0 dynamic settings are DSS, EDSS, SCR, FRDC, ECS */
-	ssp->ssp_blob[di][hwi].ssc0 = SSCR0_PSP | SSCR0_RIM | SSCR0_TIM;
+	ssp->ssp_blob[di][hwi].ssc0 = SSCR0_MOD | SSCR0_PSP | SSCR0_RIM | SSCR0_TIM;
 
 	/* sscr1 dynamic settings are SFRMDIR, SCLKDIR, SCFR */
-	ssp->ssp_blob[di][hwi].ssc1 = SSCR1_TTE | SSCR1_TTELP | SSCR1_TRAIL | SSCR1_RSRE |
-		SSCR1_TSRE;
+	if (ssp->ssp_prm[di].version == SSP_BLOB_VER_3_0)
+		/* bits 21 and 20, TSRE and RSRE do not exist in ACE3.x
+		 *  Note: Assuming SSP_BLOB_VER_3_0 is ACE3.x
+		 */
+		ssp->ssp_blob[di][hwi].ssc1 = SSCR1_TTE | SSCR1_TTELP | SSCR1_TRAIL;
+	else
+		ssp->ssp_blob[di][hwi].ssc1 = SSCR1_TTE | SSCR1_TTELP | SSCR1_TRAIL |
+			SSCR1_RSRE | SSCR1_TSRE;
 
 	/* sscr2 dynamic setting is LJDFD */
 	ssp->ssp_blob[di][hwi].ssc2 = SSCR2_SDFD | SSCR2_TURM1;
@@ -197,7 +244,13 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 		ssp->ssp_blob[di][hwi].sspsp |= SSPSP_SCMODE(inverted_bclk);
 	}
 
-	ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_MOD | SSCR0_ACS;
+	/* Note: ACS as SSCR0(30) does not exist in any ACE version, or cAVS2.x. This disables
+	 * it for ACE3.x. It might be good to fix later for other platforms. In cAVS this is 30:29
+	 * reserved, in ACE1.x this is DLE as 30:29, in ACE2.x this is RSVD30 as 30:29, in ACE3.x this
+	 * is DLE as 30:29.
+	 */
+	if (ssp->ssp_prm[di].version != SSP_BLOB_VER_3_0)
+		ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_ACS;
 
 	/* Additional hardware settings */
 
@@ -538,13 +591,23 @@ static int ssp_calculate_intern(struct intel_nhlt_params *nhlt, int hwi)
 
 	ssp->ssp_blob[di][hwi].mdivr = clk_div;
 	/* clock will always go through the divider */
+
+	/* Note: There is no SSC0(6) ECS in ACE3.x but RSVD6 in same bit position
+	 * that must be set to one.
+	 */
 	ssp->ssp_blob[di][hwi].ssc0 |= SSCR0_ECS;
+
 	/* enable divider for this clock id */
 	ssp->ssp_blob[di][hwi].mdivc |= BIT(ssp->ssp_prm[di].mclk_id);
 	/* set mclk source always for audio cardinal clock */
 	ssp->ssp_blob[di][hwi].mdivc |= MCDSS(SSP_CLOCK_AUDIO_CARDINAL);
-	/* set bclk source for audio cardinal clock */
-	ssp->ssp_blob[di][hwi].mdivc |= MNDSS(SSP_CLOCK_AUDIO_CARDINAL);
+	/* set bclk source for audio cardinal clock
+	 * Note: There is no MDIVXCTRL(21:20) MNDSS in any ACE version 1.x - 3.x. MNDSS
+	 * exists in cAVS2.x. This removes the set for ACE3.x. May need to address other
+	 * ACE platforms later.
+	 */
+	if (ssp->ssp_prm[di].version != SSP_BLOB_VER_3_0)
+		ssp->ssp_blob[di][hwi].mdivc |= MNDSS(SSP_CLOCK_AUDIO_CARDINAL);
 
 	return 0;
 }
@@ -748,6 +811,9 @@ int ssp_calculate(struct intel_nhlt_params *nhlt)
 			return -EINVAL;
 		/* v15 blob is made from legacy blob, so it can't fail */
 		ssp_calculate_intern_v15(nhlt, i);
+
+		/* v30 blob is made from legacy blob, so it can't fail */
+		ssp_calculate_intern_v30(nhlt, i);
 	}
 
 	ssp_print_internal(ssp);
@@ -826,6 +892,8 @@ int ssp_get_vendor_blob_size(struct intel_nhlt_params *nhlt, int dai_index,
 	/* set size for the blob */
 	if (ssp->ssp_prm[dai_index].version == SSP_BLOB_VER_1_5)
 		*size = ssp->ssp_blob_1_5[dai_index][hw_config_index].size;
+	else if (ssp->ssp_prm[dai_index].version == SSP_BLOB_VER_3_0)
+		*size = ssp->ssp_blob_3_0[dai_index][hw_config_index].size;
 	else
 		/* legacy */
 		*size = sizeof(struct ssp_intel_config_data) +
@@ -867,8 +935,19 @@ int ssp_get_vendor_blob(struct intel_nhlt_params *nhlt, uint8_t *vendor_blob,
 		memcpy(vendor_blob + basic_len + clock_len,
 		       ssp->ssp_blob_ext[dai_index][hw_config_index].aux_blob,
 		       ssp->ssp_blob_ext[dai_index][hw_config_index].size);
-	}
-	else {
+	} else if (ssp->ssp_prm[dai_index].version == SSP_BLOB_VER_3_0) {
+		basic_len = sizeof(struct ssp_intel_config_data_3_0);
+		clock_len = sizeof(uint32_t) * ssp->ssp_prm[dai_index].mdivr[hw_config_index].count;
+		/* basic data */
+		memcpy(vendor_blob, &ssp->ssp_blob_3_0[dai_index][hw_config_index], basic_len);
+		/* clock data */
+		memcpy(vendor_blob + basic_len,
+		       &ssp->ssp_prm[dai_index].mdivr[hw_config_index].mdivrs[0], clock_len);
+		/* ext data */
+		memcpy(vendor_blob + basic_len + clock_len,
+		       ssp->ssp_blob_ext[dai_index][hw_config_index].aux_blob,
+		       ssp->ssp_blob_ext[dai_index][hw_config_index].size);
+	} else {
 		basic_len = sizeof(struct ssp_intel_config_data);
 		/*basic data */
 		memcpy(vendor_blob, &ssp->ssp_blob[dai_index][hw_config_index], basic_len);
@@ -914,6 +993,9 @@ int ssp_set_params(struct intel_nhlt_params *nhlt, const char *dir, int dai_inde
 	/* let's compare the lower 16 bits as we don't send the signature from topology */
 	if (version == (SSP_BLOB_VER_1_5 & ((1 << 16) - 1)))
 		ssp->ssp_prm[ssp->ssp_count].version = SSP_BLOB_VER_1_5;
+	else if (version == (SSP_BLOB_VER_3_0 & ((1 << 16) - 1)))
+		ssp->ssp_prm[ssp->ssp_count].version = SSP_BLOB_VER_3_0;
+
 	if (tdm_padding_per_slot && !strcmp(tdm_padding_per_slot, "true"))
 		ssp->ssp_prm[ssp->ssp_count].tdm_per_slot_padding_flag = 1;
 	else

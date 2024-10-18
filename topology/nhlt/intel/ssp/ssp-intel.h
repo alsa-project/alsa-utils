@@ -12,10 +12,12 @@
 
 #include <stdint.h>
 
+#define SSP_TS_GROUP_SIZE 8
+
 /* struct for intel ssp nhlt vendor specific blob generation */
 struct ssp_intel_config_data {
 	uint32_t gateway_attributes;
-	uint32_t ts_group[8];
+	uint32_t ts_group[SSP_TS_GROUP_SIZE];
 	uint32_t ssc0;
 	uint32_t ssc1;
 	uint32_t sscto;
@@ -31,12 +33,13 @@ struct ssp_intel_config_data {
 } __attribute__((packed));
 
 #define SSP_BLOB_VER_1_5 0xEE000105
+#define SSP_BLOB_VER_3_0 0xEE000300
 
 struct ssp_intel_config_data_1_5 {
 	uint32_t gateway_attributes;
 	uint32_t version;
 	uint32_t size;
-	uint32_t ts_group[8];
+	uint32_t ts_group[SSP_TS_GROUP_SIZE];
 	uint32_t ssc0;
 	uint32_t ssc1;
 	uint32_t sscto;
@@ -47,6 +50,37 @@ struct ssp_intel_config_data_1_5 {
 	uint32_t sspsp2;
 	uint32_t ssc3;
 	uint32_t ssioc;
+	uint32_t mdivctlr;
+	uint32_t mdivrcnt;
+	uint32_t mdivr[];
+} __attribute__((packed));
+
+#define I2SIPCMC	8
+#define I2SOPCMC	8
+
+struct ssp_rx_dir {
+	uint64_t ssmidytsa;
+} __attribute__((packed));
+
+struct ssp_tx_dir {
+	uint64_t ssmodytsa;
+} __attribute__((packed));
+
+struct ssp_intel_config_data_3_0 {
+	uint32_t gateway_attributes;
+	uint32_t version;
+	uint32_t size;
+	uint32_t ts_group[SSP_TS_GROUP_SIZE];
+	uint32_t ssc0;
+	uint32_t ssc1;
+	uint32_t sscto;
+	uint32_t sspsp;
+	uint32_t ssc2;
+	uint32_t sspsp2;
+	uint32_t rsvd2;
+	uint32_t ssioc;
+	struct ssp_rx_dir rx_dir[I2SIPCMC];
+	struct ssp_tx_dir tx_dir[I2SOPCMC];
 	uint32_t mdivctlr;
 	uint32_t mdivrcnt;
 	uint32_t mdivr[];
