@@ -398,9 +398,12 @@ static int add_define(char **defs, char *d)
 	size_t len = (*defs ? strlen(*defs) : 0) + strlen(d) + 2;
 	char *m = realloc(*defs, len);
 	if (m) {
-		if (*defs)
+		if (*defs) {
 			strcat(m, ",");
-		strcat(m, d);
+			strcat(m, d);
+		} else {
+			strcpy(m, d);
+		}
 		*defs = m;
 		return 0;
 	}
