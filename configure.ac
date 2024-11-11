@@ -446,6 +446,21 @@ AC_ARG_WITH([alsactl-daemonswitch],
         [ALSACTL_DAEMONSWITCH="/etc/alsa/state-daemon.conf"])
 AC_SUBST(ALSACTL_DAEMONSWITCH)
 
+AC_ARG_WITH([alsactl-udev-extra-test],
+        AS_HELP_STRING([--with-alsactl-udev-extra-test=TEST], [Extra udev tests]),
+        [ALSACTL_UDEV_EXTRATEST="$withval"],
+        [ALSACTL_UDEV_EXTRATEST="default"])
+if test "$ALSACTL_UDEV_EXTRATEST" = "default"; then
+  ALSACTL_UDEV_EXTRATEST="TEST==\"${sbindir}\", TEST==\"${mydatadir}\","
+fi
+AC_SUBST(ALSACTL_UDEV_EXTRATEST)
+
+AC_ARG_WITH([alsactl-udev-args],
+        AS_HELP_STRING([--with-alsactl-udev-args=ARGS], [Extra alsactl arguments (udev rules)]),
+        [ALSACTL_UDEV_ARGS="$withval"],
+        [ALSACTL_UDEV_ARGS=""])
+AC_SUBST(ALSACTL_UDEV_ARGS)
+
 dnl pre-process plugin directory
 AC_ARG_WITH(plugindir,
     AS_HELP_STRING([--with-plugindir=dir],

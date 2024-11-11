@@ -43,10 +43,14 @@ install-data-hook:
 endif
 
 edit = \
+	extratest=$$(echo ' $(ALSACTL_UDEV_EXTRATEST)' | sed -e 's/__/ /g' -e 's/^ $$//'); \
+	args=$$(echo ' $(ALSACTL_UDEV_ARGS)' | sed -e 's/__/ /g' -e 's/^ $$//'); \
 	$(SED) -r -e 's,@sbindir\@,$(sbindir),g' \
 		  -e 's,@mydatadir\@,$(mydatadir),g' \
 		  -e 's,@daemonswitch\@,$(ALSACTL_DAEMONSWITCH),g' \
 		  -e 's,@asoundrcfile\@,$(ASOUND_STATE_DIR)/asound.state,g' \
+		  -e "s;@extratest\@;$${extratest};g" \
+		  -e "s;@args\@;$${args};g" \
 							< $< > $@ || rm $@
 
 alsa-state.service: alsa-state.service.in
