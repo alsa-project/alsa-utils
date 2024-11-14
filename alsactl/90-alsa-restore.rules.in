@@ -3,6 +3,8 @@
 ACTION=="add", SUBSYSTEM=="sound", KERNEL=="controlC*", KERNELS!="card*",@extratest@ GOTO="alsa_restore_go"
 GOTO="alsa_restore_end"
 
+LABEL="alsa_restore_go"
+
 ENV{ALSA_CARD_NUMBER}="$attr{device/number}"
 
 # mark HDA analog card; HDMI/DP card does not have capture devices
@@ -21,7 +23,7 @@ TEST!="/run/udev/alsa-hda-analog-card", GOTO="alsa_restore_std"
 IMPORT{program}="/usr/bin/cat /run/udev/alsa-hda-analog-card"
 ENV{ALSA_CARD_HDA_ANALOG}!="", ENV{ALSA_CARD_NUMBER}="$env{ALSA_CARD_HDA_ANALOG}"
 
-LABEL="alsa_restore_go"
+LABEL="alsa_restore_std"
 TEST!="@daemonswitch@", RUN+="@sbindir@/alsactl@args@ restore $env{ALSA_CARD_NUMBER}"
 TEST=="@daemonswitch@", RUN+="@sbindir@/alsactl@args@ nrestore $env{ALSA_CARD_NUMBER}"
 
