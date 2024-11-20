@@ -14,7 +14,7 @@ DRIVERS=="snd_hda_intel", TEST=="device/pcmC$env{ALSA_CARD_NUMBER}D0p", RUN+="/b
 TEST=="device/device/acp3x-dmic-capture", GOTO="alsa_hda_analog"
 TEST=="device/device/acp6x-dmic-capture", GOTO="alsa_hda_analog"
 TEST=="device/device/acp63-dmic-capture", GOTO="alsa_hda_analog"
-TEST=="device/device/acp-pdm-dmic", GOTO="alsa_hda_analog"
+TEST=="device/device/acp-dmic-codec", GOTO="alsa_hda_analog"
 GOTO="alsa_restore_std"
 
 LABEL="alsa_hda_analog"
