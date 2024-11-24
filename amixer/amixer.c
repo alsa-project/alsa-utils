@@ -587,9 +587,16 @@ static void decode_tlv(unsigned int spaces, unsigned int *tlv, unsigned int tlv_
 #endif
 	default:
 		printf("unk-%u-", type);
-		while (size > 0) {
+		while (size > sizeof(unsigned int)) {
 			printf("0x%08x,", tlv[idx++]);
 			size -= sizeof(unsigned int);
+		}
+		if (size > 0) {
+			unsigned char *b = (void *)&tlv[idx];
+			while (size > 0) {
+				printf("E-0x%02x,", *b++);
+				size--;
+			}
 		}
 		break;
 	}
