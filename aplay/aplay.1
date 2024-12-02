@@ -1,6 +1,6 @@
 .TH APLAY 1 "1 January 2010"
 .SH NAME
-arecord, aplay \- command\-line sound recorder and player for ALSA 
+arecord, aplay \- command\-line sound recorder and player for ALSA
 soundcard driver
 .SH SYNOPSIS
 \fBarecord\fP [\fIflags\fP] [filename]
@@ -84,41 +84,41 @@ A value of zero means infinity.
 The default is zero, so if this options is omitted then the record/playback process will run until it is killed.
 Either '-d' or '-s' option is available exclusively.
 .TP
-\fI\-M, \-\-mmap\fP            
+\fI\-M, \-\-mmap\fP
 Use memory\-mapped (mmap) I/O mode for the audio stream.
 If this option is not set, the read/write I/O mode will be used.
 .TP
-\fI\-N, \-\-nonblock\fP          
+\fI\-N, \-\-nonblock\fP
 Open the audio device in non\-blocking mode. If the device is busy the program will exit immediately.
 If this option is not set the program will block until the audio device is available again.
 .TP
-\fI\-F, \-\-period\-time=#\fP     
+\fI\-F, \-\-period\-time=#\fP
 Distance between interrupts is # microseconds.
 If no period time and no period size is given then a quarter of the buffer time is set.
 .TP
-\fI\-B, \-\-buffer\-time=#\fP     
+\fI\-B, \-\-buffer\-time=#\fP
 Buffer duration is # microseconds
 If no buffer time and no buffer size is given then the maximal allowed buffer time but not more than 500ms is set.
 .TP
-\fI\-\-period\-size=#\fP     
+\fI\-\-period\-size=#\fP
 Distance between interrupts is # frames
 If no period size and no period time is given then a quarter of the buffer size is set.
 .TP
-\fI\-\-buffer\-size=#\fP     
+\fI\-\-buffer\-size=#\fP
 Buffer duration is # frames
 If no buffer time and no buffer size is given then the maximal allowed buffer time but not more than 500ms is set.
 .TP
-\fI\-A, \-\-avail\-min=#\fP       
+\fI\-A, \-\-avail\-min=#\fP
 Min available space for wakeup is # microseconds
 .TP
-\fI\-R, \-\-start\-delay=#\fP     
-Delay for automatic PCM start is # microseconds 
+\fI\-R, \-\-start\-delay=#\fP
+Delay for automatic PCM start is # microseconds
 (relative to buffer size if <= 0)
 .TP
-\fI\-T, \-\-stop\-delay=#\fP      
+\fI\-T, \-\-stop\-delay=#\fP
 Delay for automatic PCM stop is # microseconds from xrun
 .TP
-\fI\-v, \-\-verbose\fP           
+\fI\-v, \-\-verbose\fP
 Show PCM structure and setup.
 This option is accumulative.  The VU meter is displayed when this
 is given twice or three times.
@@ -128,7 +128,7 @@ Specifies the VU\-meter type, either \fIstereo\fP or \fImono\fP.
 The stereo VU\-meter is available only for 2\-channel stereo samples
 with interleaved format.
 .TP
-\fI\-I, \-\-separate\-channels\fP 
+\fI\-I, \-\-separate\-channels\fP
 One file for each channel.  This option disables max\-file\-time
 and use\-strftime, and ignores SIGUSR1.  The stereo VU meter is
 not available with separate channels.
@@ -212,7 +212,7 @@ Disables recovery attempts when errors (e.g. xrun) are encountered; the
 aplay process instead aborts immediately.
 
 .SH SIGNALS
-When recording, SIGINT, SIGTERM and SIGABRT will close the output 
+When recording, SIGINT, SIGTERM and SIGABRT will close the output
 file and exit.  SIGUSR1 will close the output file, open a new one,
 and continue recording.  However, SIGUSR1 does not work with
 \-\-separate\-channels.
@@ -222,7 +222,7 @@ and continue recording.  However, SIGUSR1 does not work with
 .TP
 \fBaplay \-c 1 \-t raw \-r 22050 \-f mu_law foobar\fR
 will play the raw file "foobar" as a
-22050\-Hz, mono, 8\-bit, Mu\-Law .au file. 
+22050\-Hz, mono, 8\-bit, Mu\-Law .au file.
 
 .TP
 \fBarecord \-d 10 \-f cd \-t wav \-D copy foobar.wav\fP
@@ -257,7 +257,7 @@ alsamixer(1),
 amixer(1)
 \fP
 
-.SH BUGS 
+.SH BUGS
 Note that .aiff files are not currently supported.
 
 .SH AUTHOR
