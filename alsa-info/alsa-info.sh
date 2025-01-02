@@ -244,7 +244,7 @@ withpackages() {
 	RPM="$(command -v rpmquery)"
 	DPKG="$(command -v dpkg)"
 	[ -n "$RPM$DPKG" ] || return
-	local PATTERN='(alsa-(lib|oss|plugins|tools|(topology|ucm)-conf|utils|sof-firmware)|libalsa|tinycompress|sof-firmware)'
+	local PATTERN='(alsa-(lib|oss|plugins|tools|ucm|(topology|ucm)-conf|utils|sof-firmware)|libalsa|tinycompress|sof-firmware)'
 	{
         echo "!!Packages installed"
         echo "!!--------------------"
