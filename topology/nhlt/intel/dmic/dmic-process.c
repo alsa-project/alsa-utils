@@ -613,12 +613,23 @@ static void ipm_helper2(struct intel_dmic_params *dmic, int source[], int *ipm)
  * operate as stereo or mono left (A) or mono right (B) mode. Mono right mode is setup as channel
  * swapped mono left.
  */
-static int stereo_helper(struct intel_dmic_params *dmic, int stereo[], int swap[])
+static int stereo_helper(struct intel_dmic_params *dmic, int stereo[], int swap[], int ipmsm[])
 {
 	int cnt;
-	int i;
+	int i, j;
 	int swap_check;
 	int ret = 0;
+
+	/* Find FIFOs those need stereo mode, ipmsm 0 is mono, 1 is stereo */
+	for (i = 0; i < DMIC_HW_FIFOS; i++) {
+		ipmsm[i] = 0;
+		for (j = 0; j < DMIC_HW_CONTROLLERS; j++) {
+			if (dmic->dmic_prm[i].pdm[j].enable_mic_a && dmic->dmic_prm[i].pdm[j].enable_mic_b) {
+				ipmsm[i] = 1;
+				break;
+			}
+		}
+	}
 
 	for (i = 0; i < DMIC_HW_CONTROLLERS; i++) {
 		cnt = 0;
@@ -652,6 +663,7 @@ static int stereo_helper(struct intel_dmic_params *dmic, int stereo[], int swap[
 
 static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_configuration *cfg)
 {
+	int ipmsm[DMIC_HW_FIFOS];
 	int stereo[DMIC_HW_CONTROLLERS];
 	int swap[DMIC_HW_CONTROLLERS];
 	uint32_t val = 0;
@@ -762,6 +774,12 @@ static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_
 	of0 = (dmic->dmic_prm[0].fifo_bits == 32) ? 2 : 0;
 	of1 = (dmic->dmic_prm[1].fifo_bits == 32) ? 2 : 0;
 
+	ret = stereo_helper(dmic, stereo, swap, ipmsm);
+	if (ret < 0) {
+		fprintf(stderr, "%s: enable conflict\n", __func__);
+		return ret;
+	}
+
 	if (dmic->dmic_prm[di].driver_version == 1) {
 		if (di == 0) {
 			ipm_helper1(dmic, &ipm);
@@ -803,7 +821,7 @@ static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_
 				OUTCONTROL0_IPM_SOURCE_2(source[1]) |
 				OUTCONTROL0_IPM_SOURCE_3(source[2]) |
 				OUTCONTROL0_IPM_SOURCE_4(source[3]) |
-				OUTCONTROL0_IPM_SOURCE_MODE(1) |
+				OUTCONTROL0_IPM_SOURCE_MODE(ipmsm[0]) |
 				OUTCONTROL0_TH(th);
 		} else {
 			ipm_helper2(dmic, source, &ipm);
@@ -818,18 +836,12 @@ static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_
 				OUTCONTROL1_IPM_SOURCE_2(source[1]) |
 				OUTCONTROL1_IPM_SOURCE_3(source[2]) |
 				OUTCONTROL1_IPM_SOURCE_4(source[3]) |
-				OUTCONTROL1_IPM_SOURCE_MODE(1) |
+				OUTCONTROL1_IPM_SOURCE_MODE(ipmsm[1]) |
 				OUTCONTROL1_TH(th);
 		}
 	}
 
 	dmic->dmic_blob.chan_ctrl_cfg[di] = val;
-
-	ret = stereo_helper(dmic, stereo, swap);
-	if (ret < 0) {
-		fprintf(stderr, "%s: enable conflict\n", __func__);
-		return ret;
-	}
 
 	for (i = 0; i < DMIC_HW_CONTROLLERS; i++) {
 		/* CIC */
