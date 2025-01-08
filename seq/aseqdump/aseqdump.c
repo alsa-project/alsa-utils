@@ -393,8 +393,8 @@ static void dump_ump_midi1_event(const unsigned int *ump)
 		break;
 	case SND_UMP_MSG_NOTE_ON:
 		printf("Note on                %2d, note %d, velocity %s",
-		       channel, m->note_off.note,
-		       midi1_data(m->note_off.velocity));
+		       channel, m->note_on.note,
+		       midi1_data(m->note_on.velocity));
 		break;
 	case SND_UMP_MSG_POLY_PRESSURE:
 		printf("Poly pressure          %2d, note %d, value %s",
@@ -545,9 +545,9 @@ static void dump_ump_midi2_event(const unsigned int *ump)
 		break;
 	case SND_UMP_MSG_NOTE_ON:
 		printf("Note on                %2d, note %d, velocity %s, attr type = %d, data = 0x%x",
-		       channel, m->note_off.note,
-		       midi2_velocity(m->note_off.velocity),
-		       m->note_off.attr_type, m->note_off.attr_data);
+		       channel, m->note_on.note,
+		       midi2_velocity(m->note_on.velocity),
+		       m->note_on.attr_type, m->note_on.attr_data);
 		break;
 	case SND_UMP_MSG_POLY_PRESSURE:
 		printf("Poly pressure          %2d, note %d, value %s",
@@ -572,7 +572,7 @@ static void dump_ump_midi2_event(const unsigned int *ump)
 		       midi2_data(m->channel_pressure.data));
 		break;
 	case SND_UMP_MSG_PITCHBEND:
-		printf("Channel pressure       %2d, value %s",
+		printf("Pitchbend              %2d, value %s",
 		       channel,
 		       midi2_pitchbend(m->channel_pressure.data));
 		break;
