@@ -1,0 +1,67 @@
+# German translations for the alsa-utils package.
+# Copyright (C) 2025 The ALSA Team
+# This file is distributed under the same license as the alsa-utils package.
+# Feike Donia <feikedonia@proton.me>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: alsa-utils 1.0.23\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-01-10 09:07+0100\n"
+"PO-Revision-Date: 2025-01-13 15:07+0100\n"
+"Last-Translator: Feike Donia <feikedonia@proton.me>\n"
+"Language-Team: \n"
+"Language: nl\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: alsamixer/card_select.c:126 alsamixer/device_name.c:126
+msgid "Sound Card"
+msgstr "Geluidskaart"
+
+#: alsamixer/card_select.c:181
+msgid "(default)"
+msgstr "(standaard)"
+
+#: alsamixer/card_select.c:191
+msgid "cannot enumerate sound cards"
+msgstr "kon geen geluidskaarten weergeven"
+
+#: alsamixer/card_select.c:215
+msgid "enter device name..."
+msgstr "Apparaatnaam invoeren..."
+
+#: alsamixer/cli.c:40
+msgid "Usage: alsamixer [options]"
+msgstr "Gebruik: alsamixer [Opties]"
+
+#: alsamixer/cli.c:41
+msgid ""
+"Useful options:\n"
+"  -h, --help              this help\n"
+"  -c, --card=NUMBER       sound card number or id\n"
+"  -D, --device=NAME       mixer device name\n"
+"  -V, --view=MODE         starting view mode: playback/capture/all"
+msgstr ""
+"Opties:\n"
+"  -h, --help           deze hulp\n"
+"  -c, --card=NUMMER    geluidskaartnummer of -id\n"
+"  -D, --device=NAAM    naam mixerapparaat\n"
+"  -V, --view=MODUS     weergave bij het opstarten: afspelen/opname/alle"
+
+#: alsamixer/cli.c:46
+msgid ""
+"Debugging options:\n"
+"  -g, --no-color          toggle using of colors\n"
+"  -a, --abstraction=NAME  mixer abstraction level: none/basic"
+msgstr ""
+"Debugopties:\n"
+"  -g, --no-color          geen kleuren gebruiken\n"
+"  -a, --abstraction=NAAM  abstractieniveau van de mixer: geen/basic"
+
+#: alsamixer/cli.c:77
+#, c-format
+msgid "invalid card index: %s\n"
+msgstr "ungültige Karten-Nummer: %s\n"
+
+
