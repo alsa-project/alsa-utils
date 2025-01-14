@@ -1,4 +1,4 @@
-# German translations for the alsa-utils package.
+# Dutch translations for the alsa-utils package.
 # Copyright (C) 2025 The ALSA Team
 # This file is distributed under the same license as the alsa-utils package.
 # Feike Donia <feikedonia@proton.me>, 2025.
