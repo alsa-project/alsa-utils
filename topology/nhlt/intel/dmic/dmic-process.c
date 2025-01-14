@@ -773,7 +773,7 @@ static int configure_registers(struct intel_dmic_params *dmic, struct dmic_calc_
 
 	ret = stereo_helper(dmic, stereo, swap, ipmsm);
 	if (ret < 0) {
-		fprintf(stderr, "%s: enable conflict\n", __func__);
+		fprintf(stderr, "%s: Microphones enable conflict for DMIC0 and DMIC1 FIFOs\n", __func__);
 		return ret;
 	}
 
