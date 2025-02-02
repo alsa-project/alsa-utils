@@ -8,7 +8,7 @@
 #include "aconfig.h"
 #include <stdio.h>
 #include <stdint.h>
-#include <alsa/global.h>
+#include <alsa/asoundlib.h>
 #include "dmic-debug.h"
 
 #ifdef NHLT_DEBUG

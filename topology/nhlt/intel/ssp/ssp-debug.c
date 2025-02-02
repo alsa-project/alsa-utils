@@ -7,7 +7,7 @@
 #include "aconfig.h"
 #include <stdio.h>
 #include <stdint.h>
-#include <alsa/global.h>
+#include <alsa/asoundlib.h>
 #include "ssp-debug.h"
 #include "../intel-nhlt.h"
 
