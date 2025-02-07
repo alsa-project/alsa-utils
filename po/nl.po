@@ -1,0 +1,473 @@
+# Dutch translations for the alsa-utils package.
+# Copyright (C) 2025 The ALSA Team
+# This file is distributed under the same license as the alsa-utils package.
+# Feike Donia <feikedonia@proton.me>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: alsa-utils 1.0.23\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-01-10 09:07+0100\n"
+"PO-Revision-Date: 2025-01-13 15:07+0100\n"
+"Last-Translator: Feike Donia <feikedonia@proton.me>\n"
+"Language-Team: \n"
+"Language: nl\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: alsamixer/card_select.c:126 alsamixer/device_name.c:126
+msgid "Sound Card"
+msgstr "Geluidskaart"
+
+#: alsamixer/card_select.c:181
+msgid "(default)"
+msgstr "(standaard)"
+
+#: alsamixer/card_select.c:191
+msgid "cannot enumerate sound cards"
+msgstr "kon geen geluidskaarten weergeven"
+
+#: alsamixer/card_select.c:215
+msgid "enter device name..."
+msgstr "Apparaatnaam invoeren..."
+
+#: alsamixer/cli.c:40
+msgid "Usage: alsamixer [options]"
+msgstr "Gebruik: alsamixer [Opties]"
+
+#: alsamixer/cli.c:41
+msgid ""
+"Useful options:\n"
+"  -h, --help              this help\n"
+"  -c, --card=NUMBER       sound card number or id\n"
+"  -D, --device=NAME       mixer device name\n"
+"  -V, --view=MODE         starting view mode: playback/capture/all"
+msgstr ""
+"Opties:\n"
+"  -h, --help           deze hulp\n"
+"  -c, --card=NUMMER    geluidskaartnummer of -id\n"
+"  -D, --device=NAAM    naam mixerapparaat\n"
+"  -V, --view=MODUS     weergave bij het opstarten: afspelen/opname/alle"
+
+#: alsamixer/cli.c:46
+msgid ""
+"Debugging options:\n"
+"  -g, --no-color          toggle using of colors\n"
+"  -a, --abstraction=NAME  mixer abstraction level: none/basic"
+msgstr ""
+"Debugopties:\n"
+"  -g, --no-color          geen kleuren gebruiken\n"
+"  -a, --abstraction=NAAM  abstractieniveau van de mixer: geen/basic"
+
+#: alsamixer/cli.c:77
+#, c-format
+msgid "invalid card index: %s\n"
+msgstr "ongeldig kaartnummer: %s\n"
+
+#: alsamixer/cli.c:103
+#, c-format
+msgid "unknown abstraction level: %s\n"
+msgstr "onbekend abstractieniveau: %s\n"
+
+#: alsamixer/cli.c:108
+#, c-format
+msgid "unknown option: %c\n"
+msgstr "onbekende optie: %c\n"
+
+#: alsamixer/cli.c:110
+msgid "try `alsamixer --help' for more information\n"
+msgstr "probeer `alsamixer --help' voor meer informatie\n"
+
+#: alsamixer/device_name.c:177
+msgid "Device name:"
+msgstr "Apparaatnaam:"
+
+#: alsamixer/die.c:37
+#, c-format
+msgid "%s: %s\n"
+msgstr "%s: %s\n"
+
+#: alsamixer/mixer_display.c:98
+msgid "Card:"
+msgstr "Geluidskaart:"
+
+#: alsamixer/mixer_display.c:99
+msgid "Chip:"
+msgstr "Chip:"
+
+#: alsamixer/mixer_display.c:100
+msgid "View:"
+msgstr "Weergave:"
+
+#: alsamixer/mixer_display.c:101
+msgid "Item:"
+msgstr "Item:"
+
+#: alsamixer/mixer_display.c:105
+msgid "F1:  Help"
+msgstr "F1:  Help"
+
+#: alsamixer/mixer_display.c:105
+msgid "F2:  System information"
+msgstr "F2:  Systeeminformatie"
+
+#: alsamixer/mixer_display.c:106
+msgid "F6:  Select sound card"
+msgstr "F6:  Geluidskaart selecteren"
+
+#: alsamixer/mixer_display.c:107
+msgid "Esc: Exit"
+msgstr "Esc: Sluiten"
+
+#: alsamixer/mixer_display.c:174
+msgid "(unplugged)"
+msgstr "(ontkoppeld)"
+
+#: alsamixer/mixer_display.c:192
+msgid "Playback"
+msgstr "Afspelen"
+
+#: alsamixer/mixer_display.c:193
+msgid "Capture"
+msgstr "Opnemen"
+
+#: alsamixer/mixer_display.c:194
+msgid "All"
+msgstr "Alles"
+
+#: alsamixer/mixer_display.c:234
+msgid "mute"
+msgstr "dempen"
+
+#: alsamixer/mixer_display.c:275 alsamixer/mixer_display.c:285
+msgid "dB gain:"
+msgstr "dB-versterking:"
+
+#: alsamixer/mixer_display.c:285
+#, c-format
+msgid " [%s %s, %s]"
+msgstr " [%s %s; %s]"
+
+#: alsamixer/mixer_display.c:294 alsamixer/mixer_display.c:300
+#: alsamixer/mixer_display.c:306 alsamixer/mixer_display.c:312
+msgid "Off"
+msgstr "Uit"
+
+#: alsamixer/mixer_display.c:300 alsamixer/mixer_display.c:312
+msgid "On"
+msgstr "Aan"
+
+#: alsamixer/mixer_display.c:363
+msgid "The sound device was unplugged."
+msgstr "Het apparaat is ontkoppeld."
+
+#: alsamixer/mixer_display.c:364
+msgid "Press F6 to select another sound card."
+msgstr "Druk op F6 om een andere geluidskaart te selecteren."
+
+#: alsamixer/mixer_display.c:379
+msgid "This sound device does not have any playback controls."
+msgstr "Dit geluidsapparaat heeft geen afspeelbediening."
+
+#: alsamixer/mixer_display.c:381
+msgid "This sound device does not have any capture controls."
+msgstr "Dit geluidsapparaat heeft geen opnamebediening."
+
+#: alsamixer/mixer_display.c:383
+msgid "This sound device does not have any controls."
+msgstr "Dit geluidsapparaat kan niet worden bediend."
+
+#. TRANSLATORS: playback on; one character
+#: alsamixer/mixer_display.c:516 alsamixer/mixer_display.c:521
+msgid "O"
+msgstr "O"
+
+#. TRANSLATORS: playback muted; one character
+#: alsamixer/mixer_display.c:518 alsamixer/mixer_display.c:522
+msgid "M"
+msgstr "M"
+
+#. TRANSLATORS: "left"; no more than two characters
+#: alsamixer/mixer_display.c:536
+msgid "L"
+msgstr "L"
+
+#. TRANSLATORS: "right"; no more than two characters
+#: alsamixer/mixer_display.c:540
+msgid "R"
+msgstr "R"
+
+#. TRANSLATORS: no more than eight characters
+#: alsamixer/mixer_display.c:542
+msgid "CAPTURE"
+msgstr "OPNAME"
+
+#: alsamixer/mixer_display.c:592
+msgid "Front"
+msgstr "Voor"
+
+#: alsamixer/mixer_display.c:595
+msgid "Rear"
+msgstr "Achter"
+
+#: alsamixer/mixer_display.c:598 speaker-test/speaker-test.c:125
+msgid "Center"
+msgstr "Midden"
+
+#: alsamixer/mixer_display.c:601
+msgid "Woofer"
+msgstr "Woofer"
+
+#: alsamixer/mixer_display.c:604
+msgid "Side"
+msgstr "Zijde"
+
+#: alsamixer/mixer_widget.c:91 alsamixer/mixer_widget.c:96
+msgid "cannot open mixer"
+msgstr "kan mixerapparaat niet openen"
+
+#: alsamixer/mixer_widget.c:102 alsamixer/mixer_widget.c:179
+msgid "cannot load mixer controls"
+msgstr "kan mixerbesturing niet laden"
+
+#: alsamixer/mixer_widget.c:169
+#, c-format
+msgid "Cannot open mixer device '%s'."
+msgstr "Kan mixerapparaat '%s' niet openen."
+
+#: alsamixer/mixer_widget.c:190
+msgid "Esc     Exit"
+msgstr "Esc     Sluiten"
+
+#: alsamixer/mixer_widget.c:191
+msgid "F1 ? H  Help"
+msgstr "F1 ? H  Help"
+
+#: alsamixer/mixer_widget.c:192
+msgid "F2 /    System information"
+msgstr "F2 /    Systeeminformatie"
+
+#: alsamixer/mixer_widget.c:193
+msgid "F3      Show playback controls"
+msgstr "F3      Afspeelbediening weergeven"
+
+#: alsamixer/mixer_widget.c:194
+msgid "F4      Show capture controls"
+msgstr "F4      Opnamebediening weergeven"
+
+#: alsamixer/mixer_widget.c:195
+msgid "F5      Show all controls"
+msgstr "F5      Alle bediening weergeven"
+
+#: alsamixer/mixer_widget.c:196
+msgid "Tab     Toggle view mode (F3/F4/F5)"
+msgstr "Tab     Weergavemodus omschakelen (F3/F4/F5)"
+
+#: alsamixer/mixer_widget.c:197
+msgid "F6 S    Select sound card"
+msgstr "F6 S    Geluidskaart selecteren"
+
+#: alsamixer/mixer_widget.c:198
+msgid "L       Redraw screen"
+msgstr "L       Schermweergave verversen"
+
+#: alsamixer/mixer_widget.c:200
+msgid "Left    Move to the previous control"
+msgstr "Links   Ga naar vorige bediening"
+
+#: alsamixer/mixer_widget.c:201
+msgid "Right   Move to the next control"
+msgstr "Rechts  Ga naar volgende bediening"
+
+#: alsamixer/mixer_widget.c:203
+msgid "Up/Down    Change volume"
+msgstr "Omhoog/Omlaag   Volume wijzigen"
+
+#: alsamixer/mixer_widget.c:204
+msgid "+ -        Change volume"
+msgstr "+ -         Volume wijzigen"
+
+#: alsamixer/mixer_widget.c:205
+msgid "Page Up/Dn Change volume in big steps"
+msgstr "Page Up/Down   Volume in grote stappen wijzigen"
+
+#: alsamixer/mixer_widget.c:206
+msgid "End        Set volume to 0%"
+msgstr "End        Geluid uitzetten (0%)"
+
+#: alsamixer/mixer_widget.c:207
+msgid "0-9        Set volume to 0%-90%"
+msgstr "0-9         Volume op 0%-90% zetten"
+
+#: alsamixer/mixer_widget.c:208
+msgid "Q W E      Increase left/both/right volumes"
+msgstr "Q W E       Volume links/beide/rechts verhogen"
+
+#: alsamixer/mixer_widget.c:210
+msgid "Z X C      Decrease left/both/right volumes"
+msgstr "Z X C       Volume links/beide/rechts verlagen"
+
+#: alsamixer/mixer_widget.c:211
+msgid "B          Balance left and right volumes"
+msgstr "B           Volume links en rechts gelijkstellen"
+
+#: alsamixer/mixer_widget.c:213
+msgid "M          Toggle mute"
+msgstr "M           Geluid uit/aan"
+
+#. TRANSLATORS: or , .
+#: alsamixer/mixer_widget.c:215
+msgid "< >        Toggle left/right mute"
+msgstr ", .         Geluid uit/aan, links/rechts"
+
+#: alsamixer/mixer_widget.c:217
+msgid "Space      Toggle capture"
+msgstr "Spatiebalk   Opname starten/stoppen"
+
+#. TRANSLATORS: or Insert Delete
+#: alsamixer/mixer_widget.c:219
+msgid "; '        Toggle left/right capture"
+msgstr "; '       Opname starten/stoppen, links/rechts"
+
+#: alsamixer/mixer_widget.c:221
+msgid "Authors:"
+msgstr "Auteurs:"
+
+#: alsamixer/mixer_widget.c:222
+msgid "  Tim Janik"
+msgstr "  Tim Janik"
+
+#: alsamixer/mixer_widget.c:223
+msgid "  Jaroslav Kysela <perex@perex.cz>"
+msgstr "  Jaroslav Kysela <perex@perex.cz>"
+
+#: alsamixer/mixer_widget.c:224
+msgid "  Clemens Ladisch <clemens@ladisch.de>"
+msgstr "  Clemens Ladisch <clemens@ladisch.de>"
+
+#: alsamixer/mixer_widget.c:226
+msgid "Help"
+msgstr "Hulp"
+
+#: alsamixer/proc_files.c:103
+msgid "Select File"
+msgstr "Bestand Selecteren"
+
+#: alsamixer/textbox.c:52 alsamixer/textbox.c:66
+msgid "Error"
+msgstr "Fout"
+
+#: alsamixer/textbox.c:80
+#, c-format
+msgid "Cannot open file \"%s\"."
+msgstr "Kon bestand '%s' niet openen."
+
+#: aplay/aplay.c:178
+msgid "raw data"
+msgstr "onbewerkte gegevens"
+
+#: aplay/aplay.c:179
+msgid "VOC"
+msgstr "VOC"
+
+#: aplay/aplay.c:181
+msgid "WAVE"
+msgstr "WAVE"
+
+#: aplay/aplay.c:182
+msgid "Sparc Audio"
+msgstr "Sparc-Audio"
+
+#: aplay/aplay.c:203
+#, fuzzy, c-format
+msgid ""
+"Usage: %s [OPTION]... [FILE]...\n"
+"\n"
+"-h, --help              help\n"
+"    --version           print current version\n"
+"-l, --list-devices      list all soundcards and digital audio devices\n"
+"-L, --list-pcms         list device names\n"
+"-D, --device=NAME       select PCM by name\n"
+"-q, --quiet             quiet mode\n"
+"-t, --file-type TYPE    file type (voc, wav, raw or au)\n"
+"-c, --channels=#        channels\n"
+"-f, --format=FORMAT     sample format (case insensitive)\n"
+"-r, --rate=#            sample rate\n"
+"-d, --duration=#        interrupt after # seconds\n"
+"-s, --samples=#         interrupt after # samples per channel\n"
+"-M, --mmap              mmap stream\n"
+"-N, --nonblock          nonblocking mode\n"
+"-F, --period-time=#     distance between interrupts is # microseconds\n"
+"-B, --buffer-time=#     buffer duration is # microseconds\n"
+"    --period-size=#     distance between interrupts is # frames\n"
+"    --buffer-size=#     buffer duration is # frames\n"
+"-A, --avail-min=#       min available space for wakeup is # microseconds\n"
+"-R, --start-delay=#     delay for automatic PCM start is # microseconds \n"
+"                        (relative to buffer size if <= 0)\n"
+"-T, --stop-delay=#      delay for automatic PCM stop is # microseconds from "
+"xrun\n"
+"-v, --verbose           show PCM structure and setup (accumulative)\n"
+"-V, --vumeter=TYPE      enable VU meter (TYPE: mono or stereo)\n"
+"-I, --separate-channels one file for each channel\n"
+"-i, --interactive       allow interactive operation from stdin\n"
+"-m, --chmap=ch1,ch2,..  Give the channel map to override or follow\n"
+"    --disable-resample  disable automatic rate resample\n"
+"    --disable-channels  disable automatic channel conversions\n"
+"    --disable-format    disable automatic format conversions\n"
+"    --disable-softvol   disable software volume control (softvol)\n"
+"    --test-position     test ring buffer position\n"
+"    --test-coef=#       test coefficient for ring buffer position (default "
+"8)\n"
+"                        expression for validation is: coef * (buffer_size / "
+"2)\n"
+"    --test-nowait       do not wait for ring buffer - eats whole CPU\n"
+"    --max-file-time=#   start another output file when the old file has "
+"recorded\n"
+"                        for this many seconds\n"
+"    --process-id-file   write the process ID here\n"
+"    --use-strftime      apply the strftime facility to the output file name\n"
+"    --dump-hw-params    dump hw_params of the device\n"
+"    --fatal-errors      treat all errors as fatal\n"
+msgstr ""
+"Gebruik: %s [OPTIE]... [BESTAND]...\n"
+"\n"
+"-h, --help              deze hulp weergeven\n"
+"    --version           versie weergeven\n"
+"-l, --list-devices      alle geluidskaarten en -apparaten weergeven\n"
+"-L, --list-pcms         ALSA-apparaatnamen weergeven\n"
+"-D, --device=NAAM       PCM-apparaat selecteren\n"
+"-q, --quiet             minder gedetailleerde weergave\n"
+"-t, --file-type TYPE    bestandstype (voc, wav, raw of au)\n"
+"-c, --channels=#        kanaal\n"
+"-f, --format=FORMAT     sampleformat (hoofdlettergevoelig)\n"
+"-r, --rate=#            samplefrequentie\n"
+"-d, --duration=#        na # seconden onderbreken\n"
+"-s, --samples=#         na # samples per kanaal onderbreken\n"
+"-M, --mmap              mmap-stream\n"
+"-N, --nonblock          non-blocking modus\n"
+"-F, --period-time=#     interval tussen interrupties is # µs\n"
+"-B, --buffer-time=#     bufferlengte is # µs\n"
+"    --period-size=#     interval tussen interrupties is # frames\n"
+"    --buffer-size=#     bufferlengte is # frames\n"
+"-A, --avail-min=#       minimum beschikbare buffergrootte voor wake-up is # µs\n"
+"-R, --start-delay=#     vertraging voor automatische PCM-start is # µs\n"
+"                        (relatief aan buffergrootte, als <= 0)\n"
+"-T, --stop-delay=#      vertraging voon automatische PCM-stop is # µs vanaf "
+"xrun\n"
+"-v, --verbose           PCM-structuur en configuratie tonen (accumulatief)\n"
+"-V, --vumeter=TYPE      VU-meter weergeven (TYPE: mono of stereo)\n"
+"-I, --separate-channels een bestand per kanaal\n"
+"-i, --interactive       interactieve bewerking vanaf stdin toestaan\n"
+"-m, --chmap=ch1,ch2,..  kanaallijst weergeven om te overschijven of om te volgen\n"
+"    --disable-resample  geen automatische sample rate aanpassingen\n"
+"    --disable-channels  geen automatische kanaalnummeraanpassingen\n"
+"    --disable-format    geen automatische formataanpassingen\n"
+"    --disable-softvol   geen softwarematige volumeregeling (softvol)\n"
+"    --test-position     positie in de ringbuffer controleren\n"
+"    --test-coef=#       testcoëfficiënt voor positiecontrole (standaard 8)\n"
+"                        Formule positiecontrole: coëfficiënt × (buffergrootte ÷ 2)\n"
+"    --test-nowait       niet wachten op ringbuffer; vereist volledige CPU-prestatie\n"
+"    --max-file-time=#   meerdere bestanden maken; overschakelen na # seconden\n"
+"    --process-id-file=# proces-ID naar dit bestand schrijven\n"
+"    --use-strftime      bestandsnaam opmaken met strftime; %%v=bestandsnummer\n"
+
