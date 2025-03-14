@@ -8,7 +8,7 @@ AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE([enable])
 
 AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.19.8])
+AM_GNU_GETTEXT_VERSION([0.22.5])
 
 dnl Checks for programs.
 

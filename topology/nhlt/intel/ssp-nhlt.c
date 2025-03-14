@@ -10,10 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <alsa/input.h>
-#include <alsa/output.h>
-#include <alsa/conf.h>
-#include <alsa/error.h>
+#include <alsa/asoundlib.h>
 #include "intel-nhlt.h"
 #include "ssp-nhlt.h"
 #include "ssp/ssp-process.h"

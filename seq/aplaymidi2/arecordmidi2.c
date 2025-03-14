@@ -351,7 +351,7 @@ static int read_ump_raw(FILE *file, uint32_t *buf)
 
 	if (fread(buf, 4, 1, file) != 1)
 		return 0;
-	v = be32toh(v);
+	v = be32toh(*buf);
 	num = snd_ump_packet_length(snd_ump_msg_hdr_type(v));
 	for (i = 1; i < num; i++) {
 		if (fread(buf + i, 4, 1, file) != 1)

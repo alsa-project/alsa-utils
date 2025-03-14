@@ -11,11 +11,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <inttypes.h>
-#include <alsa/global.h>
-#include <alsa/input.h>
-#include <alsa/output.h>
-#include <alsa/conf.h>
-#include <alsa/error.h>
+#include <alsa/asoundlib.h>
 #include "pre-process-external.h"
 #include "nhlt.h"
 #include "intel/intel-nhlt.h"

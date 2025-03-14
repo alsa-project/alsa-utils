@@ -14,11 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <alsa/global.h>
-#include <alsa/input.h>
-#include <alsa/output.h>
-#include <alsa/conf.h>
-#include <alsa/error.h>
+#include <alsa/asoundlib.h>
 #include "../intel-nhlt.h"
 #include "../../nhlt.h"
 #include "ssp-process.h"
@@ -60,11 +56,11 @@ static void ssp_calculate_intern_v30(struct intel_nhlt_params *nhlt, int hwi)
 	blob30->rsvd2 = 0;
 	blob30->ssioc = blob->ssioc;
 
-	blob30->rx_dir[0].ssmidytsa = 3;
+	blob30->rx_dir[0].ssmidytsa = ssp->ssp_prm[di].hw_cfg[hwi].rx_slots;
 	for (i = 1; i < I2SIPCMC; i++)
 		blob30->rx_dir[i].ssmidytsa = 0;
 
-	blob30->tx_dir[0].ssmodytsa = 3;
+	blob30->tx_dir[0].ssmodytsa = ssp->ssp_prm[di].hw_cfg[hwi].tx_slots;
 	for (i = 1; i < I2SOPCMC; i++)
 		blob30->tx_dir[i].ssmodytsa = 0;
 
