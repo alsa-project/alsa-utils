@@ -1245,6 +1245,12 @@ static int test_au(int fd, void *buffer)
 			fprintf(stderr, _("Warning: format is changed to S16_BE\n"));
 		hwparams.format = SND_PCM_FORMAT_S16_BE;
 		break;
+	case AU_FMT_ALAW:
+		if (hwparams.format != DEFAULT_FORMAT &&
+		    hwparams.format != SND_PCM_FORMAT_A_LAW)
+			fprintf(stderr, _("Warning: format is changed to A_LAW\n"));
+		hwparams.format = SND_PCM_FORMAT_A_LAW;
+		break;
 	default:
 		return -1;
 	}
@@ -2786,6 +2792,9 @@ static void begin_au(int fd, size_t cnt)
 		break;
 	case SND_PCM_FORMAT_S16_BE:
 		ah.encoding = BE_INT(AU_FMT_LIN16);
+		break;
+	case SND_PCM_FORMAT_A_LAW:
+		ah.encoding = BE_INT(AU_FMT_ALAW);
 		break;
 	default:
 		error(_("Sparc Audio doesn't support %s format..."), snd_pcm_format_name(hwparams.format));

@@ -120,6 +120,7 @@ typedef struct {
 #define AU_FMT_ULAW		1
 #define AU_FMT_LIN8		2
 #define AU_FMT_LIN16		3
+#define AU_FMT_ALAW		27
 
 typedef struct au_header {
 	uint32_t magic;		/* '.snd' */
