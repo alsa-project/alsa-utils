@@ -221,23 +221,23 @@ static int set_snd_pcm_params(struct bat *bat, struct pcm_container *sndpcm)
 
 		period_time = buffer_time / DIV_BUFFERTIME;
 
-		/* Set buffer time and period time */
+		/* Set period time and buffer time */
+		err = snd_pcm_hw_params_set_period_time_near(sndpcm->handle,
+			params, &period_time, 0);
+		if (err < 0) {
+			fprintf(bat->err, _("Set parameter to device error: "));
+			fprintf(bat->err, _("period time: %d %s: %s(%d)\n"),
+					period_time,
+					device_name, snd_strerror(err), err);
+			return err;
+		}
+
 		err = snd_pcm_hw_params_set_buffer_time_near(sndpcm->handle,
 				params, &buffer_time, 0);
 		if (err < 0) {
 			fprintf(bat->err, _("Set parameter to device error: "));
 			fprintf(bat->err, _("buffer time: %d %s: %s(%d)\n"),
 					buffer_time,
-					device_name, snd_strerror(err), err);
-			return err;
-		}
-
-		err = snd_pcm_hw_params_set_period_time_near(sndpcm->handle,
-				params, &period_time, 0);
-		if (err < 0) {
-			fprintf(bat->err, _("Set parameter to device error: "));
-			fprintf(bat->err, _("period time: %d %s: %s(%d)\n"),
-					period_time,
 					device_name, snd_strerror(err), err);
 			return err;
 		}
