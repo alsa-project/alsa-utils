@@ -1595,6 +1595,8 @@ static int events(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 	snd_hctl_elem_t *helem;
 	int err;
 
+	setlinebuf(stdout);
+
 	if ((err = snd_hctl_open(&handle, card, 0)) < 0) {
 		error("Control %s open error: %s\n", card, snd_strerror(err));
 		return err;
@@ -1673,6 +1675,8 @@ static int sevents(int argc ATTRIBUTE_UNUSED, char *argv[] ATTRIBUTE_UNUSED)
 {
 	snd_mixer_t *handle;
 	int err;
+
+	setlinebuf(stdout);
 
 	if ((err = snd_mixer_open(&handle, 0)) < 0) {
 		error("Mixer %s open error: %s", card, snd_strerror(err));
