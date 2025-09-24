@@ -11,7 +11,7 @@ jobs:
     - name: Prepare environment
       run: |
         dnf -y upgrade
-        dnf -y install @development-tools libtool bzip2 gettext-devel ncurses-devel
+        dnf -y install @development-tools libtool bzip2 gettext-devel ncurses-devel awk
 
     - name: Checkout alsa-lib
       uses: actions/checkout@v4
