@@ -8,7 +8,7 @@ LABEL="alsa_restore_go"
 ENV{ALSA_CARD_NUMBER}="$attr{device/number}"
 
 # mark HDA analog card; HDMI/DP card does not have capture devices
-DRIVERS=="snd_hda_intel", TEST=="device/pcmC$env{ALSA_CARD_NUMBER}D0p", RUN+="/bin/sh -c 'echo ALSA_CARD_HDA_ANALOG=$env{ALSA_CARD_NUMBER} >> /run/udev/alsa-hda-analog-card'"
+DRIVERS=="snd_hda_intel", TEST=="device/pcmC$env{ALSA_CARD_NUMBER}D0c", RUN+="/bin/sh -c 'echo ALSA_CARD_HDA_ANALOG=$env{ALSA_CARD_NUMBER} >> /run/udev/alsa-hda-analog-card'"
 
 # check for ACP hardware
 TEST=="device/device/acp3x-dmic-capture", GOTO="alsa_hda_analog"
