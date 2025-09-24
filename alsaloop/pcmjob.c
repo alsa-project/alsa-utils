@@ -647,13 +647,15 @@ static int xrun(struct loopback_handle *lhandle)
 	int err;
 
 	if (lhandle == lhandle->loopback->play) {
-		logit(LOG_DEBUG, "underrun for %s\n", lhandle->id);
+		if (verbose)
+			logit(LOG_DEBUG, "underrun for %s\n", lhandle->id);
 		xrun_stats(lhandle->loopback);
 		if ((err = snd_pcm_prepare(lhandle->handle)) < 0)
 			return err;
 		lhandle->xrun_pending = 1;
 	} else {
-		logit(LOG_DEBUG, "overrun for %s\n", lhandle->id);
+		if (verbose)
+			logit(LOG_DEBUG, "overrun for %s\n", lhandle->id);
 		xrun_stats(lhandle->loopback);
 		if ((err = snd_pcm_prepare(lhandle->handle)) < 0)
 			return err;
