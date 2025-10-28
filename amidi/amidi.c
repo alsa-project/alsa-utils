@@ -57,6 +57,7 @@ static int stop;
 static int sysex_interval;
 static snd_rawmidi_t *input, **inputp;
 static snd_rawmidi_t *output, **outputp;
+static int list_all;
 
 static void error(const char *format, ...)
 {
@@ -76,6 +77,7 @@ static void usage(void)
 		"-h, --help                      this help\n"
 		"-V, --version                   print current version\n"
 		"-l, --list-devices              list all hardware ports\n"
+		"-x, --list-inactive             list inactive ports, too\n"
 		"-L, --list-rawmidis             list all RawMIDI definitions\n"
 		"-p, --port=name                 select port by name\n"
 		"-s, --send=file                 send the contents of a (.syx) file\n"
@@ -151,6 +153,9 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 			      card, device, sub, snd_strerror(err));
 			return;
 		}
+		if (!list_all &&
+		    (snd_rawmidi_info_get_flags(info) & SNDRV_RAWMIDI_INFO_STREAM_INACTIVE))
+			continue;
 		name = snd_rawmidi_info_get_name(info);
 		sub_name = snd_rawmidi_info_get_subdevice_name(info);
 		if (sub == 0 && sub_name[0] == '\0') {
@@ -471,11 +476,12 @@ static void add_send_hex_data(const char *str)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hVlLp:s:r:S::dt:aci:T:";
+	static const char short_options[] = "hVlxLp:s:r:S::dt:aci:T:";
 	static const struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"version", 0, NULL, 'V'},
 		{"list-devices", 0, NULL, 'l'},
+		{"list-inactive", 0, NULL, 'x'},
 		{"list-rawmidis", 0, NULL, 'L'},
 		{"port", 1, NULL, 'p'},
 		{"send", 1, NULL, 's'},
@@ -507,6 +513,9 @@ int main(int argc, char *argv[])
 			return 0;
 		case 'l':
 			do_device_list = 1;
+			break;
+		case 'x':
+			list_all = 1;
 			break;
 		case 'L':
 			do_rawmidi_list = 1;
