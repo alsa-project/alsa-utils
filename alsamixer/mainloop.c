@@ -34,6 +34,7 @@
 
 static WINDOW *curses_initialized;
 
+#if SND_LIB_VER(1, 2, 15) < SND_LIB_VERSION
 static void black_hole_error_handler(const char *file ATTRIBUTE_UNUSED,
 				     int line ATTRIBUTE_UNUSED,
 				     const char *function ATTRIBUTE_UNUSED,
@@ -41,6 +42,18 @@ static void black_hole_error_handler(const char *file ATTRIBUTE_UNUSED,
 				     const char *fmt ATTRIBUTE_UNUSED, ...)
 {
 }
+#else
+static void black_hole_log_handler(int prio ATTRIBUTE_UNUSED,
+				   int interface ATTRIBUTE_UNUSED,
+				   const char *file ATTRIBUTE_UNUSED,
+				   int line ATTRIBUTE_UNUSED,
+				   const char *function ATTRIBUTE_UNUSED,
+				   int errcode ATTRIBUTE_UNUSED,
+				   const char *fmt ATTRIBUTE_UNUSED,
+				   va_list arg ATTRIBUTE_UNUSED)
+{
+}
+#endif
 
 void initialize_curses(bool use_color, bool use_mouse)
 {
@@ -55,7 +68,11 @@ void initialize_curses(bool use_color, bool use_mouse)
 	if (use_mouse)
 		mousemask(ALL_MOUSE_EVENTS, NULL);
 
+#if SND_LIB_VER(1, 2, 15) < SND_LIB_VERSION
 	snd_lib_error_set_handler(black_hole_error_handler);
+#else
+	snd_lib_log_set_handler(black_hole_log_handler);
+#endif
 }
 
 void app_shutdown(void)
