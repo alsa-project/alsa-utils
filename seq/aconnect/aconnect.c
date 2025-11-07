@@ -31,11 +31,13 @@
 
 static int show_all;
 
-static void error_handler(const char *file, int line, const char *function, int err, const char *fmt, ...)
+
+#if SND_LIB_VER(1, 2, 15) < SND_LIB_VERSION
+static void error_handler(const char *file, int line, const char *function, int errcode, const char *fmt, ...)
 {
 	va_list arg;
 
-	if (err == ENOENT)	/* Ignore those misleading "warnings" */
+	if (errcode == ENOENT)	/* Ignore those misleading "warnings" */
 		return;
 	va_start(arg, fmt);
 	fprintf(stderr, "ALSA lib %s:%i:(%s) ", file, line, function);
@@ -45,6 +47,16 @@ static void error_handler(const char *file, int line, const char *function, int 
 	putc('\n', stderr);
 	va_end(arg);
 }
+#else
+static snd_lib_log_handler_t original_log_handler;
+static void log_handler(int prio, int interface, const char *file, int line, const char *function, int errcode, const char *fmt, va_list arg)
+{
+	if (prio == SND_LOG_ERROR && errcode == ENOENT)	/* Ignore those misleading "warnings" */
+		return;
+	if (original_log_handler)
+		original_log_handler(prio, interface, file, line, function, errcode, fmt, arg);
+}
+#endif
 
 static void usage(void)
 {
@@ -356,7 +368,11 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	
+#if SND_LIB_VER(1, 2, 15) < SND_LIB_VERSION
 	snd_lib_error_set_handler(error_handler);
+#else
+	original_log_handler = snd_lib_log_set_handler(log_handler);
+#endif
 
 	switch (command) {
 	case LIST:
