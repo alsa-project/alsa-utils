@@ -441,7 +441,11 @@ int main(int argc, char *argv[])
 			syslog(LOG_INFO, "alsactl " SND_UTIL_VERSION_STR " daemon started");
 	}
 
+#if SND_LIB_VER(1, 2, 15) < SND_LIB_VERSION
 	snd_lib_error_set_handler(error_handler);
+#else
+	snd_lib_log_set_handler(log_handler);
+#endif
 
 	if (!strcmp(cmd, "init")) {
 		res = init(cfgdir, initfile, initflags | FLAG_UCM_FBOOT | FLAG_UCM_BOOT, cardname);

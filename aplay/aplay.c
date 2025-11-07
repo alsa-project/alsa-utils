@@ -1464,6 +1464,13 @@ static void set_params(void)
 		      chunk_size, buffer_size);
 		prg_exit(EXIT_FAILURE);
 	}
+	if (dump_hw_params) {
+		fprintf(stderr, _("HW Params of device \"%s\":\n"),
+			snd_pcm_name(handle));
+		fprintf(stderr, "--------------------\n");
+		snd_pcm_hw_params_dump(params, log);
+		fprintf(stderr, "--------------------\n");
+	}
 	err = snd_pcm_sw_params_current(handle, swparams);
 	if (err < 0) {
 		error(_("Unable to get current sw params."));

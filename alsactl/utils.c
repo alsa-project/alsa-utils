@@ -177,7 +177,7 @@ void dbg_(const char *fcn, long line, const char *fmt, ...)
 	va_end(ap);
 }
 
-void error_handler(const char *file, int line, const char *function, int err, const char *fmt, ...)
+void error_handler(const char *file, int line, const char *function, int errcode, const char *fmt, ...)
 {
 	char buf[2048];
 	va_list arg;
@@ -187,11 +187,35 @@ void error_handler(const char *file, int line, const char *function, int err, co
 	va_end(arg);
 	if (use_syslog)
 		syslog(LOG_ERR, "alsa-lib %s:%i:(%s) %s%s%s\n", file, line, function,
-				buf, err ? ": " : "", err ? snd_strerror(err) : "");
+				buf, errcode ? ": " : "", errcode ? snd_strerror(errcode) : "");
 	else
 		fprintf(stderr, "alsa-lib %s:%i:(%s) %s%s%s\n", file, line, function,
-				buf, err ? ": " : "", err ? snd_strerror(err) : "");
+				buf, errcode ? ": " : "", errcode ? snd_strerror(errcode) : "");
 }
+
+#if SND_LIB_VER(1, 2, 15) >= SND_LIB_VERSION
+void log_handler(int prio, int interface, const char *file, int line, const char *function, int errcode, const char *fmt, va_list arg)
+{
+	char buf[2048], level[50] = "";
+	const char *text1, *text2;
+
+	if (!snd_lib_log_filter(prio, interface, NULL))
+		return;
+
+	text1 = snd_lib_log_priority(prio);
+	text2 = snd_lib_log_interface(interface);
+	if (text1 || text2)
+		snprintf(level, sizeof(level), "[%s.%s] ", text1 ? text1 : "", text2 ? text2 : "");
+
+	vsnprintf(buf, sizeof(buf), fmt, arg);
+	if (use_syslog)
+		syslog(LOG_ERR, "alsa-lib %s:%i:(%s) %s%s%s%s\n", file, line, function, level,
+				buf, errcode ? ": " : "", errcode ? snd_strerror(errcode) : "");
+	else
+		fprintf(stderr, "alsa-lib %s:%i:(%s) %s%s%s%s\n", file, line, function, level,
+				buf, errcode ? ": " : "", errcode ? snd_strerror(errcode) : "");
+}
+#endif
 
 int load_configuration(const char *file, snd_config_t **top, int *open_failed)
 {
