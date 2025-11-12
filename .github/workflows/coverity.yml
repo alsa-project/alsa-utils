@@ -1,0 +1,97 @@
+name: Coverity Scan
+
+on:
+  workflow_dispatch:
+#  push:
+#    branches:
+#      - master
+#  schedule:
+#    # Run once a week on Sunday at midnight UTC
+#    - cron: '0 4 * * 0'
+
+jobs:
+  coverity:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    steps:
+    - name: Prepare environment
+      run: |
+        dnf -y upgrade
+        dnf -y install @development-tools libtool bzip2 gettext-devel ncurses-devel awk curl wget tar file
+
+    - name: Checkout alsa-lib
+      uses: actions/checkout@v4
+      with:
+        repository: alsa-project/alsa-lib
+        ref: master
+        path: alsa-lib
+
+    - name: Configure alsa-lib
+      run: |
+        cd alsa-lib
+        head -5 configure.ac
+        libtoolize --force --copy --automake
+        aclocal
+        autoheader
+        automake --foreign --copy --add-missing
+        autoconf
+        export CFLAGS="-O2 -Wall -W -Wunused-const-variable=0 -pipe -g"
+        ./configure
+        echo "Version: $(cat version)"
+
+    - name: Build alsa-lib
+      run: |
+        cd alsa-lib
+        make
+
+    - name: Install alsa-lib
+      run: |
+        cd alsa-lib
+        make install
+
+    - name: Checkout alsa-utils
+      uses: actions/checkout@v4
+      with:
+        path: alsa-utils
+
+    - name: Configure alsa-utils
+      run: |
+        cd alsa-utils
+        mv configure.ac configure.ac.old
+        sed -e 's;po/Makefile.in;;' < configure.ac.old > configure.ac
+        aclocal
+        gettextize -c -f --no-changelog
+        libtoolize --force --copy --automake
+        aclocal -I m4
+        autoheader
+        automake --foreign --copy --add-missing
+        autoconf
+        export CFLAGS="-O2 -Wall -W -Wunused-const-variable=0 -pipe -g"
+        ./configure
+
+    - name: Download Coverity Build Tool
+      run: |
+        cd alsa-utils
+        wget -q https://scan.coverity.com/download/linux64 \
+          --post-data "token=${{ secrets.COVERITY_SCAN_TOKEN }}&project=${{ secrets.COVERITY_SCAN_PROJECT }}" \
+          -O coverity_tool.tar.gz
+        mkdir coverity-tool
+        tar xzf coverity_tool.tar.gz --strip-components=1 -C coverity-tool
+
+    - name: Build with Coverity Build Tool
+      run: |
+        cd alsa-utils
+        export PATH="$PWD/coverity-tool/bin:$PATH"
+        cov-build --dir cov-int make
+
+    - name: Submit results to Coverity Scan
+      run: |
+        cd alsa-utils
+        tar czvf alsa-utils.tgz cov-int
+        curl --form token=${{ secrets.COVERITY_SCAN_TOKEN }} \
+          --form email=${{ secrets.COVERITY_SCAN_EMAIL }} \
+          --form file=@alsa-utils.tgz \
+          --form version="$(git describe --tags --always)" \
+          --form description="ALSA Utils Coverity Scan" \
+          https://scan.coverity.com/builds?project=alsa-project%2Falsa-utils
