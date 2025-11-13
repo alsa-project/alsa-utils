@@ -353,6 +353,7 @@ int snd_card_clean_cfgdir(const char *cfgdir, int cardno)
 			lasterr = -errno;
 		}
 	}
+	free(list);
 
 	return lasterr;
 }
