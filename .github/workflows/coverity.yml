@@ -5,9 +5,9 @@ on:
 #  push:
 #    branches:
 #      - master
-#  schedule:
-#    # Run once a week on Sunday at midnight UTC
-#    - cron: '0 4 * * 0'
+  schedule:
+    # Run once a week on Sunday at 4am UTC
+    - cron: '0 4 * * 0'
 
 jobs:
   coverity:
