@@ -44,6 +44,9 @@
 #ifndef SYS_LOCKPATH
 #define SYS_LOCKPATH "/var/lock"
 #endif
+#ifndef SYS_CARD_GROUP
+#define SYS_CARD_GROUP SYS_ASOUND_DIR "/card-group.state"
+#endif
 
 int debugflag = 0;
 int force_restore = 1;
@@ -52,6 +55,7 @@ int do_lock = 0;
 int use_syslog = 0;
 char *command;
 char *statefile = NULL;
+char *groupfile = SYS_CARD_GROUP;
 char *lockpath = SYS_LOCKPATH;
 char *lockfile = SYS_LOCKFILE;
 
@@ -78,6 +82,7 @@ static struct arg args[] = {
 { 'v', "version", "print version of this program" },
 { HEADER, NULL, "Available state options:" },
 { FILEARG | 'f', "file", "configuration file (default " SYS_ASOUNDRC ")" },
+{ FILEARG | 'G', "group-file", "card group configuration file (default " SYS_CARD_GROUP ")" },
 { FILEARG | 'a', "config-dir", "boot / hotplug configuration directory (default " SYS_ASOUND_DIR ")" },
 { 'l', "lock", "use file locking to serialize concurrent access" },
 { 'L', "no-lock", "do not use file locking to serialize concurrent access" },
@@ -105,6 +110,7 @@ static struct arg args[] = {
 #ifdef HAVE_ALSA_USE_CASE_H
 { 'D', "ucm-defaults", "execute also the UCM 'defaults' section" },
 { 'U', "no-ucm", "don't init with UCM" },
+{ 'm', "force-ucm-restore", "force UCM restore for boot card groups" },
 #if SND_LIB_VER(1, 2, 5) < SND_LIB_VERSION
 { 'X', "ucm-nodev", "show UCM no device errors" },
 #endif
@@ -301,6 +307,9 @@ int main(int argc, char *argv[])
 		case 'f':
 			cfgfile = optarg;
 			break;
+		case 'G':
+			groupfile = optarg;
+			break;
 		case 'a':
 			cfgdir = optarg;
 			break;
@@ -340,6 +349,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'U':
 			initflags |= FLAG_UCM_DISABLED;
+			break;
+		case 'm':
+			initflags |= FLAG_UCM_RESTORE;
 			break;
 		case 'X':
 			initflags |= FLAG_UCM_NODEV;

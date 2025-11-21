@@ -181,6 +181,40 @@ int state_unlock(int _fd, const char *file)
 	return err;
 }
 
+static void group_state_lock_file(char *buf, size_t buflen)
+{
+	const char *name = strrchr(groupfile, '/');
+	if (name && name[0])
+		name++;
+	else
+		name = "card-group.state";
+	snprintf(buf, buflen, "%s/%s.lock", lockpath, name);
+}
+
+int group_state_lock(const char *file, int timeout)
+{
+	char fn[PATH_SIZE];
+	int err;
+
+	group_state_lock_file(fn, sizeof(fn));
+	err = state_lock_(fn, 1, timeout, -1);
+	if (err < 0)
+		error("file %s lock error: %s", file, strerror(-err));
+	return err;
+}
+
+int group_state_unlock(int _fd, const char *file)
+{
+	char fn[PATH_SIZE];
+	int err;
+
+	group_state_lock_file(fn, sizeof(fn));
+	err = state_lock_(fn, 0, 10, _fd);
+	if (err < 0)
+		error("file %s unlock error: %s", file, strerror(-err));
+	return err;
+}
+
 static void card_lock_file(char *buf, size_t buflen, int card_number)
 {
 	snprintf(buf, buflen, "%s/card%i.lock", lockpath, card_number);

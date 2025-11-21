@@ -11,7 +11,8 @@ AM_CFLAGS = -D_GNU_SOURCE
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 
-alsactl_SOURCES=alsactl.c state.c lock.c utils.c init_parse.c init_ucm.c \
+alsactl_SOURCES=alsactl.c state.c lock.c utils.c \
+		init_parse.c init_ucm.c boot_params.c \
 		daemon.c monitor.c clean.c info.c
 
 alsactl_CFLAGS=$(AM_CFLAGS) -D__USE_GNU \
