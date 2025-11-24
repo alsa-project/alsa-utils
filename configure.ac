@@ -419,8 +419,8 @@ AC_ARG_WITH([systemdsystemunitdir],
 if test "x$with_systemdsystemunitdir" != xno; then
         AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
 fi
-AM_CONDITIONAL(HAVE_SYSTEMD, [test "$have_min_systemd" = "yes" \
-        -a -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
+AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir" \
+			      -a "x$with_systemdsystemunitdir" != xno ])
 
 AC_ARG_WITH([asound-state-dir],
         AS_HELP_STRING([--with-asound-state-dir=DIR], [Directory to place asound.state file in]),
