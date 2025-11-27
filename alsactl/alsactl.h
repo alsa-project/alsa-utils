@@ -2,6 +2,7 @@
 #include <alsa/asoundlib.h>
 
 #define LOCK_TIMEOUT 10
+#define DEFAULT_SYNC_TIME 20
 
 extern int debugflag;
 extern int force_restore;
@@ -47,6 +48,7 @@ void log_handler(int prio, int interface, const char *file, int line, const char
 #define FLAG_UCM_DEFAULTS	(1<<3)
 #define FLAG_UCM_NODEV		(1<<4)
 #define FLAG_UCM_RESTORE	(1<<5)
+#define FLAG_UCM_WAIT		(1<<6)
 
 enum {
 	CARD_STATE_WAIT = 1,		/* skip configuration (wait for sync) */

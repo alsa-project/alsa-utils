@@ -29,8 +29,6 @@
 
 #include <alsa/use-case.h>
 
-#define DEFAULT_SYNC_TIME 20
-
 /*
  * Helper: Check if card should skip initialization based on boot parameters
  * Returns: 1 if should skip, 2 if should skip other card, 0 if should continue, negative on error

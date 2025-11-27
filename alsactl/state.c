@@ -1721,6 +1721,8 @@ int load_state(const char *cfgdir, const char *file,
 		while ((cardname1 = snd_card_iterator_next(&iter)) != NULL) {
 			if (!do_init)
 				break;
+			if (initflags & FLAG_UCM_WAIT)
+				wait_for_card(-1, iter.card);
 			lock_fd = card_lock(iter.card, LOCK_TIMEOUT);
 			if (lock_fd < 0) {
 				finalerr = lock_fd;
@@ -1747,6 +1749,8 @@ int load_state(const char *cfgdir, const char *file,
 	if (err < 0)
 		goto out;
 	while ((cardname1 = snd_card_iterator_next(&iter)) != NULL) {
+		if (initflags & FLAG_UCM_WAIT)
+			wait_for_card(-1, iter.card);
 		lock_fd = card_lock(iter.card, LOCK_TIMEOUT);
 		if (lock_fd < 0) {
 			initfailed(iter.card, "lock", lock_fd);

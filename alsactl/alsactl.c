@@ -123,6 +123,7 @@ static struct arg args[] = {
 { CARDCMD, "restore", "load current driver setup for one or each soundcards" },
 { EMPCMD, NULL, "  from configuration file" },
 { CARDCMD, "nrestore", "like restore, but notify the daemon to rescan soundcards" },
+{ CARDCMD, "wrestore", "wait for card ready, then restore" },
 { CARDCMD, "init", "initialize driver to a default state" },
 { CARDCMD, "daemon", "store state periodically for one or each soundcards" },
 { CARDCMD, "rdaemon", "like daemon but do the state restore at first" },
@@ -471,9 +472,12 @@ int main(int argc, char *argv[])
 		res = save_state(cfgfile, cardname);
 	} else if (!strcmp(cmd, "restore") ||
                    !strcmp(cmd, "rdaemon") ||
-		   !strcmp(cmd, "nrestore")) {
+		   !strcmp(cmd, "nrestore") ||
+		   !strcmp(cmd, "wrestore")) {
 		if (removestate)
 			remove(statefile);
+		if (!strcmp(cmd, "wrestore"))
+			initflags |= FLAG_UCM_WAIT;
 		res = load_state(cfgdir, cfgfile, initfile, initflags, cardname, init_fallback);
 		if (do_export && res >= 0)
 			res = export_cards(cardname);
