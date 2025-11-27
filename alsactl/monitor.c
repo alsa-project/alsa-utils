@@ -176,7 +176,7 @@ static int check_control_cdev(int infd, bool *retry)
 		ssize_t len = read(infd, buf, sizeof(*ev) + NAME_MAX);
 		if (len < 0) {
 			if (errno != EAGAIN)
-				err = errno;
+				err = -errno;
 			break;
 		} else if (len == 0) {
 			break;
