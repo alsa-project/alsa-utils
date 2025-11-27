@@ -1,0 +1,12 @@
+#
+# ALSA card initialization handler for cards in waiting state
+# This service is triggered by udev when ALSA_CARD_STATE=waiting
+#
+
+[Unit]
+Description=ALSA Card Initialization for card %I
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+ExecStart=@sbindir@/alsactl@args@ wrestore %i

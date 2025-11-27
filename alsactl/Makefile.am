@@ -31,7 +31,8 @@ if HAVE_SYSTEMD
 
 systemdsystemunit_DATA = \
 	alsa-state.service \
-	alsa-restore.service
+	alsa-restore.service \
+	alsa-card-wait@.service.in
 
 install-data-hook:
 	$(MKDIR_P) -m 0755 \
@@ -60,6 +61,9 @@ alsa-state.service: alsa-state.service.in
 alsa-restore.service: alsa-restore.service.in
 	$(edit)
 
+alsa-card-wait@.service: alsa-card-wait@.service.in
+	$(edit)
+
 90-alsa-restore.rules: 90-alsa-restore.rules.in
 	$(edit)
 
@@ -71,6 +75,7 @@ EXTRA_DIST += \
 CLEANFILES = \
 	alsa-state.service \
 	alsa-restore.service \
+	alsa-card-wait@.service \
 	90-alsa-restore.rules
 
 %.7: %.xml

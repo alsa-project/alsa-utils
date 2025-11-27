@@ -24,7 +24,8 @@ IMPORT{program}="/usr/bin/cat /run/udev/alsa-hda-analog-card"
 ENV{ALSA_CARD_HDA_ANALOG}!="", ENV{ALSA_CARD_NUMBER}="$env{ALSA_CARD_HDA_ANALOG}"
 
 LABEL="alsa_restore_std"
-TEST!="@daemonswitch@", RUN+="@sbindir@/alsactl@args@ restore $env{ALSA_CARD_NUMBER}"
-TEST=="@daemonswitch@", RUN+="@sbindir@/alsactl@args@ nrestore $env{ALSA_CARD_NUMBER}"
+TEST!="@daemonswitch@", IMPORT{program}="@sbindir@/alsactl@args@ --export restore $env{ALSA_CARD_NUMBER}"
+TEST=="@daemonswitch@", IMPORT{program}="@sbindir@/alsactl@args@ --export nrestore $env{ALSA_CARD_NUMBER}"
+ENV{ALSA_CARD_STATE}=="waiting", ENV{SYSTEMD_WANTS}="alsa-card-wait@$env{ALSA_CARD_NUMBER}.service"
 
 LABEL="alsa_restore_end"
