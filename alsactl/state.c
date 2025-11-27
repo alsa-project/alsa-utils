@@ -1729,6 +1729,8 @@ int load_state(const char *cfgdir, const char *file,
 			}
 			err = init(cfgdir, initfile, initflags | FLAG_UCM_FBOOT | FLAG_UCM_BOOT, cardname1);
 			card_unlock(lock_fd, iter.card);
+			if (card_state_is_okay(err))
+				export_card_state_set(iter.card, err);
 			if (err < 0) {
 				finalerr = err;
 				initfailed(iter.card, "init", err);
@@ -1754,8 +1756,10 @@ int load_state(const char *cfgdir, const char *file,
 		/* error is ignored */
 		err = init_ucm(initflags | FLAG_UCM_FBOOT, iter.card);
 		/* return code 1 and 2 -> postpone initialization */
-		if (card_state_is_okay(err))
+		if (card_state_is_okay(err)) {
+			export_card_state_set(iter.card, err);
 			goto unlock_card;
+		}
 		/* do a check if controls matches state file */
 		if (do_init && set_controls(iter.card, config, 0)) {
 			err = init(cfgdir, initfile, initflags | FLAG_UCM_BOOT, cardname1);

@@ -13,7 +13,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include
 
 alsactl_SOURCES=alsactl.c state.c lock.c utils.c \
 		init_parse.c init_ucm.c boot_params.c \
-		daemon.c monitor.c clean.c info.c
+		daemon.c monitor.c clean.c info.c export.c
 
 alsactl_CFLAGS=$(AM_CFLAGS) -D__USE_GNU \
                -DSYS_ASOUNDRC=\"$(ASOUND_STATE_DIR)/asound.state\" \

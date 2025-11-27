@@ -53,6 +53,7 @@ int force_restore = 1;
 int ignore_nocards = 0;
 int do_lock = 0;
 int use_syslog = 0;
+int do_export = 0;
 char *command;
 char *statefile = NULL;
 char *groupfile = SYS_CARD_GROUP;
@@ -97,6 +98,7 @@ static struct arg args[] = {
 { FILEARG | 'r', "runstate", "save restore and init state to this file (only errors)" },
 { 0, NULL, "  default settings is 'no file set'" },
 { 'R', "remove", "remove runstate file at first, otherwise append errors" },
+{ 'Y', "export", "export card state as key=value pairs (restore command only)" },
 { INTARG | 'p', "period", "store period in seconds for the daemon command" },
 { FILEARG | 'e', "pid-file", "pathname for the process id (daemon mode)" },
 { HEADER, NULL, "Available init options:" },
@@ -362,6 +364,9 @@ int main(int argc, char *argv[])
 		case 'R':
 			removestate = 1;
 			break;
+		case 'Y':
+			do_export = 1;
+			break;
 		case 'P':
 			force_restore = 0;
 			break;
@@ -470,6 +475,8 @@ int main(int argc, char *argv[])
 		if (removestate)
 			remove(statefile);
 		res = load_state(cfgdir, cfgfile, initfile, initflags, cardname, init_fallback);
+		if (do_export && res >= 0)
+			res = export_cards(cardname);
 		if (!strcmp(cmd, "rdaemon")) {
 			do_nice(use_nice, sched_idle);
 			res = state_daemon(cfgfile, cardname, period, pidfile);

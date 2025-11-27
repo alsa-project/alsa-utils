@@ -8,6 +8,7 @@ extern int force_restore;
 extern int ignore_nocards;
 extern int do_lock;
 extern int use_syslog;
+extern int do_export;
 extern char *command;
 extern char *statefile;
 extern char *groupfile;
@@ -95,6 +96,11 @@ int state_daemon(const char *file, const char *cardname, int period,
 int state_daemon_kill(const char *pidfile, const char *cmd);
 int clean(const char *cardname, char *const *extra_args);
 int snd_card_clean_cfgdir(const char *cfgdir, int cardno);
+
+/* export */
+
+int export_card_state_set(int card, int state);
+int export_cards(const char *cardname);
 
 /* utils */
 
