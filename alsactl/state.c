@@ -1511,7 +1511,7 @@ static int set_controls(int card, snd_config_t *top, int doit)
 	snd_ctl_elem_id_t *elem_id;
 	snd_config_t *control;
 	snd_config_iterator_t i, next;
-	int err, controls1 = -1, controls2 = -1;
+	int err, controls1 = -1, controls2 = -1, ucontrols = -1, diff;
 	unsigned int idx, count = 0;
 	char name[32], tmpid[16];
 	const char *id;
@@ -1571,7 +1571,7 @@ static int set_controls(int card, snd_config_t *top, int doit)
 	count = snd_ctl_elem_list_get_count(list);
 	dbg("list count: %u", count);
 	if (count == 0)
-		goto _check;
+		goto _free;
 	snd_ctl_elem_list_set_offset(list, 0);
 	if (snd_ctl_elem_list_alloc_space(list, count) < 0) {
 		error("No enough memory...");
@@ -1581,13 +1581,15 @@ static int set_controls(int card, snd_config_t *top, int doit)
 		error("Cannot determine controls (2): %s", snd_strerror(err));
 		goto _free;
 	}
-	controls2 = 0;
-	/* skip non-readable elements */
+	controls2 = ucontrols = 0;
+	/* skip non-readable and count user elements */
 	for (idx = 0; idx < count; ++idx) {
 		snd_ctl_elem_info_clear(elem_info);
 		snd_ctl_elem_list_get_id(list, idx, elem_id);
 		snd_ctl_elem_info_set_id(elem_info, elem_id);
 		if (snd_ctl_elem_info(handle, elem_info) == 0) {
+			if (snd_ctl_elem_info_is_user(elem_info))
+				ucontrols++;
 			if (!snd_ctl_elem_info_is_readable(elem_info))
 				continue;
 			controls2++;
@@ -1596,9 +1598,9 @@ static int set_controls(int card, snd_config_t *top, int doit)
 
 	/* check if we have additional controls in driver */
 	/* in this case we should go through init procedure */
- _check:
-	dbg("controls1=%i controls2=%i", controls1, controls2);
-	if (controls1 >= 0 && controls1 != controls2) {
+	diff = controls2 - controls1;
+	dbg("controls1=%i controls2=%i ucontrols=%i diff=%i", controls1, controls2, ucontrols, diff);
+	if (controls1 >= 0 && (-diff > ucontrols || diff > ucontrols)) {
 		/* not very informative */
 		/* but value is used for check only */
 		err = -EAGAIN;
