@@ -1738,6 +1738,7 @@ int load_state(const char *cfgdir, const char *file,
 			if (err < 0) {
 				finalerr = err;
 				initfailed(iter.card, "init", err);
+				continue;
 			}
 			initfailed(iter.card, "restore", -ENOENT);
 		}
