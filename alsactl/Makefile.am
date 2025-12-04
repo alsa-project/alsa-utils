@@ -25,14 +25,14 @@ noinst_HEADERS=alsactl.h list.h init_sysdeps.c init_utils_string.c \
                init_utils_run.c init_sysfs.c
 
 udevrules_DATA = \
-	90-alsa-restore.rules
+	conf/90-alsa-restore.rules
 
 if HAVE_SYSTEMD
 
 systemdsystemunit_DATA = \
-	alsa-state.service \
-	alsa-restore.service \
-	alsa-card-wait@.service.in
+	conf/alsa-state.service \
+	conf/alsa-restore.service \
+	conf/alsa-card-wait@.service
 
 install-data-hook:
 	$(MKDIR_P) -m 0755 \
@@ -55,28 +55,29 @@ edit = \
 		  -e "s;@args\@;$${args};g" \
 							< $< > $@ || rm $@
 
-alsa-state.service: alsa-state.service.in
+conf/alsa-state.service: conf/alsa-state.service.in
 	$(edit)
 
-alsa-restore.service: alsa-restore.service.in
+conf/alsa-restore.service: conf/alsa-restore.service.in
 	$(edit)
 
-alsa-card-wait@.service: alsa-card-wait@.service.in
+conf/alsa-card-wait@.service: conf/alsa-card-wait@.service.in
 	$(edit)
 
-90-alsa-restore.rules: 90-alsa-restore.rules.in
+conf/90-alsa-restore.rules: conf/90-alsa-restore.rules.in
 	$(edit)
 
 EXTRA_DIST += \
-	alsa-state.service.in \
-	alsa-restore.service.in \
-	90-alsa-restore.rules.in
+	conf/alsa-state.service.in \
+	conf/alsa-restore.service.in \
+	conf/alsa-card-wait@.service.in \
+	conf/90-alsa-restore.rules.in
 
 CLEANFILES = \
-	alsa-state.service \
-	alsa-restore.service \
-	alsa-card-wait@.service \
-	90-alsa-restore.rules
+	conf/alsa-state.service \
+	conf/alsa-restore.service \
+	conf/alsa-card-wait@.service \
+	conf/90-alsa-restore.rules
 
 %.7: %.xml
 	xmlto man $?
