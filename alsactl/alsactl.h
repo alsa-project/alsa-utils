@@ -98,6 +98,7 @@ int state_daemon(const char *file, const char *cardname, int period,
 int state_daemon_kill(const char *pidfile, const char *cmd);
 int clean(const char *cardname, char *const *extra_args);
 int snd_card_clean_cfgdir(const char *cfgdir, int cardno);
+void add_linked_card(int cardno);
 
 /* export */
 

@@ -893,6 +893,8 @@ static void boot_params_update_restored(snd_config_t *card_compound, int skip_ca
 			goto _next;
 		}
 
+		add_linked_card(card_val);
+
 _next:
 		snd_ctl_close(handle);
 	}

@@ -29,6 +29,33 @@
 #include <errno.h>
 #include "alsactl.h"
 
+static int linked_cards[16];
+
+static void init_linked_cards(void)
+{
+	size_t index;
+
+	for (index = 0; index < ARRAY_SIZE(linked_cards); index++)
+		linked_cards[index] = -1;
+}
+
+void add_linked_card(int cardno)
+{
+	size_t index;
+
+	for (index = 0; index < ARRAY_SIZE(linked_cards); index++) {
+		if (linked_cards[index] == cardno)
+			return;
+	}
+
+	for (index = 0; index < ARRAY_SIZE(linked_cards); index++) {
+		if (linked_cards[index] < 0) {
+			linked_cards[index] = cardno;
+			return;
+		}
+	}
+	error("Too many linked cards!");
+}
 
 static char *id_str(snd_ctl_elem_id_t *id)
 {
@@ -1703,10 +1730,11 @@ int load_state(const char *cfgdir, const char *file,
 	       const char *initfile, int initflags,
 	       const char *cardname, int do_init)
 {
-	int err, finalerr = 0, open_failed, lock_fd;
+	int err, finalerr = 0, open_failed, lock_fd, cardno;
 	struct snd_card_iterator iter;
 	snd_config_t *config;
 	const char *cardname1;
+	size_t index;
 
 	config = NULL;
 	err = load_configuration(file, &config, &open_failed);
@@ -1723,6 +1751,7 @@ int load_state(const char *cfgdir, const char *file,
 		while ((cardname1 = snd_card_iterator_next(&iter)) != NULL) {
 			if (!do_init)
 				break;
+			init_linked_cards();
 			if (initflags & FLAG_UCM_WAIT)
 				wait_for_card(-1, iter.card);
 			lock_fd = card_lock(iter.card, LOCK_TIMEOUT);
@@ -1752,6 +1781,7 @@ int load_state(const char *cfgdir, const char *file,
 	if (err < 0)
 		goto out;
 	while ((cardname1 = snd_card_iterator_next(&iter)) != NULL) {
+		init_linked_cards();
 		if (initflags & FLAG_UCM_WAIT)
 			wait_for_card(-1, iter.card);
 		lock_fd = card_lock(iter.card, LOCK_TIMEOUT);
@@ -1779,6 +1809,17 @@ int load_state(const char *cfgdir, const char *file,
 			if (!force_restore)
 				finalerr = err;
 			initfailed(iter.card, "restore", err);
+		}
+		/* for linked cards, restore controls, too */
+		for (index = 0; index < ARRAY_SIZE(linked_cards); index++) {
+			if ((cardno = linked_cards[index]) < 0)
+				break;
+			dbg("Restore for linked card %d", cardno);
+			if ((err = set_controls(cardno, config, 1))) {
+				if (!force_restore)
+					finalerr = err;
+				initfailed(cardno, "restore", err);
+			}
 		}
 unlock_card:
 		card_unlock(lock_fd, iter.card);
