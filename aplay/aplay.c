@@ -2710,7 +2710,7 @@ static void begin_wave(int fd, size_t cnt)
 	WaveHeader h;
 	WaveFmtBody f;
 	WaveChunkHeader cf, cd;
-	int bits;
+	int width, physical_width;
 	uint32_t tmp;
 	uint16_t tmp2;
 
@@ -2718,23 +2718,21 @@ static void begin_wave(int fd, size_t cnt)
 	if (cnt == (size_t)-2)
 		cnt = 0x7fffff00;
 
-	bits = 8;
+	width = snd_pcm_format_physical_width(hwparams.format);
+	physical_width = snd_pcm_format_width(hwparams.format);
+
+	if (width < 0 || physical_width < 0)
+		goto _format;
+
 	switch ((unsigned long) hwparams.format) {
 	case SND_PCM_FORMAT_U8:
-		bits = 8;
-		break;
 	case SND_PCM_FORMAT_S16_LE:
-		bits = 16;
-		break;
+	case SND_PCM_FORMAT_S24_LE: /* S24_LE is 24 bits stored in 32 bit width with 8 bit padding */
 	case SND_PCM_FORMAT_S32_LE:
-        case SND_PCM_FORMAT_FLOAT_LE:
-		bits = 32;
-		break;
-	case SND_PCM_FORMAT_S24_LE:
+	case SND_PCM_FORMAT_FLOAT_LE:
 	case SND_PCM_FORMAT_S24_3LE:
-		bits = 24;
-		break;
 	default:
+_format:
 		error(_("Wave doesn't support %s format..."), snd_pcm_format_name(hwparams.format));
 		prg_exit(EXIT_FAILURE);
 	}
@@ -2752,17 +2750,11 @@ static void begin_wave(int fd, size_t cnt)
                 f.format = LE_SHORT(WAV_FMT_PCM);
 	f.channels = LE_SHORT(hwparams.channels);
 	f.sample_fq = LE_INT(hwparams.rate);
-#if 0
-	tmp2 = (samplesize == 8) ? 1 : 2;
-	f.byte_p_spl = LE_SHORT(tmp2);
-	tmp = dsp_speed * hwparams.channels * (uint32_t) tmp2;
-#else
-	tmp2 = hwparams.channels * snd_pcm_format_physical_width(hwparams.format) / 8;
+	tmp2 = hwparams.channels * physical_width / 8;
 	f.byte_p_spl = LE_SHORT(tmp2);
 	tmp = (uint32_t) tmp2 * hwparams.rate;
-#endif
 	f.byte_p_sec = LE_INT(tmp);
-	f.bit_p_spl = LE_SHORT(bits);
+	f.bit_p_spl = LE_SHORT(width);
 
 	cd.type = WAV_DATA;
 	cd.length = LE_INT(cnt);
