@@ -810,7 +810,7 @@ restart_scan:
 
 		err = boot_params_remove_card_config(group, cardno);
 		if (err < 0) {
-			error("Unable to remove card %d from group '%s': %s", group_id, cardno, snd_strerror(err));
+			error("Unable to remove card %d from group '%s': %s", cardno, group_id, snd_strerror(err));
 			continue;
 		}
 		if (err > 0)
