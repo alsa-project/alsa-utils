@@ -47,6 +47,7 @@ endif
 edit = \
 	extratest=$$(echo ' $(ALSACTL_UDEV_EXTRATEST)' | sed -e 's/__/ /g' -e 's/^ $$//'); \
 	args=$$(echo ' $(ALSACTL_UDEV_ARGS)' | sed -e 's/__/ /g' -e 's/^ $$//'); \
+	mkdir -p conf; \
 	$(SED) -r -e 's,@sbindir\@,$(sbindir),g' \
 		  -e 's,@mydatadir\@,$(mydatadir),g' \
 		  -e 's,@daemonswitch\@,$(ALSACTL_DAEMONSWITCH),g' \
