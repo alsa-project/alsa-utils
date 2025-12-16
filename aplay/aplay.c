@@ -2731,6 +2731,7 @@ static void begin_wave(int fd, size_t cnt)
 	case SND_PCM_FORMAT_S32_LE:
 	case SND_PCM_FORMAT_FLOAT_LE:
 	case SND_PCM_FORMAT_S24_3LE:
+		break;
 	default:
 _format:
 		error(_("Wave doesn't support %s format..."), snd_pcm_format_name(hwparams.format));
