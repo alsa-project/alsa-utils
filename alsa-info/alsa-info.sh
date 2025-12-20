@@ -35,7 +35,7 @@ BGTITLE="ALSA-Info v $SCRIPT_VERSION"
 PASTEBINKEY='C9cRIO8m/9y8Cs0nVs0FraRx7U0pHsuc'
 
 WGET="$(command -v wget)"
-REQUIRES=(mktemp grep pgrep awk date uname cat sort dmesg amixer alsactl)
+REQUIRES="mktemp grep pgrep awk date uname cat sort dmesg amixer alsactl"
 
 #
 # Define some simple functions
@@ -305,7 +305,7 @@ get_alsa_library_version() {
 }
 
 # Basic requires
-for prg in "${REQUIRES[@]}"; do
+for prg in $REQUIRES; do
   t="$(command -v "$prg")"
   if test -z "$t"; then
     echo "This script requires $prg utility to continue."
@@ -414,9 +414,13 @@ fi
 
 # Fetch the info and store in temp files/variables
 TSTAMP=$(LANG=C TZ=UTC date)
-DISTRO=$(grep -ihs "buntu\|SUSE\|Fedora\|PCLinuxOS\|MEPIS\|Mandriva\|Debian\|Damn\|Sabayon\|Slackware\|KNOPPIX\|Gentoo\|Zenwalk\|Mint\|Kubuntu\|FreeBSD\|Puppy\|Freespire\|Vector\|Dreamlinux\|CentOS\|Arch\|Xandros\|Elive\|SLAX\|Red\|BSD\|KANOTIX\|Nexenta\|Foresight\|GeeXboX\|Frugalware\|64\|SystemRescue\|Novell\|Solaris\|BackTrack\|KateOS\|Pardus\|ALT" /etc/{issue,*release,*version})
-read -r KERNEL_RELEASE KERNEL_MACHINE KERNEL_PROCESSOR KERNEL_OS < <(uname -rpmo)
-read -r KERNEL_VERSION < <(uname -v)
+DISTRO=$(grep -ihs "buntu\|SUSE\|Fedora\|PCLinuxOS\|MEPIS\|Mandriva\|Debian\|Damn\|Sabayon\|Slackware\|KNOPPIX\|Gentoo\|Zenwalk\|Mint\|Kubuntu\|FreeBSD\|Puppy\|Freespire\|Vector\|Dreamlinux\|CentOS\|Arch\|Xandros\|Elive\|SLAX\|Red\|BSD\|KANOTIX\|Nexenta\|Foresight\|GeeXboX\|Frugalware\|64\|SystemRescue\|Novell\|Solaris\|BackTrack\|KateOS\|Pardus\|ALT" /etc/issue /etc/*release /etc/*version)
+UNAME=$(uname -rpmo)
+KERNEL_RELEASE=$(echo $UNAME | awk '{print $1}')
+KERNEL_MACHINE=$(echo $UNAME | awk '{print $2}')
+KERNEL_PROCESSOR=$(echo $UNAME | awk '{print $3}')
+KERNEL_OS=$(echo $UNAME | awk '{print $4}')
+KERNEL_VERSION=$(uname -v)
 if [[ "$KERNEL_VERSION" = *SMP* ]]; then KERNEL_SMP=Yes; else KERNEL_SMP=No; fi
 ALSA_DRIVER_VERSION=$(cat /proc/asound/version | head -n1 | awk '{ print $7 }' | sed 's/\.$//')
 get_alsa_library_version
@@ -465,7 +469,8 @@ fi
 if [ -d /sys/bus/acpi/devices ]; then
 	for f in /sys/bus/acpi/devices/*/adr; do
 		ACPI_ADR=$(cat $f 2>/dev/null);
-		if [[ "$ACPI_ADR" -ne 0 ]]; then
+		ACPI_ADR_INT=$(printf "%d" $ACPI_ADR);
+		if [[ "$ACPI_ADR_INT" -ne 0 ]]; then
 			case $ACPI_ADR in
 				0x??????025d*) echo "Realtek $ACPI_ADR" >>$TEMPDIR/sdwstatus.tmp;;
 				0x??????01fa*) echo "Cirrus Logic $ACPI_ADR" >>$TEMPDIR/sdwstatus.tmp;;
