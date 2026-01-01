@@ -1790,6 +1790,12 @@ int load_state(const char *cfgdir, const char *file,
 			finalerr = lock_fd;
 			continue;
 		}
+		err = snd_card_clean_cfgdir(cfgdir, iter.card);
+		if (err < 0) {
+			initfailed(iter.card, "cfgdir", err);
+			finalerr = err;
+			continue;
+		}
 		/* error is ignored */
 		err = init_ucm(initflags | FLAG_UCM_FBOOT, iter.card);
 		/* return code 1 and 2 -> postpone initialization */
