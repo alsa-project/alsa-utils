@@ -1761,7 +1761,7 @@ int init(const char *cfgdir, const char *filename, int flags, const char *cardna
 				lasterr = err;
 			continue;
 		}
-		err = init_ucm(flags, iter.card);
+		err = init_ucm(cfgdir, flags, iter.card);
 		if (err == 0 || card_state_is_okay(err))
 			continue;
 		err = init_space(&space, iter.card);

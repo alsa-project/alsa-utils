@@ -68,7 +68,7 @@ int snd_card_iterator_error(struct snd_card_iterator *iter);
 
 int load_configuration(const char *file, snd_config_t **top, int *open_failed);
 int init(const char *cfgdir, const char *file, int flags, const char *cardname);
-int init_ucm(int flags, int cardno);
+int init_ucm(const char *cfgdir, int flags, int cardno);
 bool validate_boot_time(long long boot_time, long long current_time, long long synctime);
 int read_boot_params(snd_ctl_t *handle, long long *boot_time, long long *sync_time, long long *restore_time, long long *primary_card);
 int write_boot_params(snd_ctl_t *handle, long long boot_time, long long sync_time, long long restore_time, long long primary_card);

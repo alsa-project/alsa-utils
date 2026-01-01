@@ -137,11 +137,17 @@ static int reopen_ucm_manager(snd_use_case_mgr_t **uc_mgr, int cardno, int flags
  * Helper: Execute boot sequences
  * Returns: 0 on success, negative on error
  */
-static int execute_boot_sequences(snd_use_case_mgr_t *uc_mgr, int flags, bool fixed_boot)
+static int execute_boot_sequences(const char *cfgdir, snd_use_case_mgr_t *uc_mgr,
+				  int cardno, int flags, bool fixed_boot)
 {
 	int err = 0;
 
 	if (fixed_boot) {
+		err = snd_card_clean_cfgdir(cfgdir, cardno);
+		if (err < 0) {
+			dbg("ucm clean cfgdir: %d", err);
+			return err;
+		}
 		err = snd_use_case_set(uc_mgr, "_fboot", NULL);
 		dbg("ucm _fboot: %d", err);
 		if (err == -ENOENT && (flags & FLAG_UCM_BOOT) != 0) {
@@ -170,7 +176,7 @@ static int execute_boot_sequences(snd_use_case_mgr_t *uc_mgr, int flags, bool fi
  * Handle also card groups.
  * Returns: 0 = success, 1 = skip this card (e.g. linked or in-sync), negative on error
  */
-int init_ucm(int flags, int cardno)
+int init_ucm(const char *cfgdir, int flags, int cardno)
 {
 	snd_use_case_mgr_t *uc_mgr;
 	char id[64];
@@ -268,7 +274,7 @@ int init_ucm(int flags, int cardno)
 	}
 
 _execute_boot:
-	if (flags & FLAG_UCM_FBOOT)
+	if (fixed_boot)
 		restored = true;
 
 	if (boot_card_group) {
@@ -277,7 +283,7 @@ _execute_boot:
 			goto _error;
 	}
 
-	err = execute_boot_sequences(uc_mgr, flags, fixed_boot);
+	err = execute_boot_sequences(cfgdir, uc_mgr, cardno, flags, fixed_boot);
 	if (err < 0)
 		goto _error;
 
@@ -286,6 +292,15 @@ _execute_boot:
 _error:
 	snd_use_case_mgr_close(uc_mgr);
 _fin:
+	if (fixed_boot && primary_card >= 0 && primary_card != cardno) {
+		/* remove card specific configuration files for other cards in group */
+		int clean_err = snd_card_clean_cfgdir(cfgdir, cardno);
+		if (clean_err < 0) {
+			dbg("ucm clean cfgdir: %d", clean_err);
+			if (err >= 0)
+				err = clean_err;
+		}
+	}
 	if (lock_fd >= 0)
 		group_state_unlock(lock_fd, groupfile);
 	if (ctl)
@@ -298,7 +313,7 @@ _fin:
 
 #else
 
-int init_ucm(int flags, int cardno)
+int init_ucm(const char *cfgdir, int flags, int cardno)
 {
 	return -ENXIO;
 }

@@ -1790,18 +1790,20 @@ int load_state(const char *cfgdir, const char *file,
 			finalerr = lock_fd;
 			continue;
 		}
-		err = snd_card_clean_cfgdir(cfgdir, iter.card);
-		if (err < 0) {
-			initfailed(iter.card, "cfgdir", err);
-			finalerr = err;
-			continue;
-		}
 		/* error is ignored */
-		err = init_ucm(initflags | FLAG_UCM_FBOOT, iter.card);
+		err = init_ucm(cfgdir, initflags | FLAG_UCM_FBOOT, iter.card);
 		/* return code 1 and 2 -> postpone initialization */
 		if (card_state_is_okay(err)) {
 			export_card_state_set(iter.card, err);
 			goto unlock_card;
+		} else if (err < 0) {
+			/* no UCM - remove card specific configuration */
+			err = snd_card_clean_cfgdir(cfgdir, iter.card);
+			if (err < 0) {
+				initfailed(iter.card, "cfgdir", err);
+				finalerr = err;
+				continue;
+			}
 		}
 		/* do a check if controls matches state file */
 		if (do_init && set_controls(iter.card, config, 0)) {
