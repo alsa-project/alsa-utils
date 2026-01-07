@@ -386,6 +386,7 @@ static int parse_config(int argc, char *argv[], snd_output_t *output,
 		{"ossmixer", 1, NULL, 'O'},
 		{"workaround", 1, NULL, 'w'},
 		{"xrun", 0, NULL, 'U'},
+		{"wake", 1, NULL, 'W'},
 		{"syslog", 0, NULL, 'z'},
 		{NULL, 0, NULL, 0},
 	};
