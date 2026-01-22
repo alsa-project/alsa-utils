@@ -97,12 +97,12 @@ static int info(void)
 	snd_ctl_elem_list_t *clist;
 	snd_ctl_card_info_alloca(&info);
 	snd_ctl_elem_list_alloca(&clist);
-	
+
 	if ((err = snd_ctl_open(&handle, card, 0)) < 0) {
 		error("Control device %s open error: %s", card, snd_strerror(err));
 		return err;
 	}
-	
+
 	if ((err = snd_ctl_card_info(handle, info)) < 0) {
 		error("Control device %s hw info error: %s", card, snd_strerror(err));
 		return err;
@@ -165,12 +165,12 @@ static const char *control_access(snd_ctl_elem_info_t *info)
 }
 
 #define check_range(val, min, max) \
-	(no_check ? (val) : ((val < min) ? (min) : (val > max) ? (max) : (val))) 
+	(no_check ? (val) : ((val < min) ? (min) : (val > max) ? (max) : (val)))
 #if 0
 static int convert_range(int val, int omin, int omax, int nmin, int nmax)
 {
 	int orange = omax - omin, nrange = nmax - nmin;
-	
+
 	if (orange == 0)
 		return 0;
 	return rint((((double)nrange * ((double)val - (double)omin)) + ((double)orange / 2.0)) / ((double)orange + (double)nmin));
@@ -181,7 +181,7 @@ static int convert_range(int val, int omin, int omax, int nmin, int nmax)
 static int convert_db_range(int val, int omin, int omax, int nmin, int nmax)
 {
 	int orange = omax - omin, nrange = nmax - nmin;
-	
+
 	if (orange == 0)
 		return 0;
 	return rint((((double)nrange * ((double)val - (double)omin)) + ((double)orange / 2.0)) / (double)orange + (double)nmin);
@@ -220,7 +220,7 @@ struct volume_ops {
 	int (*set)(snd_mixer_elem_t *elem, snd_mixer_selem_channel_id_t c,
 		   long value, int dir);
 };
-	
+
 enum { VOL_RAW, VOL_DB, VOL_MAP };
 
 struct volume_ops_set {
@@ -415,7 +415,7 @@ static int get_bool_simple(char **ptr, char *str, int invert, int orig)
 		(*ptr)++;
 	return orig;
 }
-		
+
 static int simple_skip_word(char **ptr, char *str)
 {
 	char *xptr = *ptr;
@@ -431,7 +431,7 @@ static int simple_skip_word(char **ptr, char *str)
 	}
 	return 0;
 }
-		
+
 static void show_control_id(snd_ctl_elem_id_t *id)
 {
 	char *str;
@@ -631,7 +631,7 @@ static int show_control(const char *space, snd_hctl_elem_t *elem,
 	printf("%s; type=%s,access=%s,values=%u", space, control_type(info), control_access(info), count);
 	switch (type) {
 	case SND_CTL_ELEM_TYPE_INTEGER:
-		printf(",min=%li,max=%li,step=%li\n", 
+		printf(",min=%li,max=%li,step=%li\n",
 		       snd_ctl_elem_info_get_min(info),
 		       snd_ctl_elem_info_get_max(info),
 		       snd_ctl_elem_info_get_step(info));
@@ -732,7 +732,7 @@ static int controls(int level)
 	snd_ctl_elem_info_t *info;
 	snd_ctl_elem_id_alloca(&id);
 	snd_ctl_elem_info_alloca(&info);
-	
+
 	if ((err = snd_hctl_open(&handle, card, 0)) < 0) {
 		error("Control %s open error: %s", card, snd_strerror(err));
 		return err;
@@ -758,7 +758,7 @@ static int controls(int level)
 	return 0;
 }
 
-static void show_selem_volume(snd_mixer_elem_t *elem, 
+static void show_selem_volume(snd_mixer_elem_t *elem,
 			      snd_mixer_selem_channel_id_t chn, int dir,
 			      long min, long max)
 {
@@ -786,7 +786,7 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 	int psw, csw;
 	int pmono, cmono, mono_ok = 0;
 	snd_mixer_elem_t *elem;
-	
+
 	elem = snd_mixer_find_selem(handle, id);
 	if (!elem) {
 		error("Mixer %s simple element not found", card);
@@ -917,11 +917,11 @@ static int show_selem(snd_mixer_t *handle, snd_mixer_selem_id_t *id, const char 
 			printf("\n");
 		}
 		pmono = snd_mixer_selem_has_playback_channel(elem, SND_MIXER_SCHN_MONO) &&
-		        (snd_mixer_selem_is_playback_mono(elem) || 
+		        (snd_mixer_selem_is_playback_mono(elem) ||
 			 (!snd_mixer_selem_has_playback_volume(elem) &&
 			  !snd_mixer_selem_has_playback_switch(elem)));
 		cmono = snd_mixer_selem_has_capture_channel(elem, SND_MIXER_SCHN_MONO) &&
-		        (snd_mixer_selem_is_capture_mono(elem) || 
+		        (snd_mixer_selem_is_capture_mono(elem) ||
 			 (!snd_mixer_selem_has_capture_volume(elem) &&
 			  !snd_mixer_selem_has_capture_switch(elem)));
 #if 0
@@ -1053,7 +1053,7 @@ static int selems(int level)
 	snd_mixer_selem_id_t *sid;
 	snd_mixer_elem_t *elem;
 	snd_mixer_selem_id_alloca(&sid);
-	
+
 	if ((err = snd_mixer_open(&handle, 0)) < 0) {
 		error("Mixer %s open error: %s", card, snd_strerror(err));
 		return err;
@@ -1290,7 +1290,7 @@ static int get_enum_item_index(snd_mixer_elem_t *elem, char **ptrp)
 
 	/* See snd_ctl_elem_init_enum_names() in sound/core/control.c. */
 	char name[64];
-	
+
 	items = snd_mixer_selem_get_enum_items(elem);
 	if (items <= 0)
 		return -1;
@@ -1563,9 +1563,9 @@ static int element_callback(snd_hctl_elem_t *elem, unsigned int mask)
 		events_remove(elem);
 		return 0;
 	}
-	if (mask & SND_CTL_EVENT_MASK_INFO) 
+	if (mask & SND_CTL_EVENT_MASK_INFO)
 		events_info(elem);
-	if (mask & SND_CTL_EVENT_MASK_VALUE) 
+	if (mask & SND_CTL_EVENT_MASK_VALUE)
 		events_value(elem);
 	return 0;
 }
@@ -1645,9 +1645,9 @@ static int melem_event(snd_mixer_elem_t *elem, unsigned int mask)
 		sevents_remove(sid);
 		return 0;
 	}
-	if (mask & SND_CTL_EVENT_MASK_INFO) 
+	if (mask & SND_CTL_EVENT_MASK_INFO)
 		sevents_info(sid);
-	if (mask & SND_CTL_EVENT_MASK_VALUE) 
+	if (mask & SND_CTL_EVENT_MASK_VALUE)
 		sevents_value(sid);
 	return 0;
 }
