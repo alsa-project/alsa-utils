@@ -193,10 +193,12 @@ static int hwdep_device_list(snd_ctl_t *ctl)
 static int card_info(snd_ctl_t *ctl)
 {
 	snd_ctl_card_info_t *info;
+	snd_ctl_card_components_t *components;
 	snd_ctl_elem_list_t *clist;
 	int err;
 
 	snd_ctl_card_info_alloca(&info);
+	snd_ctl_card_components_alloca(&components);
 	snd_ctl_elem_list_alloca(&clist);
 
 	if ((err = snd_ctl_card_info(ctl, info)) < 0) {
@@ -211,7 +213,10 @@ static int card_info(snd_ctl_t *ctl)
 		snd_ctl_card_info_get_longname(info));
 	printf("  driver_name: %s\n", snd_ctl_card_info_get_driver(info));
 	printf("  mixer_name: %s\n", snd_ctl_card_info_get_mixername(info));
-	printf("  components: %s\n", snd_ctl_card_info_get_components(info));
+	if (snd_ctl_card_components(ctl, components) >= 0)
+		printf("  components: %s\n", snd_ctl_card_components_get_string(components));
+	else
+		printf("  components: %s\n", snd_ctl_card_info_get_components(info));
 	if ((err = snd_ctl_elem_list(ctl, clist)) < 0) {
 		error("snd_ctl_elem_list failure: %s", snd_strerror(err));
 	} else {

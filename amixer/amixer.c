@@ -94,8 +94,10 @@ static int info(void)
 	snd_ctl_t *handle;
 	snd_mixer_t *mhandle;
 	snd_ctl_card_info_t *info;
+	snd_ctl_card_components_t *components;
 	snd_ctl_elem_list_t *clist;
 	snd_ctl_card_info_alloca(&info);
+	snd_ctl_card_components_alloca(&components);
 	snd_ctl_elem_list_alloca(&clist);
 
 	if ((err = snd_ctl_open(&handle, card, 0)) < 0) {
@@ -110,7 +112,10 @@ static int info(void)
 	printf("Card %s '%s'/'%s'\n", card, snd_ctl_card_info_get_id(info),
 	       snd_ctl_card_info_get_longname(info));
 	printf("  Mixer name	: '%s'\n", snd_ctl_card_info_get_mixername(info));
-	printf("  Components	: '%s'\n", snd_ctl_card_info_get_components(info));
+	if (snd_ctl_card_components(handle, components) >= 0)
+		printf("  Components	: '%s'\n", snd_ctl_card_components_get_string(components));
+	else
+		printf("  Components	: '%s'\n", snd_ctl_card_info_get_components(info));
 	if ((err = snd_ctl_elem_list(handle, clist)) < 0) {
 		error("snd_ctl_elem_list failure: %s", snd_strerror(err));
 	} else {
