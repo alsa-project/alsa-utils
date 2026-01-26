@@ -285,7 +285,9 @@ static const char *get_channel_name(int chn)
     return name ? name : "Unknown";
   }
 #endif
-  return gettext(channel_name[chn]);
+  if (chn < MAX_CHANNELS)
+    return gettext(channel_name[chn]);
+  return "Unknown";
 }
 
 static const int	supported_formats[] = {
