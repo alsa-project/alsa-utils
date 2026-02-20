@@ -542,8 +542,8 @@ static int tplg_pp_add_object_tuple_section(struct tplg_pre_processor *tplg_pp,
 					    const char *token_ref, const char *array_name)
 {
 	snd_config_t *top, *tuple_cfg, *child, *cfg, *new;
-	const char *id;
-	char *token, *type, *str;
+	const char *id, *type;
+	char *token, *str;
 	long tuple_value;
 	int ret;
 

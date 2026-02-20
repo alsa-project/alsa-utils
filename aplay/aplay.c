@@ -3219,7 +3219,7 @@ static int new_capture_file(char *name, char *namebuf, size_t namelen,
  */
 int create_path(const char *path)
 {
-	char *start;
+	const char *start;
 	mode_t mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
 
 	if (path[0] == '/')

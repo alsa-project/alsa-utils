@@ -168,7 +168,8 @@ static int tplg_pp_get_widget_name(struct tplg_pre_processor *tplg_pp,
 {
 	snd_config_iterator_t i, next;
 	snd_config_t *temp_cfg, *child, *class_cfg, *n;
-	char *class_name, *args, *widget_name;
+	const char *args;
+	char *class_name, *widget_name;
 	int ret;
 
 	/* get class name */
@@ -221,8 +222,8 @@ static int tplg_pp_get_widget_name(struct tplg_pre_processor *tplg_pp,
 
 	/* construct widget name using the constructor argument values */
 	snd_config_for_each(i, next, temp_cfg) {
-		const char *id;
-		char *arg, *remaining, *temp;
+		const char *id, *remaining;
+		char *arg, *temp;
 
 		n = snd_config_iterator_entry(i);
 		if (snd_config_get_string(n, &id) < 0)
