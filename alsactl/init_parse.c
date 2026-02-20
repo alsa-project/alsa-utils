@@ -692,7 +692,7 @@ dbvalue:
 		int err, index = 0;
 		snd_hctl_elem_t *elem;
 		snd_ctl_elem_id_t *id;
-		char *pos = strchr(attr, ' ');
+		const char *pos = strchr(attr, ' ');
 		if (pos)
 			index = strtol(pos, NULL, 0);
 		err = snd_ctl_elem_id_malloc(&id);
@@ -1281,7 +1281,7 @@ static char *new_root_dir(const char *filename)
 /* return non-zero if the file name has the extension ".conf" */
 static int conf_name_filter(const struct dirent *d)
 {
-	char *ext = strrchr(d->d_name, '.');
+	const char *ext = strrchr(d->d_name, '.');
 	return ext && !strcmp(ext, ".conf");
 }
 
