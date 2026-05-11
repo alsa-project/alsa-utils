@@ -3,7 +3,6 @@
 if test -d ../alsa-lib/utils && ! test -r `aclocal --print-ac-dir`/alsa.m4; then
   ACLOCAL_FLAGS="$ACLOCAL_FLAGS -I ../alsa-lib/utils"
 fi
-aclocal $ACLOCAL_FLAGS
 # save original files to avoid stupid modifications by gettextize
 cp Makefile.am Makefile.am.ok
 cp configure.ac configure.ac.ok
@@ -13,7 +12,7 @@ cp Makefile.am.ok Makefile.am
 cp configure.ac.ok configure.ac
 touch ltconfig
 libtoolize --force --copy --automake
-aclocal $ACLOCAL_FLAGS
+aclocal $ACLOCAL_FLAGS -Im4
 autoheader
 automake --foreign --copy --add-missing
 touch depcomp		# for older automake

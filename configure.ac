@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.59)
-AC_INIT(alsa-utils, 1.2.15.2)
+AC_PREREQ([2.72])
+AC_INIT([alsa-utils],[1.2.15.2])
 AC_CONFIG_SRCDIR([aplay/aplay.c])
 AC_PREFIX_DEFAULT(/usr)
 AM_INIT_AUTOMAKE([subdir-objects])
@@ -8,7 +8,7 @@ AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE([enable])
 
 AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.22.5])
+AM_GNU_GETTEXT_VERSION([0.25.1])
 
 dnl Checks for programs.
 
@@ -19,12 +19,12 @@ AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_SED
 AC_DISABLE_STATIC
-AM_PROG_LIBTOOL
+LT_INIT
 PKG_PROG_PKG_CONFIG
 AM_PATH_ALSA(1.2.13)
 if test "x$enable_alsatest" = "xyes"; then
 AC_CHECK_FUNC([snd_ctl_elem_add_enumerated],
-	      , [AC_ERROR([No user enum control support in alsa-lib])])
+	      , [AC_MSG_ERROR(No user enum control support in alsa-lib)])
 fi
 
 
@@ -222,8 +222,6 @@ AC_ARG_WITH(
         fi])
 AC_SUBST(udevrulesdir)
 
-dnl Checks for header files.
-AC_HEADER_STDC
 if test x$alsamixer = xtrue; then
   AC_ARG_WITH(curses,
     AS_HELP_STRING([--with-curses=libname], [Specify the curses library to use (default=auto)]),
@@ -313,7 +311,7 @@ if test x$alsamixer = xtrue; then
   fi
   LIBS="$CURSESLIB $LIBS"
 
-  AC_TRY_LINK([#include <panel.h>], [set_escdelay(100);],[HAVE_CURSES_ESCDELAY="yes"])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <panel.h>]], [[set_escdelay(100);]])],[HAVE_CURSES_ESCDELAY="yes"],[])
   if test "$HAVE_CURSES_ESCDELAY" = "yes"; then
     AC_DEFINE([HAVE_CURSES_ESCDELAY], 1, [Have curses set_escdelay])
   fi
@@ -325,15 +323,14 @@ if test x$alsamixer = xtrue; then
     dnl check for wide-character support.
     dnl For ncurses/ncursesw, CURSES_NLS was already set above.
     if test "$curseslib" = "curses"; then
-      AC_TRY_LINK([
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[
           #define _XOPEN_SOURCE 1
           #define _XOPEN_SOURCE_EXTENDED 1
           #include <curses.h>
-        ], [
+        ]], [[
           cchar_t wc;
           setcchar(&wc, L"x", A_NORMAL, 0, 0);
-        ],
-        [CURSES_NLS="yes"])
+        ]])],[CURSES_NLS="yes"],[])
     fi
     AC_MSG_RESULT([$CURSES_NLS])
     if test "$CURSES_NLS" = "yes"; then
@@ -397,10 +394,6 @@ AC_CONFIG_HEADERS(include/aconfig.h)
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
-AC_HEADER_TIME
-
-dnl Checks for library functions.
-AC_PROG_GCC_TRADITIONAL
 
 dnl Enable largefile support
 AC_SYS_LARGEFILE
@@ -481,7 +474,7 @@ AC_DEFINE_UNQUOTED(ALSA_TOPOLOGY_PLUGIN_DIR, "$plugindir", [directory containing
 ALSA_TOPOLOGY_PLUGIN_DIR="$plugindir"
 AC_SUBST(ALSA_TOPOLOGY_PLUGIN_DIR)
 
-AC_OUTPUT(Makefile alsactl/Makefile alsactl/init/Makefile \
+AC_CONFIG_FILES([Makefile alsactl/Makefile alsactl/init/Makefile \
 	  alsamixer/Makefile amidi/Makefile amixer/Makefile \
 	  m4/Makefile po/Makefile.in \
 	  alsaconf/alsaconf alsaconf/Makefile \
@@ -494,4 +487,5 @@ AC_OUTPUT(Makefile alsactl/Makefile alsactl/init/Makefile \
 	  seq/aseqsend/Makefile speaker-test/Makefile speaker-test/samples/Makefile \
 	  alsaloop/Makefile alsa-info/Makefile \
 	  axfer/Makefile axfer/test/Makefile \
-	  nhlt/Makefile)
+	  nhlt/Makefile])
+AC_OUTPUT
