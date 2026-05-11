@@ -1,22 +1,37 @@
 #!/bin/bash
 
+error() {
+  echo "$@"
+  exit 1
+}
+
+GETTEXTIZE=$(which gettextize)
+
+if test -z "$GETTEXTIZE"; then
+  echo "gettextize not found"
+  exit 1
+fi
 if test -d ../alsa-lib/utils && ! test -r `aclocal --print-ac-dir`/alsa.m4; then
   ACLOCAL_FLAGS="$ACLOCAL_FLAGS -I ../alsa-lib/utils"
 fi
 # save original files to avoid stupid modifications by gettextize
-cp Makefile.am Makefile.am.ok
-cp configure.ac configure.ac.ok
-gettextize -c -f --no-changelog
+cp Makefile.am Makefile.am.ok || error "cp Makefile.am"
+cp configure.ac configure.ac.ok || error "cp configure.ac"
+# modify gettexize to not wait for Enter
+grep -v -E "(/dev/tty|Press Return)" "$GETTEXTIZE" > gettextize || error "grep $GETTEXTIZE"
+chmod 755 gettextize || error "chmod 755 gettexize"
+./gettextize -c -f --no-changelog || error "gettexize"
+rm ./gettextize
 echo "EXTRA_DIST = gettext.m4" > m4/Makefile.am
 cp Makefile.am.ok Makefile.am
 cp configure.ac.ok configure.ac
 touch ltconfig
-libtoolize --force --copy --automake
-aclocal $ACLOCAL_FLAGS -Im4
-autoheader
-automake --foreign --copy --add-missing
+libtoolize --force --copy --automake || error "libtoolize"
+aclocal $ACLOCAL_FLAGS -Im4 || error "aclocal"
+autoheader || error "autoheader"
+automake --foreign --copy --add-missing || error "automake"
 touch depcomp		# for older automake
-autoconf
+autoconf || error "autoconf"
 export CFLAGS='-O2 -Wall -W -Wunused-const-variable=0 -pipe -g'
 echo "CFLAGS=$CFLAGS"
 echo "./configure $@"
