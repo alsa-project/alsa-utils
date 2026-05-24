@@ -80,5 +80,9 @@ CLEANFILES = \
 	conf/alsa-card-wait@.service \
 	conf/90-alsa-restore.rules
 
+if USE_XMLTO
+CLEANFILES += alsactl_init.7
+endif
+
 %.7: %.xml
 	xmlto man $?
