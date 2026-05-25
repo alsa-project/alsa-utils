@@ -35,8 +35,11 @@ to compile git sources of alsa-utils package.
 
 For compilation you can use these commands:
 
-	aclocal
+	# avoid blind AC_CONFIG_FILES change in configure.ac
+	cp configure.ac configure.ac.backup
 	gettextize
+	mv configure.ac.backup configure.ac
+	aclocal -Im4
 	autoheader
 	automake --foreign --copy --add-missing
 	autoconf
