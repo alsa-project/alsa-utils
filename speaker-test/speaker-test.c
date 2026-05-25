@@ -82,7 +82,7 @@ enum {
   TEST_PATTERN,
 };
 
-#define MAX_CHANNELS	16
+#define MAX_CHANNELS	32
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define COMPOSE_ID(a,b,c,d)	((a) | ((b)<<8) | ((c)<<16) | ((d)<<24))
@@ -142,7 +142,23 @@ static const char *const channel_name[MAX_CHANNELS] = {
   /* 12 */ N_("Channel 13"),
   /* 13 */ N_("Channel 14"),
   /* 14 */ N_("Channel 15"),
-  /* 15 */ N_("Channel 16")
+  /* 15 */ N_("Channel 16"),
+  /* 16 */ N_("Channel 17"),
+  /* 17 */ N_("Channel 18"),
+  /* 18 */ N_("Channel 19"),
+  /* 19 */ N_("Channel 20"),
+  /* 20 */ N_("Channel 21"),
+  /* 21 */ N_("Channel 22"),
+  /* 22 */ N_("Channel 23"),
+  /* 23 */ N_("Channel 24"),
+  /* 24 */ N_("Channel 25"),
+  /* 25 */ N_("Channel 26"),
+  /* 26 */ N_("Channel 27"),
+  /* 27 */ N_("Channel 28"),
+  /* 28 */ N_("Channel 29"),
+  /* 29 */ N_("Channel 30"),
+  /* 30 */ N_("Channel 31"),
+  /* 31 */ N_("Channel 32")
 };
 
 static const int	channels4[] = {
@@ -788,7 +804,23 @@ static int setup_wav_file(int chn)
     "Channel_13.wav",
     "Channel_14.wav",
     "Channel_15.wav",
-    "Channel_16.wav"
+    "Channel_16.wav",
+    "Channel_17.wav",
+    "Channel_18.wav",
+    "Channel_19.wav",
+    "Channel_20.wav",
+    "Channel_21.wav",
+    "Channel_22.wav",
+    "Channel_23.wav",
+    "Channel_24.wav",
+    "Channel_25.wav",
+    "Channel_26.wav",
+    "Channel_27.wav",
+    "Channel_28.wav",
+    "Channel_29.wav",
+    "Channel_30.wav",
+    "Channel_31.wav",
+    "Channel_32.wav"
   };
 
   if (given_test_wav_file)
