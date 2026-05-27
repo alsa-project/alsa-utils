@@ -13,3 +13,6 @@ Type=oneshot
 RemainAfterExit=true
 ExecStart=-@sbindir@/alsactl restore
 ExecStop=-@sbindir@/alsactl store
+
+[Install]
+WantedBy=sound.target
