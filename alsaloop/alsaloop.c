@@ -472,11 +472,11 @@ static int parse_config(int argc, char *argv[], snd_output_t *output,
 			break;
 		case 'c':
 			err = atoi(optarg);
-			arg_channels = err >= 1 && err < 1024 ? err : 1;
+			arg_channels = err >= 1 && err < SND_PCM_LIMIT_HW_CHANNELS_MAX ? err : 1;
 			break;
 		case 'r':
 			err = atoi(optarg);
-			arg_rate = err >= 4000 && err < 200000 ? err : 44100;
+			arg_rate = err >= SND_PCM_LIMIT_HW_RATE_MIN && err < SND_PCM_LIMIT_HW_RATE_MAX ? err : 44100;
 			break;
 		case 'B':
 			err = atoi(optarg);
