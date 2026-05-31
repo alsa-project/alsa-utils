@@ -660,7 +660,7 @@ int main(int argc, char *argv[])
 			if (tmp < 1000)
 				tmp *= 1000;
 			rhwparams.rate = tmp;
-			if (tmp < 2000 || tmp > 768000) {
+			if (tmp < SND_PCM_LIMIT_HW_RATE_MIN || tmp > SND_PCM_LIMIT_HW_RATE_MAX) {
 				error(_("bad speed value %i"), tmp);
 				return 1;
 			}
