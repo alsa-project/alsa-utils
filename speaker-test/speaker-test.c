@@ -1123,13 +1123,13 @@ int main(int argc, char *argv[]) {
       break;
     case 'r':
       rate = atoi(optarg);
-      rate = rate < 4000 ? 4000 : rate;
-      rate = rate > 768000 ? 768000 : rate;
+      rate = rate < SND_PCM_LIMIT_SW_RATE_MIN ? SND_PCM_LIMIT_SW_RATE_MIN : rate;
+      rate = rate > SND_PCM_LIMIT_SW_RATE_MAX ? SND_PCM_LIMIT_SW_RATE_MAX : rate;
       break;
     case 'c':
       channels = atoi(optarg);
       channels = channels < 1 ? 1 : channels;
-      channels = channels > 1024 ? 1024 : channels;
+      channels = channels > SND_PCM_LIMIT_SW_CHANNELS_MAX ? SND_PCM_LIMIT_SW_CHANNELS_MAX : channels;
       break;
     case 'f':
       freq = atof(optarg);
