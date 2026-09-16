@@ -664,11 +664,13 @@ if [ -d "$SYSFS" ]; then
 	echo "" >> $FILE
 	for mod in $(cat /proc/asound/modules | awk '{ print $2 }'); do
 		echo "!!Module: $mod" >> $FILE
-		for params in $(echo $SYSFS/module/$mod/parameters/*); do
-			echo -ne "\t"
-			value=$(cat $params)
-			echo "$params : $value" | sed 's:.*/::'
-		done >> $FILE
+		if [ -d "$SYSFS/module/$mod/parameters" ]; then
+			for params in $(echo $SYSFS/module/$mod/parameters/*); do
+				echo -ne "\t"
+				value=$(cat $params)
+				echo "$params : $value" | sed 's:.*/::'
+			done >> $FILE
+		fi
 		echo "" >> $FILE
 	done
 	echo "" >> $FILE
