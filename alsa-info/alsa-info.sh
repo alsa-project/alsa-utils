@@ -549,7 +549,9 @@ echo "" >> $FILE
 echo "!!ACPI SoundWire Device Status Information" >> $FILE
 echo "!!---------------" >> $FILE
 echo "" >> $FILE
-cat $TEMPDIR/sdwstatus.tmp >> $FILE
+if [ -f $TEMPDIR/sdwstatus.tmp ]; then
+    cat $TEMPDIR/sdwstatus.tmp >> $FILE
+fi
 echo "" >> $FILE
 echo "" >> $FILE
 echo "!!Kernel Information" >> $FILE
