@@ -1612,8 +1612,20 @@ pre_process_object_variables_expand_fcn(snd_config_t **dst, const char *str, voi
 
 	/* find variable from global definitions first */
 	ret = pre_process_find_variable(dst, str, conf_defines);
-	if (ret >= 0)
+	if (ret >= 0) {
+		/* the value may itself be a $VAR reference (e.g. from a nested Define
+		 * inside an IncludeByKey branch) — expand it before returning */
+		if (snd_config_get_string(*dst, &val) >= 0 && val[0] == '$') {
+			char *var = strdup(val);
+
+			snd_config_delete(*dst);
+			ret = snd_config_evaluate_string(dst, var,
+							 pre_process_object_variables_expand_fcn,
+							 tplg_pp);
+			free(var);
+		}
 		return ret;
+	}
 
 	/* No global define found, proceeed to object attribute search */
 	if (snd_config_get_id(object_cfg, &object_id) < 0)
